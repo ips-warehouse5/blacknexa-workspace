@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.tsbuildinfo
