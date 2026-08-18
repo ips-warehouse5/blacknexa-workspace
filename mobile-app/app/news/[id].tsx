@@ -72,7 +72,13 @@ export default function NewsArticleScreen(): React.ReactElement {
   const { feed, fetchTranslationFor } = useNews();
   const { settings, update } = useSettings();
   const insets = useSafeAreaInsets();
-  const [imageUri, setImageUri] = useState<string>("");
+  const article = useMemo<NewsArticle | undefined>(
+    () => feed.find((a) => a.id === id || a.slug === id),
+    [feed, id]
+  );
+
+  const initialImage = article?.imageUrl || (article ? CATEGORY_FALLBACK_IMAGES[article.category] : "") || CATEGORY_FALLBACK_IMAGES["civil-rights-legal-advocacy"];
+  const [imageUri, setImageUri] = useState<string>(initialImage);
   const [hasFailed, setHasFailed] = useState<boolean>(false);
   const [shareOpen, setShareOpen] = useState<boolean>(false);
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
@@ -86,11 +92,6 @@ export default function NewsArticleScreen(): React.ReactElement {
   const soundRef = useRef<Audio.Sound | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const article = useMemo<NewsArticle | undefined>(
-    () => feed.find((a) => a.id === id || a.slug === id),
-    [feed, id]
-  );
 
   const readMinutes = useMemo<number>(
     () => (article ? estimateReadingTime(article) : 1),
@@ -111,10 +112,11 @@ export default function NewsArticleScreen(): React.ReactElement {
 
   useEffect(() => {
     if (article) {
-      setImageUri(article.imageUrl);
+      const resolved = article.imageUrl || CATEGORY_FALLBACK_IMAGES[article.category] || CATEGORY_FALLBACK_IMAGES["civil-rights-legal-advocacy"];
+      setImageUri(resolved);
       setHasFailed(false);
     }
-  }, [article?.imageUrl]);
+  }, [article]);
 
   // Fetch a translation whenever the article or preferred language changes.
   // English short-circuits to the source text. A stale in-flight request is

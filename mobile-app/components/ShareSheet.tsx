@@ -294,7 +294,7 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
               <GoogleGMark size={22} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.googleConnectedTitle}>
-                  Share via {user.name ?? user.email.split("@")[0]}'s apps
+                  {`Share via ${user.name ?? user.email.split("@")[0]}'s apps`}
                 </Text>
                 <Text style={styles.googleConnectedSub}>
                   One tap routes to every installed social app
@@ -338,8 +338,7 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
             </Pressable>
           ) : (
             <Text style={styles.googleHint}>
-              One tap routes this story to every social app you're already logged into
-              with Google — no usernames, no passwords.
+              {"One tap routes this story to every social app you're already logged into with Google — no usernames, no passwords."}
             </Text>
           )}
 

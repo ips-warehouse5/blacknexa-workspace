@@ -18,6 +18,7 @@ import type {
   DispatchResult,
   CreateIncidentResponse,
 } from "@/constants/geo-legal";
+import { apiFetch } from "@/utils/apiClient";
 
 /** Backend base URL — same env var used by NewsProvider. */
 function backendBase(): string {
@@ -76,10 +77,12 @@ function useGeoLegalInternal() {
     if (params.lng != null) url.searchParams.set("lng", String(params.lng));
     if (params.lang) url.searchParams.set("lang", params.lang);
 
-    const res = await fetch(url.toString(), { method: "GET" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { success: boolean; profile?: JurisdictionProfile; error?: string };
-    if (!data.success || !data.profile) return null;
+    const { ok, data } = await apiFetch<{ success: boolean; profile?: JurisdictionProfile; error?: string }>(
+      url.toString(),
+      { method: "GET" }
+    );
+
+    if (!ok || !data?.success || !data.profile) return null;
     setCurrentProfile(data.profile);
     return data.profile;
   }, []);
@@ -87,19 +90,22 @@ function useGeoLegalInternal() {
   const validateReport = useCallback(async (params: ValidateParams): Promise<ValidationResult | null> => {
     const base = backendBase();
     if (!base) return null;
-    const res = await fetch(`${base}/api/v1/geo-legal/validate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        reportDraft: params.reportDraft,
-        countryCode: params.countryCode,
-        lat: params.lat,
-        lng: params.lng,
-      }),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { success: boolean; validation?: ValidationResult; error?: string };
-    if (!data.success || !data.validation) return null;
+
+    const { ok, data } = await apiFetch<{ success: boolean; validation?: ValidationResult; error?: string }>(
+      `${base}/api/v1/geo-legal/validate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportDraft: params.reportDraft,
+          countryCode: params.countryCode,
+          lat: params.lat,
+          lng: params.lng,
+        }),
+      }
+    );
+
+    if (!ok || !data?.success || !data.validation) return null;
     setCurrentValidation(data.validation);
     return data.validation;
   }, []);
@@ -107,32 +113,40 @@ function useGeoLegalInternal() {
   const confirmAndDispatch = useCallback(async (params: DispatchParams): Promise<DispatchResult | null> => {
     const base = backendBase();
     if (!base) return null;
-    const res = await fetch(`${base}/api/v1/geo-legal/dispatch`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        reportDraft: params.reportDraft,
-        validation: params.validation,
-        humanConfirmed: params.humanConfirmed,
-        channels: params.channels,
-        incidentId: params.incidentId,
-      }),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as DispatchResult & { success: boolean };
+
+    const { ok, data } = await apiFetch<DispatchResult & { success: boolean }>(
+      `${base}/api/v1/geo-legal/dispatch`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportDraft: params.reportDraft,
+          validation: params.validation,
+          humanConfirmed: params.humanConfirmed,
+          channels: params.channels,
+          incidentId: params.incidentId,
+        }),
+      }
+    );
+
+    if (!ok || !data) return null;
     return data;
   }, []);
 
   const createIncident = useCallback(async (params: CreateIncidentParams): Promise<CreateIncidentResponse | null> => {
     const base = backendBase();
     if (!base) return null;
-    const res = await fetch(`${base}/api/v1/geo-legal/incident/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as CreateIncidentResponse;
+
+    const { ok, data } = await apiFetch<CreateIncidentResponse>(
+      `${base}/api/v1/geo-legal/incident/create`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!ok || !data) return null;
     return data;
   }, []);
 

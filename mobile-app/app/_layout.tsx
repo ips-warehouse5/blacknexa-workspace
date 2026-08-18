@@ -12,6 +12,7 @@ import { NewsProvider } from "@/providers/NewsProvider";
 import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
 import { LEGAL_VERSION } from "@/constants/legal";
 import Colors from "@/constants/colors";
+import "@/utils/apiClient";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -29,17 +30,22 @@ function ConsentGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
     const consented =
-      settings.consentTos &&
-      settings.consentPrivacy &&
-      settings.consentVersion >= LEGAL_VERSION;
+      Boolean(settings.consentTos) &&
+      Boolean(settings.consentPrivacy) &&
+      Number(settings.consentVersion) >= LEGAL_VERSION;
+
     const first = segments[0] as string | undefined;
     const isOnboarding = first === "onboarding";
     const isLegal = first === "legal";
+
     if (!consented && !isOnboarding && !isLegal) {
       console.log("[BlackNexa] Routing to onboarding (no consent)");
       router.replace("/onboarding");
+    } else if (consented && isOnboarding) {
+      console.log("[BlackNexa] User consented, routing to tabs");
+      router.replace("/(tabs)");
     }
-  }, [isLoading, settings, segments, router]);
+  }, [isLoading, settings.consentTos, settings.consentPrivacy, settings.consentVersion, segments, router]);
 
   return <>{children}</>;
 }

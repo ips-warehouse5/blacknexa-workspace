@@ -117,10 +117,30 @@ export default function ReportScreen(): React.ReactElement {
   const [obtainedConsent, setObtainedConsent] = useState<boolean>(false);
   const [inPublicSpace, setInPublicSpace] = useState<boolean>(true);
   const [complianceResult, setComplianceResult] = useState<ComplianceResult | null>(null);
-  const [showComplianceCheck, setShowComplianceCheck] = useState<boolean>(false);
   const [geoValidation, setGeoValidation] = useState<GeoValidationResult | null>(null);
   const [showComplianceReview, setShowComplianceReview] = useState<boolean>(false);
   const [isValidating, setIsValidating] = useState<boolean>(false);
+
+  const resetForm = useCallback(() => {
+    setTitle("");
+    setSummary("");
+    setCategory("profiling");
+    setPrivacy(settings.anonymousByDefault ? "trusted" : "public");
+    setArea("");
+    setPhotos([]);
+    setRedactLocation(settings.redactGps);
+    setCountry(settings.defaultCountry || "US");
+    setSubdivision(settings.defaultSubdivision || "NY");
+    setMediaType("PHOTO");
+    setUserIsParticipant(true);
+    setObtainedConsent(false);
+    setInPublicSpace(true);
+    setComplianceResult(null);
+    setShowComplianceCheck(false);
+    setGeoValidation(null);
+    setShowComplianceReview(false);
+    setIsValidating(false);
+  }, [settings]);
 
   const runComplianceCheck = useCallback(async (type: "PHOTO" | "VIDEO" | "AUDIO") => {
     setMediaType(type);
@@ -343,6 +363,7 @@ export default function ReportScreen(): React.ReactElement {
       evidenceCount: photos.length,
       redactLocation,
     });
+    resetForm();
     safeBack();
   }, [
     canSubmit,
@@ -364,6 +385,7 @@ export default function ReportScreen(): React.ReactElement {
     obtainedConsent,
     inPublicSpace,
     validateReport,
+    resetForm,
   ]);
 
   // ── Geo-Legal confirmed dispatch handler ──
@@ -452,6 +474,7 @@ export default function ReportScreen(): React.ReactElement {
       console.log("[Report] geo-legal dispatch failed (non-fatal)", e);
     }
 
+    resetForm();
     safeBack();
   }, [
     geoValidation,
@@ -467,6 +490,7 @@ export default function ReportScreen(): React.ReactElement {
     mediaType,
     createIncident,
     confirmAndDispatch,
+    resetForm,
   ]);
 
   return (
@@ -474,7 +498,7 @@ export default function ReportScreen(): React.ReactElement {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => safeBack()} hitSlop={10}>
+            <Pressable onPress={() => { resetForm(); safeBack(); }} hitSlop={10}>
               <X size={22} color={Colors.text} />
             </Pressable>
           ),

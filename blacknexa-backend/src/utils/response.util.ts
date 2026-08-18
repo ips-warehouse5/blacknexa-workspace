@@ -105,7 +105,7 @@ export function buildPagination(page: number, limit: number, total: number): Pag
  * must say so explicitly in the payload.
  */
 export function legacyJson(res: Response, payload: object, status = 200): Response {
-  return res.status(status).json({ success: true, ...payload });
+  return res.status(status).type("application/json").json({ success: true, ...payload });
 }
 
 /**
@@ -115,7 +115,7 @@ export function legacyJson(res: Response, payload: object, status = 200): Respon
  * their user-facing message (see NewsProvider.tsx and TippingDashboard.tsx).
  */
 export function legacyError(res: Response, error: string, status = 400): Response {
-  return res.status(status).json({ success: false, error });
+  return res.status(status).type("application/json").json({ success: false, error });
 }
 
 /**
@@ -124,10 +124,10 @@ export function legacyError(res: Response, error: string, status = 400): Respons
  * read that key, so the distinction is preserved.
  */
 export function legacyMessage(res: Response, message: string, status = 404): Response {
-  return res.status(status).json({ success: false, message });
+  return res.status(status).type("application/json").json({ success: false, message });
 }
 
 /** Emit a bare (unwrapped) object, for routes whose payload has no envelope. */
 export function rawJson(res: Response, payload: unknown, status = 200): Response {
-  return res.status(status).json(payload);
+  return res.status(status).type("application/json").json(payload);
 }

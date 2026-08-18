@@ -32,9 +32,14 @@ import BrandMark from "@/components/BrandMark";
 import TippingDashboard from "@/components/TippingDashboard";
 import { useIncidents } from "@/providers/IncidentsProvider";
 import { useSettings, type Settings } from "@/providers/SettingsProvider";
+import { useAuth } from "@/providers/AuthProvider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfileScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const qc = useQueryClient();
+  const { signOut: authSignOut } = useAuth();
   const { myIncidents, incidents } = useIncidents();
   const { settings, update, updateMany } = useSettings();
 
@@ -128,25 +133,48 @@ export default function ProfileScreen(): React.ReactElement {
   const signOut = React.useCallback(() => {
     Alert.alert(
       "Sign out?",
-      "You'll need to re-accept the Terms and Privacy Policy on your next visit.",
+      "Signing out will clear all local records, vault data, cached reports, and preferences. You will need to re-accept the Terms of Service to continue.",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Sign out",
           style: "destructive",
-          onPress: () => {
-            updateMany({
-              consentTos: false,
-              consentPrivacy: false,
-              consentVersion: 0,
-              consentTimestamp: null,
-            });
-            router.replace("/onboarding");
+          onPress: async () => {
+            try {
+              // 1. Instantly navigate to onboarding so no intermediate tab or feed renders
+              router.replace("/onboarding");
+
+              // 2. Wipe secure OAuth tokens from SecureStore
+              await authSignOut();
+
+              // 3. Clear every single item stored in AsyncStorage
+              await AsyncStorage.clear();
+
+              // 4. Reset settings in provider to pristine default state
+              await updateMany({
+                consentTos: false,
+                consentPrivacy: false,
+                consentVersion: 0,
+                consentTimestamp: null,
+                dataProcessingAgreed: false,
+                vaultPin: "",
+                vaultPinSet: false,
+                displayName: "Morgan Thompson",
+                preferredLanguage: "en",
+              });
+
+              // 5. Purge React Query in-memory cache completely
+              qc.clear();
+            } catch (e) {
+              console.error("[Profile] signOut error:", e);
+              await AsyncStorage.clear().catch(() => {});
+              qc.clear();
+            }
           },
         },
       ]
     );
-  }, [updateMany]);
+  }, [authSignOut, updateMany, qc]);
 
   const totalSupporters = myIncidents.reduce(
     (s, i) => s + i.supporters,

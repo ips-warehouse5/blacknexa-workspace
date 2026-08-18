@@ -158,7 +158,7 @@ function LocalNewsBlock({
           <View style={{ flex: 1 }}>
             <Text style={styles.localPromptTitle}>Local BlackNexa News · {placeLabel}</Text>
             <Text style={styles.localPromptSubtitle}>
-              No local briefings yet for your area. We're generating one now — pull to refresh in a moment.
+              {"No local briefings yet for your area. We're generating one now — pull to refresh in a moment."}
             </Text>
           </View>
         </View>

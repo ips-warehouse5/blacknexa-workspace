@@ -274,12 +274,23 @@ async function fetchTranslation(
   return { ...body.data, background: body.background ?? false };
 }
 
+import { useSettings } from "@/providers/SettingsProvider";
+import { LEGAL_VERSION } from "@/constants/legal";
+
 export const [NewsProvider, useNews] = createContextHook(() => {
   const qc = useQueryClient();
+  const { settings } = useSettings();
+
+  const isConsented = Boolean(
+    settings.consentTos &&
+    settings.consentPrivacy &&
+    settings.consentVersion >= LEGAL_VERSION
+  );
 
   const feedQuery = useQuery<NewsArticle[], Error>({
     queryKey: ["news_feed"],
     queryFn: ({ signal }) => fetchFeed(signal),
+    enabled: isConsented,
     staleTime: FEED_STALE_MS,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -316,6 +327,7 @@ export const [NewsProvider, useNews] = createContextHook(() => {
   const briefingsQuery = useQuery<NewsArticle[], Error>({
     queryKey: ["news_briefings"],
     queryFn: ({ signal }) => fetchBriefings(signal),
+    enabled: isConsented,
     staleTime: SEARCH_STALE_MS,
     refetchOnMount: true,
     refetchOnWindowFocus: true,

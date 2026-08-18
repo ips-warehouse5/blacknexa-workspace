@@ -104,15 +104,15 @@ export const [SettingsProvider, useSettings] = createContextHook(() => {
   });
 
   const update = useCallback(
-    <K extends keyof Settings>(key: K, value: Settings[K]) => {
-      mutation.mutate({ ...settings, [key]: value });
+    async <K extends keyof Settings>(key: K, value: Settings[K]): Promise<Settings> => {
+      return await mutation.mutateAsync({ ...settings, [key]: value });
     },
     [mutation, settings]
   );
 
   const updateMany = useCallback(
-    (patch: Partial<Settings>) => {
-      mutation.mutate({ ...settings, ...patch });
+    async (patch: Partial<Settings>): Promise<Settings> => {
+      return await mutation.mutateAsync({ ...settings, ...patch });
     },
     [mutation, settings]
   );

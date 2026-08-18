@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiFetch } from "@/utils/apiClient";
 
 const AUTH_URL = process.env.EXPO_PUBLIC_RORK_AUTH_URL ?? "";
 const APP_KEY = process.env.EXPO_PUBLIC_RORK_APP_KEY ?? "";
@@ -84,18 +85,22 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       return;
     }
     try {
-      const response = await fetch(`${AUTH_URL}/oauth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_key: APP_KEY, refresh_token: storedRefreshToken }),
-      });
-      if (!response.ok) {
+      const { ok, data } = await apiFetch<{ access_token: string }>(
+        `${AUTH_URL}/oauth/refresh`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_key: APP_KEY, refresh_token: storedRefreshToken }),
+        }
+      );
+
+      if (!ok || !data?.access_token) {
         await SecureStore.deleteItemAsync("access_token");
         await SecureStore.deleteItemAsync("refresh_token");
         setUser(null);
         return;
       }
-      const { access_token } = await response.json();
+      const access_token = data.access_token;
       await SecureStore.setItemAsync("access_token", access_token);
       setUser(userFromToken(access_token));
     } catch {
@@ -142,19 +147,23 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       const promise = (async (): Promise<AuthUser | null> => {
         codeVerifierRef.current = null;
         try {
-          const response = await fetch(`${AUTH_URL}/oauth/token`, {
+          const { ok, status, data, error: fetchErr } = await apiFetch<{
+            access_token?: string;
+            refresh_token?: string;
+            user?: AuthUser;
+            error?: string;
+          }>(`${AUTH_URL}/oauth/token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ app_key: APP_KEY, code, code_verifier: verifier }),
           });
-          if (!response.ok) {
-            const body = await response.json().catch(() => ({}));
-            const message =
-              (body as { error?: string }).error ??
-              `Token exchange failed (${response.status})`;
+
+          if (!ok || !data?.access_token || !data?.refresh_token) {
+            const message = data?.error ?? fetchErr ?? `Token exchange failed (${status})`;
             throw new Error(message);
           }
-          const { access_token, refresh_token, user: userData } = await response.json();
+
+          const { access_token, refresh_token, user: userData } = data;
           await SecureStore.setItemAsync("access_token", access_token);
           await SecureStore.setItemAsync("refresh_token", refresh_token);
           const decoded = userFromToken(access_token);

@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "BlackNexa",
-    "slug": "499r3rz679a2j9vr4ap98",
+    "slug": "blacknexa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rork-499r3rz679a2j9vr4ap98",
+    "scheme": "blacknexa",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.rork.499r3rz679a2j9vr4ap98",
+      "bundleIdentifier": "com.blacknexa.app",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "BlackNexa uses the microphone so you can dictate a news topic or record an audio briefing.",
         "NSLocationWhenInUseUsageDescription": "BlackNexa uses your location to surface local news and briefings relevant to your community.",
@@ -27,8 +27,13 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.499r3rz679a2j9vr4ap98",
-      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.MODIFY_AUDIO_SETTINGS", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"]
+      "package": "com.blacknexa.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -37,7 +42,7 @@
       [
         "expo-router",
         {
-          "origin": "https://rork.com/"
+          "origin": "https://blacknexa.com/"
         }
       ],
       "expo-font",
@@ -46,6 +51,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": "https://blacknexa.com/"
+      },
+      "eas": {
+        "projectId": "d291ffae-366e-4c07-90f1-43cc1c0f5912"
+      }
+    },
+    "owner": "newsmovesmarketsforex-llc"
   }
 }

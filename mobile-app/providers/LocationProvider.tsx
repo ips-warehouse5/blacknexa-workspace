@@ -5,6 +5,8 @@ import * as Linking from "expo-linking";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Location from "expo-location";
 import type { NewsArticle } from "@/mocks/news";
+import { useSettings } from "@/providers/SettingsProvider";
+import { LEGAL_VERSION } from "@/constants/legal";
 
 /**
  * UserLocation — a one-shot geographical fix plus reverse-geocoded place
@@ -202,19 +204,24 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     }
   }, [cacheQuery]);
 
-  // Auto-stamp location on first app load when no cached fix exists.
-  // This fires once after the cache query resolves — if the user has already
-  // granted permission (or a prior fix was cached), we skip. If permission was
-  // never asked, we request it silently so the feed can geostamp immediately.
+  const { settings } = useSettings();
+  const isConsented = Boolean(
+    settings.consentTos &&
+    settings.consentPrivacy &&
+    settings.consentVersion >= LEGAL_VERSION
+  );
+
+  // Auto-stamp location on first app load when no cached fix exists and user is consented.
   const autoRequestedRef = useRef(false);
   useEffect(() => {
+    if (!isConsented) return;
     if (autoRequestedRef.current) return;
     if (cacheQuery.isLoading) return;
     autoRequestedRef.current = true;
     if (location) return; // already have a fix
     // Fire-and-forget — the user can deny and still use the app.
     void requestLocation();
-  }, [cacheQuery.isLoading, location, requestLocation]);
+  }, [isConsented, cacheQuery.isLoading, location, requestLocation]);
 
   /**
    * Open the device's app settings so the user can grant location permission.
@@ -235,7 +242,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
   const localFeedQuery = useQuery<NewsArticle[], Error>({
     queryKey: ["news_local", location?.lat, location?.lng, nearbyEnabled],
     queryFn: ({ signal }) => fetchLocalFeed(location!, nearbyEnabled, signal),
-    enabled: Boolean(location),
+    enabled: Boolean(isConsented && location),
     staleTime: 60_000,
     refetchOnMount: true,
     retry: 1,

@@ -22,24 +22,33 @@ export default function OnboardingScreen(): React.ReactElement {
   const { updateMany } = useSettings();
   const [tos, setTos] = useState<boolean>(false);
   const [privacy, setPrivacy] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const canContinue = tos && privacy;
+  const canContinue = tos && privacy && !isSubmitting;
 
-  const accept = useCallback(() => {
-    if (!canContinue) return;
+  const accept = useCallback(async () => {
+    if (!canContinue || isSubmitting) return;
+    setIsSubmitting(true);
+
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
         () => {}
       );
     }
-    updateMany({
-      consentTos: true,
-      consentPrivacy: true,
-      consentVersion: LEGAL_VERSION,
-      consentTimestamp: Date.now(),
-    });
-    router.replace("/(tabs)");
-  }, [canContinue, updateMany]);
+
+    try {
+      await updateMany({
+        consentTos: true,
+        consentPrivacy: true,
+        consentVersion: LEGAL_VERSION,
+        consentTimestamp: Date.now(),
+      });
+      router.replace("/(tabs)");
+    } catch (e) {
+      console.error("[Onboarding] consent error:", e);
+      setIsSubmitting(false);
+    }
+  }, [canContinue, isSubmitting, updateMany]);
 
   return (
     <>
