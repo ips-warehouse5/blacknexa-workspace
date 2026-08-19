@@ -3,13 +3,14 @@ import { BookOpen, Shield, Radio, Lock, LifeBuoy, User } from "lucide-react-nati
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 
 export default function TabLayout(): React.ReactElement {
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.gold,
-        tabBarInactiveTintColor: Colors.textMute,
+        tabBarInactiveTintColor: Colors.textMuted,
         headerShown: false,
         tabBarStyle: {
           backgroundColor: Colors.surface,
@@ -19,8 +20,8 @@ export default function TabLayout(): React.ReactElement {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
+          fontSize: 12,
+          fontWeight: "500", fontFamily: fontFamily.medium,
           letterSpacing: 0.3,
         },
         tabBarBackground: () => (

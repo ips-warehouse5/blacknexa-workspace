@@ -13,6 +13,7 @@ import {
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import {
   type CredibilityReport,
   credibilityScoreLabel,
@@ -26,10 +27,10 @@ type Props = {
 };
 
 const COLOR_MAP: Record<string, string> = {
-  emerald: Colors.emerald,
+  emerald: Colors.success,
   gold: Colors.gold,
-  crimson: Colors.crimson,
-  textMute: Colors.textMute,
+  crimson: Colors.error,
+  textMute: Colors.textMuted,
 };
 
 export default function CredibilityCard({ report, testID }: Props) {
@@ -62,7 +63,7 @@ export default function CredibilityCard({ report, testID }: Props) {
       <View style={styles.scoreSection}>
         <View style={styles.scoreHeader}>
           <Text style={styles.scoreNumber}>{scorePct}%</Text>
-          <View style={[styles.meritBadge, { backgroundColor: color + "18" }]}>
+          <View style={[styles.meritBadge, { backgroundColor: color + "26" }]}>
             {report.hasMerit ? (
               <CheckCircle2 size={11} color={color} />
             ) : (
@@ -120,7 +121,7 @@ export default function CredibilityCard({ report, testID }: Props) {
         <Text style={styles.expandText}>
           {expanded ? "Hide" : "View"} assessment details
         </Text>
-        {expanded ? <ChevronUp size={14} color={Colors.textDim} /> : <ChevronDown size={14} color={Colors.textDim} />}
+        {expanded ? <ChevronUp size={14} color={Colors.textSecondary} /> : <ChevronDown size={14} color={Colors.textSecondary} />}
       </Pressable>
 
       {expanded && (
@@ -128,9 +129,9 @@ export default function CredibilityCard({ report, testID }: Props) {
           {report.factors.map((factor) => (
             <View key={factor.id} style={styles.factorRow}>
               {factor.passed ? (
-                <CheckCircle2 size={13} color={Colors.emerald} />
+                <CheckCircle2 size={13} color={Colors.success} />
               ) : (
-                <AlertTriangle size={13} color={Colors.crimson} />
+                <AlertTriangle size={13} color={Colors.error} />
               )}
               <View style={{ flex: 1 }}>
                 <Text style={styles.factorLabel}>{factor.label}</Text>
@@ -150,7 +151,7 @@ export default function CredibilityCard({ report, testID }: Props) {
       )}
 
       <View style={styles.footerRow}>
-        <Fingerprint size={12} color={Colors.textMute} />
+        <Fingerprint size={12} color={Colors.textMuted} />
         <Text style={styles.footerText}>
           SHA-256 verified · EXIF triangulated · Manipulation detection · {report.timestamp.slice(0, 10)}
         </Text>
@@ -172,14 +173,14 @@ function StatusPill({
     <View
       style={[
         styles.statusPill,
-        { backgroundColor: (passed ? Colors.emerald : Colors.crimson) + "14" },
+        { backgroundColor: (passed ? Colors.success : Colors.error) + "26" },
       ]}
     >
-      <Icon size={11} color={passed ? Colors.emerald : Colors.crimson} />
+      <Icon size={11} color={passed ? Colors.success : Colors.error} />
       <Text
         style={[
           styles.statusPillText,
-          { color: passed ? Colors.emerald : Colors.crimson },
+          { color: passed ? Colors.success : Colors.error },
         ]}
       >
         {label}
@@ -191,7 +192,7 @@ function StatusPill({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -213,14 +214,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   scoreSection: {
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
   },
   scoreNumber: {
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.5,
   },
@@ -248,12 +249,12 @@ const styles = StyleSheet.create({
   },
   meritText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.3,
   },
   scoreBar: {
     height: 8,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 4,
     overflow: "hidden",
     marginBottom: 8,
@@ -271,14 +272,14 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
   thresholdText: {
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "500",
+    color: Colors.textMuted,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   statusGrid: {
     flexDirection: "row",
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     fontSize: 10.5,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   expandBtn: {
     flexDirection: "row",
@@ -309,8 +310,8 @@ const styles = StyleSheet.create({
   },
   expandText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
   },
   factorsContainer: {
     gap: 10,
@@ -323,13 +324,13 @@ const styles = StyleSheet.create({
   },
   factorLabel: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
   factorDetail: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
   },
   notesContainer: {
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   },
   noteText: {
     fontSize: 11,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 15,
     fontStyle: "italic",
   },
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
   footerText: {
     flex: 1,
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 14,
   },
 });

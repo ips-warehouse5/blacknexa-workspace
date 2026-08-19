@@ -58,6 +58,7 @@ import {
 } from "@/constants/security";
 import { quickCredibilityAssessment } from "@/constants/credibility";
 import { MISSION_STATEMENT, NO_GUARANTEE_DISCLAIMER_TEXT } from "@/constants/disclaimers";
+import { fontFamily } from "@/constants/theme";
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as IncidentCategory[];
 
@@ -80,14 +81,14 @@ const PRIVACY_OPTIONS: {
     label: "Trusted Circle",
     desc: "Shared anonymously with verified advocates.",
     icon: Users,
-    color: Colors.sky,
+    color: Colors.info,
   },
   {
     key: "public",
     label: "Community",
     desc: "Appears in the public feed to build awareness.",
     icon: Eye,
-    color: Colors.emerald,
+    color: Colors.success,
   },
 ];
 
@@ -506,7 +507,7 @@ export default function ReportScreen(): React.ReactElement {
         }}
       />
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
+        style={{ flex: 1, backgroundColor: Colors.background }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
@@ -529,7 +530,7 @@ export default function ReportScreen(): React.ReactElement {
             value={title}
             onChangeText={setTitle}
             placeholder="Brief title (e.g. Stopped without cause)"
-            placeholderTextColor={Colors.textMute}
+            placeholderTextColor={Colors.textMuted}
             style={styles.input}
             testID="input-title"
           />
@@ -539,7 +540,7 @@ export default function ReportScreen(): React.ReactElement {
             value={summary}
             onChangeText={setSummary}
             placeholder="Share what happened in your own words. Include times, people, and details while they're fresh."
-            placeholderTextColor={Colors.textMute}
+            placeholderTextColor={Colors.textMuted}
             style={[styles.input, styles.textarea]}
             multiline
             textAlignVertical="top"
@@ -572,12 +573,12 @@ export default function ReportScreen(): React.ReactElement {
 
           <Label>Location</Label>
           <View style={styles.locationWrap}>
-            <MapPin size={16} color={Colors.textDim} />
+            <MapPin size={16} color={Colors.textSecondary} />
             <TextInput
               value={area}
               onChangeText={setArea}
               placeholder="Neighborhood, city"
-              placeholderTextColor={Colors.textMute}
+              placeholderTextColor={Colors.textMuted}
               style={styles.locationInput}
               testID="input-area"
             />
@@ -600,9 +601,9 @@ export default function ReportScreen(): React.ReactElement {
             <View
               style={[styles.check, redactLocation && styles.checkOn]}
             >
-              {redactLocation && <Check size={13} color={Colors.bg} strokeWidth={3} />}
+              {redactLocation && <Check size={13} color={Colors.background} strokeWidth={3} />}
             </View>
-            <MapPinOff size={14} color={Colors.textDim} />
+            <MapPinOff size={14} color={Colors.textSecondary} />
             <Text style={styles.redactText}>
               Redact precise location in public feed
             </Text>
@@ -618,7 +619,7 @@ export default function ReportScreen(): React.ReactElement {
                 value={country}
                 onChangeText={(t) => setCountry(t.toUpperCase().slice(0, 2))}
                 placeholder="US"
-                placeholderTextColor={Colors.textMute}
+                placeholderTextColor={Colors.textMuted}
                 style={styles.jurisInput}
                 testID="input-country"
                 autoCapitalize="characters"
@@ -627,7 +628,7 @@ export default function ReportScreen(): React.ReactElement {
                 value={subdivision}
                 onChangeText={(t) => setSubdivision(t.toUpperCase().slice(0, 3))}
                 placeholder="NY"
-                placeholderTextColor={Colors.textMute}
+                placeholderTextColor={Colors.textMuted}
                 style={styles.jurisInput}
                 testID="input-subdivision"
                 autoCapitalize="characters"
@@ -646,9 +647,9 @@ export default function ReportScreen(): React.ReactElement {
               testID="toggle-participant"
             >
               <View style={[styles.check, userIsParticipant && styles.checkOn]}>
-                {userIsParticipant && <Check size={13} color={Colors.bg} strokeWidth={3} />}
+                {userIsParticipant && <Check size={13} color={Colors.background} strokeWidth={3} />}
               </View>
-              <Mic size={13} color={Colors.textDim} />
+              <Mic size={13} color={Colors.textSecondary} />
               <Text style={styles.contextText}>I was a participant in the conversation</Text>
             </Pressable>
             <Pressable
@@ -657,9 +658,9 @@ export default function ReportScreen(): React.ReactElement {
               testID="toggle-consent"
             >
               <View style={[styles.check, obtainedConsent && styles.checkOn]}>
-                {obtainedConsent && <Check size={13} color={Colors.bg} strokeWidth={3} />}
+                {obtainedConsent && <Check size={13} color={Colors.background} strokeWidth={3} />}
               </View>
-              <ShieldCheck size={13} color={Colors.textDim} />
+              <ShieldCheck size={13} color={Colors.textSecondary} />
               <Text style={styles.contextText}>I obtained explicit consent from all parties</Text>
             </Pressable>
             <Pressable
@@ -668,9 +669,9 @@ export default function ReportScreen(): React.ReactElement {
               testID="toggle-public"
             >
               <View style={[styles.check, inPublicSpace && styles.checkOn]}>
-                {inPublicSpace && <Check size={13} color={Colors.bg} strokeWidth={3} />}
+                {inPublicSpace && <Check size={13} color={Colors.background} strokeWidth={3} />}
               </View>
-              <Video size={13} color={Colors.textDim} />
+              <Video size={13} color={Colors.textSecondary} />
               <Text style={styles.contextText}>Recording was in a public space</Text>
             </Pressable>
           </View>
@@ -779,17 +780,17 @@ export default function ReportScreen(): React.ReactElement {
               colors={
                 canSubmit
                   ? [Colors.gold, Colors.goldDeep]
-                  : [Colors.surface3, Colors.surface2]
+                  : [Colors.surface3, Colors.surfaceSecondary]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.submitInner}
             >
-              <Shield size={18} color={canSubmit ? Colors.bg : Colors.textMute} />
+              <Shield size={18} color={canSubmit ? Colors.background : Colors.textMuted} />
               <Text
                 style={[
                   styles.submitText,
-                  !canSubmit && { color: Colors.textMute },
+                  !canSubmit && { color: Colors.textMuted },
                 ]}
               >
                 {isValidating ? "Validating compliance..." : isCreating ? "Sealing record..." : "Submit secure report"}
@@ -832,7 +833,7 @@ const styles = StyleSheet.create({
   brandChip: { marginBottom: 14 },
   intro: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 22,
     borderWidth: StyleSheet.hairlineWidth,
@@ -851,15 +852,15 @@ const styles = StyleSheet.create({
   },
   introTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 3,
   },
-  introText: { fontSize: 12.5, color: Colors.textDim, lineHeight: 17 },
+  introText: { fontSize: 12.5, color: Colors.textSecondary, lineHeight: 17 },
   label: {
     fontSize: 12,
-    fontWeight: "800",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 10,
@@ -867,7 +868,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 14,
     color: Colors.text,
     fontSize: 15,
@@ -886,14 +887,14 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   chipActive: { backgroundColor: Colors.gold, borderColor: Colors.gold },
-  chipText: { fontSize: 13, color: Colors.textDim, fontWeight: "600" },
-  chipTextActive: { color: Colors.bg, fontWeight: "800" },
+  chipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
+  chipTextActive: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
   locationWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 14,
     height: 48,
     borderWidth: StyleSheet.hairlineWidth,
@@ -907,7 +908,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  locBtnText: { fontSize: 12, color: Colors.gold, fontWeight: "700" },
+  locBtnText: { fontSize: 12, color: Colors.gold, fontWeight: "700", fontFamily: fontFamily.bold },
   redactRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -925,11 +926,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkOn: { backgroundColor: Colors.gold, borderColor: Colors.gold },
-  redactText: { fontSize: 13, color: Colors.textDim, fontWeight: "500", flex: 1 },
+  redactText: { fontSize: 13, color: Colors.textSecondary, fontWeight: "500", fontFamily: fontFamily.medium, flex: 1 },
   evidenceGrid: { marginBottom: 18 },
   addEvidence: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     borderStyle: "dashed",
     borderWidth: 1.5,
     borderColor: Colors.gold + "55",
@@ -937,20 +938,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  addEvidenceText: { fontSize: 14, fontWeight: "700", color: Colors.text, marginTop: 4 },
-  addEvidenceSub: { fontSize: 11, color: Colors.textDim, fontWeight: "500" },
+  addEvidenceText: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text, marginTop: 4 },
+  addEvidenceSub: { fontSize: 11, color: Colors.textSecondary, fontWeight: "500", fontFamily: fontFamily.medium },
   evidenceCount: {
     marginTop: 10,
-    backgroundColor: Colors.emerald + "18",
+    backgroundColor: Colors.success + "18",
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: Colors.emerald + "44",
+    borderColor: Colors.success + "44",
   },
   evidenceCountText: {
     fontSize: 12,
-    color: Colors.emerald,
-    fontWeight: "700",
+    color: Colors.success,
+    fontWeight: "700", fontFamily: fontFamily.bold,
     textAlign: "center",
   },
   privacyList: { gap: 10, marginBottom: 28 },
@@ -959,7 +960,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 12,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.border,
@@ -971,8 +972,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  privacyLabel: { fontSize: 14, fontWeight: "700", color: Colors.text, marginBottom: 2 },
-  privacyDesc: { fontSize: 12, color: Colors.textDim, lineHeight: 17 },
+  privacyLabel: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text, marginBottom: 2 },
+  privacyDesc: { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
   radio: {
     width: 20,
     height: 20,
@@ -986,10 +987,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
   },
   submit: {
-    borderRadius: 16,
+    borderRadius: 10,
     overflow: "hidden",
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 6 },
@@ -1005,10 +1006,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
   },
-  submitText: { color: Colors.bg, fontWeight: "800", fontSize: 15, letterSpacing: 0.3 },
+  submitText: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold, fontSize: 15, letterSpacing: 0.3 },
   disclaimer: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 16,
     marginTop: 14,
@@ -1024,13 +1025,13 @@ const styles = StyleSheet.create({
   },
   noGuaranteeTitle: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     marginBottom: 6,
   },
   noGuaranteeText: {
     fontSize: 11,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   jurisdictionWrap: {
@@ -1060,20 +1061,20 @@ const styles = StyleSheet.create({
   },
   jurisInput: {
     width: 48,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 8,
     padding: 8,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     textAlign: "center",
     borderWidth: 1,
     borderColor: Colors.border,
   },
   jurisLabel: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     flex: 1,
   },
   contextToggles: {
@@ -1088,8 +1089,8 @@ const styles = StyleSheet.create({
   },
   contextText: {
     fontSize: 12.5,
-    color: Colors.textDim,
-    fontWeight: "500",
+    color: Colors.textSecondary,
+    fontWeight: "500", fontFamily: fontFamily.medium,
     flex: 1,
   },
   preCheckBtn: {
@@ -1098,7 +1099,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     backgroundColor: Colors.gold + "14",
-    borderRadius: 12,
+    borderRadius: 10,
     paddingVertical: 12,
     marginBottom: 18,
     borderWidth: 1,
@@ -1106,7 +1107,7 @@ const styles = StyleSheet.create({
   },
   preCheckText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
 });

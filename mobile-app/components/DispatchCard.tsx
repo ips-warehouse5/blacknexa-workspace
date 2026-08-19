@@ -33,6 +33,7 @@ import {
   AGENCY_TYPE_LABELS,
 } from "@/constants/agencies";
 import type { DispatchResult } from "@/constants/dispatch";
+import { fontFamily } from "@/constants/theme";
 
 type Props = {
   /** Pre-resolved dispatch result (if already executed). */
@@ -61,9 +62,9 @@ const CHANNEL_ICONS: Record<DispatchChannel, typeof Newspaper> = {
 
 const CHANNEL_COLORS: Record<DispatchChannel, string> = {
   PRESS: Colors.gold,
-  GOVT_AGENCY: Colors.sky,
+  GOVT_AGENCY: Colors.info,
   GLOBAL_HUMAN_RIGHTS: Colors.violet,
-  LEGAL_NETWORK: Colors.emerald,
+  LEGAL_NETWORK: Colors.success,
 };
 
 export default function DispatchCard({
@@ -139,23 +140,23 @@ export default function DispatchCard({
             {
               backgroundColor:
                 result.status === "SUCCESSFULLY_DISPATCHED"
-                  ? Colors.emerald + "14"
+                  ? Colors.success + "26"
                   : result.status === "NOT_ELIGIBLE"
-                  ? Colors.crimson + "12"
-                  : Colors.gold + "12",
+                  ? Colors.error + "26"
+                  : Colors.gold + "26",
               borderColor:
                 result.status === "SUCCESSFULLY_DISPATCHED"
-                  ? Colors.emerald + "44"
+                  ? Colors.success + "44"
                   : result.status === "NOT_ELIGIBLE"
-                  ? Colors.crimson + "44"
+                  ? Colors.error + "44"
                   : Colors.gold + "44",
             },
           ]}
         >
           {result.status === "SUCCESSFULLY_DISPATCHED" ? (
-            <CheckCircle2 size={16} color={Colors.emerald} />
+            <CheckCircle2 size={16} color={Colors.success} />
           ) : (
-            <AlertTriangle size={16} color={result.status === "NOT_ELIGIBLE" ? Colors.crimson : Colors.gold} />
+            <AlertTriangle size={16} color={result.status === "NOT_ELIGIBLE" ? Colors.error : Colors.gold} />
           )}
           <View style={{ flex: 1 }}>
             <Text
@@ -164,9 +165,9 @@ export default function DispatchCard({
                 {
                   color:
                     result.status === "SUCCESSFULLY_DISPATCHED"
-                      ? Colors.emerald
+                      ? Colors.success
                       : result.status === "NOT_ELIGIBLE"
-                      ? Colors.crimson
+                      ? Colors.error
                       : Colors.gold,
                 },
               ]}
@@ -197,7 +198,7 @@ export default function DispatchCard({
           <Text style={styles.expandText}>
             {expanded ? "Hide" : "View"} {result.targetAgencies.length} target agency(ies)
           </Text>
-          {expanded ? <ChevronUp size={14} color={Colors.textDim} /> : <ChevronDown size={14} color={Colors.textDim} />}
+          {expanded ? <ChevronUp size={14} color={Colors.textSecondary} /> : <ChevronDown size={14} color={Colors.textSecondary} />}
         </Pressable>
       )}
 
@@ -243,7 +244,7 @@ export default function DispatchCard({
 
       {/* No-guarantee notice */}
       <View style={styles.disclaimerRow}>
-        <AlertTriangle size={11} color={Colors.textMute} />
+        <AlertTriangle size={11} color={Colors.textMuted} />
         <Text style={styles.disclaimerText}>
           No guarantee of legal representation, press publication, or governmental action.
           All third-party organizations make independent decisions.
@@ -263,10 +264,10 @@ function PipelineStep({
   detail?: string;
 }) {
   const colorMap = {
-    checked: Colors.emerald,
-    passed: Colors.emerald,
-    failed: Colors.crimson,
-    pending: Colors.textMute,
+    checked: Colors.success,
+    passed: Colors.success,
+    failed: Colors.error,
+    pending: Colors.textMuted,
   };
   const color = colorMap[status];
 
@@ -274,9 +275,9 @@ function PipelineStep({
     <View style={styles.pipelineStep}>
       <View style={[styles.pipelineDot, { backgroundColor: color }]}>
         {status === "checked" || status === "passed" ? (
-          <CheckCircle2 size={10} color={Colors.bg} />
+          <CheckCircle2 size={10} color={Colors.background} />
         ) : status === "failed" ? (
-          <AlertTriangle size={10} color={Colors.bg} />
+          <AlertTriangle size={10} color={Colors.background} />
         ) : null}
       </View>
       <Text style={[styles.pipelineLabel, { color }]}>{label}</Text>
@@ -301,14 +302,14 @@ function AgencyRow({ target }: { target: AgencyTarget }) {
             <View style={[styles.tierBadge, { backgroundColor: Colors.surface3 }]}>
               <Text style={styles.tierText}>{AGENCY_TIER_LABELS[agency.tier as AgencyTier]}</Text>
             </View>
-            <View style={[styles.typeBadge, { backgroundColor: Colors.gold + "14" }]}>
+            <View style={[styles.typeBadge, { backgroundColor: Colors.gold + "26" }]}>
               <Text style={styles.typeText}>{AGENCY_TYPE_LABELS[agency.type as AgencyType]}</Text>
             </View>
           </View>
         </View>
         {verification.overallValid ? (
           <View style={styles.verifiedBadge}>
-            <ShieldCheck size={11} color={Colors.emerald} />
+            <ShieldCheck size={11} color={Colors.success} />
             <Text style={styles.verifiedText}>Verified</Text>
           </View>
         ) : (
@@ -330,12 +331,12 @@ function AgencyRow({ target }: { target: AgencyTarget }) {
         )}
         {agency.intakeEmail && (
           <View style={styles.contactPill}>
-            <Mail size={10} color={Colors.sky} />
+            <Mail size={10} color={Colors.info} />
             <Text style={styles.contactText}>{agency.intakeEmail}</Text>
           </View>
         )}
         <View style={styles.contactPill}>
-          <MapPin size={10} color={Colors.textDim} />
+          <MapPin size={10} color={Colors.textSecondary} />
           <Text style={styles.contactText}>{agency.jurisdiction}</Text>
         </View>
       </View>
@@ -352,7 +353,7 @@ function AgencyRow({ target }: { target: AgencyTarget }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -376,14 +377,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   pipelineSection: {
@@ -406,11 +407,11 @@ const styles = StyleSheet.create({
   },
   pipelineLabel: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   pipelineDetail: {
     fontSize: 9,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   pipelineConnector: {
     flex: 1,
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     marginBottom: 4,
   },
   resultMessage: {
@@ -439,9 +440,9 @@ const styles = StyleSheet.create({
   },
   auditId: {
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     marginTop: 4,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   expandBtn: {
     flexDirection: "row",
@@ -454,15 +455,15 @@ const styles = StyleSheet.create({
   },
   expandText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
   },
   agencyList: {
     gap: 10,
     paddingTop: 10,
   },
   agencyRow: {
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 12,
     padding: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -476,7 +477,7 @@ const styles = StyleSheet.create({
   },
   agencyName: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 6,
   },
@@ -491,8 +492,8 @@ const styles = StyleSheet.create({
   },
   tierText: {
     fontSize: 9,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
   },
   typeBadge: {
     paddingHorizontal: 6,
@@ -501,40 +502,40 @@ const styles = StyleSheet.create({
   },
   typeText: {
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: Colors.emerald + "18",
+    backgroundColor: Colors.success + "26",
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 999,
   },
   verifiedText: {
     fontSize: 9,
-    fontWeight: "700",
-    color: Colors.emerald,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.success,
   },
   flaggedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: Colors.gold + "18",
+    backgroundColor: Colors.gold + "26",
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 999,
   },
   flaggedText: {
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   agencyDesc: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
     marginBottom: 8,
   },
@@ -554,8 +555,8 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 10,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
   },
   flaggedNote: {
     fontSize: 10,
@@ -565,8 +566,8 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: "800",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 10,
@@ -579,7 +580,7 @@ const styles = StyleSheet.create({
   },
   channelCard: {
     width: "48%",
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 12,
     padding: 14,
     alignItems: "center",
@@ -595,7 +596,7 @@ const styles = StyleSheet.create({
   },
   channelLabel: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     textAlign: "center",
   },
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 10.5,
     color: Colors.gold,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     lineHeight: 15,
     fontStyle: "italic",
   },
@@ -624,7 +625,7 @@ const styles = StyleSheet.create({
   disclaimerText: {
     flex: 1,
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 14,
   },
 });

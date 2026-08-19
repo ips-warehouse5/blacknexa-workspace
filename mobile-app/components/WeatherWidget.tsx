@@ -51,6 +51,7 @@ const WEATHER_CODES: Record<number, { label: string; icon: string }> = {
 };
 
 import { apiClient } from "@/utils/apiClient";
+import { fontFamily } from "@/constants/theme";
 
 function weatherInfo(code: number): { label: string; icon: string } {
   return WEATHER_CODES[code] ?? { label: "—", icon: "cloud" };
@@ -95,20 +96,20 @@ export default function WeatherWidget(): React.ReactElement | null {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Cloud size={14} color={Colors.sky} />
+          <Cloud size={14} color={Colors.info} />
           <Text style={styles.title}>ATMOSPHERIC INTELLIGENCE</Text>
         </View>
         <Pressable onPress={handleRefresh} style={styles.refreshBtn}>
           {weatherQuery.isFetching ? (
-            <ActivityIndicator size="small" color={Colors.sky} />
+            <ActivityIndicator size="small" color={Colors.info} />
           ) : (
-            <RefreshCw size={11} color={Colors.textDim} />
+            <RefreshCw size={11} color={Colors.textSecondary} />
           )}
         </Pressable>
       </View>
 
       <View style={styles.locationRow}>
-        <MapPin size={10} color={Colors.sky} />
+        <MapPin size={10} color={Colors.info} />
         <Text style={styles.locationText} numberOfLines={1}>
           {location.label}
         </Text>
@@ -116,7 +117,7 @@ export default function WeatherWidget(): React.ReactElement | null {
 
       {weatherQuery.isLoading ? (
         <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color={Colors.sky} />
+          <ActivityIndicator size="small" color={Colors.info} />
           <Text style={styles.loadingText}>Reading atmospheric conditions…</Text>
         </View>
       ) : weatherQuery.error ? (
@@ -129,14 +130,14 @@ export default function WeatherWidget(): React.ReactElement | null {
           </View>
           <View style={styles.dataCell}>
             <View style={styles.metricRow}>
-              <Droplets size={11} color={Colors.sky} />
+              <Droplets size={11} color={Colors.info} />
               <Text style={styles.metricValue}>{cw.relative_humidity_2m}%</Text>
             </View>
             <Text style={styles.dataLabel}>Humidity</Text>
           </View>
           <View style={styles.dataCell}>
             <View style={styles.metricRow}>
-              <Wind size={11} color={Colors.sky} />
+              <Wind size={11} color={Colors.info} />
               <Text style={styles.metricValue}>{Math.round(cw.wind_speed_10m)}</Text>
             </View>
             <Text style={styles.dataLabel}>km/h wind</Text>
@@ -149,12 +150,12 @@ export default function WeatherWidget(): React.ReactElement | null {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 16,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.sky + "33",
+    borderColor: Colors.info + "33",
   },
   header: {
     flexDirection: "row",
@@ -169,8 +170,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 10,
-    fontWeight: "800",
-    color: Colors.sky,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.info,
     letterSpacing: 0.6,
   },
   refreshBtn: {
@@ -189,8 +190,8 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
     flex: 1,
   },
   loadingRow: {
@@ -201,13 +202,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 12,
-    color: Colors.textMute,
-    fontWeight: "500",
+    color: Colors.textMuted,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   errorText: {
     fontSize: 12,
-    color: Colors.crimson,
-    fontWeight: "600",
+    color: Colors.error,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     paddingVertical: 8,
   },
   dataGrid: {
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
   },
   tempValue: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -1,
   },
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
   },
   dataLabel: {
     fontSize: 10,
-    fontWeight: "600",
-    color: Colors.textMute,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textMuted,
     letterSpacing: 0.3,
     textTransform: "uppercase",
   },

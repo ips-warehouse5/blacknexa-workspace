@@ -12,6 +12,7 @@ import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import Colors from "@/constants/colors";
 import { CIPHER_SPEC, KDF_SPEC } from "@/constants/crypto";
+import { fontFamily } from "@/constants/theme";
 
 type Props = {
   /** Whether the vault PIN has been set up. */
@@ -67,7 +68,7 @@ export default function SecurityCard({
           <Text style={styles.specText}>{KDF_SPEC}</Text>
         </View>
         <View style={styles.specBadge}>
-          <Fingerprint size={10} color={Colors.emerald} />
+          <Fingerprint size={10} color={Colors.success} />
           <Text style={styles.specText}>SHA-256</Text>
         </View>
       </View>
@@ -75,12 +76,12 @@ export default function SecurityCard({
       <View style={styles.featureRow}>
         <ShieldCheck
           size={13}
-          color={autoSeal ? Colors.emerald : Colors.textMute}
+          color={autoSeal ? Colors.success : Colors.textMuted}
         />
         <Text
           style={[
             styles.featureText,
-            { color: autoSeal ? Colors.text : Colors.textMute },
+            { color: autoSeal ? Colors.text : Colors.textMuted },
           ]}
         >
           Auto-seal evidence on capture {autoSeal ? "✓" : "(off)"}
@@ -90,12 +91,12 @@ export default function SecurityCard({
       <View style={styles.featureRow}>
         <Lock
           size={13}
-          color={biometrics ? Colors.emerald : Colors.textMute}
+          color={biometrics ? Colors.success : Colors.textMuted}
         />
         <Text
           style={[
             styles.featureText,
-            { color: biometrics ? Colors.text : Colors.textMute },
+            { color: biometrics ? Colors.text : Colors.textMuted },
           ]}
         >
           Biometric vault lock {biometrics ? "✓" : "(off)"}
@@ -105,12 +106,12 @@ export default function SecurityCard({
       <View style={styles.featureRow}>
         <KeyRound
           size={13}
-          color={vaultPinSet ? Colors.emerald : Colors.crimson}
+          color={vaultPinSet ? Colors.success : Colors.error}
         />
         <Text
           style={[
             styles.featureText,
-            { color: vaultPinSet ? Colors.text : Colors.crimson },
+            { color: vaultPinSet ? Colors.text : Colors.error },
           ]}
         >
           Vault PIN {vaultPinSet ? "configured ✓" : "NOT SET — evidence not encrypted"}
@@ -140,7 +141,7 @@ export default function SecurityCard({
       {sealedCount !== undefined && sealedCount > 0 && (
         <View style={styles.sealedRow}>
           <View style={styles.sealedBadge}>
-            <Lock size={11} color={Colors.emerald} />
+            <Lock size={11} color={Colors.success} />
             <Text style={styles.sealedText}>
               {sealedCount} file{sealedCount === 1 ? "" : "s"} sealed
             </Text>
@@ -163,7 +164,7 @@ export default function SecurityCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -187,14 +188,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   specRow: {
@@ -209,12 +210,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
   },
   specText: {
     fontSize: 10,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 0.3,
   },
   featureRow: {
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 12.5,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     flex: 1,
   },
   pinHint: {
@@ -239,12 +240,12 @@ const styles = StyleSheet.create({
   },
   pinHintTitle: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   pinHintText: {
     fontSize: 11,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
     marginTop: 6,
   },
@@ -264,21 +265,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: Colors.emerald + "18",
+    backgroundColor: Colors.success + "26",
   },
   sealedText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.emerald,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.success,
   },
   sealedSubtext: {
     fontSize: 10,
-    color: Colors.textMute,
-    fontWeight: "600",
+    color: Colors.textMuted,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   disclaimer: {
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
     marginTop: 10,
     paddingTop: 10,

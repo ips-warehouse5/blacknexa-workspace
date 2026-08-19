@@ -2,6 +2,7 @@ import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-nati
 import { AlertTriangle, CheckCircle2, Info, ShieldCheck } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import {
   type ComplianceResult,
   CONSENT_TYPE_LABELS,
@@ -16,9 +17,9 @@ const STATUS_META: Record<
   ComplianceResult["status"],
   { icon: typeof CheckCircle2; color: string; label: string }
 > = {
-  APPROVED: { icon: CheckCircle2, color: Colors.emerald, label: "Compliance Verified" },
+  APPROVED: { icon: CheckCircle2, color: Colors.success, label: "Compliance Verified" },
   PENDING_LEGAL_REVIEW: { icon: AlertTriangle, color: Colors.gold, label: "Pending Legal Review" },
-  REJECTED: { icon: AlertTriangle, color: Colors.crimson, label: "Compliance Rejected" },
+  REJECTED: { icon: AlertTriangle, color: Colors.error, label: "Compliance Rejected" },
 };
 
 export default function ComplianceCard({ result, testID }: Props) {
@@ -45,7 +46,7 @@ export default function ComplianceCard({ result, testID }: Props) {
       </View>
 
       <View style={styles.statusRow}>
-        <View style={[styles.statusBadge, { backgroundColor: meta.color + "18" }]}>
+        <View style={[styles.statusBadge, { backgroundColor: meta.color + "26" }]}>
           <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
         </View>
         <View style={styles.jurisdictionBadge}>
@@ -67,9 +68,9 @@ export default function ComplianceCard({ result, testID }: Props) {
           {result.reasons.map((reason, i) => (
             <View key={`reason-${i}`} style={styles.reasonRow}>
               {reason.startsWith("SAFEGUARD") ? (
-                <AlertTriangle size={11} color={Colors.crimson} />
+                <AlertTriangle size={11} color={Colors.error} />
               ) : (
-                <CheckCircle2 size={11} color={Colors.emerald} />
+                <CheckCircle2 size={11} color={Colors.success} />
               )}
               <Text style={styles.reasonText}>{reason}</Text>
             </View>
@@ -78,7 +79,7 @@ export default function ComplianceCard({ result, testID }: Props) {
       )}
 
       <View style={styles.footerRow}>
-        <ShieldCheck size={12} color={Colors.textMute} />
+        <ShieldCheck size={12} color={Colors.textMuted} />
         <Text style={styles.footerText}>
           Verified against wiretap (18 U.S.C. § 2511), GDPR Art. 6, PIPEDA, and state surveillance acts.
         </Text>
@@ -90,7 +91,7 @@ export default function ComplianceCard({ result, testID }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -112,14 +113,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   statusRow: {
@@ -134,19 +135,19 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.3,
   },
   jurisdictionBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
   },
   jurisdictionText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
   },
   summary: {
     fontSize: 13,
@@ -163,13 +164,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   detailValue: {
     fontSize: 12,
     color: Colors.gold,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   reasonsContainer: {
     gap: 6,
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   reasonText: {
     flex: 1,
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
   },
   footerRow: {
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
   footerText: {
     flex: 1,
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 14,
   },
 });

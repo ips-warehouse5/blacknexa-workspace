@@ -22,6 +22,7 @@ import {
 import React, { useMemo } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import {
   AGENCY_TIER_LABELS,
   PRIVACY_REGIME_LABELS,
@@ -109,7 +110,7 @@ export default function LegalResourceCard({ profile, testID }: Props) {
             {profile.agencies.map((agency, i) => (
               <View key={`ag-${i}`} style={styles.itemCard}>
                 <View style={styles.itemHeaderRow}>
-                  <Building2 size={14} color={Colors.textDim} />
+                  <Building2 size={14} color={Colors.textSecondary} />
                   <Text style={styles.itemName}>{agency.name}</Text>
                 </View>
                 <Text style={styles.tierLabel}>
@@ -155,7 +156,7 @@ export default function LegalResourceCard({ profile, testID }: Props) {
             {profile.pressContacts.map((press, i) => (
               <View key={`pr-${i}`} style={styles.itemCard}>
                 <View style={styles.itemHeaderRow}>
-                  <Newspaper size={14} color={Colors.textDim} />
+                  <Newspaper size={14} color={Colors.textSecondary} />
                   <Text style={styles.itemName}>{press.name}</Text>
                 </View>
                 <Text style={styles.tierLabel}>
@@ -219,7 +220,7 @@ function Section({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -243,12 +244,12 @@ const styles = StyleSheet.create({
   },
   countryName: {
     fontSize: 17,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
   },
   countryCode: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   aiBadge: {
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
   },
   aiBadgeText: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
   },
@@ -279,14 +280,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: "800",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
   itemCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: StyleSheet.hairlineWidth,
@@ -300,28 +301,27 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     flex: 1,
   },
   itemCitation: {
     fontSize: 11,
     color: Colors.gold,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     marginBottom: 6,
-    fontFamily: undefined,
   },
   tierLabel: {
     fontSize: 10,
-    color: Colors.textMute,
-    fontWeight: "700",
+    color: Colors.textMuted,
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.5,
     marginBottom: 6,
     textTransform: "uppercase",
   },
   itemSummary: {
     fontSize: 12.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 18,
     marginBottom: 8,
   },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 12,
     color: Colors.gold,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   footer: {
     marginTop: 8,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
     textAlign: "center",
   },

@@ -2,6 +2,7 @@ import { Link, Stack } from "expo-router";
 import { Compass } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 
 export default function NotFoundScreen(): React.ReactElement {
   return (
@@ -26,7 +27,7 @@ export default function NotFoundScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -44,14 +45,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 6,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     marginBottom: 24,
   },
@@ -61,5 +62,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 999,
   },
-  linkText: { color: Colors.bg, fontWeight: "800", fontSize: 14 },
+  linkText: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold, fontSize: 14 },
 });

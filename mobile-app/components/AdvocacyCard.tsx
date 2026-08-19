@@ -2,6 +2,7 @@ import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-nati
 import { ChevronRight, Megaphone, Phone, ShieldCheck } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import {
   ADVOCACY_ACTION_META,
   type AdvocacyRoute,
@@ -13,24 +14,24 @@ type Props = {
 };
 
 const TONE_BG: Record<string, string> = {
-  gold: Colors.gold + "1A",
-  crimson: Colors.crimson + "1A",
-  emerald: Colors.emerald + "1A",
-  sky: Colors.sky + "1A",
+  gold: Colors.gold + "26",
+  crimson: Colors.error + "26",
+  emerald: Colors.success + "26",
+  sky: Colors.info + "26",
 };
 
 const TONE_TEXT: Record<string, string> = {
   gold: Colors.gold,
-  crimson: Colors.crimson,
-  emerald: Colors.emerald,
-  sky: Colors.sky,
+  crimson: Colors.error,
+  emerald: Colors.success,
+  sky: Colors.info,
 };
 
 const TONE_BORDER: Record<string, string> = {
   gold: Colors.gold + "55",
-  crimson: Colors.crimson + "55",
-  emerald: Colors.emerald + "55",
-  sky: Colors.sky + "55",
+  crimson: Colors.error + "55",
+  emerald: Colors.success + "55",
+  sky: Colors.info + "55",
 };
 
 function openContact(contact: string) {
@@ -107,7 +108,7 @@ export default function AdvocacyCard({ routes, testID }: Props) {
 
             {canContact && (
               <View style={styles.chevron}>
-                <ChevronRight size={16} color={Colors.textMute} />
+                <ChevronRight size={16} color={Colors.textMuted} />
               </View>
             )}
           </Pressable>
@@ -125,7 +126,7 @@ export default function AdvocacyCard({ routes, testID }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -149,14 +150,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   routeRow: {
@@ -184,14 +185,14 @@ const styles = StyleSheet.create({
   },
   actionPillText: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.3,
     textTransform: "uppercase",
   },
   triggerTag: {
     fontSize: 10,
-    fontWeight: "700",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 0.6,
   },
   routeBody: {
@@ -199,19 +200,19 @@ const styles = StyleSheet.create({
   },
   targetOrg: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 3,
   },
   rationale: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 17,
     marginBottom: 4,
   },
   contact: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   chevron: {
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
   },
   disclaimer: {
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
     marginTop: 12,
     paddingTop: 12,

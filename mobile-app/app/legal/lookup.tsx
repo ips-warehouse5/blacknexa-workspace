@@ -36,6 +36,7 @@ import LegalResourceCard from "@/components/LegalResourceCard";
 import { useGeoLegal } from "@/providers/GeoLegalProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { fontFamily } from "@/constants/theme";
 import {
   COMMON_COUNTRIES,
   GLOBAL_RESOURCE_REGIONS,
@@ -113,12 +114,12 @@ export default function LegalLookupScreen(): React.ReactElement {
       <Stack.Screen
         options={{
           title: "Legal Resources",
-          headerStyle: { backgroundColor: Colors.bg },
+          headerStyle: { backgroundColor: Colors.background },
           headerTintColor: Colors.text,
         }}
       />
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
+        style={{ flex: 1, backgroundColor: Colors.background }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
@@ -142,12 +143,12 @@ export default function LegalLookupScreen(): React.ReactElement {
           {/* Lookup controls */}
           <View style={styles.lookupBox}>
             <View style={styles.inputRow}>
-              <Globe size={16} color={Colors.textDim} />
+              <Globe size={16} color={Colors.textSecondary} />
               <TextInput
                 value={countryInput}
                 onChangeText={(t) => setCountryInput(t.toUpperCase().slice(0, 2))}
                 placeholder="Country code (e.g. US, GB, DE)"
-                placeholderTextColor={Colors.textMute}
+                placeholderTextColor={Colors.textMuted}
                 style={styles.input}
                 autoCapitalize="characters"
                 testID="legal-country-input"
@@ -211,7 +212,7 @@ export default function LegalLookupScreen(): React.ReactElement {
 
           {error && (
             <View style={styles.errorBox}>
-              <X size={14} color={Colors.crimson} />
+              <X size={14} color={Colors.error} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
   brandChip: { marginBottom: 14 },
   intro: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 18,
     borderWidth: StyleSheet.hairlineWidth,
@@ -296,11 +297,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.gold + "44",
   },
-  introTitle: { fontSize: 15, fontWeight: "800", color: Colors.text, marginBottom: 4 },
-  introText: { fontSize: 12.5, color: Colors.textDim, lineHeight: 17 },
+  introTitle: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text, marginBottom: 4 },
+  introText: { fontSize: 12.5, color: Colors.textSecondary, lineHeight: 17 },
   lookupBox: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -313,13 +314,13 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   searchBtn: {
     flexDirection: "row",
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.gold + "44",
   },
   searchBtnDisabled: { opacity: 0.5 },
-  searchBtnText: { fontSize: 12, color: Colors.gold, fontWeight: "700" },
+  searchBtnText: { fontSize: 12, color: Colors.gold, fontWeight: "700", fontFamily: fontFamily.bold },
   gpsBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -342,9 +343,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
   },
-  gpsBtnText: { fontSize: 12, color: Colors.gold, fontWeight: "700" },
+  gpsBtnText: { fontSize: 12, color: Colors.gold, fontWeight: "700", fontFamily: fontFamily.bold },
   chipsRow: { gap: 8, paddingBottom: 14, marginBottom: 6 },
   countryChip: {
     flexDirection: "row",
@@ -359,45 +360,45 @@ const styles = StyleSheet.create({
   },
   countryChipActive: { borderColor: Colors.gold, backgroundColor: Colors.gold + "14" },
   countryChipFlag: { fontSize: 16 },
-  countryChipText: { fontSize: 12, color: Colors.textDim, fontWeight: "700" },
+  countryChipText: { fontSize: 12, color: Colors.textSecondary, fontWeight: "700", fontFamily: fontFamily.bold },
   countryChipTextActive: { color: Colors.gold },
   errorBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     padding: 12,
-    backgroundColor: Colors.crimson + "0D",
+    backgroundColor: Colors.error + "0D",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.crimson + "33",
+    borderColor: Colors.error + "33",
     marginBottom: 14,
   },
-  errorText: { fontSize: 12, color: Colors.crimson, flex: 1 },
+  errorText: { fontSize: 12, color: Colors.error, flex: 1 },
   resultsContainer: {
     flex: 1,
     minHeight: 400,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
   },
   emptyState: {
     alignItems: "center",
     paddingVertical: 60,
     gap: 12,
   },
-  emptyTitle: { fontSize: 15, fontWeight: "700", color: Colors.textDim },
+  emptyTitle: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.textSecondary },
   emptyText: {
     fontSize: 13,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 18,
     paddingHorizontal: 30,
   },
   regionsSection: { gap: 12 },
   regionsHeader: { marginBottom: 2 },
-  regionsTitle: { fontSize: 15, fontWeight: "800", color: Colors.text, marginBottom: 4 },
-  regionsSubtitle: { fontSize: 12, color: Colors.textDim, lineHeight: 17 },
+  regionsTitle: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text, marginBottom: 4 },
+  regionsSubtitle: { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
   regionCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
@@ -409,16 +410,16 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   regionFlag: { fontSize: 18 },
-  regionName: { fontSize: 14, fontWeight: "800", color: Colors.text, flex: 1 },
-  regionFocus: { fontSize: 12.5, color: Colors.textDim, lineHeight: 17, marginBottom: 10 },
+  regionName: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text, flex: 1 },
+  regionFocus: { fontSize: 12.5, color: Colors.textSecondary, lineHeight: 17, marginBottom: 10 },
   regionMetaLabel: {
     fontSize: 9.5,
-    fontWeight: "800",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 1,
     marginBottom: 3,
   },
-  regionMetaText: { fontSize: 12, color: Colors.textDim, lineHeight: 16, marginBottom: 8 },
+  regionMetaText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 16, marginBottom: 8 },
   regionCodesRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
   regionCodeChip: {
     flexDirection: "row",
@@ -431,5 +432,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.gold + "44",
   },
-  regionCodeText: { fontSize: 12, fontWeight: "800", color: Colors.gold },
+  regionCodeText: { fontSize: 12, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.gold },
 });

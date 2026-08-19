@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/colors";
 import { safeBack } from "@/utils/navigation";
+import { fontFamily } from "@/constants/theme";
 
 export default function ModalScreen(): React.ReactElement {
   return (
@@ -26,7 +27,7 @@ export default function ModalScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -39,19 +40,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
   },
   tm: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     marginTop: 3,
     letterSpacing: 0.5,
   },
   legal: {
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     marginTop: 14,
     marginBottom: 18,
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 14,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -70,5 +71,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 999,
   },
-  btnText: { color: Colors.bg, fontWeight: "800" },
+  btnText: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
 });

@@ -1,6 +1,7 @@
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Fingerprint, Link2, Lock, ShieldCheck } from "lucide-react-native";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import {
   type CustodyEvent,
   CUSTODY_ACTION_LABELS,
@@ -33,8 +34,8 @@ export default function CustodyCard({ events, rootHash, integrityVerified, testI
 
       <View style={styles.integrityRow}>
         <View style={[styles.integrityBadge, integrityVerified !== false && styles.integrityOk]}>
-          <ShieldCheck size={11} color={integrityVerified !== false ? Colors.emerald : Colors.crimson} />
-          <Text style={[styles.integrityText, { color: integrityVerified !== false ? Colors.emerald : Colors.crimson }]}>
+          <ShieldCheck size={11} color={integrityVerified !== false ? Colors.success : Colors.error} />
+          <Text style={[styles.integrityText, { color: integrityVerified !== false ? Colors.success : Colors.error }]}>
             {integrityVerified !== false ? "Integrity verified" : "Tamper detected"}
           </Text>
         </View>
@@ -61,7 +62,7 @@ export default function CustodyCard({ events, rootHash, integrityVerified, testI
                 <Text style={styles.tlActor}>{event.actor}</Text>
                 {event.eventHash && (
                   <View style={styles.hashRow}>
-                    <Link2 size={9} color={Colors.textMute} />
+                    <Link2 size={9} color={Colors.textMuted} />
                     <Text style={styles.hashText}>
                       {event.eventHash.slice(0, 16)}…
                     </Text>
@@ -91,7 +92,7 @@ export default function CustodyCard({ events, rootHash, integrityVerified, testI
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -115,14 +116,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
   },
   integrityRow: {
@@ -137,14 +138,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: Colors.crimson + "18",
+    backgroundColor: Colors.error + "26",
   },
   integrityOk: {
-    backgroundColor: Colors.emerald + "18",
+    backgroundColor: Colors.success + "26",
   },
   integrityText: {
     fontSize: 10.5,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.3,
   },
   aesBadge: {
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
   },
   aesText: {
     fontSize: 10.5,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.violet,
     letterSpacing: 0.3,
   },
@@ -180,9 +181,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border,
     marginTop: 2,
   },
-  tlLabel: { fontSize: 13, fontWeight: "700", color: Colors.text },
-  tlTime: { fontSize: 11, color: Colors.textDim, marginTop: 1 },
-  tlActor: { fontSize: 10.5, color: Colors.textMute, marginTop: 1 },
+  tlLabel: { fontSize: 13, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  tlTime: { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
+  tlActor: { fontSize: 10.5, color: Colors.textMuted, marginTop: 1 },
   hashRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   },
   hashText: {
     fontSize: 9.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
   },
   rootRow: {
@@ -205,17 +206,17 @@ const styles = StyleSheet.create({
   },
   rootLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
   },
   rootValue: {
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
   },
   disclaimer: {
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
     marginTop: 10,
     paddingTop: 10,

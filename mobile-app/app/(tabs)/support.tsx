@@ -40,6 +40,7 @@ import {
   type RightsTip,
 } from "@/mocks/resources";
 import { ENGINE_INFO, GLOBAL_RESOURCE_REGIONS } from "@/constants/geo-legal";
+import { fontFamily } from "@/constants/theme";
 
 export default function SupportScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -88,7 +89,7 @@ export default function SupportScreen(): React.ReactElement {
 
           <View style={styles.emergencyBanner}>
             <View style={styles.emergencyIconWrap}>
-              <ShieldAlert size={18} color={Colors.bg} />
+              <ShieldAlert size={18} color={Colors.background} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.emergencyTitle}>
@@ -151,7 +152,7 @@ export default function SupportScreen(): React.ReactElement {
                   icon={
                     <Icon
                       size={18}
-                      color={active === cat.id ? Colors.bg : Colors.gold}
+                      color={active === cat.id ? Colors.background : Colors.gold}
                     />
                   }
                 />
@@ -171,7 +172,7 @@ export default function SupportScreen(): React.ReactElement {
           <View style={styles.divider} />
 
           <View style={styles.kyrHeader}>
-            <AlertTriangle size={16} color={Colors.crimson} />
+            <AlertTriangle size={16} color={Colors.error} />
             <Text style={styles.kyrTitle}>Emergency Protocols</Text>
           </View>
           <View style={styles.kyrCard}>
@@ -195,7 +196,7 @@ export default function SupportScreen(): React.ReactElement {
                           {
                             backgroundColor:
                               p.severity === "high"
-                                ? Colors.crimson
+                                ? Colors.error
                                 : Colors.gold,
                           },
                         ]}
@@ -203,9 +204,9 @@ export default function SupportScreen(): React.ReactElement {
                       <Text style={styles.kyrRowTitle}>{p.title}</Text>
                     </View>
                     {open ? (
-                      <ChevronUp size={16} color={Colors.textDim} />
+                      <ChevronUp size={16} color={Colors.textSecondary} />
                     ) : (
-                      <ChevronDown size={16} color={Colors.textDim} />
+                      <ChevronDown size={16} color={Colors.textSecondary} />
                     )}
                   </Pressable>
                   {open && (
@@ -248,9 +249,9 @@ export default function SupportScreen(): React.ReactElement {
                   >
                     <Text style={styles.kyrRowTitle}>{tip.title}</Text>
                     {open ? (
-                      <ChevronUp size={16} color={Colors.textDim} />
+                      <ChevronUp size={16} color={Colors.textSecondary} />
                     ) : (
-                      <ChevronDown size={16} color={Colors.textDim} />
+                      <ChevronDown size={16} color={Colors.textSecondary} />
                     )}
                   </Pressable>
                   {open && <Text style={styles.kyrBody}>{tip.body}</Text>}
@@ -280,11 +281,11 @@ export default function SupportScreen(): React.ReactElement {
                     {
                       backgroundColor:
                         law.type === "one-party"
-                          ? Colors.emerald + "22"
+                          ? Colors.success + "22"
                           : Colors.gold + "22",
                       borderColor:
                         law.type === "one-party"
-                          ? Colors.emerald
+                          ? Colors.success
                           : Colors.gold,
                     },
                   ]}
@@ -295,7 +296,7 @@ export default function SupportScreen(): React.ReactElement {
                       {
                         color:
                           law.type === "one-party"
-                            ? Colors.emerald
+                            ? Colors.success
                             : Colors.gold,
                       },
                     ]}
@@ -309,14 +310,14 @@ export default function SupportScreen(): React.ReactElement {
           </ScrollView>
 
           <View style={styles.kyrHeader}>
-            <CheckCircle2 size={16} color={Colors.emerald} />
+            <CheckCircle2 size={16} color={Colors.success} />
             <Text style={styles.kyrTitle}>Protest Safety Checklist</Text>
           </View>
           <View style={styles.checklistCard}>
             {PROTEST_SAFETY.map((item) => (
               <View key={item.id} style={styles.checkRow}>
                 <View style={styles.checkBox}>
-                  <CheckCircle2 size={14} color={Colors.emerald} />
+                  <CheckCircle2 size={14} color={Colors.success} />
                 </View>
                 <Text style={styles.checkText}>{item.label}</Text>
               </View>
@@ -368,7 +369,7 @@ export default function SupportScreen(): React.ReactElement {
         >
           <View style={styles.resourceHeader}>
             <Text style={styles.resourceName}>{item.name}</Text>
-            {item.verified && <BadgeCheck size={16} color={Colors.emerald} />}
+            {item.verified && <BadgeCheck size={16} color={Colors.success} />}
           </View>
           <Text style={styles.resourceDesc}>{item.description}</Text>
           <View style={styles.resourceFooter}>
@@ -418,13 +419,13 @@ function CategoryTile({
       <Text
         style={[
           styles.catLabel,
-          active && { color: Colors.bg, fontWeight: "800" },
+          active && { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
         ]}
       >
         {label}
       </Text>
       <Text
-        style={[styles.catCount, active && { color: Colors.bg + "CC" }]}
+        style={[styles.catCount, active && { color: Colors.background + "CC" }]}
       >
         {count}
       </Text>
@@ -433,25 +434,25 @@ function CategoryTile({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 16, backgroundColor: Colors.bg },
+  content: { paddingHorizontal: 16, backgroundColor: Colors.background },
   brandChip: { marginBottom: 12 },
   kicker: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 1.6,
     marginBottom: 6,
   },
   title: {
     fontSize: 32,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.8,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: 18,
     maxWidth: 340,
@@ -460,10 +461,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: Colors.crimson + "1A",
-    borderColor: Colors.crimson + "55",
+    backgroundColor: Colors.error + "1A",
+    borderColor: Colors.error + "55",
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 22,
   },
@@ -471,17 +472,17 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: Colors.crimson,
+    backgroundColor: Colors.error,
     alignItems: "center",
     justifyContent: "center",
   },
   emergencyTitle: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
-  emergencySub: { fontSize: 11.5, color: Colors.textDim, fontWeight: "600" },
+  emergencySub: { fontSize: 11.5, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
   geoLegalBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gold + "0D",
     borderColor: Colors.gold + "33",
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 22,
   },
@@ -505,15 +506,15 @@ const styles = StyleSheet.create({
   },
   geoLegalTitle: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
-  geoLegalSub: { fontSize: 11, color: Colors.textDim, fontWeight: "500" },
+  geoLegalSub: { fontSize: 11, color: Colors.textSecondary, fontWeight: "500", fontFamily: fontFamily.medium },
   sectionLabel: {
     fontSize: 10.5,
-    fontWeight: "800",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 1.4,
     marginBottom: 10,
   },
@@ -527,28 +528,28 @@ const styles = StyleSheet.create({
     width: "48.5%",
     backgroundColor: Colors.surface,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
   catIconWrap: { marginBottom: 10 },
   catLabel: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
-  catCount: { fontSize: 12, color: Colors.textDim, fontWeight: "600" },
+  catCount: { fontSize: 12, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 12,
     letterSpacing: -0.3,
   },
   resourceCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     borderWidth: StyleSheet.hairlineWidth,
@@ -563,13 +564,13 @@ const styles = StyleSheet.create({
   },
   resourceName: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     flex: 1,
   },
   resourceDesc: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 19,
     marginBottom: 12,
   },
@@ -579,20 +580,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   reachPill: {
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 999,
   },
   reachText: {
     fontSize: 10.5,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   contactRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  contactText: { fontSize: 12, color: Colors.gold, fontWeight: "700" },
+  contactText: { fontSize: 12, color: Colors.gold, fontWeight: "700", fontFamily: fontFamily.bold },
   kyrHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -602,13 +603,13 @@ const styles = StyleSheet.create({
   },
   kyrTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.3,
   },
   kyrCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
     paddingHorizontal: 14,
@@ -623,14 +624,14 @@ const styles = StyleSheet.create({
   },
   kyrRowTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     flex: 1,
     paddingRight: 12,
   },
   kyrBody: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 19,
     paddingBottom: 14,
   },
@@ -656,24 +657,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 1,
   },
-  stepNumText: { fontSize: 11, fontWeight: "800", color: Colors.gold },
+  stepNumText: { fontSize: 11, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.gold },
   stepText: {
     flex: 1,
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 19,
   },
   lawsScroll: { gap: 10, paddingBottom: 6, paddingRight: 12, marginBottom: 16 },
   lawCard: {
     width: 220,
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
     gap: 8,
   },
-  lawState: { fontSize: 15, fontWeight: "800", color: Colors.text },
+  lawState: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   lawPill: {
     alignSelf: "flex-start",
     paddingHorizontal: 8,
@@ -683,10 +684,10 @@ const styles = StyleSheet.create({
   },
   lawPillText: {
     fontSize: 9.5,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.7,
   },
-  lawNote: { fontSize: 12, color: Colors.textDim, lineHeight: 17 },
+  lawNote: { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: Colors.border,
@@ -694,7 +695,7 @@ const styles = StyleSheet.create({
   },
   checklistCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
     padding: 14,
@@ -706,16 +707,16 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 7,
-    backgroundColor: Colors.emerald + "1A",
+    backgroundColor: Colors.success + "1A",
     alignItems: "center",
     justifyContent: "center",
   },
-  checkText: { flex: 1, fontSize: 13, color: Colors.text, fontWeight: "600" },
+  checkText: { flex: 1, fontSize: 13, color: Colors.text, fontWeight: "600", fontFamily: fontFamily.semiBold },
   engineCard: {
     alignItems: "center",
     gap: 6,
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.gold + "33",
     padding: 18,
@@ -723,14 +724,14 @@ const styles = StyleSheet.create({
   },
   engineTitle: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 1.4,
     textTransform: "uppercase",
   },
   engineMission: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     fontStyle: "italic",
     textAlign: "center",
@@ -742,12 +743,12 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  engineMeta: { fontSize: 11, color: Colors.textDim, fontWeight: "600" },
-  engineMetaDot: { fontSize: 11, color: Colors.textMute },
+  engineMeta: { fontSize: 11, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
+  engineMetaDot: { fontSize: 11, color: Colors.textMuted },
   engineContact: {
     fontSize: 12,
     color: Colors.gold,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     marginTop: 2,
   },
 });

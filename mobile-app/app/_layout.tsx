@@ -1,8 +1,23 @@
+import {
+  useFonts,
+  WorkSans_400Regular,
+  WorkSans_500Medium,
+  WorkSans_600SemiBold,
+  WorkSans_700Bold,
+} from "@expo-google-fonts/work-sans";
+import {
+  Spectral_400Regular,
+  Spectral_400Regular_Italic,
+  Spectral_500Medium,
+  Spectral_600SemiBold,
+  Spectral_700Bold,
+} from "@expo-google-fonts/spectral";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
+import { Text, TextInput } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { GeoLegalProvider } from "@/providers/GeoLegalProvider";
@@ -12,8 +27,23 @@ import { NewsProvider } from "@/providers/NewsProvider";
 import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
 import { LEGAL_VERSION } from "@/constants/legal";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import { installNetworkLogger } from "@/utils/networkLogger";
 import "@/utils/apiClient";
+
+// Safety net: any Text/TextInput that doesn't explicitly set a fontFamily
+// (e.g. missed spots, third-party components) still renders in Work Sans
+// rather than silently falling back to the OS system font.
+(Text as any).defaultProps = (Text as any).defaultProps || {};
+(Text as any).defaultProps.style = [
+  { fontFamily: fontFamily.regular },
+  (Text as any).defaultProps.style,
+];
+(TextInput as any).defaultProps = (TextInput as any).defaultProps || {};
+(TextInput as any).defaultProps.style = [
+  { fontFamily: fontFamily.regular },
+  (TextInput as any).defaultProps.style,
+];
 
 // Installed before any provider mounts so the very first API calls are captured.
 // No-op outside development.
@@ -60,10 +90,14 @@ function RootLayoutNav() {
     <Stack
       screenOptions={{
         headerBackTitle: "Back",
-        headerStyle: { backgroundColor: Colors.bg },
+        headerStyle: { backgroundColor: Colors.background },
         headerTintColor: Colors.text,
-        headerTitleStyle: { color: Colors.text, fontWeight: "700" },
-        contentStyle: { backgroundColor: Colors.bg },
+        headerTitleStyle: {
+          color: Colors.text,
+          fontWeight: "700",
+          fontFamily: fontFamily.bold,
+        },
+        contentStyle: { backgroundColor: Colors.background },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -102,9 +136,27 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    WorkSans_400Regular,
+    WorkSans_500Medium,
+    WorkSans_600SemiBold,
+    WorkSans_700Bold,
+    Spectral_400Regular,
+    Spectral_400Regular_Italic,
+    Spectral_500Medium,
+    Spectral_600SemiBold,
+    Spectral_700Bold,
+  });
+
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -114,7 +166,7 @@ export default function RootLayout() {
             <LocationProvider>
               <NewsProvider>
                 <GeoLegalProvider>
-                  <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg }}>
+                  <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.background }}>
                     <StatusBar style="light" />
                     <ConsentGate>
                       <RootLayoutNav />

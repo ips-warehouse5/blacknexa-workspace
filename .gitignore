@@ -17,3 +17,6 @@ npm-debug.log*
 .idea/
 .vscode/
 *.tsbuildinfo
+
+# claud
+*.claude/

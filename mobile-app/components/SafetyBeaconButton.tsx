@@ -28,6 +28,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "@/providers/LocationProvider";
+import { fontFamily } from "@/constants/theme";
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
 
@@ -150,7 +151,7 @@ export default function SafetyBeaconButton(): React.ReactElement {
         testID="safety-beacon-btn"
       >
         <View style={styles.fabInner}>
-          <ShieldAlert size={22} color={Colors.crimson} />
+          <ShieldAlert size={22} color={Colors.error} />
         </View>
       </Pressable>
 
@@ -161,11 +162,11 @@ export default function SafetyBeaconButton(): React.ReactElement {
             <View style={styles.handle} />
             <View style={styles.header}>
               <View style={styles.titleRow}>
-                <ShieldAlert size={18} color={Colors.crimson} />
+                <ShieldAlert size={18} color={Colors.error} />
                 <Text style={styles.title}>Safety Beacon</Text>
               </View>
               <Pressable style={styles.closeBtn} onPress={() => setSheetVisible(false)}>
-                <X size={18} color={Colors.textDim} />
+                <X size={18} color={Colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -175,7 +176,7 @@ export default function SafetyBeaconButton(): React.ReactElement {
             </Text>
 
             <View style={styles.gpsStatus}>
-              <Radio size={12} color={location ? Colors.emerald : Colors.textMute} />
+              <Radio size={12} color={location ? Colors.success : Colors.textMuted} />
               <Text style={styles.gpsStatusText}>
                 {location
                   ? `GPS Active · ${location.label}`
@@ -190,9 +191,9 @@ export default function SafetyBeaconButton(): React.ReactElement {
               testID="panic-trigger"
             >
               {beaconMutation.isPending ? (
-                <ActivityIndicator size="small" color={Colors.bg} />
+                <ActivityIndicator size="small" color={Colors.background} />
               ) : (
-                <AlertTriangle size={20} color={Colors.bg} />
+                <AlertTriangle size={20} color={Colors.background} />
               )}
               <Text style={styles.panicBtnText}>
                 {beaconMutation.isPending
@@ -224,7 +225,7 @@ export default function SafetyBeaconButton(): React.ReactElement {
                 event payload when a paired device is triggered.
               </Text>
               <Pressable style={styles.bleScanBtn} disabled>
-                <Bluetooth size={13} color={Colors.textDim} />
+                <Bluetooth size={13} color={Colors.textSecondary} />
                 <Text style={styles.bleScanBtnText}>Scan for BLE devices</Text>
               </Pressable>
               <Text style={styles.bleNote}>
@@ -247,7 +248,7 @@ export default function SafetyBeaconButton(): React.ReactElement {
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    shadowColor: Colors.crimson,
+    shadowColor: Colors.error,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
@@ -261,14 +262,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: Colors.crimson + "66",
+    borderColor: Colors.error + "66",
   },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)" },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 10,
   },
@@ -287,18 +288,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 18, fontWeight: "800", color: Colors.text },
+  title: { fontSize: 18, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   description: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 17,
     marginBottom: 14,
   },
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -314,8 +315,8 @@ const styles = StyleSheet.create({
   },
   gpsStatusText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
     flex: 1,
   },
   panicBtn: {
@@ -323,15 +324,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: Colors.crimson,
-    borderRadius: 14,
+    backgroundColor: Colors.error,
+    borderRadius: 10,
     paddingVertical: 16,
     marginBottom: 10,
   },
   panicBtnText: {
     fontSize: 15,
-    fontWeight: "800",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.5,
   },
   btnDisabled: { opacity: 0.5 },
@@ -340,8 +341,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     paddingVertical: 14,
     marginBottom: 16,
     borderWidth: 1,
@@ -349,12 +350,12 @@ const styles = StyleSheet.create({
   },
   dashcamBtnText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   bleSection: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 12,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.gold + "22",
@@ -367,13 +368,13 @@ const styles = StyleSheet.create({
   },
   bleTitle: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.3,
   },
   bleDescription: {
     fontSize: 11,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 16,
     marginBottom: 10,
   },
@@ -390,28 +391,28 @@ const styles = StyleSheet.create({
   },
   bleScanBtnText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
   },
   bleNote: {
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 14,
   },
   statusBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.emerald + "14",
+    backgroundColor: Colors.success + "14",
     borderRadius: 10,
     paddingVertical: 10,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: Colors.emerald + "33",
+    borderColor: Colors.success + "33",
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.emerald,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.success,
   },
 });

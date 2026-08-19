@@ -21,6 +21,7 @@ import PrivacyBadge from "@/components/PrivacyBadge";
 import BrandMark from "@/components/BrandMark";
 import { formatRelative } from "@/mocks/incidents";
 import { useIncidents } from "@/providers/IncidentsProvider";
+import { fontFamily } from "@/constants/theme";
 
 export default function VaultScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -69,7 +70,7 @@ export default function VaultScreen(): React.ReactElement {
             <StatCard
               label="Evidence"
               value={stats.evidence.toString()}
-              accent={Colors.emerald}
+              accent={Colors.success}
             />
             <StatCard
               label="Private"
@@ -79,7 +80,7 @@ export default function VaultScreen(): React.ReactElement {
           </View>
 
           <View style={styles.sealCard}>
-            <ShieldCheck size={22} color={Colors.emerald} />
+            <ShieldCheck size={22} color={Colors.success} />
             <View style={{ flex: 1 }}>
               <Text style={styles.sealTitle}>
                 Vault integrity verified
@@ -112,7 +113,7 @@ export default function VaultScreen(): React.ReactElement {
           </Text>
           <View style={styles.recordMeta}>
             <View style={styles.metaPill}>
-              <MapPin size={11} color={Colors.textDim} />
+              <MapPin size={11} color={Colors.textSecondary} />
               <Text style={styles.metaText}>{item.area}</Text>
             </View>
             {item.hasEvidence && (
@@ -124,7 +125,7 @@ export default function VaultScreen(): React.ReactElement {
               </View>
             )}
             <View style={styles.metaPill}>
-              <FileText size={11} color={Colors.textDim} />
+              <FileText size={11} color={Colors.textSecondary} />
               <Text style={styles.metaText}>Sealed</Text>
             </View>
           </View>
@@ -145,7 +146,7 @@ export default function VaultScreen(): React.ReactElement {
             style={styles.emptyBtn}
             testID="vault-empty-cta"
           >
-            <Plus size={16} color={Colors.bg} strokeWidth={3} />
+            <Plus size={16} color={Colors.background} strokeWidth={3} />
             <Text style={styles.emptyBtnText}>New Record</Text>
           </Pressable>
         </View>
@@ -172,7 +173,7 @@ function StatCard({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 16, backgroundColor: Colors.bg },
+  content: { paddingHorizontal: 16, backgroundColor: Colors.background },
   brandChip: { marginBottom: 12 },
   titleRow: {
     flexDirection: "row",
@@ -182,21 +183,21 @@ const styles = StyleSheet.create({
   },
   kicker: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 1.6,
     marginBottom: 6,
   },
   title: {
     fontSize: 32,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.8,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 20,
     maxWidth: 280,
   },
@@ -214,20 +215,20 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: -0.6,
   },
   statLabel: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.5,
     textTransform: "uppercase",
     marginTop: 2,
@@ -236,30 +237,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: Colors.emerald + "12",
-    borderRadius: 14,
+    backgroundColor: Colors.success + "12",
+    borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: Colors.emerald + "40",
+    borderColor: Colors.success + "40",
     marginBottom: 22,
   },
   sealTitle: {
     fontSize: 13,
-    fontWeight: "700",
-    color: Colors.emerald,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.success,
     marginBottom: 3,
   },
-  sealText: { fontSize: 12, color: Colors.textDim, lineHeight: 17 },
+  sealText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 12,
     letterSpacing: -0.3,
   },
   record: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: StyleSheet.hairlineWidth,
@@ -271,10 +272,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  recordTime: { fontSize: 11, color: Colors.textMute, fontWeight: "500" },
+  recordTime: { fontSize: 11, color: Colors.textMuted, fontWeight: "500", fontFamily: fontFamily.medium },
   recordTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     lineHeight: 20,
     marginBottom: 10,
@@ -284,12 +285,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
   },
-  metaText: { fontSize: 11, color: Colors.textDim, fontWeight: "600" },
+  metaText: { fontSize: 11, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
   empty: { alignItems: "center", paddingTop: 20, paddingHorizontal: 20 },
   emptyIcon: {
     width: 64,
@@ -304,13 +305,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     lineHeight: 19,
     marginBottom: 18,
@@ -324,5 +325,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 999,
   },
-  emptyBtnText: { color: Colors.bg, fontWeight: "800", fontSize: 14 },
+  emptyBtnText: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold, fontSize: 14 },
 });

@@ -35,6 +35,7 @@ import { useSettings, type Settings } from "@/providers/SettingsProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
+import { fontFamily } from "@/constants/theme";
 
 export default function ProfileScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -190,7 +191,7 @@ export default function ProfileScreen(): React.ReactElement {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: Colors.bg }}
+      style={{ flex: 1, backgroundColor: Colors.background }}
       contentContainerStyle={{
         paddingTop: insets.top + 16,
         paddingBottom: 120 + insets.bottom,
@@ -204,7 +205,7 @@ export default function ProfileScreen(): React.ReactElement {
         </View>
         <Text style={styles.name}>{settings.displayName}</Text>
         <View style={styles.handleRow}>
-          <ShieldCheck size={13} color={Colors.emerald} />
+          <ShieldCheck size={13} color={Colors.success} />
           <Text style={styles.handle}>Verified · Community Member</Text>
         </View>
       </View>
@@ -223,14 +224,14 @@ export default function ProfileScreen(): React.ReactElement {
       <SectionTitle>Privacy & Security</SectionTitle>
       <View style={styles.card}>
         <LinkRow
-          icon={<KeyRound size={18} color={settings.vaultPinSet ? Colors.emerald : Colors.crimson} />}
+          icon={<KeyRound size={18} color={settings.vaultPinSet ? Colors.success : Colors.error} />}
           title="Vault PIN"
           subtitle={
             settings.vaultPinSet
               ? "Configured · AES-256-GCM encryption active"
               : "NOT SET · evidence is unencrypted"
           }
-          titleColor={settings.vaultPinSet ? Colors.text : Colors.crimson}
+          titleColor={settings.vaultPinSet ? Colors.text : Colors.error}
           onPress={setupVaultPin}
         />
         <Divider />
@@ -283,28 +284,28 @@ export default function ProfileScreen(): React.ReactElement {
       <SectionTitle>Account</SectionTitle>
       <View style={styles.card}>
         <LinkRow
-          icon={<UserCog size={18} color={Colors.textDim} />}
+          icon={<UserCog size={18} color={Colors.textSecondary} />}
           title="Edit profile"
           onPress={editProfile}
         />
         <Divider />
         <LinkRow
-          icon={<Download size={18} color={Colors.textDim} />}
+          icon={<Download size={18} color={Colors.textSecondary} />}
           title="Export my data"
           subtitle="Download your full record archive"
           onPress={exportData}
         />
         <Divider />
         <LinkRow
-          icon={<HelpCircle size={18} color={Colors.textDim} />}
+          icon={<HelpCircle size={18} color={Colors.textSecondary} />}
           title="Help & safety"
           onPress={helpSafety}
         />
         <Divider />
         <LinkRow
-          icon={<LogOut size={18} color={Colors.crimson} />}
+          icon={<LogOut size={18} color={Colors.error} />}
           title="Sign out"
-          titleColor={Colors.crimson}
+          titleColor={Colors.error}
           onPress={signOut}
         />
       </View>
@@ -312,14 +313,14 @@ export default function ProfileScreen(): React.ReactElement {
       <SectionTitle>Legal</SectionTitle>
       <View style={styles.card}>
         <LinkRow
-          icon={<ScrollText size={18} color={Colors.textDim} />}
+          icon={<ScrollText size={18} color={Colors.textSecondary} />}
           title="Terms of Service"
           subtitle="How BlackNexa works and your rights"
           onPress={() => router.push("/legal/terms")}
         />
         <Divider />
         <LinkRow
-          icon={<FileText size={18} color={Colors.textDim} />}
+          icon={<FileText size={18} color={Colors.textSecondary} />}
           title="Privacy Policy"
           subtitle="What we collect and how it’s protected"
           onPress={() => router.push("/legal/privacy")}
@@ -407,7 +408,7 @@ function LinkRow({
         </Text>
         {subtitle && <Text style={styles.rowSub}>{subtitle}</Text>}
       </View>
-      <ChevronRight size={18} color={Colors.textMute} />
+      <ChevronRight size={18} color={Colors.textMuted} />
     </Pressable>
   );
 }
@@ -432,23 +433,23 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 26,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: -0.5,
   },
   name: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.4,
     marginBottom: 4,
   },
   handleRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  handle: { fontSize: 12, color: Colors.textDim, fontWeight: "600" },
+  handle: { fontSize: 12, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
   statsRow: {
     flexDirection: "row",
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     paddingVertical: 16,
     marginVertical: 20,
     borderWidth: StyleSheet.hairlineWidth,
@@ -457,14 +458,14 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: "center" },
   statVal: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.4,
   },
   statLbl: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.5,
     textTransform: "uppercase",
     marginTop: 2,
@@ -472,8 +473,8 @@ const styles = StyleSheet.create({
   vsep: { width: 1, backgroundColor: Colors.border },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: "800",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 1.4,
     textTransform: "uppercase",
     marginTop: 16,
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
     overflow: "hidden",
@@ -498,12 +499,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
-  rowTitle: { fontSize: 14, fontWeight: "700", color: Colors.text },
-  rowSub: { fontSize: 12, color: Colors.textDim, marginTop: 2 },
+  rowTitle: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  rowSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: Colors.border,
@@ -512,18 +513,18 @@ const styles = StyleSheet.create({
   footer: {
     textAlign: "center",
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     marginTop: 24,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     letterSpacing: 0.3,
   },
   legal: {
     textAlign: "center",
     fontSize: 10,
     lineHeight: 15,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     marginTop: 10,
     paddingHorizontal: 12,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
 });

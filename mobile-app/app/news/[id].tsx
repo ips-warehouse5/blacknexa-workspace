@@ -40,6 +40,7 @@ import {
   type LanguageCode,
 } from "@/constants/i18n";
 import ShareSheet from "@/components/ShareSheet";
+import { fontFamily, fontFamilySpectral } from "@/constants/theme";
 import {
   buildArticleSpokenScript,
   isNativeTtsAvailable,
@@ -400,7 +401,7 @@ export default function NewsArticleScreen(): React.ReactElement {
                     </Text>
                   </View>
                   <View style={styles.scopePill}>
-                    <ScopeIcon size={10} color={Colors.bg} />
+                    <ScopeIcon size={10} color={Colors.background} />
                     <Text style={styles.scopeText}>{article.scope}</Text>
                   </View>
                   {isTranslated && (
@@ -423,10 +424,10 @@ export default function NewsArticleScreen(): React.ReactElement {
                 <View style={styles.bylineRow}>
                   <Text style={styles.bylineAuthor}>{article.author}</Text>
                   <View style={styles.dot} />
-                  <Clock size={11} color={Colors.textMute} />
+                  <Clock size={11} color={Colors.textMuted} />
                   <Text style={styles.bylineTime}>{readMinutes} min read</Text>
                   <View style={styles.dot} />
-                  <Clock size={11} color={Colors.textMute} />
+                  <Clock size={11} color={Colors.textMuted} />
                   <Text style={styles.bylineTime}>{formatNewsRelative(article.publishedAt)}</Text>
                 </View>
                 <Text style={styles.publishDate}>{formatNewsAbsolute(article.publishedAt)}</Text>
@@ -455,9 +456,9 @@ export default function NewsArticleScreen(): React.ReactElement {
               </Text>
             </View>
             {isTranslating ? (
-              <Loader2 size={16} color={Colors.textMute} />
+              <Loader2 size={16} color={Colors.textMuted} />
             ) : (
-              <ChevronDown size={16} color={Colors.textMute} />
+              <ChevronDown size={16} color={Colors.textMuted} />
             )}
           </Pressable>
 
@@ -482,7 +483,7 @@ export default function NewsArticleScreen(): React.ReactElement {
           </Text>
 
           <View style={styles.verifiedBanner}>
-            <BadgeCheck size={18} color={Colors.emerald} />
+            <BadgeCheck size={18} color={Colors.success} />
             <View style={{ flex: 1 }}>
               <Text style={styles.verifiedTitle}>{article.factCheckStatus}</Text>
               <Text style={styles.verifiedSub}>
@@ -493,7 +494,7 @@ export default function NewsArticleScreen(): React.ReactElement {
 
           <View style={styles.audioCard}>
             <View style={styles.audioIcon}>
-              <Volume2 size={18} color={audioPlaying ? Colors.crimson : Colors.gold} />
+              <Volume2 size={18} color={audioPlaying ? Colors.error : Colors.gold} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.audioTitle}>
@@ -506,14 +507,14 @@ export default function NewsArticleScreen(): React.ReactElement {
             <Pressable
               style={[
                 styles.audioPlay,
-                audioPlaying && { backgroundColor: Colors.crimson },
+                audioPlaying && { backgroundColor: Colors.error },
                 audioLoading && { opacity: 0.6 },
               ]}
               onPress={playAudioBriefing}
               disabled={audioLoading}
             >
               {audioLoading ? (
-                <Loader2 size={16} color={Colors.bg} />
+                <Loader2 size={16} color={Colors.background} />
               ) : (
                 <Text style={styles.audioPlayText}>
                   {audioPlaying ? "Stop" : "Play"}
@@ -558,7 +559,7 @@ export default function NewsArticleScreen(): React.ReactElement {
                     </Text>
                   ) : null}
                 </View>
-                <ExternalLink size={13} color={Colors.textMute} />
+                <ExternalLink size={13} color={Colors.textMuted} />
               </Pressable>
             );
           })}
@@ -670,7 +671,7 @@ function LanguagePickerModal({
             <Languages size={18} color={Colors.gold} />
             <Text style={langStyles.title}>Select reading language</Text>
             <Pressable onPress={onClose} style={langStyles.closeBtn} accessibilityLabel="Close">
-              <ChevronLeft size={20} color={Colors.textMute} style={{ transform: [{ rotate: "90deg" }] }} />
+              <ChevronLeft size={20} color={Colors.textMuted} style={{ transform: [{ rotate: "90deg" }] }} />
             </Pressable>
           </View>
           <Text style={langStyles.subtitle}>
@@ -712,9 +713,9 @@ function LanguagePickerModal({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg },
+  root: { flex: 1, backgroundColor: Colors.background },
   scroll: { flexGrow: 1 },
-  heroWrap: { height: 320, backgroundColor: Colors.surface2 },
+  heroWrap: { height: 320, backgroundColor: Colors.surfaceSecondary },
   heroImage: { flex: 1, justifyContent: "flex-end" },
   heroImageInner: { resizeMode: "cover" },
   heroScrim: { flex: 1, justifyContent: "flex-end" },
@@ -728,8 +729,8 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 10,
-    fontWeight: "800",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
@@ -742,23 +743,23 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 999,
   },
-  scopeText: { fontSize: 10, fontWeight: "700", color: Colors.bg, textTransform: "capitalize" },
+  scopeText: { fontSize: 10, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.background, textTransform: "capitalize" },
   headline: {
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamilySpectral.bold,
     color: Colors.text,
     lineHeight: 30,
     letterSpacing: -0.4,
     marginBottom: 10,
   },
   bylineRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  bylineAuthor: { fontSize: 12, fontWeight: "700", color: Colors.gold },
-  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: Colors.textMute },
-  bylineTime: { fontSize: 12, color: Colors.textMute, fontWeight: "500" },
+  bylineAuthor: { fontSize: 12, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.gold },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: Colors.textMuted },
+  bylineTime: { fontSize: 12, color: Colors.textMuted, fontWeight: "500", fontFamily: fontFamily.medium },
   publishDate: {
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "600",
+    color: Colors.textMuted,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.4,
     marginTop: 6,
     textTransform: "uppercase",
@@ -766,14 +767,15 @@ const styles = StyleSheet.create({
   body: { padding: 18 },
   summary: {
     fontSize: 17,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamilySpectral.bold,
     color: Colors.text,
     lineHeight: 24,
     marginBottom: 16,
   },
   content: {
     fontSize: 15,
-    color: Colors.textDim,
+    fontFamily: fontFamilySpectral.regular,
+    color: Colors.textSecondary,
     lineHeight: 24,
     marginBottom: 22,
   },
@@ -781,15 +783,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: Colors.emerald + "14",
+    backgroundColor: Colors.success + "14",
     borderWidth: 1,
-    borderColor: Colors.emerald + "44",
-    borderRadius: 16,
+    borderColor: Colors.success + "44",
+    borderRadius: 12,
     padding: 14,
     marginBottom: 18,
   },
-  verifiedTitle: { fontSize: 13, fontWeight: "800", color: Colors.emerald, letterSpacing: 0.4 },
-  verifiedSub: { fontSize: 12, color: Colors.textDim, marginTop: 2 },
+  verifiedTitle: { fontSize: 13, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.success, letterSpacing: 0.4 },
+  verifiedSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   audioCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -797,7 +799,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 24,
   },
@@ -809,34 +811,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  audioTitle: { fontSize: 14, fontWeight: "700", color: Colors.text },
-  audioSub: { fontSize: 12, color: Colors.textDim, marginTop: 2 },
+  audioTitle: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  audioSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   audioPlay: {
     backgroundColor: Colors.gold,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
   },
-  audioPlayText: { fontSize: 12, fontWeight: "800", color: Colors.bg },
+  audioPlayText: { fontSize: 12, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.background },
   audioError: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.crimson,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.error,
     marginTop: -18,
     marginBottom: 18,
   },
   sourcesTitle: {
     fontSize: 11,
-    fontWeight: "800",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 0.8,
     textTransform: "uppercase",
     marginBottom: 4,
   },
   sourcesSubtext: {
     fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "500",
+    color: Colors.textSecondary,
+    fontWeight: "500", fontFamily: fontFamily.medium,
     lineHeight: 17,
     marginBottom: 12,
   },
@@ -858,18 +860,18 @@ const styles = StyleSheet.create({
   },
   sourceBadgeText: {
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   sourceName: {
     fontSize: 14,
     color: Colors.text,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   sourceDomain: {
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "500",
+    color: Colors.textMuted,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   sourceMetaRow: {
     flexDirection: "row",
@@ -879,20 +881,20 @@ const styles = StyleSheet.create({
   },
   sourceDate: {
     fontSize: 10,
-    color: Colors.textMute,
-    fontWeight: "500",
+    color: Colors.textMuted,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   sourceUrl: {
     fontSize: 10,
     color: Colors.gold + "AA",
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     marginTop: 3,
     lineHeight: 14,
   },
   sourceExcerpt: {
     fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "400",
+    color: Colors.textSecondary,
+    fontWeight: "400", fontFamily: fontFamily.regular,
     lineHeight: 17,
     marginTop: 6,
     fontStyle: "italic",
@@ -901,8 +903,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: Colors.surface2,
-    borderRadius: 16,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 12,
     padding: 14,
     marginTop: 24,
     borderWidth: StyleSheet.hairlineWidth,
@@ -910,13 +912,13 @@ const styles = StyleSheet.create({
   },
   principleLabel: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.4,
     textTransform: "uppercase",
     marginBottom: 6,
   },
-  principleText: { fontSize: 13, color: Colors.text, lineHeight: 19, fontWeight: "500" },
+  principleText: { fontSize: 13, color: Colors.text, lineHeight: 19, fontWeight: "500", fontFamily: fontFamily.medium },
   brandFooter: {
     marginTop: 28,
     paddingTop: 20,
@@ -934,28 +936,28 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 1.2,
   },
   brandTagline: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.3,
     marginTop: 2,
     textTransform: "uppercase",
   },
   brandMeta: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 16,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   brandURL: {
     fontSize: 11,
     color: Colors.gold + "AA",
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     marginTop: 8,
     letterSpacing: 0.3,
   },
@@ -967,9 +969,9 @@ const styles = StyleSheet.create({
   },
   tmLine: {
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     marginBottom: 4,
     letterSpacing: 0.1,
   },
@@ -1000,7 +1002,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
-  shareText: { fontSize: 12, fontWeight: "700", color: Colors.text },
+  shareText: { fontSize: 12, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   langPicker: {
     flexDirection: "row",
     alignItems: "center",
@@ -1008,42 +1010,42 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.gold + "33",
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 18,
   },
   langLabel: {
     fontSize: 10,
-    fontWeight: "800",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 0.5,
     textTransform: "uppercase",
     marginBottom: 3,
   },
   langValue: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
   },
   translatedPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.gold + "1F",
+    backgroundColor: Colors.gold + "26",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
   },
   translatedText: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.3,
   },
   translateError: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
     marginBottom: 12,
   },
   pendingBanner: {
@@ -1061,7 +1063,7 @@ const styles = StyleSheet.create({
   pendingText: {
     flex: 1,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     color: Colors.gold,
     lineHeight: 17,
   },
@@ -1069,21 +1071,21 @@ const styles = StyleSheet.create({
     writingDirection: "rtl",
     textAlign: "right",
   },
-  missing: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.bg },
-  missingTitle: { fontSize: 16, fontWeight: "700", color: Colors.text, marginBottom: 4 },
-  missingText: { fontSize: 13, color: Colors.textDim },
+  missing: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.background },
+  missingTitle: { fontSize: 16, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text, marginBottom: 4 },
+  missingText: { fontSize: 13, color: Colors.textSecondary },
 });
 
 const langStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     maxHeight: "85%",
   },
   handle: {
@@ -1105,20 +1107,20 @@ const langStyles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 17,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
   },
   closeBtn: {
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     paddingHorizontal: 20,
     paddingBottom: 12,
     lineHeight: 17,
@@ -1132,9 +1134,9 @@ const langStyles = StyleSheet.create({
     gap: 14,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 14,
+    borderRadius: 12,
     marginBottom: 6,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
@@ -1147,13 +1149,13 @@ const langStyles = StyleSheet.create({
   },
   nativeName: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
   englishName: {
     fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "500",
+    color: Colors.textSecondary,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
 });

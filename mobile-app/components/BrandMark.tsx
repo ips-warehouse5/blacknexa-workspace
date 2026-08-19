@@ -2,6 +2,7 @@ import { Shield } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 
 type Variant = "chip" | "header" | "watermark" | "inline";
 
@@ -39,7 +40,7 @@ export default function BrandMark({
       <View style={[styles.headerRow, style]} testID={testID}>
         {showIcon && (
           <View style={styles.headerIcon}>
-            <Shield size={14} color={Colors.bg} fill={Colors.gold} />
+            <Shield size={14} color={Colors.background} fill={Colors.gold} />
           </View>
         )}
         <View>
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.gold + "44",
     paddingHorizontal: 9,
@@ -88,14 +89,14 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 10.5,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.4,
   },
   chipTm: {
     fontSize: 8,
     color: Colors.gold,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   headerRow: {
     flexDirection: "row",
@@ -115,28 +116,28 @@ const styles = StyleSheet.create({
   brandLine: { flexDirection: "row", alignItems: "flex-start", gap: 2 },
   brand: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.2,
   },
   tm: {
     fontSize: 8,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
     marginTop: 2,
   },
   tagline: {
     fontSize: 10,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.4,
     marginTop: 1,
   },
   inline: { flexDirection: "row", alignItems: "center" },
   inlineText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
   },
@@ -149,20 +150,20 @@ const styles = StyleSheet.create({
   },
   watermarkText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 0.4,
     textAlign: "center",
   },
   watermarkTm: {
     fontSize: 8.5,
     color: Colors.gold,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   watermarkLegal: {
     fontSize: 9.5,
-    color: Colors.textMute,
-    fontWeight: "600",
+    color: Colors.textMuted,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.6,
     textTransform: "uppercase",
   },

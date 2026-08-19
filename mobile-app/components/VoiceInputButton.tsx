@@ -4,6 +4,7 @@ import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from "rea
 import * as Haptics from "expo-haptics";
 import { useAudioRecorder } from "expo-audio";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 import {
   SPEECH_RECORDING_OPTIONS,
   prepareForVoiceRecording,
@@ -198,7 +199,7 @@ export default function VoiceInputButton({
     return (
       <Pressable onPress={stop} style={[styles.root, prominent && styles.rootProminent]}>
         <View style={[styles.iconBtn, prominent && styles.iconBtnProminent, styles.iconBtnRecording]}>
-          <X size={prominent ? 22 : 18} color={Colors.bg} />
+          <X size={prominent ? 22 : 18} color={Colors.background} />
         </View>
         <Text style={[styles.label, styles.labelRecording, prominent && styles.labelProminent]}>Listening… tap to stop</Text>
       </Pressable>
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     backgroundColor: Colors.gold + "12",
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.gold + "44",
   },
@@ -251,23 +252,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gold + "22",
   },
   iconBtnRecording: {
-    backgroundColor: Colors.crimson,
-    borderColor: Colors.crimson,
+    backgroundColor: Colors.error,
+    borderColor: Colors.error,
   },
   iconBtnBusy: {
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderColor: Colors.gold + "44",
   },
   label: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   labelProminent: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   labelRecording: {
-    color: Colors.crimson,
+    color: Colors.error,
   },
 });

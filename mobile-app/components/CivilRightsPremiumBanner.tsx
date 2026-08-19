@@ -5,6 +5,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import Colors from "@/constants/colors";
+import { fontFamily } from "@/constants/theme";
 
 /**
  * Subscription-tier exclusivity banner highlighting the BlackNexa Civil Rights
@@ -28,7 +29,7 @@ export default function CivilRightsPremiumBanner(): React.ReactElement {
       ]}
     >
       <LinearGradient
-        colors={[Colors.surface2, Colors.surface3]}
+        colors={[Colors.surfaceSecondary, Colors.surface3]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -39,7 +40,7 @@ export default function CivilRightsPremiumBanner(): React.ReactElement {
         <View style={styles.content}>
           <View style={styles.badgeRow}>
             <View style={styles.premiumBadge}>
-              <Sparkles size={9} color={Colors.bg} />
+              <Sparkles size={9} color={Colors.background} />
               <Text style={styles.premiumText}>PREMIUM</Text>
             </View>
             <Text style={styles.title}>Civil Rights Reporting Tool</Text>
@@ -57,7 +58,7 @@ export default function CivilRightsPremiumBanner(): React.ReactElement {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 18,
+    borderRadius: 12,
     overflow: "hidden",
     marginBottom: 10,
     marginTop: 4,
@@ -100,20 +101,20 @@ const styles = StyleSheet.create({
   },
   premiumText: {
     fontSize: 8,
-    fontWeight: "900",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.8,
   },
   title: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 17,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
 });

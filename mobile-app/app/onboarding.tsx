@@ -16,6 +16,7 @@ import Colors from "@/constants/colors";
 import BrandMark from "@/components/BrandMark";
 import { LEGAL_VERSION } from "@/constants/legal";
 import { useSettings } from "@/providers/SettingsProvider";
+import { fontFamily } from "@/constants/theme";
 
 export default function OnboardingScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -53,7 +54,7 @@ export default function OnboardingScreen(): React.ReactElement {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <View style={{ flex: 1, backgroundColor: Colors.background }}>
         <ScrollView
           contentContainerStyle={[
             styles.content,
@@ -79,7 +80,7 @@ export default function OnboardingScreen(): React.ReactElement {
               label="You control sharing"
             />
             <Pillar
-              icon={<Sparkles size={16} color={Colors.emerald} />}
+              icon={<Sparkles size={16} color={Colors.success} />}
               label="Built for equity"
             />
           </View>
@@ -120,7 +121,7 @@ export default function OnboardingScreen(): React.ReactElement {
               colors={
                 canContinue
                   ? [Colors.gold, Colors.goldDeep]
-                  : [Colors.surface3, Colors.surface2]
+                  : [Colors.surface3, Colors.surfaceSecondary]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -129,14 +130,14 @@ export default function OnboardingScreen(): React.ReactElement {
               <Text
                 style={[
                   styles.ctaText,
-                  !canContinue && { color: Colors.textMute },
+                  !canContinue && { color: Colors.textMuted },
                 ]}
               >
                 Continue
               </Text>
               <ChevronRight
                 size={18}
-                color={canContinue ? Colors.bg : Colors.textMute}
+                color={canContinue ? Colors.background : Colors.textMuted}
               />
             </LinearGradient>
           </Pressable>
@@ -190,7 +191,7 @@ function ConsentRow({
         testID={testID}
       >
         <View style={[styles.check, checked && styles.checkOn]}>
-          {checked && <Check size={13} color={Colors.bg} strokeWidth={3} />}
+          {checked && <Check size={13} color={Colors.background} strokeWidth={3} />}
         </View>
         <Text style={styles.consentLabel}>{label}</Text>
       </Pressable>
@@ -206,14 +207,14 @@ const styles = StyleSheet.create({
   brand: { alignSelf: "center", marginBottom: 26 },
   title: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.6,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 15,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 22,
     marginBottom: 22,
   },
@@ -236,19 +237,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   pillarText: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "700",
+    color: Colors.textSecondary,
+    fontWeight: "700", fontFamily: fontFamily.bold,
     textAlign: "center",
   },
   consentCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
@@ -256,13 +257,13 @@ const styles = StyleSheet.create({
   },
   consentTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 4,
   },
   consentSub: {
     fontSize: 12.5,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 18,
     marginBottom: 14,
   },
@@ -292,12 +293,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: Colors.text,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   consentLink: {
     fontSize: 12,
     color: Colors.gold,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     textDecorationLine: "underline",
     marginLeft: 8,
   },
@@ -307,7 +308,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   cta: {
-    borderRadius: 16,
+    borderRadius: 10,
     overflow: "hidden",
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 6 },
@@ -324,17 +325,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   ctaText: {
-    color: Colors.bg,
-    fontWeight: "800",
+    color: Colors.background,
+    fontWeight: "700", fontFamily: fontFamily.bold,
     fontSize: 15,
     letterSpacing: 0.3,
   },
   tm: {
     fontSize: 10.5,
     lineHeight: 16,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     marginTop: 22,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
 });

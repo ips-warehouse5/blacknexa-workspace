@@ -22,6 +22,7 @@ import {
   type Incident,
 } from "@/mocks/incidents";
 import PrivacyBadge from "./PrivacyBadge";
+import { fontFamily } from "@/constants/theme";
 
 type Props = {
   incident: Incident;
@@ -62,7 +63,7 @@ function IncidentCardBase({ incident, supported, onToggleSupport }: Props) {
         <PrivacyBadge level={incident.privacy} compact />
         {incident.urgent && (
           <View style={styles.urgentPill}>
-            <Flame size={11} color={Colors.crimson} />
+            <Flame size={11} color={Colors.error} />
             <Text style={styles.urgentText}>Urgent</Text>
           </View>
         )}
@@ -79,7 +80,7 @@ function IncidentCardBase({ incident, supported, onToggleSupport }: Props) {
 
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
-          <MapPin size={13} color={Colors.textDim} />
+          <MapPin size={13} color={Colors.textSecondary} />
           <Text style={styles.metaText}>{incident.area}</Text>
         </View>
         <View style={styles.dot} />
@@ -93,19 +94,19 @@ function IncidentCardBase({ incident, supported, onToggleSupport }: Props) {
           onPress={support}
           style={[
             styles.actionBtn,
-            supported && { backgroundColor: Colors.crimson + "1A" },
+            supported && { backgroundColor: Colors.error + "1A" },
           ]}
           testID={`support-${incident.id}`}
         >
           <Heart
             size={15}
-            color={supported ? Colors.crimson : Colors.textDim}
-            fill={supported ? Colors.crimson : "transparent"}
+            color={supported ? Colors.error : Colors.textSecondary}
+            fill={supported ? Colors.error : "transparent"}
           />
           <Text
             style={[
               styles.actionText,
-              supported && { color: Colors.crimson },
+              supported && { color: Colors.error },
             ]}
           >
             {incident.supporters}
@@ -123,8 +124,8 @@ function IncidentCardBase({ incident, supported, onToggleSupport }: Props) {
 
         {incident.verifications > 0 && (
           <View style={styles.actionBtn}>
-            <BadgeCheck size={15} color={Colors.emerald} />
-            <Text style={[styles.actionText, { color: Colors.emerald }]}>
+            <BadgeCheck size={15} color={Colors.success} />
+            <Text style={[styles.actionText, { color: Colors.success }]}>
               {incident.verifications} verified
             </Text>
           </View>
@@ -140,7 +141,7 @@ export default IncidentCard;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 18,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.4,
     textTransform: "uppercase",
@@ -173,30 +174,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: 999,
-    backgroundColor: Colors.crimson + "18",
+    backgroundColor: Colors.error + "26",
     borderWidth: 1,
-    borderColor: Colors.crimson + "55",
+    borderColor: Colors.error + "55",
   },
   urgentText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.crimson,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.error,
   },
   time: {
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "500",
+    color: Colors.textMuted,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   title: {
     fontSize: 17,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     lineHeight: 23,
     marginBottom: 6,
   },
   summary: {
     fontSize: 14,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -213,14 +214,14 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "500",
+    color: Colors.textSecondary,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   dot: {
     width: 3,
     height: 3,
     borderRadius: 2,
-    backgroundColor: Colors.textMute,
+    backgroundColor: Colors.textMuted,
   },
   footer: {
     flexDirection: "row",
@@ -237,11 +238,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
   },
   actionText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
   },
 });

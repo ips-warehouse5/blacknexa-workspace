@@ -34,6 +34,7 @@ import {
 } from "lucide-react-native";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
+import { fontFamily } from "@/constants/theme";
 
 type Props = {
   visible: boolean;
@@ -160,7 +161,7 @@ function GoogleGMark({ size = 20 }: { size?: number }): React.ReactElement {
       <Text
         style={{
           fontSize: size * 0.62,
-          fontWeight: "900",
+          fontWeight: "700", fontFamily: fontFamily.bold,
           color: "#4285F4",
           fontStyle: "italic",
           lineHeight: size,
@@ -331,7 +332,7 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
               }}
               accessibilityLabel="Disconnect Google account"
             >
-              <LogOut size={12} color={Colors.textMute} />
+              <LogOut size={12} color={Colors.textMuted} />
               <Text style={styles.disconnectText}>
                 Disconnect {user.email}
               </Text>
@@ -390,7 +391,7 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
             >
               <View style={[styles.platformIcon, { backgroundColor: Colors.surface3 }]}>
                 {copied ? (
-                  <Check size={22} color={Colors.emerald} />
+                  <Check size={22} color={Colors.success} />
                 ) : (
                   <LinkIcon size={22} color={Colors.text} />
                 )}
@@ -402,7 +403,7 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
           </ScrollView>
 
           <View style={styles.verifiedRow}>
-            <BadgeCheck size={14} color={Colors.emerald} />
+            <BadgeCheck size={14} color={Colors.success} />
             <Text style={styles.verifiedText}>
               BlackNexa™ News • Verified • Distribute Globally
             </Text>
@@ -420,13 +421,13 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingBottom: 36,
     paddingHorizontal: 18,
     paddingTop: 10,
@@ -449,24 +450,24 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 1.2,
   },
   subtitle: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 18,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   googleBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
+    borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 8,
@@ -475,7 +476,7 @@ const styles = StyleSheet.create({
   googleBtnText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: "#1F1F1F",
     letterSpacing: 0.1,
   },
@@ -486,22 +487,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gold + "14",
     borderWidth: 1,
     borderColor: Colors.gold + "55",
-    borderRadius: 14,
+    borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 6,
   },
   googleConnectedTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.1,
   },
   googleConnectedSub: {
     fontSize: 11,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     marginTop: 2,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   disconnectBtn: {
     flexDirection: "row",
@@ -514,12 +515,12 @@ const styles = StyleSheet.create({
   },
   disconnectText: {
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "600",
+    color: Colors.textMuted,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   googleHint: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 15,
     marginBottom: 14,
@@ -538,8 +539,8 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     fontSize: 10,
-    fontWeight: "800",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 1,
   },
   grid: {
@@ -563,8 +564,8 @@ const styles = StyleSheet.create({
   },
   platformLabel: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.2,
   },
   verifiedRow: {
@@ -579,13 +580,13 @@ const styles = StyleSheet.create({
   },
   verifiedText: {
     fontSize: 11,
-    color: Colors.emerald,
-    fontWeight: "700",
+    color: Colors.success,
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.3,
   },
   cancelBtn: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 10,
@@ -594,7 +595,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
   },
 });

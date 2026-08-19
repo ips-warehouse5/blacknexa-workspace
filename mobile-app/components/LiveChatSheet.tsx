@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
+import { fontFamily } from "@/constants/theme";
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
 
@@ -239,7 +240,7 @@ export default function LiveChatSheet({ visible, onClose }: Props): React.ReactE
                   </Text>
                   {connected && (
                     <View style={styles.usersPill}>
-                      <Users size={9} color={Colors.emerald} />
+                      <Users size={9} color={Colors.success} />
                       <Text style={styles.usersText}>Online</Text>
                     </View>
                   )}
@@ -247,7 +248,7 @@ export default function LiveChatSheet({ visible, onClose }: Props): React.ReactE
               </View>
             </View>
             <Pressable style={styles.closeBtn} onPress={onClose}>
-              <X size={18} color={Colors.textDim} />
+              <X size={18} color={Colors.textSecondary} />
             </Pressable>
           </View>
 
@@ -281,7 +282,7 @@ export default function LiveChatSheet({ visible, onClose }: Props): React.ReactE
               value={input}
               onChangeText={setInput}
               placeholder="Type a message…"
-              placeholderTextColor={Colors.textMute}
+              placeholderTextColor={Colors.textMuted}
               style={styles.textInput}
               editable={connected}
               returnKeyType="send"
@@ -292,7 +293,7 @@ export default function LiveChatSheet({ visible, onClose }: Props): React.ReactE
               disabled={!connected || !input.trim()}
               style={[styles.sendBtn, (!connected || !input.trim()) && styles.sendBtnDisabled]}
             >
-              <Send size={16} color={Colors.bg} />
+              <Send size={16} color={Colors.background} />
             </Pressable>
           </View>
         </View>
@@ -306,8 +307,8 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)" },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     flex: 0.85,
     paddingTop: 10,
   },
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { fontSize: 17, fontWeight: "800", color: Colors.text },
+  title: { fontSize: 17, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -341,32 +342,32 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 4,
   },
-  statusDotOn: { backgroundColor: Colors.emerald },
-  statusDotOff: { backgroundColor: Colors.textMute },
+  statusDotOn: { backgroundColor: Colors.success },
+  statusDotOff: { backgroundColor: Colors.textMuted },
   statusText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
   },
   usersPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: Colors.emerald + "1A",
+    backgroundColor: Colors.success + "26",
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   usersText: {
     fontSize: 9,
-    fontWeight: "800",
-    color: Colors.emerald,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.success,
   },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
   },
   msgBubble: {
     maxWidth: "82%",
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 16,
     padding: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
   },
   msgAuthor: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     marginBottom: 4,
   },
@@ -404,19 +405,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text,
     lineHeight: 19,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   msgTextSelf: {
     color: Colors.text,
   },
   msgTime: {
     fontSize: 9,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     marginTop: 4,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   msgTimeSelf: {
-    color: Colors.textMute,
+    color: Colors.textMuted,
   },
   emptyState: {
     flex: 1,
@@ -425,8 +426,8 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     gap: 6,
   },
-  emptyTitle: { fontSize: 15, fontWeight: "700", color: Colors.text },
-  emptyText: { fontSize: 13, color: Colors.textDim },
+  emptyTitle: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  emptyText: { fontSize: 13, color: Colors.textSecondary },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -438,13 +439,13 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    backgroundColor: Colors.surface2,
-    borderRadius: 20,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
@@ -458,19 +459,19 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { opacity: 0.4 },
   moderationBanner: {
-    backgroundColor: Colors.crimson + "1A",
+    backgroundColor: Colors.error + "1A",
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
     marginHorizontal: 16,
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: Colors.crimson + "33",
+    borderColor: Colors.error + "33",
   },
   moderationText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: Colors.crimson,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.error,
     textAlign: "center",
   },
 });

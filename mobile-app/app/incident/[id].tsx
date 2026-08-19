@@ -51,6 +51,7 @@ import { processIncidentDispatch, type DispatchResult } from "@/constants/dispat
 import { CATEGORY_LABELS, formatRelative } from "@/mocks/incidents";
 import { useIncidents } from "@/providers/IncidentsProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { fontFamily } from "@/constants/theme";
 
 export default function IncidentDetailScreen(): React.ReactElement {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -257,7 +258,7 @@ export default function IncidentDetailScreen(): React.ReactElement {
   const supported = isSupported(incident.id);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: Colors.bg }}>
+    <ScrollView style={{ flex: 1, backgroundColor: Colors.background }}>
       <Stack.Screen
         options={{
           title: CATEGORY_LABELS[incident.category],
@@ -290,7 +291,7 @@ export default function IncidentDetailScreen(): React.ReactElement {
             {incident.author.anonymous ? "Anonymous" : incident.author.handle}
           </Text>
           <View style={styles.dot} />
-          <Clock size={12} color={Colors.textMute} />
+          <Clock size={12} color={Colors.textMuted} />
           <Text style={styles.authorTime}>
             {formatRelative(incident.timestamp)}
           </Text>
@@ -323,7 +324,7 @@ export default function IncidentDetailScreen(): React.ReactElement {
             <View style={styles.evidenceGrid}>
               {Array.from({ length: incident.evidenceCount }).map((_, i) => (
                 <View key={`ev-${i}`} style={styles.evidenceTile}>
-                  <ShieldCheck size={20} color={Colors.emerald} />
+                  <ShieldCheck size={20} color={Colors.success} />
                   <Text style={styles.evidenceTileText}>Sealed #{i + 1}</Text>
                 </View>
               ))}
@@ -375,13 +376,13 @@ export default function IncidentDetailScreen(): React.ReactElement {
             <View style={styles.rowBetween}>
               <Text style={styles.cardTitle}>Evidence integrity</Text>
               <View style={styles.evidenceBadge}>
-                <Fingerprint size={12} color={Colors.emerald} />
+                <Fingerprint size={12} color={Colors.success} />
                 <Text style={styles.evidenceBadgeText}>SHA-256</Text>
               </View>
             </View>
             <View style={styles.integrityRow}>
               <View style={styles.integrityPill}>
-                <ShieldCheck size={11} color={Colors.emerald} />
+                <ShieldCheck size={11} color={Colors.success} />
                 <Text style={styles.integrityPillText}>AES-256-GCM</Text>
               </View>
               <View style={styles.integrityPill}>
@@ -432,14 +433,14 @@ export default function IncidentDetailScreen(): React.ReactElement {
             onPress={support}
             style={[
               styles.primaryAction,
-              supported && { backgroundColor: Colors.crimson },
+              supported && { backgroundColor: Colors.error },
             ]}
             testID="detail-support"
           >
             <Heart
               size={16}
-              color={Colors.bg}
-              fill={supported ? Colors.bg : "transparent"}
+              color={Colors.background}
+              fill={supported ? Colors.background : "transparent"}
               strokeWidth={2.5}
             />
             <Text style={styles.primaryActionText}>
@@ -453,8 +454,8 @@ export default function IncidentDetailScreen(): React.ReactElement {
             style={styles.secondaryAction}
             testID="detail-verify"
           >
-            <BadgeCheck size={16} color={Colors.emerald} />
-            <Text style={[styles.secondaryText, { color: Colors.emerald }]}>
+            <BadgeCheck size={16} color={Colors.success} />
+            <Text style={[styles.secondaryText, { color: Colors.success }]}>
               Verify
             </Text>
           </Pressable>
@@ -463,7 +464,7 @@ export default function IncidentDetailScreen(): React.ReactElement {
             style={styles.secondaryAction}
             testID="detail-flag"
           >
-            <Flag size={16} color={Colors.textDim} />
+            <Flag size={16} color={Colors.textSecondary} />
           </Pressable>
         </View>
         <BrandMark variant="watermark" testID="incident-watermark" />
@@ -501,30 +502,30 @@ function Timeline({
 const styles = StyleSheet.create({
   center: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
-  notFound: { color: Colors.textDim, fontSize: 15 },
+  notFound: { color: Colors.textSecondary, fontSize: 15 },
   container: { padding: 18, paddingBottom: 60 },
   brandChip: { marginBottom: 12 },
   pills: { flexDirection: "row", gap: 8, marginBottom: 14 },
   catPill: {
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
   },
   catText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   title: {
     fontSize: 26,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     lineHeight: 33,
     letterSpacing: -0.6,
@@ -546,15 +547,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  authorName: { fontSize: 13, fontWeight: "700", color: Colors.text },
+  authorName: { fontSize: 13, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   dot: {
     width: 3,
     height: 3,
     borderRadius: 2,
-    backgroundColor: Colors.textMute,
+    backgroundColor: Colors.textMuted,
     marginHorizontal: 4,
   },
-  authorTime: { fontSize: 12, color: Colors.textDim, fontWeight: "500" },
+  authorTime: { fontSize: 12, color: Colors.textSecondary, fontWeight: "500", fontFamily: fontFamily.medium },
   summary: {
     fontSize: 15,
     color: Colors.text,
@@ -563,7 +564,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -571,16 +572,16 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 12,
-    fontWeight: "800",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 10,
   },
-  cardValue: { fontSize: 15, fontWeight: "700", color: Colors.text },
+  cardValue: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   cardMuted: {
     fontSize: 12,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     marginTop: 8,
     lineHeight: 17,
   },
@@ -602,7 +603,7 @@ const styles = StyleSheet.create({
   evidenceBadgeText: {
     fontSize: 11,
     color: Colors.gold,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   evidenceGrid: {
     flexDirection: "row",
@@ -614,7 +615,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 12,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderWidth: 1,
     borderColor: Colors.border,
     alignItems: "center",
@@ -623,8 +624,8 @@ const styles = StyleSheet.create({
   },
   evidenceTileText: {
     fontSize: 10,
-    color: Colors.textDim,
-    fontWeight: "700",
+    color: Colors.textSecondary,
+    fontWeight: "700", fontFamily: fontFamily.bold,
   },
   tlRow: { flexDirection: "row", gap: 12 },
   tlCol: { alignItems: "center", width: 14 },
@@ -641,8 +642,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border,
     marginTop: 2,
   },
-  tlLabel: { fontSize: 13, fontWeight: "700", color: Colors.text },
-  tlTime: { fontSize: 12, color: Colors.textDim, marginTop: 1 },
+  tlLabel: { fontSize: 13, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  tlTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 1 },
   actionBar: {
     flexDirection: "row",
     gap: 10,
@@ -656,11 +657,11 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.gold,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 10,
   },
   primaryActionText: {
-    color: Colors.bg,
-    fontWeight: "800",
+    color: Colors.background,
+    fontWeight: "700", fontFamily: fontFamily.bold,
     fontSize: 14,
     letterSpacing: 0.3,
   },
@@ -671,11 +672,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
-  secondaryText: { fontSize: 13, fontWeight: "700" },
+  secondaryText: { fontSize: 13, fontWeight: "700", fontFamily: fontFamily.bold },
   integrityRow: {
     flexDirection: "row",
     gap: 8,
@@ -688,11 +689,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: Colors.emerald + "18",
+    backgroundColor: Colors.success + "26",
   },
   integrityPillText: {
     fontSize: 10.5,
-    fontWeight: "700",
-    color: Colors.emerald,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.success,
   },
 });

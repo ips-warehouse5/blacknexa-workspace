@@ -34,6 +34,7 @@ import {
 import Colors from "@/constants/colors";
 import type { ValidationResult, JurisdictionProfile } from "@/constants/geo-legal";
 import { PRIVACY_REGIME_LABELS } from "@/constants/geo-legal";
+import { fontFamily } from "@/constants/theme";
 
 type Props = {
   visible: boolean;
@@ -96,19 +97,19 @@ export default function ComplianceReviewSheet({
             style={[
               styles.statusBanner,
               validation.compliant
-                ? { borderColor: Colors.emerald + "55", backgroundColor: Colors.emerald + "0D" }
-                : { borderColor: Colors.crimson + "55", backgroundColor: Colors.crimson + "0D" },
+                ? { borderColor: Colors.success + "55", backgroundColor: Colors.success + "0D" }
+                : { borderColor: Colors.error + "55", backgroundColor: Colors.error + "0D" },
             ]}
           >
             {validation.compliant ? (
-              <Check size={18} color={Colors.emerald} />
+              <Check size={18} color={Colors.success} />
             ) : (
-              <AlertTriangle size={18} color={Colors.crimson} />
+              <AlertTriangle size={18} color={Colors.error} />
             )}
             <Text
               style={[
                 styles.statusText,
-                { color: validation.compliant ? Colors.emerald : Colors.crimson },
+                { color: validation.compliant ? Colors.success : Colors.error },
               ]}
             >
               {validation.compliant
@@ -123,7 +124,7 @@ export default function ComplianceReviewSheet({
               <Text style={styles.sectionTitle}>Missing Information</Text>
               {validation.missingFields.map((field, i) => (
                 <View key={`mf-${i}`} style={styles.issueRow}>
-                  <AlertTriangle size={13} color={Colors.crimson} />
+                  <AlertTriangle size={13} color={Colors.error} />
                   <Text style={styles.issueText}>{field}</Text>
                 </View>
               ))}
@@ -152,7 +153,7 @@ export default function ComplianceReviewSheet({
               <Text style={styles.sectionTitle}>Formatted Report Summary</Text>
               <ChevronDown
                 size={16}
-                color={Colors.textDim}
+                color={Colors.textSecondary}
                 style={{ transform: [{ rotate: showFullSummary ? "180deg" : "0deg" }] }}
               />
             </Pressable>
@@ -195,7 +196,7 @@ export default function ComplianceReviewSheet({
               end={{ x: 1, y: 1 }}
               style={styles.confirmBtnInner}
             >
-              <Shield size={18} color={Colors.bg} />
+              <Shield size={18} color={Colors.background} />
               <Text style={styles.confirmText}>
                 {validation.compliant
                   ? "Confirm & Dispatch"
@@ -217,7 +218,7 @@ export default function ComplianceReviewSheet({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  container: { flex: 1, backgroundColor: Colors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -238,8 +239,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.gold + "44",
   },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: Colors.text },
-  headerSub: { fontSize: 12, color: Colors.textDim, marginTop: 2 },
+  headerTitle: { fontSize: 16, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  headerSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 18, paddingVertical: 16, paddingBottom: 50 },
   statusBanner: {
@@ -251,12 +252,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 20,
   },
-  statusText: { fontSize: 14, fontWeight: "700", flex: 1 },
+  statusText: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, flex: 1 },
   section: { marginBottom: 20 },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: "800",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 10,
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 4,
   },
-  issueText: { fontSize: 12.5, color: Colors.textDim, flex: 1, lineHeight: 17 },
+  issueText: { fontSize: 12.5, color: Colors.textSecondary, flex: 1, lineHeight: 17 },
   summaryToggle: {
     flexDirection: "row",
     alignItems: "center",
@@ -281,13 +282,13 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
-  summaryText: { fontSize: 12.5, color: Colors.text, lineHeight: 19, fontFamily: undefined },
+  summaryText: { fontSize: 12.5, color: Colors.text, lineHeight: 19, fontFamily: fontFamily.regular },
   expandBtn: {
     marginTop: 8,
     alignItems: "center",
     paddingVertical: 6,
   },
-  expandText: { fontSize: 12, color: Colors.gold, fontWeight: "700" },
+  expandText: { fontSize: 12, color: Colors.gold, fontWeight: "700", fontFamily: fontFamily.bold },
   privacyBox: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -299,9 +300,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.gold + "33",
     marginBottom: 20,
   },
-  privacyText: { fontSize: 11, color: Colors.textDim, flex: 1, lineHeight: 16 },
+  privacyText: { fontSize: 11, color: Colors.textSecondary, flex: 1, lineHeight: 16 },
   confirmBtn: {
-    borderRadius: 16,
+    borderRadius: 10,
     overflow: "hidden",
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 4 },
@@ -316,10 +317,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
   },
-  confirmText: { color: Colors.bg, fontWeight: "800", fontSize: 15, letterSpacing: 0.3 },
+  confirmText: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold, fontSize: 15, letterSpacing: 0.3 },
   disclaimer: {
     fontSize: 10.5,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 15,
     marginTop: 14,

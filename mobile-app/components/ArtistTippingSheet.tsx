@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
+import { fontFamily } from "@/constants/theme";
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
 
@@ -170,7 +171,7 @@ export default function ArtistTippingSheet({
               <Text style={styles.title}>Tip {artistName}</Text>
             </View>
             <Pressable style={styles.closeBtn} onPress={onClose}>
-              <X size={18} color={Colors.textDim} />
+              <X size={18} color={Colors.textSecondary} />
             </Pressable>
           </View>
 
@@ -207,7 +208,7 @@ export default function ArtistTippingSheet({
                 setTipError(null);
               }}
               placeholder="Custom amount"
-              placeholderTextColor={Colors.textMute}
+              placeholderTextColor={Colors.textMuted}
               style={styles.customInput}
               keyboardType="decimal-pad"
               returnKeyType="done"
@@ -220,7 +221,7 @@ export default function ArtistTippingSheet({
             value={message}
             onChangeText={setMessage}
             placeholder="Add a word of encouragement…"
-            placeholderTextColor={Colors.textMute}
+            placeholderTextColor={Colors.textMuted}
             style={styles.messageInput}
             multiline
             maxLength={200}
@@ -238,12 +239,12 @@ export default function ArtistTippingSheet({
           >
             {tipMutation.isPending ? (
               <>
-                <ActivityIndicator size="small" color={Colors.bg} />
+                <ActivityIndicator size="small" color={Colors.background} />
                 <Text style={styles.sendBtnText}>Processing…</Text>
               </>
             ) : (
               <>
-                <Send size={16} color={Colors.bg} />
+                <Send size={16} color={Colors.background} />
                 <Text style={styles.sendBtnText}>
                   Send ${customAmount.trim() || amount} Tip
                 </Text>
@@ -267,8 +268,8 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)" },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 10,
   },
@@ -287,25 +288,25 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 18, fontWeight: "800", color: Colors.text },
+  title: { fontSize: 18, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 17,
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 0.4,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderWidth: 1,
     borderColor: Colors.border,
     alignItems: "center",
@@ -329,14 +330,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gold,
     borderColor: Colors.gold,
   },
-  presetText: { fontSize: 14, fontWeight: "700", color: Colors.textDim },
-  presetTextActive: { color: Colors.bg, fontWeight: "800" },
+  presetText: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.textSecondary },
+  presetTextActive: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
   customRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: Colors.surface2,
-    borderRadius: 12,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -347,21 +348,21 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     padding: 0,
   },
   currencyLabel: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
   },
   messageInput: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 12,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     padding: 14,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     minHeight: 60,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
@@ -369,8 +370,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.crimson,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.error,
     marginBottom: 10,
   },
   sendBtn: {
@@ -379,15 +380,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     backgroundColor: Colors.gold,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingVertical: 15,
     marginBottom: 10,
   },
   sendBtnDisabled: { opacity: 0.6 },
-  sendBtnText: { fontSize: 15, fontWeight: "800", color: Colors.bg },
+  sendBtnText: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.background },
   disclaimer: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
   },
 });

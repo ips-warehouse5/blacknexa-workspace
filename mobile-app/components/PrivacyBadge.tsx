@@ -3,14 +3,15 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/colors";
 import type { PrivacyLevel } from "@/mocks/incidents";
+import { fontFamily } from "@/constants/theme";
 
 type Props = { level: PrivacyLevel; compact?: boolean };
 
 export default function PrivacyBadge({ level, compact }: Props) {
   const config = {
     private: { label: "Private", color: Colors.violet, Icon: Lock },
-    trusted: { label: "Trusted", color: Colors.sky, Icon: Users },
-    public: { label: "Public", color: Colors.emerald, Icon: Eye },
+    trusted: { label: "Trusted", color: Colors.info, Icon: Users },
+    public: { label: "Public", color: Colors.success, Icon: Eye },
   }[level];
 
   const { Icon, color, label } = config;
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
   compact: { paddingHorizontal: 7, paddingVertical: 2.5 },
   label: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     letterSpacing: 0.3,
   },
 });

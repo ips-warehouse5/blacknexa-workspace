@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import Colors from "@/constants/colors";
 import { type Disclaimer, type DisclaimerType } from "@/constants/disclaimers";
+import { fontFamily } from "@/constants/theme";
 
 type Props = {
   visible: boolean;
@@ -57,7 +58,7 @@ export default function DisclaimerModal({
             </Text>
           </View>
           <Pressable onPress={onDismiss} hitSlop={10} testID="disclaimer-dismiss">
-            <X size={22} color={Colors.textDim} />
+            <X size={22} color={Colors.textSecondary} />
           </Pressable>
         </View>
 
@@ -74,7 +75,7 @@ export default function DisclaimerModal({
                   testID={`ack-${disclaimer.id}`}
                 >
                   <View style={[styles.checkBox, isAck && styles.checkBoxOn]}>
-                    {isAck && <Check size={14} color={Colors.bg} strokeWidth={3} />}
+                    {isAck && <Check size={14} color={Colors.background} strokeWidth={3} />}
                   </View>
                   <Text style={[styles.ackText, isAck && styles.ackTextOn]}>
                     I have read and acknowledge this
@@ -110,7 +111,7 @@ export default function DisclaimerModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -133,13 +134,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
   },
   scroll: {
     flex: 1,
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
   },
   disclaimerCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
   },
   disclaimerTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     marginBottom: 10,
   },
@@ -185,17 +186,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkBoxOn: {
-    backgroundColor: Colors.emerald,
-    borderColor: Colors.emerald,
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
   },
   ackText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: Colors.textDim,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.textSecondary,
     flex: 1,
   },
   ackTextOn: {
-    color: Colors.emerald,
+    color: Colors.success,
   },
   footer: {
     paddingHorizontal: 18,
@@ -206,12 +207,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
   },
   confirmBtn: {
     backgroundColor: Colors.gold,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
   },
@@ -220,11 +221,11 @@ const styles = StyleSheet.create({
   },
   confirmText: {
     fontSize: 15,
-    fontWeight: "800",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.3,
   },
   confirmTextDisabled: {
-    color: Colors.textMute,
+    color: Colors.textMuted,
   },
 });

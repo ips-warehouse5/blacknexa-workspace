@@ -20,6 +20,7 @@ import IncidentCard from "@/components/IncidentCard";
 import BrandMark from "@/components/BrandMark";
 import { CATEGORY_LABELS, type IncidentCategory } from "@/mocks/incidents";
 import { useIncidents } from "@/providers/IncidentsProvider";
+import { fontFamily } from "@/constants/theme";
 
 type FilterKey = "all" | IncidentCategory;
 
@@ -70,13 +71,13 @@ export default function FeedScreen(): React.ReactElement {
   return (
     <View style={styles.root}>
       <LinearGradient
-        colors={[Colors.surface, Colors.bg]}
+        colors={[Colors.surface, Colors.background]}
         style={[styles.headerBg, { paddingTop: insets.top }]}
       >
         <View style={styles.headerTop}>
           <View style={styles.brandRow}>
             <View style={styles.brandMark}>
-              <Shield size={16} color={Colors.bg} fill={Colors.gold} />
+              <Shield size={16} color={Colors.background} fill={Colors.gold} />
             </View>
             <View>
               <View style={styles.brandLine}>
@@ -106,12 +107,12 @@ export default function FeedScreen(): React.ReactElement {
         </View>
 
         <View style={styles.searchWrap}>
-          <Search size={16} color={Colors.textMute} />
+          <Search size={16} color={Colors.textMuted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search incidents, areas, categories"
-            placeholderTextColor={Colors.textMute}
+            placeholderTextColor={Colors.textMuted}
             style={styles.searchInput}
             testID="search-input"
           />
@@ -200,7 +201,7 @@ export default function FeedScreen(): React.ReactElement {
           end={{ x: 1, y: 1 }}
           style={styles.fabInner}
         >
-          <Plus size={22} color={Colors.bg} strokeWidth={3} />
+          <Plus size={22} color={Colors.background} strokeWidth={3} />
           <Text style={styles.fabText}>Report</Text>
         </LinearGradient>
       </Pressable>
@@ -209,7 +210,7 @@ export default function FeedScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg },
+  root: { flex: 1, backgroundColor: Colors.background },
   headerBg: {
     paddingHorizontal: 18,
     paddingBottom: 14,
@@ -237,21 +238,21 @@ const styles = StyleSheet.create({
   brandLine: { flexDirection: "row", alignItems: "flex-start", gap: 3 },
   brand: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.3,
   },
   tm: {
     fontSize: 9,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
     marginTop: 2,
   },
   brandSub: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.5,
     marginTop: 1,
   },
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
@@ -274,14 +275,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: Colors.gold,
     borderWidth: 2,
-    borderColor: Colors.surface2,
+    borderColor: Colors.surfaceSecondary,
   },
   searchWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     paddingHorizontal: 14,
     height: 44,
     borderWidth: StyleSheet.hairlineWidth,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     padding: 0,
   },
   listContent: { paddingHorizontal: 16, paddingTop: 8 },
@@ -310,10 +311,10 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 13,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
-  filterTextActive: { color: Colors.bg, fontWeight: "700" },
+  filterTextActive: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -323,14 +324,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.5,
   },
   sectionCount: {
     fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   empty: {
     paddingVertical: 60,
@@ -338,13 +339,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     marginBottom: 4,
   },
   emptyText: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     paddingHorizontal: 40,
   },
@@ -367,8 +368,8 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 14,
-    fontWeight: "800",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.3,
   },
 });

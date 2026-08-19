@@ -4,13 +4,14 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/colors";
 import BrandMark from "@/components/BrandMark";
 import { PRIVACY } from "@/constants/legal";
+import { fontFamily } from "@/constants/theme";
 
 export default function PrivacyScreen(): React.ReactElement {
   return (
     <>
       <Stack.Screen options={{ title: "Privacy Policy" }} />
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
+        style={{ flex: 1, backgroundColor: Colors.background }}
         contentContainerStyle={styles.content}
         testID="privacy-screen"
       >
@@ -39,37 +40,37 @@ const styles = StyleSheet.create({
   brand: { marginBottom: 14 },
   title: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.4,
     marginBottom: 4,
   },
   updated: {
     fontSize: 12,
-    color: Colors.textMute,
-    fontWeight: "600",
+    color: Colors.textMuted,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     marginBottom: 18,
   },
   section: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
     marginBottom: 10,
   },
-  heading: { fontSize: 14, fontWeight: "800", color: Colors.gold, marginBottom: 6 },
-  body: { fontSize: 13.5, color: Colors.textDim, lineHeight: 20 },
+  heading: { fontSize: 14, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.gold, marginBottom: 6 },
+  body: { fontSize: 13.5, color: Colors.textSecondary, lineHeight: 20 },
   footer: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     marginTop: 18,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   tm: {
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
     marginTop: 8,
     paddingHorizontal: 16,

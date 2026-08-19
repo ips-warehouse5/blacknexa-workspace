@@ -35,6 +35,7 @@ import {
 import { useNews, type GenerateNewsResult } from "@/providers/NewsProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { fontFamily, fontFamilySpectral } from "@/constants/theme";
 
 type FilterKey = "all" | NewsCategory;
 
@@ -238,7 +239,7 @@ function LocalNewsBlock({
           pressed && { opacity: 0.85 },
         ]}
       >
-        <Navigation size={13} color={nearbyEnabled ? Colors.bg : Colors.gold} />
+        <Navigation size={13} color={nearbyEnabled ? Colors.background : Colors.gold} />
         <Text style={[styles.nearbyToggleText, nearbyEnabled && styles.nearbyToggleTextActive]}>
           {nearbyLabel}
         </Text>
@@ -440,13 +441,13 @@ export default function NewsScreen(): React.ReactElement {
   return (
     <View style={styles.root}>
       <LinearGradient
-        colors={[Colors.surface, Colors.bg]}
+        colors={[Colors.surface, Colors.background]}
         style={[styles.headerBg, { paddingTop: insets.top }]}
       >
         <View style={styles.headerTop}>
           <View style={styles.brandRow}>
             <View style={styles.brandMark}>
-              <BookOpen size={16} color={Colors.bg} />
+              <BookOpen size={16} color={Colors.background} />
             </View>
             <View>
               <View style={styles.brandLine}>
@@ -466,12 +467,12 @@ export default function NewsScreen(): React.ReactElement {
         </View>
 
         <View style={styles.searchWrap}>
-          <Search size={16} color={Colors.textMute} />
+          <Search size={16} color={Colors.textMuted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search verified briefings"
-            placeholderTextColor={Colors.textMute}
+            placeholderTextColor={Colors.textMuted}
             style={styles.searchInput}
             testID="news-search"
             returnKeyType="search"
@@ -499,7 +500,7 @@ export default function NewsScreen(): React.ReactElement {
           <Text style={styles.locationChipText} numberOfLines={1}>
             {location?.label ?? "Set location"}
           </Text>
-          <RefreshCw size={11} color={Colors.textDim} />
+          <RefreshCw size={11} color={Colors.textSecondary} />
         </Pressable>
       </LinearGradient>
 
@@ -670,7 +671,7 @@ export default function NewsScreen(): React.ReactElement {
             end={{ x: 1, y: 1 }}
             style={styles.fabInner}
           >
-            <Plus size={22} color={Colors.bg} strokeWidth={3} />
+            <Plus size={22} color={Colors.background} strokeWidth={3} />
             <Text style={styles.fabText}>Generate</Text>
           </LinearGradient>
         </Pressable>
@@ -694,7 +695,7 @@ export default function NewsScreen(): React.ReactElement {
                 <Text style={styles.modalTitle}>BlackNexa News AI Engine</Text>
               </View>
               <Pressable style={styles.modalClose} onPress={() => setGenOpen(false)}>
-                <X size={18} color={Colors.textDim} />
+                <X size={18} color={Colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -703,7 +704,7 @@ export default function NewsScreen(): React.ReactElement {
               value={topic}
               onChangeText={setTopic}
               placeholder="e.g. Recent federal grants for Black-owned clean tech firms"
-              placeholderTextColor={Colors.textMute}
+              placeholderTextColor={Colors.textMuted}
               multiline
               style={styles.topicInput}
               testID="news-gen-topic"
@@ -776,7 +777,7 @@ export default function NewsScreen(): React.ReactElement {
                     setSourceValidationError(null);
                   }}
                   placeholder={`https://example.com/source-${idx + 1}`}
-                  placeholderTextColor={Colors.textMute}
+                  placeholderTextColor={Colors.textMuted}
                   style={styles.sourceInput}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -792,7 +793,7 @@ export default function NewsScreen(): React.ReactElement {
                     }}
                     style={styles.sourceRemoveBtn}
                   >
-                    <X size={14} color={Colors.textMute} />
+                    <X size={14} color={Colors.textMuted} />
                   </Pressable>
                 ) : null}
               </View>
@@ -847,12 +848,12 @@ export default function NewsScreen(): React.ReactElement {
             >
               {isGenerating ? (
                 <>
-                  <Loader2 size={18} color={Colors.bg} />
+                  <Loader2 size={18} color={Colors.background} />
                   <Text style={styles.genButtonText}>Generating…</Text>
                 </>
               ) : (
                 <>
-                  <Sparkles size={18} color={Colors.bg} />
+                  <Sparkles size={18} color={Colors.background} />
                   <Text style={styles.genButtonText}>Generate Briefing</Text>
                 </>
               )}
@@ -867,7 +868,7 @@ export default function NewsScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg },
+  root: { flex: 1, backgroundColor: Colors.background },
   headerBg: {
     paddingHorizontal: 18,
     paddingBottom: 14,
@@ -893,15 +894,15 @@ const styles = StyleSheet.create({
   brandLine: { flexDirection: "row", alignItems: "flex-start", gap: 3 },
   brand: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.3,
   },
-  tm: { fontSize: 9, fontWeight: "800", color: Colors.gold, marginTop: 2 },
+  tm: { fontSize: 9, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.gold, marginTop: 2 },
   brandSub: {
     fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
+    color: Colors.textSecondary,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     letterSpacing: 0.5,
     marginTop: 1,
   },
@@ -909,7 +910,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
@@ -919,8 +920,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     paddingHorizontal: 14,
     height: 44,
     borderWidth: StyleSheet.hairlineWidth,
@@ -930,7 +931,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     padding: 0,
   },
   locationChip: {
@@ -941,14 +942,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.gold + "33",
   },
   locationChipText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     color: Colors.gold,
     maxWidth: 220,
   },
@@ -956,7 +957,7 @@ const styles = StyleSheet.create({
   briefingsBlock: { marginBottom: 8, marginTop: 4 },
   briefingsTitle: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.6,
     textTransform: "uppercase",
@@ -975,8 +976,8 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   localPromptBlock: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 18,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     marginTop: 4,
@@ -1001,14 +1002,14 @@ const styles = StyleSheet.create({
   },
   localPromptTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.2,
     marginBottom: 3,
   },
   localPromptSubtitle: {
     fontSize: 12,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     lineHeight: 17,
   },
   localPromptBtn: {
@@ -1022,8 +1023,8 @@ const styles = StyleSheet.create({
   },
   localPromptBtnText: {
     fontSize: 13,
-    fontWeight: "800",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.3,
   },
   locationOptionsRow: {
@@ -1040,14 +1041,14 @@ const styles = StyleSheet.create({
   },
   locationOptionText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
     color: Colors.gold,
   },
   briefingsRow: { gap: 12, paddingRight: 12 },
   briefingCard: {
     width: 230,
-    backgroundColor: Colors.surface2,
-    borderRadius: 18,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 12,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
@@ -1074,7 +1075,7 @@ const styles = StyleSheet.create({
   },
   nearbyTagText: {
     fontSize: 8,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.6,
   },
@@ -1083,7 +1084,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 12,
     paddingVertical: 10,
     marginTop: 10,
@@ -1096,16 +1097,16 @@ const styles = StyleSheet.create({
   },
   nearbyToggleText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.3,
   },
   nearbyToggleTextActive: {
-    color: Colors.bg,
+    color: Colors.background,
   },
   briefingCategory: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
     textTransform: "uppercase",
@@ -1113,15 +1114,15 @@ const styles = StyleSheet.create({
   },
   briefingHeadline: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamilySpectral.bold,
     color: Colors.text,
     lineHeight: 19,
     marginBottom: 10,
   },
   briefingTime: {
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "600",
+    color: Colors.textMuted,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
   filterRow: { gap: 8, paddingVertical: 12, paddingRight: 12 },
   filterChip: {
@@ -1133,20 +1134,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   filterChipActive: { backgroundColor: Colors.gold, borderColor: Colors.gold },
-  filterText: { fontSize: 13, color: Colors.textDim, fontWeight: "600" },
-  filterTextActive: { color: Colors.bg, fontWeight: "700" },
+  filterText: { fontSize: 13, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
+  filterTextActive: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
   scopeRow: { gap: 8, paddingRight: 12, marginBottom: 6 },
   scopeChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderWidth: 1,
     borderColor: Colors.border,
   },
   scopeChipActive: { backgroundColor: Colors.surface3, borderColor: Colors.gold + "66" },
-  scopeText: { fontSize: 12, color: Colors.textDim, fontWeight: "600" },
-  scopeTextActive: { color: Colors.gold, fontWeight: "700" },
+  scopeText: { fontSize: 12, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
+  scopeTextActive: { color: Colors.gold, fontWeight: "700", fontFamily: fontFamily.bold },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -1156,16 +1157,16 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamilySpectral.bold,
     color: Colors.text,
     letterSpacing: -0.5,
   },
-  sectionCount: { fontSize: 12, color: Colors.textDim, fontWeight: "600" },
+  sectionCount: { fontSize: 12, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
   empty: { paddingVertical: 60, alignItems: "center", gap: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
+  emptyTitle: { fontSize: 16, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   emptyText: {
     fontSize: 13,
-    color: Colors.textDim,
+    color: Colors.textSecondary,
     textAlign: "center",
     paddingHorizontal: 40,
   },
@@ -1193,7 +1194,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: Colors.gold + "44",
-    shadowColor: Colors.bg,
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -1209,16 +1210,16 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 14,
-    fontWeight: "800",
-    color: Colors.bg,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.background,
     letterSpacing: 0.3,
   },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)" },
   modalSheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 10,
   },
@@ -1237,31 +1238,31 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  modalTitle: { fontSize: 18, fontWeight: "800", color: Colors.text },
+  modalTitle: { fontSize: 18, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
   modalClose: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   fieldLabel: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textDim,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textSecondary,
     letterSpacing: 0.4,
     textTransform: "uppercase",
     marginBottom: 8,
     marginTop: 6,
   },
   topicInput: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 10,
     padding: 14,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     minHeight: 80,
     textAlignVertical: "top",
     borderWidth: StyleSheet.hairlineWidth,
@@ -1279,8 +1280,8 @@ const styles = StyleSheet.create({
   voiceHint: {
     flex: 1,
     fontSize: 11,
-    color: Colors.textMute,
-    fontWeight: "500",
+    color: Colors.textMuted,
+    fontWeight: "500", fontFamily: fontFamily.medium,
     textAlign: "right",
   },
   chipRow: { gap: 8, paddingRight: 12, paddingVertical: 2, marginBottom: 6 },
@@ -1288,23 +1289,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderWidth: 1,
     borderColor: Colors.border,
   },
   chipActive: { backgroundColor: Colors.gold, borderColor: Colors.gold },
-  chipText: { fontSize: 12, color: Colors.textDim, fontWeight: "600" },
-  chipTextActive: { color: Colors.bg, fontWeight: "700" },
+  chipText: { fontSize: 12, color: Colors.textSecondary, fontWeight: "600", fontFamily: fontFamily.semiBold },
+  chipTextActive: { color: Colors.background, fontWeight: "700", fontFamily: fontFamily.bold },
   disclaimer: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 16,
     marginTop: 8,
     marginBottom: 14,
   },
   sourceHint: {
     fontSize: 11,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     lineHeight: 15,
     marginBottom: 10,
   },
@@ -1324,18 +1325,18 @@ const styles = StyleSheet.create({
   },
   sourceInputBadgeText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   sourceInput: {
     flex: 1,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
     color: Colors.text,
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
@@ -1343,7 +1344,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1356,12 +1357,12 @@ const styles = StyleSheet.create({
   },
   sourceAddBtnText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
   },
   errorText: {
     fontSize: 12,
-    color: Colors.crimson,
+    color: Colors.error,
     marginBottom: 10,
   },
   genButton: {
@@ -1370,27 +1371,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     backgroundColor: Colors.gold,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingVertical: 15,
   },
   genButtonDisabled: { opacity: 0.5 },
-  genButtonText: { fontSize: 15, fontWeight: "800", color: Colors.bg },
+  genButtonText: { fontSize: 15, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.background },
   progressBlock: {
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.gold + "44",
   },
   progressRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 },
-  progressLabel: { fontSize: 13, fontWeight: "700", color: Colors.text },
-  progressDetail: { fontSize: 11, color: Colors.textDim, marginLeft: 26 },
+  progressLabel: { fontSize: 13, fontWeight: "700", fontFamily: fontFamily.bold, color: Colors.text },
+  progressDetail: { fontSize: 11, color: Colors.textSecondary, marginLeft: 26 },
   progressSlow: {
     fontSize: 11,
     color: Colors.gold,
     marginTop: 8,
     marginLeft: 26,
-    fontWeight: "600",
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
   },
 });

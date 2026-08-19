@@ -12,6 +12,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { fontFamily } from "@/constants/theme";
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
 
@@ -222,7 +223,7 @@ export default function TippingDashboard(): React.ReactElement | null {
           hitSlop={8}
           accessibilityLabel="Refresh balance"
         >
-          <RefreshCw size={15} color={Colors.textDim} />
+          <RefreshCw size={15} color={Colors.textSecondary} />
         </Pressable>
       </View>
 
@@ -256,7 +257,7 @@ export default function TippingDashboard(): React.ReactElement | null {
 
           <View style={styles.balanceBreakdown}>
             <BalanceStat
-              icon={<TrendingUp size={14} color={Colors.emerald} />}
+              icon={<TrendingUp size={14} color={Colors.success} />}
               label="Pending"
               value={formatUsd(balance.pendingUsd)}
             />
@@ -268,7 +269,7 @@ export default function TippingDashboard(): React.ReactElement | null {
             />
             <View style={styles.hsep} />
             <BalanceStat
-              icon={<Wallet size={14} color={Colors.sky} />}
+              icon={<Wallet size={14} color={Colors.info} />}
               label="Total Tips"
               value={balance.totalTips.toString()}
             />
@@ -290,7 +291,7 @@ export default function TippingDashboard(): React.ReactElement | null {
               <ActivityIndicator size="small" color={Colors.surface} />
             ) : (
               <>
-                <ArrowDownToLine size={16} color={canWithdraw ? Colors.surface : Colors.textMute} />
+                <ArrowDownToLine size={16} color={canWithdraw ? Colors.surface : Colors.textMuted} />
                 <Text
                   style={[
                     styles.withdrawBtnText,
@@ -357,7 +358,7 @@ function BalanceStat({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.surface,
-    borderRadius: 18,
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
     overflow: "hidden",
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: 0.5,
     textTransform: "uppercase",
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -400,8 +401,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: Colors.textDim,
-    fontWeight: "500",
+    color: Colors.textSecondary,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   errorRow: {
     paddingHorizontal: 16,
@@ -409,29 +410,29 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 13,
-    color: Colors.crimson,
-    fontWeight: "500",
+    color: Colors.error,
+    fontWeight: "500", fontFamily: fontFamily.medium,
   },
   balanceHero: {
     alignItems: "center",
     paddingVertical: 18,
     paddingHorizontal: 16,
-    backgroundColor: Colors.surface2,
+    backgroundColor: Colors.surfaceSecondary,
     marginHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     marginBottom: 12,
   },
   balanceLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 6,
   },
   balanceAmount: {
     fontSize: 34,
-    fontWeight: "900",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: -1,
     marginBottom: 8,
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
   },
   currencyText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.gold,
     letterSpacing: 0.5,
   },
@@ -468,14 +469,14 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 10,
-    fontWeight: "700",
-    color: Colors.textMute,
+    fontWeight: "700", fontFamily: fontFamily.bold,
+    color: Colors.textMuted,
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   statValue: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.text,
     letterSpacing: -0.3,
   },
@@ -492,7 +493,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: Colors.gold,
   },
   withdrawBtnDisabled: {
@@ -504,12 +505,12 @@ const styles = StyleSheet.create({
   },
   withdrawBtnText: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", fontFamily: fontFamily.bold,
     color: Colors.surface,
     letterSpacing: 0.3,
   },
   withdrawBtnTextDisabled: {
-    color: Colors.textMute,
+    color: Colors.textMuted,
   },
   payoutMsgRow: {
     flexDirection: "row",
@@ -534,22 +535,22 @@ const styles = StyleSheet.create({
   payoutMsgTextSuccess: {
     flex: 1,
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.emerald,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.success,
     lineHeight: 17,
   },
   payoutMsgTextError: {
     flex: 1,
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.crimson,
+    fontWeight: "600", fontFamily: fontFamily.semiBold,
+    color: Colors.error,
     lineHeight: 17,
   },
   footerNote: {
     fontSize: 10,
-    color: Colors.textMute,
+    color: Colors.textMuted,
     textAlign: "center",
-    fontWeight: "500",
+    fontWeight: "500", fontFamily: fontFamily.medium,
     paddingBottom: 14,
     paddingHorizontal: 16,
     letterSpacing: 0.3,
