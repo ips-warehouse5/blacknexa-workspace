@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "blacknexa",
+    "scheme": [
+      "blacknexa",
+      "rork-499r3rz679a2j9vr4ap98"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -19,7 +22,9 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "BlackNexa uses the microphone so you can dictate a news topic or record an audio briefing.",
         "NSLocationWhenInUseUsageDescription": "BlackNexa uses your location to surface local news and briefings relevant to your community.",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -47,7 +52,8 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
@@ -57,7 +63,7 @@
         "origin": "https://blacknexa.com/"
       },
       "eas": {
-        "projectId": "d291ffae-366e-4c07-90f1-43cc1c0f5912"
+        "projectId": "e4f7a30d-28d3-4317-95e9-b05ac9a3f254"
       }
     },
     "owner": "newsmovesmarketsforex-llc"

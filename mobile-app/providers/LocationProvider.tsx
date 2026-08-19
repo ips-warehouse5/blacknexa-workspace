@@ -26,8 +26,9 @@ export type UserLocation = {
   capturedAt: string;
 };
 
+import { apiClient, FUNCTIONS_URL } from "@/utils/apiClient";
+
 const LOCATION_KEY = "blacknexa.location.v1";
-const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL;
 
 type LocationStatus =
   | "idle"
@@ -123,34 +124,33 @@ async function captureLocation(): Promise<UserLocation | null> {
 }
 
 /**
- * Fetch the location-aware local feed from the Worker. The Worker ranks
- * existing articles by relevance to the reader's geography and triggers a
- * background local briefing when coverage is thin.
+ * Fetch the location-aware local feed from the Worker.
  */
 async function fetchLocalFeed(
-  loc: UserLocation,
+  loc: UserLocation | null,
   nearby: boolean,
   signal?: AbortSignal
 ): Promise<NewsArticle[]> {
-  if (!FUNCTIONS_URL) return [];
-  const params = new URLSearchParams({
-    lat: String(loc.lat),
-    lng: String(loc.lng),
-    city: loc.city,
-    region: loc.region,
-    country: loc.country,
-    countryCode: loc.countryCode,
-    limit: "8",
-    nearby: nearby ? "true" : "false",
-  });
-  const url = `${FUNCTIONS_URL}/api/v1/news/local?${params.toString()}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Local feed failed (${res.status}).`);
-  const json = (await res.json()) as LocalFeedResponse;
-  if (!json.success || !Array.isArray(json.data)) {
-    throw new Error(json.error ?? "Malformed local feed response.");
+  if (!loc || !FUNCTIONS_URL) return [];
+  try {
+    const json = await apiClient<LocalFeedResponse>("/api/v1/news/local", {
+      params: {
+        city: loc.city,
+        region: loc.region,
+        country: loc.country,
+        countryCode: loc.countryCode,
+        limit: 8,
+        nearby: nearby ? "true" : "false",
+      },
+      signal,
+    });
+    if (!json.success || !Array.isArray(json.data)) {
+      throw new Error(json.error ?? "Malformed local feed response.");
+    }
+    return json.data;
+  } catch {
+    return [];
   }
-  return json.data;
 }
 
 export const [LocationProvider, useLocation] = createContextHook(() => {

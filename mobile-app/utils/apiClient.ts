@@ -1,178 +1,160 @@
-/**
- * Central API Client for making HTTP requests with structured console logging.
- *
- * Logged details:
- *  - Endpoint URL
- *  - HTTP Request Method (GET, POST, etc.)
- *  - Request Parameters / Body
- *  - Response Status Code
- *  - Response JSON Payload
- */
+import * as SecureStore from "expo-secure-store";
 
-export type ApiClientOptions = RequestInit & {
-  params?: Record<string, any>;
-};
+export const FUNCTIONS_URL =
+  process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL?.replace(/\/$/, "") ??
+  "https://blacknexa-backend.rork.app";
 
-// Auto-install a global fetch & XMLHttpRequest interceptor to capture and log ANY fetch request in the app
-// AND ensure XMLHttpRequest is hooked so React Native DevTools Network tab receives the events
-if (typeof global !== "undefined" && !(global as any).__BLACKNEXA_FETCH_INTERCEPTOR_INSTALLED__) {
-  (global as any).__BLACKNEXA_FETCH_INTERCEPTOR_INSTALLED__ = true;
+export const AUTH_URL =
+  process.env.EXPO_PUBLIC_RORK_AUTH_URL?.replace(/\/$/, "") ??
+  "https://auth.rork.com";
 
-  // React Native DevTools Network Tab / Flipper bridge compatibility
-  if ((global as any).XMLHttpRequest && (global as any).XMLHttpRequest.prototype) {
-    const originalOpen = (global as any).XMLHttpRequest.prototype.open;
-    const originalSend = (global as any).XMLHttpRequest.prototype.send;
+export const TOOLKIT_URL =
+  process.env.EXPO_PUBLIC_TOOLKIT_URL?.replace(/\/$/, "") ??
+  "https://toolkit.rork.com";
 
-    (global as any).XMLHttpRequest.prototype.open = function (
-      method: string,
-      url: string,
-      ...rest: any[]
-    ) {
-      this._url = url;
-      this._method = method;
-      return originalOpen.apply(this, [method, url, ...rest]);
-    };
+const SECURE_AUTH_KEY = "blacknexa.auth.tokens.v1";
 
-    (global as any).XMLHttpRequest.prototype.send = function (body?: any) {
-      if (this._url) {
-        // Let React Native's NativeModules networking inspector track XHR
-      }
-      return originalSend.apply(this, [body]);
-    };
+export class ApiError extends Error {
+  status: number;
+  data: any;
+
+  constructor(message: string, status: number, data?: any) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
   }
-
-  const originalFetch = global.fetch;
-  global.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
-    const method = init?.method || "GET";
-
-    let reqBody: any = null;
-    if (init?.body) {
-      try {
-        reqBody = typeof init.body === "string" ? JSON.parse(init.body) : init.body;
-      } catch {
-        reqBody = init.body;
-      }
-    }
-
-    // Dynamically extract short endpoint path and friendly API Name
-    let endpointPath = url;
-    let apiName = "API Request";
-    try {
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        const parsedUrl = new URL(url);
-        endpointPath = parsedUrl.pathname + (parsedUrl.search || "");
-        const path = parsedUrl.pathname;
-
-        if (path.includes("/news/feed")) apiName = "News Feed";
-        else if (path.includes("/news/briefings")) apiName = "News Briefings";
-        else if (path.includes("/news/local")) apiName = "Local News Feed";
-        else if (path.includes("/news/generate")) apiName = "AI News Generation";
-        else if (path.includes("/news/translate")) apiName = "Article Translation";
-        else if (path.includes("/news/audio")) apiName = "Article Audio Briefing";
-        else if (path.includes("/blacknexa/weather")) apiName = "Weather Intelligence";
-        else if (path.includes("/blacknexa/live-chat")) apiName = "Community Live Chat";
-        else if (path.includes("/blacknexa/artists/tip")) apiName = "Artist Micro-Tipping";
-        else if (path.includes("/blacknexa/hardware/beacon-trigger")) apiName = "Safety Panic Beacon";
-        else if (path.includes("/blacknexa/publish-verified-story")) apiName = "Publish Verified Story";
-        else if (path.includes("/geo-legal/lookup")) apiName = "Geo-Legal Lookup";
-        else if (path.includes("/geo-legal/validate")) apiName = "Geo-Legal Validation";
-        else if (path.includes("/geo-legal/dispatch")) apiName = "Geo-Legal Dispatch";
-        else if (path.includes("/platform/tipping/creator/register")) apiName = "Register Creator Ledger";
-        else if (path.includes("/platform/tipping/creator") && path.includes("/balance")) apiName = "Creator Balance";
-        else if (path.includes("/platform/tipping/payout/request")) apiName = "Creator Payout Request";
-        else if (path.includes("/oauth/initiate")) apiName = "OAuth Initiate";
-        else if (path.includes("/oauth/token")) apiName = "OAuth Token Exchange";
-        else if (path.includes("/oauth/refresh")) apiName = "OAuth Token Refresh";
-        else if (path.includes("/speech-model")) apiName = "AI Speech Model (TTS)";
-        else if (path.includes("/transcription-model")) apiName = "AI Transcription (STT)";
-        else apiName = path.split("/").filter(Boolean).slice(-2).join("/");
-      }
-    } catch {}
-
-    console.groupCollapsed?.(`📡 [${method}] ${apiName} → ${endpointPath}`) ?? console.log(`📡 [${method}] ${apiName} → ${endpointPath}`);
-    console.log("➜ API Name:", apiName);
-    console.log("➜ Endpoint:", endpointPath);
-    console.log("➜ Full URL:", url);
-    console.log("➜ Method:", method);
-    if (reqBody) {
-      console.log("➜ Request Body / Params:", reqBody);
-    }
-    console.groupEnd?.();
-
-    try {
-      const response = await originalFetch(input, init);
-      const cloned = response.clone();
-      
-      cloned.text().then((text) => {
-        let parsed: any = text;
-        try {
-          parsed = JSON.parse(text);
-        } catch {}
-
-        const statusIcon = response.ok ? "📥" : "⚠️";
-        console.groupCollapsed?.(`${statusIcon} [${response.status} ${response.statusText}] ${apiName} → ${endpointPath}`) ?? 
-          console.log(`${statusIcon} [${response.status}] ${apiName}`);
-        console.log("➜ API Name:", apiName);
-        console.log("➜ Endpoint:", endpointPath);
-        console.log("➜ Full URL:", url);
-        console.log("➜ Status:", response.status, response.statusText);
-        console.log("➜ Response JSON Object (Interactive Preview):", parsed);
-        console.groupEnd?.();
-      }).catch(() => {});
-
-      return response;
-    } catch (err: any) {
-      console.groupCollapsed?.(`❌ [FAILED] ${apiName} → ${endpointPath}`) ?? console.error(`❌ [FAILED] ${apiName}`);
-      console.error("➜ API Name:", apiName);
-      console.error("➜ Endpoint:", endpointPath);
-      console.error("➜ Full URL:", url);
-      console.error("➜ Error Details:", err?.message || err);
-      console.groupEnd?.();
-      throw err;
-    }
-  };
 }
 
-export async function apiFetch<T = any>(
-  endpoint: string,
-  options?: ApiClientOptions
-): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> {
-  const method = options?.method || "GET";
-  
-  // Construct URL with query parameters if present
-  let fullUrl = endpoint;
-  if (options?.params) {
-    const urlObj = new URL(endpoint);
-    Object.entries(options.params).forEach(([key, val]) => {
-      if (val !== undefined && val !== null) {
-        urlObj.searchParams.append(key, String(val));
-      }
-    });
-    fullUrl = urlObj.toString();
+export type RequestConfig = RequestInit & {
+  params?: Record<string, string | number | boolean | undefined | null>;
+  timeoutMs?: number;
+  skipAuth?: boolean;
+};
+
+/**
+ * Reads the stored access token from SecureStore if available.
+ */
+async function getAccessToken(): Promise<string | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(SECURE_AUTH_KEY);
+    if (!raw) return null;
+    const tokens = JSON.parse(raw);
+    return tokens.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Builds a URL with query parameters.
+ */
+export function buildUrl(
+  pathOrUrl: string,
+  params?: Record<string, string | number | boolean | undefined | null>,
+  baseUrl: string = FUNCTIONS_URL
+): string {
+  const isAbsolute = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://");
+  const full = isAbsolute ? pathOrUrl : `${baseUrl}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+
+  if (!params) return full;
+
+  const url = new URL(full);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) {
+      url.searchParams.set(k, String(v));
+    }
+  });
+  return url.toString();
+}
+
+/**
+ * Central HTTP client with typed responses, automatic token injection,
+ * configurable timeout, and structured error handling.
+ */
+export async function apiClient<T = any>(
+  pathOrUrl: string,
+  config: RequestConfig = {},
+  baseUrl: string = FUNCTIONS_URL
+): Promise<T> {
+  const { params, timeoutMs = 15000, skipAuth = false, headers: customHeaders, ...init } = config;
+  const url = buildUrl(pathOrUrl, params, baseUrl);
+
+  const headers = new Headers(customHeaders);
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  if (init.body && typeof init.body === "string" && !headers.has("Content-Type")) {
+    try {
+      JSON.parse(init.body);
+      headers.set("Content-Type", "application/json");
+    } catch {
+      // not JSON string
+    }
+  }
+
+  if (!skipAuth && !headers.has("Authorization")) {
+    const token = await getAccessToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (init.signal) {
+    init.signal.addEventListener("abort", () => controller.abort());
   }
 
   try {
-    const res = await fetch(fullUrl, options);
-    let resJson: any = null;
+    const res = await fetch(url, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
 
-    try {
-      resJson = await res.json();
-    } catch {
-      resJson = await res.text();
+    clearTimeout(timeoutId);
+
+    const contentType = res.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
+    const data = isJson ? await res.json() : await res.text();
+
+    if (!res.ok) {
+      const errorMessage =
+        (typeof data === "object" && data !== null && (data.error || data.message)) ||
+        `HTTP Error ${res.status}: ${res.statusText}`;
+      throw new ApiError(errorMessage, res.status, data);
     }
 
-    return {
-      ok: res.ok,
-      status: res.status,
-      data: resJson as T,
-    };
-  } catch (error: any) {
-    return {
-      ok: false,
-      status: 0,
-      data: null,
-      error: error?.message || "Network request failed",
-    };
+    return data as T;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new ApiError(`Request timeout after ${timeoutMs}ms`, 408);
+    }
+    if (err instanceof ApiError) {
+      throw err;
+    }
+    throw new ApiError(err?.message || "Network request failed", 0);
   }
 }
+
+/** Legacy helper alias for backwards compatibility */
+export const apiFetch = async <T = any>(
+  endpoint: string,
+  options?: RequestConfig
+): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> => {
+  try {
+    const data = await apiClient<T>(endpoint, options);
+    return { ok: true, status: 200, data };
+  } catch (e: any) {
+    return {
+      ok: false,
+      status: e?.status || 0,
+      data: null,
+      error: e?.message || "Network error",
+    };
+  }
+};

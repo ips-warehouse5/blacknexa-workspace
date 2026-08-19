@@ -2,11 +2,12 @@ import { Mic, Loader2, X } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Audio } from "expo-av";
+import { useAudioRecorder } from "expo-audio";
 import Colors from "@/constants/colors";
 import {
-  startVoiceRecording,
-  stopVoiceRecordingAndTranscribe,
+  SPEECH_RECORDING_OPTIONS,
+  prepareForVoiceRecording,
+  transcribeRecordingUri,
 } from "@/utils/audio";
 
 export type VoiceInputButtonProps = {
@@ -23,8 +24,11 @@ export default function VoiceInputButton({
 }: VoiceInputButtonProps): React.ReactElement {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
-  const recordingRef = useRef<Audio.Recording | null>(null);
   const webRecognitionRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
+  // expo-audio owns the recorder's lifecycle through this hook, so it is created
+  // unconditionally even on web (where the browser SpeechRecognition path is used
+  // instead and the recorder simply stays idle).
+  const recorder = useAudioRecorder(SPEECH_RECORDING_OPTIONS);
 
   const start = useCallback(async () => {
     // Web platform: use the browser's built-in SpeechRecognition API.
@@ -94,8 +98,9 @@ export default function VoiceInputButton({
 
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      const recording = await startVoiceRecording();
-      recordingRef.current = recording;
+      await prepareForVoiceRecording();
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setIsRecording(true);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Voice input failed";
@@ -112,9 +117,8 @@ export default function VoiceInputButton({
         Alert.alert("Microphone", message);
       }
       setIsRecording(false);
-      recordingRef.current = null;
     }
-  }, []);
+  }, [recorder, onTranscript]);
 
   const stop = useCallback(async () => {
     // Web: stop the browser SpeechRecognition session.
@@ -132,15 +136,15 @@ export default function VoiceInputButton({
       return;
     }
 
-    const recording = recordingRef.current;
-    if (!recording) return;
+    if (!recorder.isRecording) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setIsRecording(false);
     setIsTranscribing(true);
 
     try {
-      const result = await stopVoiceRecordingAndTranscribe(recording);
+      await recorder.stop();
+      const result = await transcribeRecordingUri(recorder.uri);
       if (result.text) {
         onTranscript(result.text);
       } else {
@@ -151,9 +155,8 @@ export default function VoiceInputButton({
       Alert.alert("Voice input", message);
     } finally {
       setIsTranscribing(false);
-      recordingRef.current = null;
     }
-  }, [onTranscript]);
+  }, [onTranscript, recorder]);
 
   const cancel = useCallback(async () => {
     if (Platform.OS === "web") {
@@ -171,13 +174,14 @@ export default function VoiceInputButton({
       return;
     }
     try {
-      await recordingRef.current?.stopAndUnloadAsync();
+      if (recorder.isRecording) {
+        await recorder.stop();
+      }
     } catch {
       /* ignore */
     }
-    recordingRef.current = null;
     setIsRecording(false);
-  }, []);
+  }, [recorder]);
 
   if (isTranscribing) {
     return (

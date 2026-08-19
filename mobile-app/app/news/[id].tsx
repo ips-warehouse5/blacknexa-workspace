@@ -14,7 +14,7 @@ import {
   Sparkles,
   Volume2,
 } from "lucide-react-native";
-import { Audio } from "expo-av";
+import { type AudioPlayer } from "expo-audio";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
@@ -77,7 +77,10 @@ export default function NewsArticleScreen(): React.ReactElement {
     [feed, id]
   );
 
-  const initialImage = article?.imageUrl || (article ? CATEGORY_FALLBACK_IMAGES[article.category] : "") || CATEGORY_FALLBACK_IMAGES["civil-rights-legal-advocacy"];
+  const initialImage =
+    article?.imageUrl ||
+    (article ? CATEGORY_FALLBACK_IMAGES[article.category] : "") ||
+    CATEGORY_FALLBACK_IMAGES["civil-rights-police-accountability"];
   const [imageUri, setImageUri] = useState<string>(initialImage);
   const [hasFailed, setHasFailed] = useState<boolean>(false);
   const [shareOpen, setShareOpen] = useState<boolean>(false);
@@ -89,7 +92,8 @@ export default function NewsArticleScreen(): React.ReactElement {
   const [audioLoading, setAudioLoading] = useState<boolean>(false);
   const [audioPlaying, setAudioPlaying] = useState<boolean>(false);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
+  const playbackSubRef = useRef<{ remove: () => void } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -112,7 +116,10 @@ export default function NewsArticleScreen(): React.ReactElement {
 
   useEffect(() => {
     if (article) {
-      const resolved = article.imageUrl || CATEGORY_FALLBACK_IMAGES[article.category] || CATEGORY_FALLBACK_IMAGES["civil-rights-legal-advocacy"];
+      const resolved =
+        article.imageUrl ||
+        CATEGORY_FALLBACK_IMAGES[article.category] ||
+        CATEGORY_FALLBACK_IMAGES["civil-rights-police-accountability"];
       setImageUri(resolved);
       setHasFailed(false);
     }
@@ -221,14 +228,35 @@ export default function NewsArticleScreen(): React.ReactElement {
 
   const stopAudio = useCallback(async () => {
     try {
-      await soundRef.current?.stopAsync();
-      await soundRef.current?.unloadAsync();
+      playbackSubRef.current?.remove();
+      soundRef.current?.pause();
+      soundRef.current?.remove();
     } catch {
       /* ignore */
     }
     stopNativeTTS();
+    playbackSubRef.current = null;
     soundRef.current = null;
     setAudioPlaying(false);
+  }, []);
+
+  /**
+   * Wire a freshly-created player into the screen's state: track it for cleanup
+   * and clear the playing flag once playback finishes. Shared by the backend-MP3
+   * and AI-TTS playback paths so both release the player the same way.
+   */
+  const attachPlayer = useCallback((player: AudioPlayer) => {
+    soundRef.current = player;
+    setAudioPlaying(true);
+    playbackSubRef.current = player.addListener("playbackStatusUpdate", (status) => {
+      if (status.didJustFinish) {
+        setAudioPlaying(false);
+        playbackSubRef.current?.remove();
+        playbackSubRef.current = null;
+        player.remove();
+        soundRef.current = null;
+      }
+    });
   }, []);
 
   const playAudioBriefing = useCallback(async () => {
@@ -256,16 +284,7 @@ export default function NewsArticleScreen(): React.ReactElement {
         // Backend has a pre-generated MP3. Try to play it; if the mobile player
         // rejects the format, fall back to native TTS in the same language.
         try {
-          const sound = await playAudioUri(backendAudioUrl);
-          soundRef.current = sound;
-          setAudioPlaying(true);
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status && "didJustFinish" in status && status.didJustFinish) {
-              setAudioPlaying(false);
-              sound.unloadAsync().catch(() => {});
-              soundRef.current = null;
-            }
-          });
+          attachPlayer(await playAudioUri(backendAudioUrl));
           return;
         } catch (playerErr) {
           const msg = playerErr instanceof Error ? playerErr.message : String(playerErr);
@@ -288,20 +307,11 @@ export default function NewsArticleScreen(): React.ReactElement {
       }
 
       const tts = await synthesizeSpeech(script);
-      const sound = await playAudioUri(tts.uri);
-      soundRef.current = sound;
-      setAudioPlaying(true);
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status && "didJustFinish" in status && status.didJustFinish) {
-          setAudioPlaying(false);
-          sound.unloadAsync().catch(() => {});
-          soundRef.current = null;
-        }
-      });
+      attachPlayer(await playAudioUri(tts.uri));
     } catch (e) {
       const message = e instanceof Error ? e.message : "Could not play the audio briefing.";
       // Last resort: native TTS. This uses the OS speech synthesizer, not the
-      // network or expo-av file formats, so it works on real devices even when
+      // network or expo-audio file formats, so it works on real devices even when
       // everything else fails.
       if (isNativeTtsAvailable()) {
         try {
@@ -324,7 +334,7 @@ export default function NewsArticleScreen(): React.ReactElement {
     } finally {
       setAudioLoading(false);
     }
-  }, [article, audioPlaying, isTranslated, display, stopAudio, translation, preferredLanguage, article?.content]);
+  }, [article, audioPlaying, isTranslated, display, stopAudio, attachPlayer, translation, preferredLanguage, article?.content]);
 
   useEffect(() => {
     return () => {

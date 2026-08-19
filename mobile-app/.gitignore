@@ -44,3 +44,9 @@ yarn-error.*
 core
 node_modules
 .expo
+
+# local AI project memory — never commit or push
+.ai/
+
+# lockfile
+bun.lock

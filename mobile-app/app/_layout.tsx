@@ -12,7 +12,12 @@ import { NewsProvider } from "@/providers/NewsProvider";
 import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
 import { LEGAL_VERSION } from "@/constants/legal";
 import Colors from "@/constants/colors";
+import { installNetworkLogger } from "@/utils/networkLogger";
 import "@/utils/apiClient";
+
+// Installed before any provider mounts so the very first API calls are captured.
+// No-op outside development.
+installNetworkLogger();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

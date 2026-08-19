@@ -1,4 +1,12 @@
-import { Audio } from "expo-av";
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+  IOSOutputFormat,
+  AudioQuality,
+  type AudioPlayer,
+  type RecordingOptions,
+} from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Speech from "expo-speech";
@@ -23,11 +31,11 @@ export type TranscriptionResult = {
  * Generate natural text-to-speech audio for a short text via the Vercel AI
  * Gateway (Rork Toolkit proxy). Returns a playable data URI.
  *
- * NOTE: Some versions of Expo Go on iOS cannot play data URIs directly through
- * expo-av. The article-detail player prefers the device's native TTS engine on
- * mobile because it is fast, offline-capable, and supports every language the
- * app translates into. This AI endpoint is kept for web and for future
- * high-fidelity voice playback if expo-av support improves.
+ * NOTE: base64 data URIs are not a documented `AudioSource` for expo-audio, and
+ * were unreliable on iOS under expo-av before it. The article-detail player
+ * therefore prefers the device's native TTS engine on mobile because it is fast,
+ * offline-capable, and supports every language the app translates into. This AI
+ * endpoint is kept for web and for future high-fidelity voice playback.
  */
 export async function synthesizeSpeech(text: string): Promise<TTSResult> {
   if (!text.trim()) throw new Error("No text to speak");
@@ -71,51 +79,59 @@ export async function synthesizeSpeech(text: string): Promise<TTSResult> {
 }
 
 /**
- * Start a microphone recording suitable for sending to speech-to-text.
+ * Recording options tuned for speech-to-text rather than music: 16 kHz mono is
+ * what the transcription model wants, and it keeps the upload small. Based on
+ * expo-audio's HIGH_QUALITY preset (m4a/AAC), which is why the captured file is
+ * sent to the Gateway as `audio/mp4`.
+ *
+ * Owned here so the recorder options live next to the transcription call that
+ * depends on their format; `VoiceInputButton` passes this to `useAudioRecorder`.
  */
-export async function startVoiceRecording(): Promise<Audio.Recording> {
+export const SPEECH_RECORDING_OPTIONS: RecordingOptions = {
+  extension: ".m4a",
+  sampleRate: 16000,
+  numberOfChannels: 1,
+  bitRate: 128000,
+  android: {
+    extension: ".m4a",
+    outputFormat: "mpeg4",
+    audioEncoder: "aac",
+  },
+  ios: {
+    extension: ".m4a",
+    outputFormat: IOSOutputFormat.MPEG4AAC,
+    audioQuality: AudioQuality.MEDIUM,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+  web: {
+    mimeType: "audio/webm",
+    bitsPerSecond: 128000,
+  },
+};
+
+/**
+ * Request microphone access and configure the audio session for recording.
+ *
+ * expo-audio owns the recorder through the `useAudioRecorder` hook, so the
+ * recorder itself is created by the calling component. This helper keeps the
+ * permission and audio-mode handling in one place, and normalises the error so
+ * the UI can distinguish a denial from a genuine failure.
+ */
+export async function prepareForVoiceRecording(): Promise<void> {
   try {
-    const { status } = await Audio.requestPermissionsAsync();
-    if (status !== "granted") {
+    const { granted } = await requestRecordingPermissionsAsync();
+    if (!granted) {
       throw new Error("Microphone permission was denied");
     }
 
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
+    await setAudioModeAsync({
+      allowsRecording: true,
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: "duckOthers",
     });
-
-    const recording = new Audio.Recording();
-    await recording.prepareToRecordAsync({
-      android: {
-        extension: ".m4a",
-        outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-        audioEncoder: Audio.AndroidAudioEncoder.AAC,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-      },
-      ios: {
-        extension: ".m4a",
-        outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-        audioQuality: Audio.IOSAudioQuality.MEDIUM,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-        linearPCMBitDepth: 16,
-        linearPCMIsBigEndian: false,
-        linearPCMIsFloat: false,
-      },
-      web: {
-        mimeType: "audio/webm",
-        bitsPerSecond: 128000,
-      },
-    });
-    await recording.startAsync();
-    return recording;
   } catch (err) {
     // Comprehensive catch: rethrow permission errors as-is so the UI can
     // show the right alert; wrap everything else in a clean message.
@@ -128,18 +144,12 @@ export async function startVoiceRecording(): Promise<Audio.Recording> {
 }
 
 /**
- * Stop a recording and transcribe the captured audio using the Vercel AI
- * Gateway (Rork Toolkit proxy).
+ * Transcribe a finished recording using the Vercel AI Gateway (Rork Toolkit
+ * proxy). The caller stops the recorder and passes `recorder.uri`.
  */
-export async function stopVoiceRecordingAndTranscribe(
-  recording: Audio.Recording
+export async function transcribeRecordingUri(
+  uri: string | null
 ): Promise<TranscriptionResult> {
-  try {
-    await recording.stopAndUnloadAsync();
-  } catch (err) {
-    throw new Error(`Failed to stop recording: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  const uri = recording.getURI();
   if (!uri) throw new Error("Recording produced no audio");
 
   try {
@@ -308,20 +318,25 @@ export function stopNativeTTS(): void {
 }
 
 /**
- * Play a generated audio URI using expo-av. Returns the sound object so the
- * caller can stop or pause it. The caller is responsible for catching errors
- * and falling back to native TTS when the URI is unsupported.
+ * Play a generated audio URI using expo-audio. Returns the player so the caller
+ * can pause it and release it with `remove()`. The caller is responsible for
+ * catching errors and falling back to native TTS when the URI is unsupported.
+ *
+ * `createAudioPlayer` is used rather than the `useAudioPlayer` hook because
+ * playback here is started imperatively from an event handler, and the caller
+ * owns the player's lifetime.
  */
-export async function playAudioUri(uri: string): Promise<Audio.Sound> {
+export async function playAudioUri(uri: string): Promise<AudioPlayer> {
   try {
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
+    await setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
     });
 
-    const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-    return sound;
+    const player = createAudioPlayer({ uri });
+    player.play();
+    return player;
   } catch (err) {
     throw new Error(`Audio playback failed: ${err instanceof Error ? err.message : String(err)}`);
   }

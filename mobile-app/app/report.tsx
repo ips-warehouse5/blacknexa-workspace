@@ -117,6 +117,7 @@ export default function ReportScreen(): React.ReactElement {
   const [obtainedConsent, setObtainedConsent] = useState<boolean>(false);
   const [inPublicSpace, setInPublicSpace] = useState<boolean>(true);
   const [complianceResult, setComplianceResult] = useState<ComplianceResult | null>(null);
+  const [showComplianceCheck, setShowComplianceCheck] = useState<boolean>(false);
   const [geoValidation, setGeoValidation] = useState<GeoValidationResult | null>(null);
   const [showComplianceReview, setShowComplianceReview] = useState<boolean>(false);
   const [isValidating, setIsValidating] = useState<boolean>(false);

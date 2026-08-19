@@ -10,15 +10,8 @@ import {
   type NewsScope,
 } from "@/mocks/news";
 import { type ArticleTranslation, type LanguageCode } from "@/constants/i18n";
+import { apiClient, FUNCTIONS_URL } from "@/utils/apiClient";
 
-/**
- * Live feed source: the BlackNexa News & Syndication Cloudflare Worker.
- * `EXPO_PUBLIC_RORK_FUNCTIONS_URL` is injected from expo/.env and points at
- * the provisioned Worker (e.g. https://blacknexa-backend.rork.app). The
- * Worker owns the article table in a Durable Object and brokers Grok via
- * the Rork AI Gateway, so the toolkit secret never reaches the client.
- */
-const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL;
 const FEED_STALE_MS = 60_000;
 const SEARCH_STALE_MS = 60_000;
 const TRANSLATION_STALE_MS = 5 * 60_000;
@@ -35,28 +28,21 @@ export type GenerateNewsInput = {
   language?: LanguageCode;
 };
 
-/** Result of a generation: the canonical English article plus, when the
- * reader's language is not English, the on-the-fly native translation. */
-export type GenerateNewsResult = {
-  article: NewsArticle;
-  translation?: ArticleTranslation;
-};
-
 type FeedResponse = {
   success: boolean;
-  total?: number;
   data?: NewsArticle[];
+  count?: number;
   error?: string;
 };
 
 type BriefingsResponse = {
   success: boolean;
-  briefingTitle?: string;
   data?: NewsArticle[];
+  count?: number;
   error?: string;
 };
 
-type GenerateResponse = {
+export type GenerateNewsResult = {
   success: boolean;
   article?: NewsArticle;
   translation?: ArticleTranslation;
@@ -73,20 +59,20 @@ type TranslationResponse = {
 
 async function fetchFeed(signal?: AbortSignal): Promise<NewsArticle[]> {
   if (!FUNCTIONS_URL) {
-    // Backend not configured — fall back to the bundled seed so the tab
-    // still renders during local dev or before provisioning.
     return SEED_NEWS;
   }
-  const url = `${FUNCTIONS_URL}/api/v1/news/feed?limit=50`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    throw new Error(`Feed request failed (${res.status}).`);
+  try {
+    const json = await apiClient<FeedResponse>("/api/v1/news/feed", {
+      params: { limit: 50 },
+      signal,
+    });
+    if (!json.success || !Array.isArray(json.data)) {
+      throw new Error(json.error ?? "Malformed feed response.");
+    }
+    return json.data;
+  } catch {
+    return SEED_NEWS;
   }
-  const json = (await res.json()) as FeedResponse;
-  if (!json.success || !Array.isArray(json.data)) {
-    throw new Error(json.error ?? "Malformed feed response.");
-  }
-  return json.data;
 }
 
 async function fetchSearch(
@@ -94,39 +80,43 @@ async function fetchSearch(
   signal?: AbortSignal
 ): Promise<NewsArticle[]> {
   if (!FUNCTIONS_URL) {
-    // Backend not configured — fall back to a simple client-side search over
-    // the seed so the UI still works in local dev.
     const q = query.toLowerCase();
     return SEED_NEWS.filter(
       (a) => a.headline.toLowerCase().includes(q) || a.summary.toLowerCase().includes(q)
     );
   }
-  const url = `${FUNCTIONS_URL}/api/v1/news/feed?search=${encodeURIComponent(query)}&limit=50`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    throw new Error(`Search request failed (${res.status}).`);
+  try {
+    const json = await apiClient<FeedResponse>("/api/v1/news/feed", {
+      params: { search: query, limit: 50 },
+      signal,
+    });
+    if (!json.success || !Array.isArray(json.data)) {
+      throw new Error(json.error ?? "Malformed search response.");
+    }
+    return json.data;
+  } catch {
+    const q = query.toLowerCase();
+    return SEED_NEWS.filter(
+      (a) => a.headline.toLowerCase().includes(q) || a.summary.toLowerCase().includes(q)
+    );
   }
-  const json = (await res.json()) as FeedResponse;
-  if (!json.success || !Array.isArray(json.data)) {
-    throw new Error(json.error ?? "Malformed search response.");
-  }
-  return json.data;
 }
 
 async function fetchBriefings(signal?: AbortSignal): Promise<NewsArticle[]> {
   if (!FUNCTIONS_URL) {
     return SEED_NEWS.slice(0, 3);
   }
-  const url = `${FUNCTIONS_URL}/api/v1/news/briefings`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) {
-    throw new Error(`Briefings request failed (${res.status}).`);
+  try {
+    const json = await apiClient<BriefingsResponse>("/api/v1/news/briefings", {
+      signal,
+    });
+    if (!json.success || !Array.isArray(json.data)) {
+      throw new Error(json.error ?? "Malformed briefings response.");
+    }
+    return json.data;
+  } catch {
+    return SEED_NEWS.slice(0, 3);
   }
-  const json = (await res.json()) as BriefingsResponse;
-  if (!json.success || !Array.isArray(json.data)) {
-    throw new Error(json.error ?? "Malformed briefings response.");
-  }
-  return json.data;
 }
 
 async function generateViaWorker(
@@ -138,42 +128,27 @@ async function generateViaWorker(
     );
   }
 
-  // When the user provides 3+ verified source URLs, use the enterprise
-  // verified-story endpoint which enforces the strict 3-5 source rule.
   const sources = input.verifiedSourceUrls?.filter((u) => u.trim().length > 0) ?? [];
   if (sources.length >= 3) {
-    const res = await fetch(`${FUNCTIONS_URL}/api/v1/blacknexa/publish-verified-story`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic: input.topicPrompt,
-        category: input.category,
-        targetLocation: "United States",
-        keyIndividuals: [],
-        rawFacts: input.topicPrompt,
-        verifiedSources: sources.slice(0, 10),
-      }),
-    });
-    let body: { success?: boolean; article?: NewsArticle; error?: string } | null = null;
-    try {
-      body = (await res.json()) as { success?: boolean; article?: NewsArticle; error?: string };
-    } catch {
-      /* non-JSON error body */
+    const body = await apiClient<{ success?: boolean; article?: any; error?: string }>(
+      "/api/v1/blacknexa/publish-verified-story",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          topic: input.topicPrompt,
+          category: input.category,
+          targetLocation: "United States",
+          keyIndividuals: [],
+          rawFacts: input.topicPrompt,
+          verifiedSources: sources.slice(0, 10),
+        }),
+      }
+    );
+
+    if (!body?.success) {
+      throw new Error(body?.error ?? "Verified story submission failed.");
     }
-    if (!res.ok || !body?.success) {
-      const msg = body?.error ?? `Verified story submission failed (${res.status}).`;
-      throw new Error(msg);
-    }
-    // The enterprise endpoint returns a different shape — normalize it.
-    const ent = body.article as unknown as {
-      id: number;
-      title: string;
-      content: string;
-      category: string;
-      location: string;
-      verifiedSources: { name: string; url: string }[];
-      timestamp: string;
-    } | undefined;
+    const ent = body.article;
     if (!ent) throw new Error("Verified story response was malformed.");
     const article: NewsArticle = {
       id: `ent-${ent.id}`,
@@ -185,38 +160,32 @@ async function generateViaWorker(
       content: ent.content,
       imageUrl: "",
       factCheckStatus: "Fact-Verified · 3+ Sources Cross-Referenced",
-      verifiedSources: ent.verifiedSources.map((s) => ({ name: s.name, url: s.url })),
+      verifiedSources: (ent.verifiedSources || []).map((s: any) => ({ name: s.name, url: s.url })),
       godlyPrincipleAlignment: "Upholds faith-grounded truth and civic accountability.",
       audioUrl: "",
-      publishedAt: ent.timestamp,
+      publishedAt: ent.timestamp || new Date().toISOString(),
       author: "BlackNexa Verified Briefing",
     };
-    return { article };
+    return { success: true, article };
   }
 
-  const res = await fetch(`${FUNCTIONS_URL}/api/v1/news/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      topicPrompt: input.topicPrompt,
-      category: input.category,
-      scope: input.scope,
-      language: input.language ?? "en",
-    }),
-  });
+  const body = await apiClient<{ success?: boolean; article?: NewsArticle; translation?: ArticleTranslation; error?: string }>(
+    "/api/v1/news/generate",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        topicPrompt: input.topicPrompt,
+        category: input.category,
+        scope: input.scope,
+        language: input.language ?? "en",
+      }),
+    }
+  );
 
-  let body: GenerateResponse | null = null;
-  try {
-    body = (await res.json()) as GenerateResponse;
-  } catch {
-    /* non-JSON error body */
+  if (!body?.success || !body.article) {
+    throw new Error(body?.error ?? "Generation failed.");
   }
-
-  if (!res.ok || !body?.success || !body.article) {
-    const msg = body?.error ?? `Generation failed (${res.status}).`;
-    throw new Error(msg);
-  }
-  return { article: body.article, translation: body.translation };
+  return { success: true, article: body.article, translation: body.translation };
 }
 
 /**
@@ -257,18 +226,17 @@ async function fetchTranslation(
       "News backend is not configured. Set EXPO_PUBLIC_RORK_FUNCTIONS_URL to enable translation."
     );
   }
-  const url = `${FUNCTIONS_URL}/api/v1/news/translate/${encodeURIComponent(
-    slug
-  )}?lang=${language}`;
-  const res = await fetch(url, { signal });
-  let body: TranslationResponse | null = null;
-  try {
-    body = (await res.json()) as TranslationResponse;
-  } catch {
-    /* non-JSON error body */
-  }
-  if (!res.ok || !body?.success || !body.data) {
-    const msg = body?.error ?? `Translation failed (${res.status}).`;
+
+  const body = await apiClient<TranslationResponse>(
+    `/api/v1/news/translate/${encodeURIComponent(slug)}`,
+    {
+      params: { lang: language },
+      signal,
+    }
+  );
+
+  if (!body?.success || !body.data) {
+    const msg = body?.error ?? "Translation failed.";
     throw new Error(msg);
   }
   return { ...body.data, background: body.background ?? false };
@@ -405,6 +373,7 @@ export const [NewsProvider, useNews] = createContextHook(() => {
   const generateMutation = useMutation({
     mutationFn: generateViaWorker,
     onSuccess: ({ article, translation }) => {
+      if (!article) return;
       // Seed the translation cache so opening the article shows it natively
       // in the reader's language with zero extra network calls.
       if (translation && translation.language !== "en") {
@@ -414,8 +383,6 @@ export const [NewsProvider, useNews] = createContextHook(() => {
         );
       }
       // Prepend the new article and mark the feed fresh so the UI re-renders.
-      // If the same headline already exists, deduplicate so we never show two
-      // of the same briefing.
       qc.setQueryData<NewsArticle[]>(["news_feed"], (prev) => {
         if (!prev) return [article];
         const next = [article, ...prev];
@@ -423,7 +390,8 @@ export const [NewsProvider, useNews] = createContextHook(() => {
         const seenSlugs = new Set<string>();
         const seenHeadlines = new Set<string>();
         const seenHashes = new Set<string>();
-        return next.filter((a) => {
+        return next.filter((a): a is NewsArticle => {
+          if (!a) return false;
           const norm = normalizedHeadline(a.headline);
           const hash = contentHashOf(a);
           if (

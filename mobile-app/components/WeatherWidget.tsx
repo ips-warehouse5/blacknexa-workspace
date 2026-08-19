@@ -50,15 +50,19 @@ const WEATHER_CODES: Record<number, { label: string; icon: string }> = {
   99: { label: "Severe storm", icon: "cloud-lightning" },
 };
 
+import { apiClient } from "@/utils/apiClient";
+
 function weatherInfo(code: number): { label: string; icon: string } {
   return WEATHER_CODES[code] ?? { label: "—", icon: "cloud" };
 }
 
 async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
-  const url = `${FUNCTIONS_URL}/api/v1/blacknexa/weather?lat=${lat}&lon=${lon}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Weather fetch failed (${res.status}).`);
-  const json = (await res.json()) as { success: boolean; data?: WeatherData; error?: string };
+  const json = await apiClient<{ success: boolean; data?: WeatherData; error?: string }>(
+    "/api/v1/blacknexa/weather",
+    {
+      params: { lat, lon },
+    }
+  );
   if (!json.success || !json.data) throw new Error(json.error ?? "Weather data unavailable.");
   return json.data;
 }

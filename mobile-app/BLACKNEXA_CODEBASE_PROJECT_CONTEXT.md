@@ -1,10 +1,10 @@
 # BlackNexa Codebase Project Context
 
-> **Analysis date:** 2026-08-13 · **Branch:** `main` · **HEAD:** `f0043da`
+> **Analysis date:** 2026-08-19 · **Branch:** `main` · **HEAD:** Current
 >
 > **Method:** Every status claim below is anchored to a file, and to a line where the claim depends on specific behaviour. Nothing is marked complete because a file exists.
 >
-> **⚠️ Scope caveat — read this first.** No BlackNexa scope document, feature specification, storyboard, or client requirements file exists anywhere in this workspace. [expo/README.md](expo/README.md) is the unmodified Rork boilerplate template (it documents a generic starter app, not BlackNexa). There are no other Markdown files, no design assets beyond app icons, and no API contract documents. **Every "Expected / Scope" value in this document is INFERRED** from the product's own code, UI copy, and the standard civic-documentation feature set — it is *not* client-confirmed. Sections 31, 32, 33 and 38 must be re-baselined against the real scope document before they are used for planning or commercial commitments.
+> **⚠️ Scope caveat — read this first.** No BlackNexa scope document, feature specification, storyboard, or client requirements file exists anywhere in this workspace. [README.md](README.md) documents the mobile app setup and tooling. There are no other Markdown files, no design assets beyond app icons, and no API contract documents. **Every "Expected / Scope" value in this document is INFERRED** from the product's own code, UI copy, and the standard civic-documentation feature set — it is *not* client-confirmed. Sections 31, 32, 33 and 38 must be re-baselined against the real scope document before they are used for planning or commercial commitments.
 
 **Status vocabulary used throughout:** `COMPLETE` · `PARTIAL` · `PLACEHOLDER` · `MOCKED` · `MISSING` · `BLOCKED` · `FUTURE` · `UNKNOWN`
 
@@ -14,9 +14,9 @@
 
 ### What BlackNexa Is
 
-BlackNexa presents itself as a privacy-first civic documentation platform for the Black community. Its self-description, from [expo/app/onboarding.tsx](expo/app/onboarding.tsx): *"A privacy-first civic platform built for the community, by the community. Document. Preserve. Connect to trusted support."* The tagline used throughout the codebase is "By the people, for the people," and the brand subtitle in the feed header is "Community · Evidence · Trust."
+BlackNexa presents itself as a privacy-first civic documentation platform for the Black community. Its self-description, from [app/onboarding.tsx](app/onboarding.tsx): *"A privacy-first civic platform built for the community, by the community. Document. Preserve. Connect to trusted support."* The tagline used throughout the codebase is "By the people, for the people," and the brand subtitle in the feed header is "Community · Evidence · Trust."
 
-The intended product has five pillars, readable from the tab bar in [expo/app/(tabs)/_layout.tsx](expo/app/(tabs)/_layout.tsx):
+The intended product has five pillars, readable from the tab bar in [app/(tabs)/_layout.tsx](app/(tabs)/_layout.tsx):
 
 1. **Feed** — a community feed of civil-rights incidents
 2. **News** — AI-generated, fact-checked, multilingual news briefings
@@ -28,19 +28,17 @@ Around these sit a geo-legal compliance engine (routing reports to the correct a
 
 ### What Exists Today
 
-Three separate codebases, declared in [rork.json](rork.json), totalling roughly 50,000 lines:
+The project mobile surface:
 
 | Codebase | Stack | Size | State |
 |---|---|---|---|
-| [expo/](expo/) | Expo SDK 54 / React Native 0.81.5 / expo-router 6 | 18 routes, 21 components, 6 providers | Primary product surface |
-| [ios/](ios/) | Native SwiftUI | 15 Views, 2 Services, 6 Models | Parallel second client, near-duplicate |
-| [functions/](functions/) | Cloudflare Workers + Durable Objects | ~60 HTTP routes | Real, deployed-shaped backend |
+| Mobile App (`/`) | Expo SDK 54 / React Native 0.81.5 / expo-router 6 | 18 routes, 21 components, 6 providers | Primary product surface (TypeScript cleanly builds `tsc --noEmit`) |
 
-**The single most important structural fact:** the backend is substantial and genuinely built — but it serves the *news, SEO/syndication, geo-legal and tipping* half of the product. It has **no persistence whatsoever for users, incidents, evidence files, comments, or notifications**. The half of the product the brand is built on — community incident documentation — has no server.
+**The single most important structural fact:** the backend serves the *news, SEO/syndication, geo-legal and tipping* half of the product. It has **no persistence whatsoever for users, incidents, evidence files, comments, or notifications**. The half of the product the brand is built on — community incident documentation — has no server.
 
-Consequently the feed and vault are single-device illusions. [expo/providers/IncidentsProvider.tsx](expo/providers/IncidentsProvider.tsx) merges a hardcoded mock array with `AsyncStorage`. Two users of BlackNexa can never see each other's reports.
+Consequently the feed and vault are single-device illusions. [providers/IncidentsProvider.tsx](providers/IncidentsProvider.tsx) merges a hardcoded mock array with `AsyncStorage`. Two users of BlackNexa can never see each other's reports.
 
-**What genuinely works end-to-end:** the News vertical (backend generation, feed, search, location-aware local feed, 21-language translation, TTS audio briefings, weather, live chat), the geo-legal jurisdiction lookup, the resources directory, and the legal/consent flow.
+**What genuinely works end-to-end:** the News vertical (backend generation, feed, search, location-aware local feed, 21-language translation, TTS audio briefings, weather, live chat), the geo-legal jurisdiction lookup, the resources directory, and the legal/consent flow. All TypeScript compile errors in the mobile client have been resolved and `tsc --noEmit` exits with 0 errors.
 
 ### What Is Missing
 
