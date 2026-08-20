@@ -18,6 +18,8 @@ type IncidentDraft = {
   hasEvidence: boolean;
   evidenceCount: number;
   redactLocation: boolean;
+  /** Backend-issued incident id, when the server create succeeded. */
+  serverId?: string;
 };
 
 const USER_INCIDENTS_KEY = "blacknexa.user_incidents.v2";
@@ -68,7 +70,13 @@ export const [IncidentsProvider, useIncidents] = createContextHook(() => {
   );
 
   const incidents = useMemo<Incident[]>(() => {
-    const merged = [...userIncidents, ...MOCK_INCIDENTS];
+    // Sample incidents are development-only. They are fictional entries that are
+    // visually indistinguishable from real reports (named authors, plausible
+    // stories, supporter counts), so shipping them would imply a community feed
+    // that does not exist — there is no incident list endpoint at all (R-024).
+    const merged = __DEV__
+      ? [...userIncidents, ...MOCK_INCIDENTS]
+      : [...userIncidents];
     return merged.map((i) =>
       supportedSet.has(i.id)
         ? { ...i, supporters: i.supporters + 1 }
@@ -80,6 +88,7 @@ export const [IncidentsProvider, useIncidents] = createContextHook(() => {
     mutationFn: async (draft: IncidentDraft): Promise<Incident[]> => {
       const newIncident: Incident = {
         id: `inc_${Date.now()}`,
+        serverId: draft.serverId,
         title: draft.title,
         summary: draft.summary,
         category: draft.category,

@@ -17,12 +17,21 @@ import type {
   DispatchChannel,
   DispatchResult,
   CreateIncidentResponse,
+  IncidentDetailResponse,
 } from "@/constants/geo-legal";
-import { apiFetch } from "@/utils/apiClient";
+import { apiFetch, FUNCTIONS_URL } from "@/utils/apiClient";
 
-/** Backend base URL — same env var used by NewsProvider. */
+/**
+ * Backend base URL.
+ *
+ * Reuses `FUNCTIONS_URL` from apiClient rather than reading the env var directly,
+ * so this shares apiClient's hosted-URL fallback. Previously this returned `""`
+ * when `EXPO_PUBLIC_RORK_FUNCTIONS_URL` was unset, which made every geo-legal
+ * call return `null` **silently** — a report would appear to submit and never
+ * leave the device. See .ai/open-risks.md R-019.
+ */
 function backendBase(): string {
-  return process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
+  return FUNCTIONS_URL;
 }
 
 export type LookupParams = {
@@ -150,6 +159,33 @@ function useGeoLegalInternal() {
     return data;
   }, []);
 
+  /**
+   * Fetch the server's copy of an incident.
+   *
+   * Takes the **server** id (`inc_<millis>_<rand5>`), not the local one
+   * (`inc_<millis>`) — the server does not recognise local ids. Callers pass
+   * `Incident.serverId`, which is absent on reports created before server
+   * persistence was wired up.
+   *
+   * Returns `null` on any failure. The detail screen treats server data as
+   * enrichment, so a null must never block rendering the local record.
+   */
+  const fetchIncidentDetail = useCallback(
+    async (serverIncidentId: string): Promise<IncidentDetailResponse | null> => {
+      const base = backendBase();
+      if (!base) return null;
+
+      const { ok, data } = await apiFetch<IncidentDetailResponse>(
+        `${base}/api/v1/geo-legal/incident/${encodeURIComponent(serverIncidentId)}`,
+        { method: "GET" }
+      );
+
+      if (!ok || !data?.success) return null;
+      return data;
+    },
+    []
+  );
+
   // React Query wrapper for lookup with caching.
   const lookupQuery = useQuery({
     queryKey: ["geo-legal", currentProfile?.countryCode] as const,
@@ -182,6 +218,7 @@ function useGeoLegalInternal() {
     validateReport,
     confirmAndDispatch,
     createIncident,
+    fetchIncidentDetail,
     lookupQuery,
     validateMutation,
     dispatchMutation,

@@ -50,13 +50,37 @@ import {
 import { processIncidentDispatch, type DispatchResult } from "@/constants/dispatch";
 import { CATEGORY_LABELS, formatRelative } from "@/mocks/incidents";
 import { useIncidents } from "@/providers/IncidentsProvider";
+import { useGeoLegal } from "@/providers/GeoLegalProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { useQuery } from "@tanstack/react-query";
 
 export default function IncidentDetailScreen(): React.ReactElement {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getById, toggleSupport, isSupported } = useIncidents();
   const { settings } = useSettings();
+  const { fetchIncidentDetail } = useGeoLegal();
   const incident = id ? getById(id) : undefined;
+
+  /**
+   * The server's copy of this incident — enrichment only.
+   *
+   * Keyed on `serverId` (the backend format), never the local `id`. Disabled
+   * entirely for records that were never persisted server-side, so older reports
+   * make no network call at all.
+   *
+   * The screen renders from the local record regardless; a failure here is
+   * silent by design. This screen must work offline and under seizure conditions.
+   */
+  const serverQuery = useQuery({
+    queryKey: ["incident-server", incident?.serverId],
+    queryFn: () => fetchIncidentDetail(incident!.serverId!),
+    enabled: !!incident?.serverId,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  const serverIncident = serverQuery.data?.incident;
+  const serverDispatchAudit = serverQuery.data?.dispatchAudit ?? [];
 
   const [custodyEvents, setCustodyEvents] = useState<CustodyEvent[]>([]);
   const [rootHash, setRootHash] = useState<string | undefined>(undefined);
@@ -392,6 +416,62 @@ export default function IncidentDetailScreen(): React.ReactElement {
             <Text style={styles.cardMuted}>
               Each file is SHA-256 hashed and AES-256 encrypted on capture. The hash chain proves evidence has not been tampered with since sealing.
             </Text>
+          </View>
+        )}
+
+        {/*
+          Server record — shown only when this incident was persisted server-side
+          and the fetch succeeded. Purely additive: everything above renders from
+          the local record and is unaffected if this never loads.
+        */}
+        {serverIncident && (
+          <View style={styles.card} testID="incident-server-record">
+            <View style={styles.rowBetween}>
+              <Text style={styles.cardTitle}>Server record</Text>
+              <View style={styles.evidenceBadge}>
+                <ShieldCheck size={12} color={Colors.emerald} />
+                <Text style={styles.evidenceBadgeText}>SYNCED</Text>
+              </View>
+            </View>
+
+            <View style={styles.integrityRow}>
+              {serverIncident.serverEncrypted && (
+                <View style={styles.integrityPill}>
+                  <ShieldCheck size={11} color={Colors.emerald} />
+                  <Text style={styles.integrityPillText}>Server sealed</Text>
+                </View>
+              )}
+              {serverIncident.piiScrubbed && (
+                <View style={styles.integrityPill}>
+                  <Fingerprint size={11} color={Colors.gold} />
+                  <Text style={styles.integrityPillText}>PII scrubbed</Text>
+                </View>
+              )}
+            </View>
+
+            <Text style={styles.cardMuted}>
+              Stored on the BlackNexa server with a second encryption layer applied
+              and personal identifiers redacted. Reference: {serverIncident.id}
+            </Text>
+
+            {serverDispatchAudit.length > 0 && (
+              <>
+                <Text style={styles.cardTitle}>
+                  Dispatch audit · {serverDispatchAudit.length}
+                </Text>
+                <Text style={styles.cardMuted}>
+                  Agencies recorded for this report. Filing with each one is done
+                  through their own portal.
+                </Text>
+                {serverDispatchAudit.map((row) => (
+                  <View key={row.id} style={styles.integrityRow}>
+                    <Text style={styles.cardMuted}>
+                      {row.agencyName} · {row.channel} · {row.status}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            )}
           </View>
         )}
 

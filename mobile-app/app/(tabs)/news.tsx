@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { BookOpen, Link2, Loader2, LocateFixed, MapPin, MessageCircle, Navigation, Plus, RefreshCw, Search, Sparkles, X } from "lucide-react-native";
+import { BookOpen, Loader2, LocateFixed, MapPin, MessageCircle, Navigation, Plus, RefreshCw, Search, Sparkles, X } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -285,8 +285,6 @@ export default function NewsScreen(): React.ReactElement {
   const [genScope, setGenScope] = useState<NewsScope>("national");
   const [genStep, setGenStep] = useState<number>(0);
   const [genSlow, setGenSlow] = useState<boolean>(false);
-  const [sourceUrls, setSourceUrls] = useState<string[]>(["", "", ""]);
-  const [sourceValidationError, setSourceValidationError] = useState<string | null>(null);
 
   const GENERATION_STEPS = useMemo(
     () => [
@@ -350,35 +348,13 @@ export default function NewsScreen(): React.ReactElement {
     }
     setGenStep(0);
     setGenSlow(false);
-    // Validate source URLs — when 3+ are provided, the enterprise
-    // verified-story endpoint is used (strict 3-5 source rule).
-    const validUrls = sourceUrls.map((u) => u.trim()).filter((u) => u.length > 0);
-    const uniqueUrls = [...new Set(validUrls)];
-    if (uniqueUrls.length > 0 && uniqueUrls.length < 3) {
-      setSourceValidationError("At least 3 independent source URLs are required to publish a verified story. Add more or leave blank for AI generation.");
-      return;
-    }
-    if (uniqueUrls.length > 10) {
-      setSourceValidationError("Maximum 10 source URLs allowed.");
-      return;
-    }
-    // Basic URL format check
-    for (const u of uniqueUrls) {
-      try {
-        new URL(u);
-      } catch {
-        setSourceValidationError(`"${u}" is not a valid URL. Include the full https:// link.`);
-        return;
-      }
-    }
-    setSourceValidationError(null);
-
+    // `verifiedSourceUrls` is deliberately omitted so NewsProvider always takes the
+    // /news/generate branch. See the note by the removed source fields below.
     generate(
       {
         topicPrompt: topic.trim(),
         category: genCategory,
         scope: genScope,
-        verifiedSourceUrls: uniqueUrls.length >= 3 ? uniqueUrls : undefined,
         language: settings.preferredLanguage,
       },
       {
@@ -414,7 +390,7 @@ export default function NewsScreen(): React.ReactElement {
         },
       }
     );
-  }, [topic, genCategory, genScope, sourceUrls, generate, settings.preferredLanguage]);
+  }, [topic, genCategory, genScope, generate, settings.preferredLanguage]);
 
   // Cycle through progress steps while generation is running, and flag when it
   // is slower than the backend's fast-path target so the user knows to wait.
@@ -760,55 +736,23 @@ export default function NewsScreen(): React.ReactElement {
               })}
             </ScrollView>
 
-            <Text style={styles.fieldLabel}>Verified Source URLs (3-5 required for verified publishing)</Text>
+            {/*
+              The manual "Verified Source URLs" fields are removed for now.
+
+              They routed generation to POST /blacknexa/publish-verified-story, which
+              rejects 7 of our 8 categories, builds the article from a string template
+              rather than AI, produces no image or audio, and writes to a table this app
+              never reads — so the briefing vanished on restart.
+
+              Every briefing now goes through POST /news/generate, which performs grounded
+              AI generation and discovers 5–7 verifiable sources itself. Restore this block
+              only once the backend can accept caller-supplied sources on that endpoint.
+              See .ai/open-risks.md R-027.
+            */}
             <Text style={styles.sourceHint}>
-              Add 3+ independent source links to publish a verified briefing. Leave blank for AI-generated briefings with automatic source discovery.
+              Briefings are generated from grounded AI research, with sources discovered and
+              cited automatically so every claim can be traced to its origin.
             </Text>
-            {sourceUrls.map((url, idx) => (
-              <View key={`src-${idx}`} style={styles.sourceInputRow}>
-                <View style={styles.sourceInputBadge}>
-                  <Text style={styles.sourceInputBadgeText}>{idx + 1}</Text>
-                </View>
-                <TextInput
-                  value={url}
-                  onChangeText={(text) => {
-                    setSourceUrls((prev) => prev.map((u, i) => (i === idx ? text : u)));
-                    setSourceValidationError(null);
-                  }}
-                  placeholder={`https://example.com/source-${idx + 1}`}
-                  placeholderTextColor={Colors.textMute}
-                  style={styles.sourceInput}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  keyboardType="url"
-                  returnKeyType="done"
-                />
-                {sourceUrls.length > 3 && idx >= 3 ? (
-                  <Pressable
-                    onPress={() => {
-                      setSourceUrls((prev) => prev.filter((_, i) => i !== idx));
-                      setSourceValidationError(null);
-                    }}
-                    style={styles.sourceRemoveBtn}
-                  >
-                    <X size={14} color={Colors.textMute} />
-                  </Pressable>
-                ) : null}
-              </View>
-            ))}
-            {sourceUrls.length < 10 ? (
-              <Pressable
-                onPress={() => setSourceUrls((prev) => [...prev, ""])}
-                style={styles.sourceAddBtn}
-              >
-                <Link2 size={13} color={Colors.gold} />
-                <Text style={styles.sourceAddBtnText}>Add another source</Text>
-              </Pressable>
-            ) : null}
-            {sourceValidationError ? (
-              <Text style={styles.errorText}>{sourceValidationError}</Text>
-            ) : null}
 
             <Text style={styles.disclaimer}>
               All generated briefings follow strict factual and godly alignment rules. Sources are cited and marked fact-verified.
@@ -1308,6 +1252,11 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     marginBottom: 10,
   },
+  // ── Retained for the manual source-URL fields ───────────────────────────────
+  // Currently unused: those fields were withdrawn because the endpoint they fed
+  // (publish-verified-story) is not fit to ship. Kept so the block can be restored
+  // in one step if the backend accepts caller-supplied sources. See .ai/decisions.md
+  // D-012. Delete these seven styles if that never happens.
   sourceInputRow: {
     flexDirection: "row",
     alignItems: "center",
