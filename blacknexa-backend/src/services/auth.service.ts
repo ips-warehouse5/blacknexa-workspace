@@ -138,8 +138,8 @@ class AuthService {
 
     if (!admin) {
       // Constant-ish work so timing does not distinguish unknown-email from
-      // wrong-password. The hash is a throwaway.
-      await bcrypt.compare(password, "$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva");
+      // wrong-password. The hash is configured via environment settings.
+      await bcrypt.compare(password, env.bcryptDummyHash);
       throw new AuthError("Invalid email or password.", 401);
     }
     if (!admin.is_active) {

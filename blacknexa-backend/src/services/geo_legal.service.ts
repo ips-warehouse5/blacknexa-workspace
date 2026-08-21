@@ -262,7 +262,7 @@ class GeoLegalService {
       if (channel === "GOVT_AGENCY" || channel === "HUMAN_RIGHTS") {
         for (const agency of agencies) {
           rows.push({
-            id: `${auditId}_${agency.id}`,
+            id: `${auditId}_${channel}_${agency.id}`,
             incident_id: incidentId,
             channel,
             agency_id: agency.id,
@@ -284,7 +284,7 @@ class GeoLegalService {
       if (channel === "PRESS") {
         for (const press of pressContacts) {
           rows.push({
-            id: `${auditId}_${press.id}`,
+            id: `${auditId}_${channel}_${press.id}`,
             incident_id: incidentId,
             channel: "PRESS",
             agency_id: press.id,
