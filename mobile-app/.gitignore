@@ -26,6 +26,7 @@ android/
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+bun.lock
 
 # macOS
 .DS_Store
@@ -43,3 +44,21 @@ yarn-error.*
 core
 node_modules
 .expo
+.ai/
+
+# Signing credentials — losing these is unrecoverable, committing them is worse
+credentials/
+firebase/*.json
+firebase/*.plist
+*.keystore
+*.jks
+*.p12
+*.p8
+keystore.properties
+*google-services.json
+*GoogleService-Info.plist
+
+# Design boards — local reference only (owner's instruction, 2026-08-25)
+BlackNexa Screen Board*.html
+*.designboard.html
+design-board/

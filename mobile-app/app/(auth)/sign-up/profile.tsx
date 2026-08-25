@@ -84,12 +84,10 @@ export default function SignUpProfileScreen(): React.ReactElement {
     // Recorded here rather than on A7, because there was no account to attach the
     // consent to until the code on A8 was accepted.
     await recordConsents(LEGAL_VERSION);
-    completeOnboarding();
     router.replace("/(onboarding)/notifications");
   }, [
     anonymous,
     avatarMode,
-    completeOnboarding,
     displayName,
     recordConsents,
     updateProfile,

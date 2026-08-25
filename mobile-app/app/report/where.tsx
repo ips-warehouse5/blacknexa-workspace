@@ -63,6 +63,27 @@ export default function WhereStep(): React.ReactElement {
 
   const userDefault = user?.preferences.defaultPrecision ?? "approximate";
 
+  // Debounced geocoding when typing an address/area
+  const onAddressChange = useCallback((text: string) => {
+    setLabel(text);
+    setProblem(null);
+    if (!text.trim() || text.length < 3) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await Location.geocodeAsync(text.trim());
+        if (results && results.length > 0) {
+          const first = results[0];
+          setCoords({ lat: first.latitude, lng: first.longitude });
+        }
+      } catch {
+        // Geocode failure is non-blocking
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const useMyLocation = useCallback(async () => {
     setLocating(true);
     setNotice(null);
@@ -168,7 +189,7 @@ export default function WhereStep(): React.ReactElement {
         <TextField
           label="AREA"
           value={label}
-          onChangeText={setLabel}
+          onChangeText={onAddressChange}
           placeholder="Brownsville, Brooklyn"
           autoCapitalize="words"
           containerStyle={{ marginTop: 16 }}

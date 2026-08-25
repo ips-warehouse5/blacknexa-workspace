@@ -19,7 +19,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as NavigationBar from "expo-navigation-bar";
 import { StatusBar } from "expo-status-bar";
@@ -65,6 +65,8 @@ const queryClient = new QueryClient({
  */
 function AuthGate(): React.ReactElement | null {
   const { status } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
   const [splashHidden, setSplashHidden] = useState(false);
 
   const hideSplash = useCallback(async () => {
@@ -79,6 +81,28 @@ function AuthGate(): React.ReactElement | null {
     if (status !== "restoring") void hideSplash();
   }, [hideSplash, status]);
 
+  useEffect(() => {
+    if (status === "restoring") return;
+
+    const firstSegment = segments[0] as string | undefined;
+    const inAuthGroup = firstSegment === "(auth)";
+    const inOnboardingGroup = firstSegment === "(onboarding)";
+    const isPublicRoute =
+      firstSegment === "legal" ||
+      firstSegment === "news" ||
+      firstSegment === "incident" ||
+      firstSegment === "r" ||
+      firstSegment === "modal";
+
+    if (status === "signedOut" && !inAuthGroup && !isPublicRoute) {
+      router.replace("/(auth)/intro");
+    } else if (status === "onboarding" && !inOnboardingGroup && !isPublicRoute) {
+      router.replace("/(onboarding)/notifications");
+    } else if (status === "signedIn" && (inAuthGroup || inOnboardingGroup)) {
+      router.replace("/(tabs)");
+    }
+  }, [status, segments, router]);
+
   if (status === "restoring") return null;
 
   return (
@@ -90,13 +114,9 @@ function AuthGate(): React.ReactElement | null {
         animation: "slide_from_right",
       }}
     >
-      {status === "signedOut" ? (
-        <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-      ) : status === "onboarding" ? (
-        <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
-      ) : (
-        <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-      )}
+      <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+      <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
 
       {/* Reachable from the signed-in stack. */}
       <Stack.Screen name="search" options={{ animation: "fade" }} />

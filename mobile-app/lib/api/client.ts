@@ -65,15 +65,18 @@ const store = {
   },
 };
 
-/** Resolve the API origin. Set `EXPO_PUBLIC_API_URL` in the app's .env. */
+/** Resolve the API origin. Priority: EXPO_PUBLIC_API_URL -> EXPO_PUBLIC_RORK_FUNCTIONS_URL -> EXPO_PUBLIC_TOOLKIT_URL. */
 function resolveBaseUrl(): string {
-  const configured = process.env.EXPO_PUBLIC_API_URL;
+  const configured =
+    process.env.EXPO_PUBLIC_API_URL ||
+    process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ||
+    process.env.EXPO_PUBLIC_TOOLKIT_URL;
   if (configured) return configured.replace(/\/+$/, "");
   // A physical device cannot reach the host's localhost, so this default is only
   // ever right in a simulator — hence the warning rather than a silent fallback.
   if (__DEV__) {
     console.warn(
-      "[api] EXPO_PUBLIC_API_URL is not set — falling back to http://localhost:4000, which a physical device cannot reach.",
+      "[api] Neither EXPO_PUBLIC_API_URL nor EXPO_PUBLIC_RORK_FUNCTIONS_URL is set — falling back to http://localhost:4000, which a physical device cannot reach.",
     );
   }
   return "http://localhost:4000";
@@ -81,6 +84,9 @@ function resolveBaseUrl(): string {
 
 export const API_BASE_URL = resolveBaseUrl();
 const API_PREFIX = "/api/v1";
+
+// Printed once, because the per-request lines omit it to stay readable.
+if (__DEV__) console.log(`[API] base ${API_BASE_URL}`);
 
 /** A failed request, carrying the server's own message for display. */
 export class ApiError extends Error {
@@ -114,6 +120,78 @@ interface RequestOptions {
 type Listener = () => void;
 
 const DEFAULT_TIMEOUT_MS = 20_000;
+
+// ── Dev logging ─────────────────────────────────────────────────────────────
+//
+// Development only — every call below is behind `__DEV__` and compiles out of a
+// release bundle. Three things it has to get right:
+//
+//   1. **Redaction.** Login bodies carry a password, OTP flows carry a code, and
+//      every auth response carries a token pair. Printing those puts credentials
+//      into the Metro console and into whatever captures it. Never log a body or
+//      a payload that has not been through `redact`.
+//   2. **Pairing.** Requests overlap, so a response has to say which request it
+//      belongs to — hence the sequence number in every line.
+//   3. **Depth.** React Native's console prints `[Object]` past two levels,
+//      which is exactly where the interesting part of a feed row lives. Payloads
+//      are serialised to JSON so nesting survives.
+
+/** Field names whose values never reach the console, at any depth. */
+const SENSITIVE_KEYS = new Set([
+  "password",
+  "newpassword",
+  "currentpassword",
+  "code",
+  "otp",
+  "pin",
+  "token",
+  "accesstoken",
+  "refreshtoken",
+  "pushtoken",
+  "secret",
+  "authorization",
+]);
+
+/** Long payloads are cut here; enough to read a feed page, not a whole scroll. */
+const MAX_LOG_CHARS = 2_000;
+
+/** A structural copy with every sensitive value replaced. */
+function redact(value: unknown, depth = 0): unknown {
+  if (depth > 8 || value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((item) => redact(item, depth + 1));
+
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    out[key] = SENSITIVE_KEYS.has(key.toLowerCase())
+      ? "«redacted»"
+      : redact(item, depth + 1);
+  }
+  return out;
+}
+
+/** Redacted, serialised, and truncated — ready to hand to `console`. */
+function formatPayload(value: unknown): string {
+  if (value === undefined || value === null) return "—";
+  let text: string;
+  try {
+    text = JSON.stringify(redact(value), null, 2) ?? String(value);
+  } catch {
+    // Circular, or something JSON cannot hold.
+    return "«unserialisable»";
+  }
+  return text.length > MAX_LOG_CHARS
+    ? `${text.slice(0, MAX_LOG_CHARS)}\n… truncated, ${text.length} chars total`
+    : text;
+}
+
+/** What the request actually carried, which is what `anonymous` alone never says. */
+function describeAuth(anonymous: boolean, hasToken: boolean): string {
+  if (anonymous) return "skipped";
+  return hasToken ? "bearer" : "none";
+}
+
+/** Pairs a response line with its request line when calls overlap. */
+let requestSeq = 0;
 
 class ApiClient {
   private accessToken: string | null = null;
@@ -253,16 +331,39 @@ class ApiClient {
     const onAbort = () => controller.abort();
     signal?.addEventListener("abort", onAbort);
 
+    const url = `${API_BASE_URL}${API_PREFIX}${path}`;
+    const startTime = Date.now();
+    const seq = ++requestSeq;
+    // The base URL is constant, so the per-line label carries only the part that
+    // varies. `retry` marks the replay after a token refresh, which otherwise
+    // looks like the same call inexplicably happening twice.
+    const label = `#${seq} ${method} ${API_PREFIX}${path}${isRetry ? " (retry)" : ""}`;
+
+    if (__DEV__) {
+      console.log(
+        `[API] 🚀 ${label}\n     auth: ${describeAuth(anonymous, Boolean(this.accessToken))}` +
+          (body === undefined ? "" : `\n     body: ${formatPayload(body)}`),
+      );
+    }
+
     let response: Response;
     try {
-      response = await fetch(`${API_BASE_URL}${API_PREFIX}${path}`, {
+      response = await fetch(url, {
         method,
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });
     } catch (err) {
+      const duration = Date.now() - startTime;
       const aborted = err instanceof Error && err.name === "AbortError";
+      if (__DEV__) {
+        console.warn(
+          `[API] 📡 ${aborted ? "TIMEOUT" : "NETWORK ERROR"} ${label} (${duration}ms)\n` +
+            `     url:  ${url}\n` +
+            `     info: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
       throw new ApiError(
         aborted
           ? "That took too long. Check your connection and try again."
@@ -283,12 +384,19 @@ class ApiClient {
       }
     }
 
+    const duration = Date.now() - startTime;
     const text = await response.text();
     let payload: unknown = null;
     if (text) {
       try {
         payload = JSON.parse(text);
       } catch {
+        if (__DEV__) {
+          console.warn(
+            `[API] ❌ ${response.status} NON-JSON ${label} (${duration}ms)\n` +
+              `     body: ${text.slice(0, MAX_LOG_CHARS)}`,
+          );
+        }
         // A non-JSON body from a proxy or gateway.
         throw new ApiError("Something went wrong. Please try again.", response.status);
       }
@@ -302,14 +410,26 @@ class ApiClient {
     };
 
     if (!response.ok || envelope.success === false || envelope.success === 0) {
-      // The backend puts the user-facing sentence in `error` on the legacy
-      // envelope and in `message` on the unified one. Both are already written as
-      // copy a person can read, so neither is rewritten here.
       const message =
         envelope.error ??
         envelope.message ??
         "Something went wrong. Please try again.";
+      if (__DEV__) {
+        console.warn(
+          `[API] ❌ ${response.status} ${label} (${duration}ms)\n` +
+            `     error: ${message}\n` +
+            `     body:  ${formatPayload(envelope)}`,
+        );
+      }
       throw new ApiError(message, response.status);
+    }
+
+    if (__DEV__) {
+      console.log(
+        `[API] ✅ ${response.status} ${label} (${duration}ms)` +
+          (envelope.message ? `\n     msg:    ${envelope.message}` : "") +
+          `\n     result: ${formatPayload(envelope.result ?? payload)}`,
+      );
     }
 
     return (envelope.result ?? (payload as T)) as T;

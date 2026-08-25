@@ -5,8 +5,8 @@ import * as Speech from "expo-speech";
 import { Platform } from "react-native";
 import { type LanguageCode } from "@/constants/i18n";
 
-const TOOLKIT_URL = process.env.EXPO_PUBLIC_TOOLKIT_URL ?? "";
-const TOOLKIT_SECRET = process.env.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY ?? "";
+const TOOLKIT_URL = process.env.GEMINI_BASE_URL ?? "";
+const TOOLKIT_SECRET = process.env.GEMINI_API_KEY ?? "";
 
 const SPEECH_CACHE_PREFIX = "blacknexa_tts_";
 
@@ -120,7 +120,10 @@ export async function startVoiceRecording(): Promise<Audio.Recording> {
     // Comprehensive catch: rethrow permission errors as-is so the UI can
     // show the right alert; wrap everything else in a clean message.
     const message = err instanceof Error ? err.message : String(err);
-    if (message.toLowerCase().includes("denied") || message.toLowerCase().includes("permission")) {
+    if (
+      message.toLowerCase().includes("denied") ||
+      message.toLowerCase().includes("permission")
+    ) {
       throw new Error("Microphone permission was denied");
     }
     throw new Error(`Recording could not start: ${message}`);
@@ -132,12 +135,14 @@ export async function startVoiceRecording(): Promise<Audio.Recording> {
  * Gateway (Rork Toolkit proxy).
  */
 export async function stopVoiceRecordingAndTranscribe(
-  recording: Audio.Recording
+  recording: Audio.Recording,
 ): Promise<TranscriptionResult> {
   try {
     await recording.stopAndUnloadAsync();
   } catch (err) {
-    throw new Error(`Failed to stop recording: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Failed to stop recording: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
   const uri = recording.getURI();
   if (!uri) throw new Error("Recording produced no audio");
@@ -146,7 +151,9 @@ export async function stopVoiceRecordingAndTranscribe(
     const base64 = await uriToBase64(uri);
     return transcribeAudio(base64, "audio/mp4");
   } catch (err) {
-    throw new Error(`Transcription failed: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Transcription failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -155,7 +162,7 @@ export async function stopVoiceRecordingAndTranscribe(
  */
 export async function transcribeAudio(
   base64Audio: string,
-  mediaType: string
+  mediaType: string,
 ): Promise<TranscriptionResult> {
   if (!TOOLKIT_URL || !TOOLKIT_SECRET) {
     throw new Error("Missing Toolkit configuration for transcription");
@@ -172,7 +179,7 @@ export async function transcribeAudio(
         "ai-gateway-protocol-version": "0.0.1",
       },
       body: JSON.stringify({ audio: base64Audio, mediaType }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -204,7 +211,7 @@ export function isNativeTtsAvailable(): boolean {
  */
 export function speakWithNativeTTS(
   script: string,
-  language: LanguageCode = "en"
+  language: LanguageCode = "en",
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
@@ -220,7 +227,10 @@ export function speakWithNativeTTS(
       // Estimate speech duration: ~150 words per minute = 2.5 words/sec.
       // Add a 5-second buffer. Used as a safety timeout for Android.
       const wordCount = script.split(/\s+/).length;
-      const estimatedMs = Math.max(8000, Math.ceil((wordCount / 2.5) * 1000) + 5000);
+      const estimatedMs = Math.max(
+        8000,
+        Math.ceil((wordCount / 2.5) * 1000) + 5000,
+      );
 
       let resolved = false;
       let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
@@ -281,7 +291,10 @@ export function speakWithNativeTTS(
           if (resolved) return;
           resolved = true;
           cleanup();
-          console.warn("[TTS] Speech.speak threw:", speakErr instanceof Error ? speakErr.message : String(speakErr));
+          console.warn(
+            "[TTS] Speech.speak threw:",
+            speakErr instanceof Error ? speakErr.message : String(speakErr),
+          );
           resolve();
         }
       };
@@ -294,7 +307,10 @@ export function speakWithNativeTTS(
       }
     } catch (outerErr) {
       // Comprehensive catch-all so the caller never gets an unhandled exception.
-      console.warn("[TTS] outer error:", outerErr instanceof Error ? outerErr.message : String(outerErr));
+      console.warn(
+        "[TTS] outer error:",
+        outerErr instanceof Error ? outerErr.message : String(outerErr),
+      );
       resolve();
     }
   });
@@ -320,10 +336,15 @@ export async function playAudioUri(uri: string): Promise<Audio.Sound> {
       staysActiveInBackground: false,
     });
 
-    const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
+    const { sound } = await Audio.Sound.createAsync(
+      { uri },
+      { shouldPlay: true },
+    );
     return sound;
   } catch (err) {
-    throw new Error(`Audio playback failed: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Audio playback failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -360,7 +381,7 @@ function hashText(text: string): string {
 export function buildArticleSpokenScript(
   headline: string,
   summary: string,
-  content?: string
+  content?: string,
 ): string {
   const lead = `${headline}. ${summary}`;
   if (content && content.trim()) {

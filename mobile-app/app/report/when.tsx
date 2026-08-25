@@ -15,12 +15,13 @@
  */
 
 import React, { useCallback, useMemo, useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { colors, radius } from "@/constants/theme";
+import { alpha, colors, radius } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { Checkbox, SegmentedControl, SwitchRow } from "@/components/ui/Controls";
 import { WizardShell, cardHairline } from "@/components/report/WizardShell";
@@ -45,12 +46,14 @@ function startOfDayOffset(days: number): Date {
 }
 
 export default function WhenStep(): React.ReactElement {
+  const insets = useSafeAreaInsets();
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const exit = useWizardExit();
 
   const [occurred, setOccurred] = useState<Date>(() =>
     payload.occurredAt ? new Date(payload.occurredAt) : new Date(),
   );
+  const [tempDate, setTempDate] = useState<Date>(occurred);
   const [happeningNow, setHappeningNow] = useState(payload.happeningNow ?? false);
   const [timeUnknown, setTimeUnknown] = useState(payload.occurredPrecision === "day_part");
   const [dayPart, setDayPart] = useState<DayPart>(payload.occurredDayPart ?? "afternoon");
@@ -97,14 +100,31 @@ export default function WhenStep(): React.ReactElement {
     [commit, occurred],
   );
 
-  const onPicked = useCallback(
+  const openPicker = useCallback(
+    (mode: "date" | "time") => {
+      setTempDate(occurred);
+      setPicker(mode);
+    },
+    [occurred],
+  );
+
+  const onConfirmIos = useCallback(() => {
+    const clamped = tempDate.getTime() > Date.now() ? new Date() : tempDate;
+    setOccurred(clamped);
+    commit({ when: clamped });
+    setProblem(null);
+    setPicker(null);
+  }, [commit, tempDate]);
+
+  const onCancelIos = useCallback(() => {
+    setPicker(null);
+  }, []);
+
+  const onPickedAndroid = useCallback(
     (event: DateTimePickerEvent, value?: Date) => {
-      // Android fires with `dismissed` when the dialog is cancelled.
-      if (Platform.OS === "android") setPicker(null);
+      setPicker(null);
       if (event.type === "dismissed" || !value) return;
 
-      // C3: future dates are unselectable. Clamped rather than rejected, so the
-      // picker never leaves an impossible value on screen.
       const clamped = value.getTime() > Date.now() ? new Date() : value;
       setOccurred(clamped);
       commit({ when: clamped });
@@ -186,7 +206,7 @@ export default function WhenStep(): React.ReactElement {
           />
 
           <Pressable
-            onPress={() => setPicker("date")}
+            onPress={() => openPicker("date")}
             accessibilityRole="button"
             accessibilityLabel={`Date, ${occurred.toLocaleDateString()}`}
             style={styles.row}
@@ -222,7 +242,7 @@ export default function WhenStep(): React.ReactElement {
             </View>
           ) : (
             <Pressable
-              onPress={() => setPicker("time")}
+              onPress={() => openPicker("time")}
               accessibilityRole="button"
               accessibilityLabel={`Time, ${occurred.toLocaleTimeString()}`}
               style={[styles.row, { marginTop: 9 }]}
@@ -290,33 +310,66 @@ export default function WhenStep(): React.ReactElement {
         </Text>
       </View>
 
-      {picker ? (
+      {/* Standard modal picker bottom sheet for iOS */}
+      {Platform.OS === "ios" ? (
+        <Modal
+          visible={picker !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={onCancelIos}
+        >
+          <View style={styles.modalOverlay}>
+            <Pressable style={styles.modalBackdrop} onPress={onCancelIos} />
+            <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+              <View style={styles.modalHeader}>
+                <Pressable onPress={onCancelIos} hitSlop={10} style={styles.modalHeaderBtn}>
+                  <Text variant="label" color={colors.t3}>
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Text variant="labelLg" color={colors.t0}>
+                  {picker === "date" ? "Select Date" : "Select Time"}
+                </Text>
+                <Pressable onPress={onConfirmIos} hitSlop={10} style={styles.modalHeaderBtn}>
+                  <Text variant="labelLg" color={colors.acc}>
+                    Done
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.pickerContainer}>
+                {picker ? (
+                  <DateTimePicker
+                    value={tempDate}
+                    mode={picker}
+                    maximumDate={picker === "date" ? new Date() : undefined}
+                    display="spinner"
+                    themeVariant="light"
+                    textColor={colors.t0}
+                    onChange={(_event, date) => {
+                      if (date) setTempDate(date);
+                    }}
+                    style={styles.iosPicker}
+                  />
+                ) : null}
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : picker ? (
         <DateTimePicker
           value={occurred}
           mode={picker}
-          // The constraint, enforced by the picker rather than by a later error.
-          maximumDate={new Date()}
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={onPicked}
+          maximumDate={picker === "date" ? new Date() : undefined}
+          display="default"
+          onChange={onPickedAndroid}
         />
-      ) : null}
-
-      {/* iOS keeps the inline picker mounted, so it needs its own dismissal. */}
-      {picker && Platform.OS === "ios" ? (
-        <Pressable
-          onPress={() => setPicker(null)}
-          style={{ alignSelf: "center", paddingVertical: 10 }}
-        >
-          <Text variant="label" color={colors.acc}>
-            Done
-          </Text>
-        </Pressable>
       ) : null}
     </WizardShell>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   nowCard: {
     backgroundColor: colors.s3,
     borderRadius: radius.lg,
@@ -325,18 +378,18 @@ const styles = {
     marginTop: 14,
   },
   row: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: colors.s3,
     borderRadius: radius.lg,
     padding: 15,
     marginTop: 14,
   },
-  rowValue: { flexDirection: "row" as const, alignItems: "center" as const, gap: 9 },
+  rowValue: { flexDirection: "row", alignItems: "center", gap: 9 },
   unknownRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 11,
     marginTop: 14,
   },
@@ -349,7 +402,7 @@ const styles = {
     borderWidth: 1,
     borderColor: cardHairline,
   },
-  pairRow: { flexDirection: "row" as const, justifyContent: "space-between" as const },
+  pairRow: { flexDirection: "row", justifyContent: "space-between" },
   pairNote: {
     marginTop: 10,
     paddingTop: 10,
@@ -357,4 +410,49 @@ const styles = {
     borderTopColor: cardHairline,
     lineHeight: 17,
   },
-};
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.42)",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalContent: {
+    backgroundColor: colors.s0,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+    borderTopWidth: 1,
+    borderColor: alpha(colors.t0, 0.08),
+    overflow: "hidden",
+    shadowColor: colors.deep,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: alpha(colors.t0, 0.07),
+    backgroundColor: colors.s1,
+  },
+  modalHeaderBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  pickerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    backgroundColor: colors.s0,
+  },
+  iosPicker: {
+    width: "100%",
+    height: 216,
+  },
+});

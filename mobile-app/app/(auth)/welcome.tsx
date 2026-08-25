@@ -28,17 +28,16 @@ export default function WelcomeScreen(): React.ReactElement {
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
 
-  /**
-   * Google's request has to be a hook, so it lives here rather than in the
-   * provider. `useIdTokenAuthRequest` yields the `id_token` the backend verifies
-   * against Google's JWKS — an access token would prove nothing about identity.
-   *
-   * With no client ids configured the request is null and the button says so,
-   * rather than opening a browser that immediately fails.
-   */
+  const googleIosClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+    "47943475561-ddp7kapksdsdov6c81bqttohhupgm3qm.apps.googleusercontent.com";
+  const googleAndroidClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
+    "47943475561-gliss3g4ak20npfl72s3kieid2gph481.apps.googleusercontent.com";
+
   const [googleRequest, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: googleIosClientId,
+    androidClientId: googleAndroidClientId,
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   });
 
@@ -58,8 +57,6 @@ export default function WelcomeScreen(): React.ReactElement {
   const onGoogle = useCallback(async () => {
     clearError();
     if (!googleRequest) {
-      // Honest rather than silent: a button that appears to work and does nothing
-      // is worse than one that explains why it cannot.
       await promptGoogle().catch(() => {});
       return;
     }
@@ -69,8 +66,6 @@ export default function WelcomeScreen(): React.ReactElement {
   const onApple = useCallback(async () => {
     clearError();
     await signInWithApple();
-    // Routing is the gate's job: a successful sign-in flips auth status and the
-    // stack swaps underneath us.
   }, [clearError, signInWithApple]);
 
   return (
@@ -114,8 +109,6 @@ export default function WelcomeScreen(): React.ReactElement {
               onPress={onApple}
               loading={busy}
               variant="primary"
-              // Apple's own required treatment: black fill, white mark. Not the
-              // app's accent, so the no-recommendation rule holds.
               style={{ backgroundColor: colors.t0 }}
               icon={<AppleMark />}
               testID="welcome-apple"

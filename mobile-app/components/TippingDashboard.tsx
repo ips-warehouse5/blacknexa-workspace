@@ -143,9 +143,6 @@ export default function TippingDashboard(): React.ReactElement | null {
     }
   }, [balanceQuery.error, registerMutation]);
 
-  // Don't render if no auth user or no functions URL configured.
-  if (!user || !FUNCTIONS_URL) return null;
-
   // ── Withdraw (payout request) ───────────────────────────────────────────
   const [payoutMessage, setPayoutMessage] = useState<
     { type: "success" | "error"; text: string } | null
@@ -199,6 +196,9 @@ export default function TippingDashboard(): React.ReactElement | null {
     const timer = setTimeout(() => setPayoutMessage(null), 6_000);
     return () => clearTimeout(timer);
   }, [payoutMessage]);
+
+  // Don't render if no auth user or no functions URL configured.
+  if (!user || !FUNCTIONS_URL) return null;
 
   const balance = balanceQuery.data ?? null;
   const isLoading =
