@@ -17,16 +17,22 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, controlHeight, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/providers/AuthProvider";
 
+// Required so the browser tab used for Google's OAuth prompt closes itself and
+// hands the result back to the app; without this the flow can hang after login.
+WebBrowser.maybeCompleteAuthSession();
+
 export default function WelcomeScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const googleIosClientId =
     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
@@ -49,22 +55,35 @@ export default function WelcomeScreen(): React.ReactElement {
   }, []);
 
   useEffect(() => {
-    if (googleResponse?.type !== "success") return;
+    if (!googleResponse) return;
+    // A cancelled prompt is not an error worth showing, matching Apple's flow.
+    if (googleResponse.type === "dismiss" || googleResponse.type === "cancel") return;
+    if (googleResponse.type === "error") {
+      setGoogleError("That sign-in did not complete. Please try again.");
+      return;
+    }
+    if (googleResponse.type !== "success") return;
     const idToken = googleResponse.params?.id_token;
-    if (idToken) void signInWithGoogleToken(idToken);
+    if (idToken) {
+      void signInWithGoogleToken(idToken);
+    } else {
+      setGoogleError("That sign-in did not complete. Please try again.");
+    }
   }, [googleResponse, signInWithGoogleToken]);
 
   const onGoogle = useCallback(async () => {
     clearError();
+    setGoogleError(null);
     if (!googleRequest) {
-      await promptGoogle().catch(() => {});
+      await promptGoogle().catch(() => setGoogleError("That sign-in did not complete. Please try again."));
       return;
     }
-    await promptGoogle();
+    await promptGoogle().catch(() => setGoogleError("That sign-in did not complete. Please try again."));
   }, [clearError, googleRequest, promptGoogle]);
 
   const onApple = useCallback(async () => {
     clearError();
+    setGoogleError(null);
     await signInWithApple();
   }, [clearError, signInWithApple]);
 
@@ -92,13 +111,13 @@ export default function WelcomeScreen(): React.ReactElement {
           </Text>
         </View>
 
-        {error ? (
+        {error || googleError ? (
           <Text
             variant="bodySm"
             color={colors.bad2}
             style={{ marginTop: 16, paddingHorizontal: screenPadding.hero }}
           >
-            {error}
+            {error || googleError}
           </Text>
         ) : null}
 
