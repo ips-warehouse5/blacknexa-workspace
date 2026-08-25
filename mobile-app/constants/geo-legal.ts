@@ -111,6 +111,58 @@ export type CreateIncidentResponse = {
   error?: string;
 };
 
+/**
+ * `GET /api/v1/geo-legal/incident/:id`.
+ *
+ * Shape verified against the running backend. Note this is **not** a superset of
+ * the local `Incident` record: the server does not return title, summary,
+ * supporters, verifications, author or area. What it adds is the dispatch audit
+ * trail, evidence metadata and the server-side encryption status — so callers
+ * must merge, not replace.
+ *
+ * `sealedPayload` is the formatted summary with the server's own encryption
+ * layer already peeled; evidence blobs are never returned, only their metadata.
+ */
+export type ServerIncident = {
+  id: string;
+  userId: string;
+  countryCode: string;
+  category: string;
+  sealedPayload: string;
+  serverEncrypted: boolean;
+  piiScrubbed: boolean;
+  privacyLevel: "private" | "trusted" | "public";
+  createdAt: string;
+  dispatchStatus: string;
+  dispatchAuditId: string | null;
+};
+
+export type ServerEvidence = {
+  id: string;
+  mediaType: string;
+  contentHash: string;
+  metadataScrubbed: boolean;
+  createdAt: string;
+};
+
+export type ServerDispatchAudit = {
+  id: string;
+  channel: string;
+  agencyId: string;
+  agencyName: string;
+  portalUrl: string;
+  status: string;
+  dispatchedAt: string;
+};
+
+export type IncidentDetailResponse = {
+  success: boolean;
+  incident?: ServerIncident;
+  evidence?: ServerEvidence[];
+  dispatchAudit?: ServerDispatchAudit[];
+  error?: string;
+};
+
 export const PRIVACY_REGIME_LABELS: Record<PrivacyRegime, string> = {
   GDPR: "GDPR (EU)",
   CCPA: "CCPA (California)",

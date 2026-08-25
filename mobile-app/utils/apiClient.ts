@@ -2,7 +2,8 @@ import * as SecureStore from "expo-secure-store";
 
 export const FUNCTIONS_URL =
   process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL?.replace(/\/$/, "") ??
-  "https://blacknexa-backend.rork.app";
+  "http://192.168.1.214:4000";
+// "https://blacknexa-backend.rork.app";
 
 export const AUTH_URL =
   process.env.EXPO_PUBLIC_RORK_AUTH_URL?.replace(/\/$/, "") ??
@@ -52,10 +53,13 @@ async function getAccessToken(): Promise<string | null> {
 export function buildUrl(
   pathOrUrl: string,
   params?: Record<string, string | number | boolean | undefined | null>,
-  baseUrl: string = FUNCTIONS_URL
+  baseUrl: string = FUNCTIONS_URL,
 ): string {
-  const isAbsolute = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://");
-  const full = isAbsolute ? pathOrUrl : `${baseUrl}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+  const isAbsolute =
+    pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://");
+  const full = isAbsolute
+    ? pathOrUrl
+    : `${baseUrl}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
 
   if (!params) return full;
 
@@ -75,9 +79,15 @@ export function buildUrl(
 export async function apiClient<T = any>(
   pathOrUrl: string,
   config: RequestConfig = {},
-  baseUrl: string = FUNCTIONS_URL
+  baseUrl: string = FUNCTIONS_URL,
 ): Promise<T> {
-  const { params, timeoutMs = 15000, skipAuth = false, headers: customHeaders, ...init } = config;
+  const {
+    params,
+    timeoutMs = 15000,
+    skipAuth = false,
+    headers: customHeaders,
+    ...init
+  } = config;
   const url = buildUrl(pathOrUrl, params, baseUrl);
 
   const headers = new Headers(customHeaders);
@@ -85,7 +95,11 @@ export async function apiClient<T = any>(
     headers.set("Accept", "application/json");
   }
 
-  if (init.body && typeof init.body === "string" && !headers.has("Content-Type")) {
+  if (
+    init.body &&
+    typeof init.body === "string" &&
+    !headers.has("Content-Type")
+  ) {
     try {
       JSON.parse(init.body);
       headers.set("Content-Type", "application/json");
@@ -123,7 +137,9 @@ export async function apiClient<T = any>(
 
     if (!res.ok) {
       const errorMessage =
-        (typeof data === "object" && data !== null && (data.error || data.message)) ||
+        (typeof data === "object" &&
+          data !== null &&
+          (data.error || data.message)) ||
         `HTTP Error ${res.status}: ${res.statusText}`;
       throw new ApiError(errorMessage, res.status, data);
     }
@@ -144,7 +160,7 @@ export async function apiClient<T = any>(
 /** Legacy helper alias for backwards compatibility */
 export const apiFetch = async <T = any>(
   endpoint: string,
-  options?: RequestConfig
+  options?: RequestConfig,
 ): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> => {
   try {
     const data = await apiClient<T>(endpoint, options);

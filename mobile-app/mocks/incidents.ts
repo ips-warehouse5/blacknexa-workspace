@@ -9,7 +9,17 @@ export type IncidentCategory =
   | "harassment";
 
 export type Incident = {
+  /** Local identifier, `inc_<millis>`. Generated on this device. */
   id: string;
+  /**
+   * Identifier issued by the backend when the incident was persisted, format
+   * `inc_<millis>_<rand5>`. Deliberately separate from `id` — the two formats
+   * differ, and the server does not recognise local ids.
+   *
+   * Absent when the report predates server persistence, or when the create call
+   * failed. Anything reading the server copy must handle that.
+   */
+  serverId?: string;
   title: string;
   summary: string;
   category: IncidentCategory;

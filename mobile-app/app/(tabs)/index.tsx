@@ -61,6 +61,32 @@ export default function FeedScreen(): React.ReactElement {
     return list;
   }, [publicIncidents, filter, query]);
 
+  /**
+   * The feed can be empty for three quite different reasons, and telling the user
+   * to "clear your search" when they simply have no reports is misleading.
+   *
+   * Note the feed is local-only: there is no incident list endpoint on the
+   * backend (R-024), so it never contains other people's reports.
+   */
+  const emptyState = useMemo(() => {
+    if (incidents.length === 0) {
+      return {
+        title: "No reports yet",
+        body: "Tap the + button to document an incident. Your reports stay on this device until you choose to share them.",
+      };
+    }
+    if (publicIncidents.length === 0) {
+      return {
+        title: "Your reports are private",
+        body: "Reports marked private don't appear in the feed. You'll find them in your Vault.",
+      };
+    }
+    return {
+      title: "No stories match",
+      body: "Try a different category or clear your search.",
+    };
+  }, [incidents.length, publicIncidents.length]);
+
   const openReport = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -182,10 +208,8 @@ export default function FeedScreen(): React.ReactElement {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No stories match</Text>
-            <Text style={styles.emptyText}>
-              Try a different category or clear your search.
-            </Text>
+            <Text style={styles.emptyTitle}>{emptyState.title}</Text>
+            <Text style={styles.emptyText}>{emptyState.body}</Text>
           </View>
         }
       />

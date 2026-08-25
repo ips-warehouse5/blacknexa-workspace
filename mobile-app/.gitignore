@@ -47,6 +47,7 @@ node_modules
 
 # local AI project memory — never commit or push
 .ai/
+CLAUDE.md
 
 # lockfile
 bun.lock

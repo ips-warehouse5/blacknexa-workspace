@@ -55,6 +55,7 @@ import {
   appendCustodyEvent,
   createEvidenceManifest,
   sha256,
+  type EvidenceManifest,
 } from "@/constants/security";
 import { quickCredibilityAssessment } from "@/constants/credibility";
 import { MISSION_STATEMENT, NO_GUARANTEE_DISCLAIMER_TEXT } from "@/constants/disclaimers";
@@ -401,6 +402,8 @@ export default function ReportScreen(): React.ReactElement {
 
     const incidentId = `inc_${Date.now()}`;
     const actor = settings.anonymousByDefault ? "Anonymous" : settings.displayName;
+    /** Held outside the try so the server-create step below can attach the sealed blob. */
+    let sealedManifest: EvidenceManifest | null = null;
 
     // Initialize cryptographic audit log (same as local flow).
     try {
@@ -418,7 +421,7 @@ export default function ReportScreen(): React.ReactElement {
         });
         const contentHash = await sha256(evidenceData + incidentId);
         const vaultSecret = settings.vaultPin || `fallback:${incidentId}:${settings.consentTimestamp}`;
-        createEvidenceManifest({
+        sealedManifest = createEvidenceManifest({
           incidentId,
           mediaType,
           contentHash,
@@ -434,14 +437,65 @@ export default function ReportScreen(): React.ReactElement {
           description: `${photos.length} file(s) sealed with AES-256-GCM. Hash: ${contentHash.slice(0, 16)}…`,
         });
       }
+    } catch (e) {
+      console.log("[Custody] init error", e);
+    }
+
+    const draft: GeoReportDraft = {
+      title: title.trim(),
+      summary: summary.trim(),
+      category,
+      area: area.trim(),
+      countryCode: country,
+    };
+
+    // Persist the incident server-side BEFORE dispatching.
+    //
+    // This is the call that performs PII scrubbing and server-side sealing, and
+    // that stores the evidence package. Dispatch only writes an agency audit
+    // trail, so without this step the report never leaves the device and the
+    // audit rows reference an incident that does not exist server-side.
+    // Non-fatal: a backend failure must not lose the user's local record.
+    let serverIncidentId: string | null = null;
+    try {
+      const created = await createGeoIncident({
+        userId: settings.anonymousByDefault ? "anonymous" : (settings.displayName || "anonymous"),
+        countryCode: country,
+        category,
+        privacyLevel: privacy,
+        reportDraft: draft,
+        validation: geoValidation,
+        // The server expects the sealed blob as a string; the client holds it as
+        // a structured SealedPayload.
+        sealedEvidence: sealedManifest?.sealedPayload
+          ? {
+              incidentId,
+              sealedPayload: JSON.stringify(sealedManifest.sealedPayload),
+              mediaType,
+              contentHash: sealedManifest.contentHash,
+              metadataScrubbed: redactLocation,
+            }
+          : undefined,
+        humanConfirmed: true,
+      });
+      serverIncidentId = created?.incidentId ?? null;
+    } catch (e) {
+      console.log("[Report] server incident create failed (non-fatal)", e);
+    }
+
+    // Record only what actually happened. Claiming server-side processing that
+    // did not occur would put a false statement in the chain-of-custody log.
+    try {
       await appendCustodyEvent({
         incidentId,
         action: "ENCRYPTED",
         actor: "BlackNexa Engine",
-        description: "Record encrypted with AES-256-GCM (zero-knowledge). Server-side re-encryption + PII scrubbing applied.",
+        description: serverIncidentId
+          ? `Record sealed with AES-256-GCM. Server-side re-encryption + PII scrubbing applied (server ref: ${serverIncidentId}).`
+          : "Record sealed with AES-256-GCM on device. Server-side processing unavailable — this record is stored locally only.",
       });
     } catch (e) {
-      console.log("[Custody] init error", e);
+      console.log("[Custody] encryption event error", e);
     }
 
     // Create the incident in the local store (for the feed + vault).
@@ -454,23 +508,21 @@ export default function ReportScreen(): React.ReactElement {
       hasEvidence: photos.length > 0,
       evidenceCount: photos.length,
       redactLocation,
+      // Kept so the detail screen can fetch the server copy later. Undefined when
+      // the server create failed — the local record still stands on its own.
+      serverId: serverIncidentId ?? undefined,
     });
 
     // Dispatch to agencies via the geo-legal backend (audit trail + contact links).
+    // Prefer the server-issued incident id so the audit rows link to a real
+    // incident; fall back to the local id only if creation failed.
     try {
-      const draft: GeoReportDraft = {
-        title: title.trim(),
-        summary: summary.trim(),
-        category,
-        area: area.trim(),
-        countryCode: country,
-      };
       await confirmAndDispatch({
         reportDraft: draft,
         validation: geoValidation,
         humanConfirmed: true,
         channels: ["GOVT_AGENCY", "PRESS", "HUMAN_RIGHTS"],
-        incidentId,
+        incidentId: serverIncidentId ?? incidentId,
       });
     } catch (e) {
       console.log("[Report] geo-legal dispatch failed (non-fatal)", e);
@@ -491,6 +543,7 @@ export default function ReportScreen(): React.ReactElement {
     settings,
     mediaType,
     createIncident,
+    createGeoIncident,
     confirmAndDispatch,
     resetForm,
   ]);
