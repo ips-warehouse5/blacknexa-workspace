@@ -1,374 +1,477 @@
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { Bell, Plus, Search, Shield } from "lucide-react-native";
+/**
+ * B1 · Home — the community feed.
+ *
+ * From the caption: "The filter bar is pinned under the header and never scrolls
+ * away. Filters and the sort chip hold fixed positions; only the category rail
+ * between them scrolls, fading at its right edge so it reads as more-to-come
+ * rather than a clipped word."
+ *
+ * Three parts of that are load-bearing:
+ *
+ *   • **Pinned, not sticky-on-scroll.** The bar sits outside the list, so it never
+ *     animates in or out. Someone filtering a long feed does not lose the control
+ *     they are using.
+ *
+ *   • **Only the rail scrolls.** Filters (left) and the sort chip (right) are
+ *     fixed; the category rail is the one horizontally scrolling region, with a
+ *     mask fade at its right edge.
+ *
+ *   • **Counts are live.** Every chip carries a count computed under the *other*
+ *     active filters, so tapping one never lands on an empty result by surprise.
+ *
+ * The card is treatment 1a — see `components/report/FeedCard.tsx`.
+ */
+
 import React, { useCallback, useMemo, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
-import Colors from "@/constants/colors";
-import IncidentCard from "@/components/IncidentCard";
-import BrandMark from "@/components/BrandMark";
-import { CATEGORY_LABELS, type IncidentCategory } from "@/mocks/incidents";
-import { useIncidents } from "@/providers/IncidentsProvider";
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { router } from "expo-router";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import MaskedView from "@react-native-masked-view/masked-view";
+import { LinearGradient } from "expo-linear-gradient";
+import { alpha, colors, screenPadding } from "@/constants/theme";
+import Text from "@/components/ui/Text";
+import { Chip } from "@/components/ui/Controls";
+import FeedCard, { CARD_GAP, cardHeight } from "@/components/report/FeedCard";
+import { FeedSkeleton, FeedEmpty, FeedError } from "@/components/report/FeedStates";
+import FiltersSheet from "@/components/sheets/FiltersSheet";
+import SortSheet from "@/components/sheets/SortSheet";
+import { useAuth } from "@/providers/AuthProvider";
+import reportsApi, {
+  CATEGORY_META,
+  type FeedCardView,
+  type FeedQuery,
+  type ReportCategory,
+} from "@/lib/api/reports";
 
-type FilterKey = "all" | IncidentCategory;
+const SORT_LABEL: Record<NonNullable<FeedQuery["sort"]>, string> = {
+  newest: "Newest",
+  supported: "Most supported",
+  corroborated: "Most corroborated",
+};
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  ...(Object.keys(CATEGORY_LABELS) as IncidentCategory[]).map((k) => ({
-    key: k,
-    label: CATEGORY_LABELS[k],
-  })),
-];
+const SORT_SENTENCE: Record<NonNullable<FeedQuery["sort"]>, string> = {
+  newest: "Newest first",
+  supported: "Most supported",
+  corroborated: "Most corroborated",
+};
 
 export default function FeedScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { incidents, toggleSupport, isSupported } = useIncidents();
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [query, setQuery] = useState<string>("");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const publicIncidents = useMemo(
-    () =>
-      incidents.filter(
-        (i) => i.privacy === "public" || i.privacy === "trusted"
-      ),
-    [incidents]
+  const [filters, setFilters] = useState<FeedQuery>({ sort: "newest", when: "all" });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+
+  /** Everything except pagination — the key both queries share. */
+  const filterKey = useMemo(
+    () => [
+      filters.category ?? null,
+      filters.when ?? "all",
+      filters.verifiedOnly ?? false,
+      filters.urgentOnly ?? false,
+      filters.sort ?? "newest",
+    ],
+    [filters],
   );
 
-  const filtered = useMemo(() => {
-    let list = publicIncidents;
-    if (filter !== "all") list = list.filter((i) => i.category === filter);
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(
-        (i) =>
-          i.title.toLowerCase().includes(q) ||
-          i.summary.toLowerCase().includes(q) ||
-          i.area.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [publicIncidents, filter, query]);
+  const feed = useInfiniteQuery({
+    queryKey: ["feed", ...filterKey],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => reportsApi.feed({ ...filters, cursor: pageParam }),
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
 
-  const openReport = useCallback(() => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    }
-    router.push("/report");
+  /**
+   * Facets run in parallel with the page, not after it.
+   *
+   * The chips must show their counts on first paint; waiting for the rows would
+   * leave the bar numberless for a beat, which is exactly the "empty result by
+   * surprise" the design is guarding against.
+   */
+  const facets = useQuery({
+    queryKey: ["feed-facets", ...filterKey],
+    queryFn: () => reportsApi.facets(filters),
+  });
+
+  const items = useMemo(
+    () => feed.data?.pages.flatMap((page) => page.items) ?? [],
+    [feed.data],
+  );
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.category) count += 1;
+    if (filters.when && filters.when !== "all") count += 1;
+    if (filters.verifiedOnly) count += 1;
+    if (filters.urgentOnly) count += 1;
+    return count;
+  }, [filters]);
+
+  /** The result line under the bar: "17 reports · Policing · Newest first". */
+  const resultLine = useMemo(() => {
+    const total = facets.data?.total ?? items.length;
+    const parts = [`${total} report${total === 1 ? "" : "s"}`];
+    if (filters.category) parts.push(CATEGORY_META[filters.category].label);
+    parts.push(SORT_SENTENCE[filters.sort ?? "newest"]);
+    return parts.join(" · ");
+  }, [facets.data?.total, filters.category, filters.sort, items.length]);
+
+  const toggleCategory = useCallback((category: ReportCategory) => {
+    setFilters((current) => ({
+      ...current,
+      // Tapping the active chip clears it — the rail is a toggle, not a radio.
+      category: current.category === category ? undefined : category,
+    }));
   }, []);
 
+  const clearAll = useCallback(() => {
+    setFilters({ sort: filters.sort, when: "all" });
+  }, [filters.sort]);
+
+  /**
+   * Stand with, applied optimistically.
+   *
+   * A tap that waits on a round trip feels broken, and the only cost of being
+   * wrong is a count that corrects itself on the next refetch.
+   */
+  const toggleSupport = useCallback(
+    async (item: FeedCardView) => {
+      const key = ["feed", ...filterKey];
+      queryClient.setQueryData(key, (old: typeof feed.data) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((row) =>
+              row.id === item.id
+                ? {
+                    ...row,
+                    standingWith: !row.standingWith,
+                    supportCount: row.supportCount + (row.standingWith ? -1 : 1),
+                  }
+                : row,
+            ),
+          })),
+        };
+      });
+
+      try {
+        await reportsApi.toggleSupport(item.id);
+      } catch {
+        // Put it back rather than leaving a number the server disagrees with.
+        void queryClient.invalidateQueries({ queryKey: key });
+      }
+    },
+    [filterKey, queryClient],
+  );
+
+  const openReport = useCallback((item: FeedCardView) => {
+    router.push(`/r/${item.caseRef}`);
+  }, []);
+
+  const categoryChips = facets.data?.categories ?? [];
+
   return (
-    <View style={styles.root}>
-      <LinearGradient
-        colors={[Colors.surface, Colors.bg]}
-        style={[styles.headerBg, { paddingTop: insets.top }]}
-      >
-        <View style={styles.headerTop}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <Shield size={16} color={Colors.bg} fill={Colors.gold} />
-            </View>
-            <View>
-              <View style={styles.brandLine}>
-                <Text style={styles.brand}>BlackNexa</Text>
-                <Text style={styles.tm} testID="brand-tm">TM</Text>
-              </View>
-              <Text style={styles.brandSub}>Community · Evidence · Trust</Text>
-            </View>
-          </View>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      {/* Header: avatar / brand / search + bell. */}
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => router.push("/profile")}
+          accessibilityRole="button"
+          accessibilityLabel="Your profile"
+          style={styles.avatar}
+          testID="feed-avatar"
+        >
+          <Text variant="labelSm" color={colors.acc}>
+            {user?.initials ?? "?"}
+          </Text>
+        </Pressable>
+
+        <Text variant="cardTitle" color={colors.t0} style={{ fontSize: 18 }}>
+          BlackNexa
+        </Text>
+
+        <View style={styles.headerActions}>
           <Pressable
-            style={styles.iconBtn}
-            testID="header-notifications"
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                Haptics.selectionAsync().catch(() => {});
-              }
-              Alert.alert(
-                "Notifications",
-                "You're all caught up. New supporters and verifications will appear here.",
-                [{ text: "OK" }]
-              );
-            }}
+            onPress={() => router.push("/search")}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Search reports"
+            testID="feed-search"
           >
-            <Bell size={18} color={Colors.text} />
-            <View style={styles.bellDot} />
+            <SearchGlyph />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            testID="feed-notifications"
+          >
+            <BellGlyph withDot />
           </Pressable>
         </View>
+      </View>
 
-        <View style={styles.searchWrap}>
-          <Search size={16} color={Colors.textMute} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search incidents, areas, categories"
-            placeholderTextColor={Colors.textMute}
-            style={styles.searchInput}
-            testID="search-input"
+      {/* The pinned filter bar. Outside the list, so it never scrolls away. */}
+      <View style={styles.filterBar}>
+        <View style={styles.filterRow}>
+          <Chip
+            label="Filters"
+            count={activeFilterCount > 0 ? activeFilterCount : undefined}
+            selected={activeFilterCount > 0}
+            onPress={() => setFiltersOpen(true)}
+            testID="open-filters"
           />
-        </View>
-      </LinearGradient>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: 120 + insets.bottom },
-        ]}
-        initialNumToRender={6}
-        windowSize={7}
-        removeClippedSubviews={Platform.OS !== "web"}
-        ListHeaderComponent={
-          <View>
-            <ScrollView
+          {/* The one horizontally scrolling region, faded at its right edge. */}
+          <MaskedView
+            style={styles.rail}
+            maskElement={
+              <LinearGradient
+                colors={["#000", "#000", "transparent"]}
+                locations={[0, 0.92, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
+            }
+          >
+            <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-            >
-              {FILTERS.map((item) => {
-                const active = filter === item.key;
-                return (
-                  <Pressable
-                    key={item.key}
-                    onPress={() => setFilter(item.key)}
-                    style={[
-                      styles.filterChip,
-                      active && styles.filterChipActive,
-                    ]}
-                    testID={`filter-${item.key}`}
-                  >
-                    <Text
-                      style={[
-                        styles.filterText,
-                        active && styles.filterTextActive,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Community Feed</Text>
-              <Text style={styles.sectionCount}>
-                {filtered.length} {filtered.length === 1 ? "story" : "stories"}
-              </Text>
-            </View>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <IncidentCard
-            incident={item}
-            supported={isSupported(item.id)}
-            onToggleSupport={toggleSupport}
+              data={categoryChips}
+              keyExtractor={(entry) => entry.category}
+              contentContainerStyle={styles.railContent}
+              renderItem={({ item: entry }) => (
+                <Chip
+                  label={CATEGORY_META[entry.category].label}
+                  count={entry.count}
+                  dotColor={colors[CATEGORY_META[entry.category].token]}
+                  selected={filters.category === entry.category}
+                  onPress={() => toggleCategory(entry.category)}
+                  testID={`filter-${entry.category}`}
+                />
+              )}
+            />
+          </MaskedView>
+
+          <Chip
+            label={SORT_LABEL[filters.sort ?? "newest"] === "Newest" ? "Newest" : "Sorted"}
+            selected={false}
+            onPress={() => setSortOpen(true)}
+            testID="open-sort"
           />
-        )}
-        ListFooterComponent={
-          filtered.length > 0 ? (
-            <BrandMark variant="watermark" testID="feed-watermark" />
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No stories match</Text>
-            <Text style={styles.emptyText}>
-              Try a different category or clear your search.
-            </Text>
-          </View>
-        }
+        </View>
+
+        <View style={styles.resultRow}>
+          <Text variant="metaSm" color={colors.t3}>
+            {resultLine}
+          </Text>
+          {activeFilterCount > 0 ? (
+            <Pressable onPress={clearAll} hitSlop={8} accessibilityRole="button">
+              <Text variant="metaSm" color={colors.acc}>
+                Clear all
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+
+      {feed.isLoading ? (
+        <FeedSkeleton />
+      ) : feed.isError ? (
+        <FeedError onRetry={() => void feed.refetch()} />
+      ) : items.length === 0 ? (
+        <FeedEmpty
+          filtered={activeFilterCount > 0}
+          onClear={clearAll}
+          onFile={() => router.push("/report")}
+        />
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={{ height: CARD_GAP }} />}
+          renderItem={({ item }) => (
+            <FeedCard item={item} onPress={openReport} onToggleSupport={toggleSupport} />
+          )}
+          // Both card variants are fixed-height, which is what makes this
+          // possible — and what keeps scroll restoration smooth on a long feed.
+          getItemLayout={(data, index) => {
+            const rows = data ?? [];
+            let offset = 0;
+            for (let i = 0; i < index; i += 1) offset += cardHeight(rows[i]) + CARD_GAP;
+            return { length: cardHeight(rows[index]), offset, index };
+          }}
+          onEndReachedThreshold={0.6}
+          onEndReached={() => {
+            if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={feed.isRefetching && !feed.isFetchingNextPage}
+              onRefresh={() => {
+                void feed.refetch();
+                void facets.refetch();
+              }}
+              tintColor={colors.acc}
+            />
+          }
+          ListFooterComponent={
+            feed.isFetchingNextPage ? (
+              <Text variant="metaSm" color={colors.t4} center style={{ paddingVertical: 18 }}>
+                Loading more…
+              </Text>
+            ) : null
+          }
+        />
+      )}
+
+      <FiltersSheet
+        visible={filtersOpen}
+        filters={filters}
+        facets={facets.data}
+        onApply={(next) => {
+          setFilters(next);
+          setFiltersOpen(false);
+        }}
+        onClose={() => setFiltersOpen(false)}
       />
 
-      <Pressable
-        onPress={openReport}
-        style={[styles.fab, { bottom: 100 + insets.bottom }]}
-        testID="fab-report"
-      >
-        <LinearGradient
-          colors={[Colors.gold, Colors.goldDeep]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.fabInner}
-        >
-          <Plus size={22} color={Colors.bg} strokeWidth={3} />
-          <Text style={styles.fabText}>Report</Text>
-        </LinearGradient>
-      </Pressable>
+      <SortSheet
+        visible={sortOpen}
+        sort={filters.sort ?? "newest"}
+        onSelect={(sort) => {
+          setFilters((current) => ({ ...current, sort }));
+          setSortOpen(false);
+        }}
+        onClose={() => setSortOpen(false)}
+      />
+    </View>
+  );
+}
+
+function SearchGlyph(): React.ReactElement {
+  return (
+    <View style={styles.glyph}>
+      <View style={styles.searchRing} />
+      <View style={styles.searchHandle} />
+    </View>
+  );
+}
+
+function BellGlyph({ withDot }: { withDot?: boolean }): React.ReactElement {
+  return (
+    <View style={styles.glyph}>
+      <View style={styles.bellDome} />
+      <View style={styles.bellBar} />
+      <View style={styles.bellClapper} />
+      {withDot ? <View style={styles.bellDot} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg },
-  headerBg: {
-    paddingHorizontal: 18,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-  },
-  headerTop: {
+  root: { flex: 1, backgroundColor: colors.bg },
+
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 8,
-    marginBottom: 14,
+    paddingHorizontal: 18,
+    paddingTop: 2,
+    paddingBottom: 12,
   },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  brandMark: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: Colors.surface3,
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: colors.s6,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: Colors.gold + "44",
   },
-  brandLine: { flexDirection: "row", alignItems: "flex-start", gap: 3 },
-  brand: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: Colors.text,
-    letterSpacing: -0.3,
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+
+  filterBar: {
+    backgroundColor: colors.s0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: alpha(colors.t0, 0.07),
+    paddingBottom: 9,
   },
-  tm: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: Colors.gold,
-    letterSpacing: 0.5,
-    marginTop: 2,
+  filterRow: { flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 16 },
+  rail: { flex: 1, minWidth: 0, height: 34 },
+  railContent: { gap: 7, paddingRight: 18 },
+  resultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingTop: 9,
   },
-  brandSub: {
-    fontSize: 11,
-    color: Colors.textDim,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+
+  listContent: {
+    paddingHorizontal: screenPadding.feed,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+
+  glyph: { width: 21, height: 21, alignItems: "center", justifyContent: "center" },
+  searchRing: {
+    position: "absolute",
+    top: 1,
+    left: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    borderWidth: 1.7,
+    borderColor: colors.t1,
+  },
+  searchHandle: {
+    position: "absolute",
+    right: 2,
+    bottom: 3,
+    width: 6,
+    height: 1.7,
+    borderRadius: 1,
+    backgroundColor: colors.t1,
+    transform: [{ rotate: "45deg" }],
+  },
+  bellDome: {
+    width: 13,
+    height: 11,
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
+    borderWidth: 1.7,
+    borderBottomWidth: 0,
+    borderColor: colors.t1,
     marginTop: 1,
   },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Colors.surface2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
+  bellBar: { width: 17, height: 1.7, backgroundColor: colors.t1 },
+  bellClapper: {
+    width: 5,
+    height: 2.5,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    borderWidth: 1.7,
+    borderTopWidth: 0,
+    borderColor: colors.t1,
+    marginTop: 1,
   },
   bellDot: {
     position: "absolute",
-    top: 9,
-    right: 10,
+    top: 0,
+    right: 1,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.gold,
+    backgroundColor: colors.acc,
     borderWidth: 2,
-    borderColor: Colors.surface2,
-  },
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 44,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 14,
-    fontWeight: "500",
-    padding: 0,
-  },
-  listContent: { paddingHorizontal: 16, paddingTop: 8 },
-  filterRow: { gap: 8, paddingVertical: 12, paddingRight: 12 },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  filterChipActive: {
-    backgroundColor: Colors.gold,
-    borderColor: Colors.gold,
-  },
-  filterText: {
-    fontSize: 13,
-    color: Colors.textDim,
-    fontWeight: "600",
-  },
-  filterTextActive: { color: Colors.bg, fontWeight: "700" },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.text,
-    letterSpacing: -0.5,
-  },
-  sectionCount: {
-    fontSize: 12,
-    color: Colors.textDim,
-    fontWeight: "600",
-  },
-  empty: {
-    paddingVertical: 60,
-    alignItems: "center",
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: Colors.textDim,
-    textAlign: "center",
-    paddingHorizontal: 40,
-  },
-  fab: {
-    position: "absolute",
-    right: 18,
-    shadowColor: Colors.gold,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  fabInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 999,
-  },
-  fabText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: Colors.bg,
-    letterSpacing: 0.3,
+    borderColor: colors.bg,
   },
 });

@@ -1,13 +1,17 @@
 """Photojournalistic image generation.
 
-Ports `aiGatewayService.generateArticleImage()`. The model is multimodal, called
-through chat-completions with `modalities: ["text", "image"]`.
+Ports `aiGatewayService.generateArticleImage()`. The model is multimodal, so the
+image comes back from the same `generateContent` call as text, selected by asking
+for `responseModalities: ["TEXT", "IMAGE"]`.
 
-Gateways disagree about where the image lands, so all three observed shapes are
-handled, exactly as the Node implementation does:
-  * `message.images[]` as bare data-URI strings,
-  * `message.images[]` as `{image_url: {url}}` objects,
-  * a data URI embedded in `message.content`.
+Extraction got considerably simpler than the gateway version it replaces. That
+one had to handle three observed response shapes — `images[]` as bare data URIs,
+`images[]` as `{image_url: {url}}` objects, and a data URI buried in the message
+text — because the gateway normalised nothing. Gemini answers with one shape: an
+`inlineData` part carrying base64 and a mime type. The embedded-data-URI scan is
+kept as a fallback for a model that describes the image in prose instead of
+attaching it; the two `images[]` shapes are gone with the gateway that produced
+them.
 
 Returns `None` on any failure — the caller then falls back to a curated photo, so
 the feed never shows a broken thumbnail.
@@ -17,69 +21,39 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.integrations.gateway import post_json
-from app.integrations.llm.chat import CHAT_PATH, first_message
+from app.integrations.llm import gemini
 from app.schemas.news import GeneratedImage
 
 logger = get_logger(__name__)
 
-_DATA_URI = re.compile(r"^data:(image/[a-zA-Z0-9+.\-]+);base64,(.+)$", re.DOTALL)
 _EMBEDDED_DATA_URI = re.compile(r"data:(image/[a-zA-Z0-9+.\-]+);base64,([A-Za-z0-9+/=]+)")
-# Some providers return raw base64 with no data-URI prefix.
-_BARE_BASE64 = re.compile(r"^[A-Za-z0-9+/]{100,}={0,2}$")
 
 _IMAGE_TEMPERATURE = 0.7
-_IMAGE_MAX_TOKENS = 4096
+_LABEL = "gemini_image"
 
 
-def _parse_data_uri(value: str) -> GeneratedImage | None:
-    """Split a data URI into base64 payload and media type."""
-    match = _DATA_URI.match(value)
-    if match:
-        return GeneratedImage(base64=match.group(2), mediaType=match.group(1))
-    if _BARE_BASE64.match(value):
-        return GeneratedImage(base64=value, mediaType="image/png")
-    return None
+def extract_image(body: dict[str, object] | None) -> GeneratedImage | None:
+    """Find the generated image in the response."""
+    inline = gemini.inline_data_from(body, mime_prefix="image/", label=_LABEL)
+    if inline:
+        data, mime_type = inline
+        return GeneratedImage(base64=data, mediaType=mime_type)
 
-
-def _extract_from_entry(entry: Any) -> GeneratedImage | None:
-    """Pull an image out of one `images[]` element, string or object."""
-    if isinstance(entry, str):
-        return _parse_data_uri(entry)
-    if isinstance(entry, dict):
-        url = (entry.get("image_url") or {}).get("url") if isinstance(
-            entry.get("image_url"), dict
-        ) else None
-        if isinstance(url, str):
-            return _parse_data_uri(url)
-    return None
-
-
-def extract_image(body: dict[str, Any] | None) -> GeneratedImage | None:
-    """Find the generated image anywhere in the response."""
-    message = first_message(body)
-    if not message:
-        return None
-
-    for entry in message.get("images") or []:
-        image = _extract_from_entry(entry)
-        if image:
-            return image
-
-    content = message.get("content")
-    if isinstance(content, str) and content:
-        embedded = _EMBEDDED_DATA_URI.search(content)
+    # Fallback: some prompts get answered with a described image rather than an
+    # attached one, and a data URI occasionally arrives inside the text part.
+    text = gemini.text_from(body, label=_LABEL)
+    if text:
+        embedded = _EMBEDDED_DATA_URI.search(text)
         if embedded:
             return GeneratedImage(base64=embedded.group(2), mediaType=embedded.group(1))
 
     logger.warning(
         "image_not_found_in_response",
-        image_entries=len(message.get("images") or []),
-        has_content=bool(message.get("content")),
+        parts=len(gemini.content_parts(body, label=_LABEL)),
+        has_text=bool(text),
     )
     return None
 
@@ -88,15 +62,17 @@ async def generate_image(prompt: str) -> tuple[GeneratedImage | None, int]:
     """Generate one image. Returns `(image, duration_ms)`."""
     started = time.perf_counter()
 
-    body = await post_json(
-        CHAT_PATH,
-        {
-            "model": settings.image_model,
-            "modalities": ["text", "image"],
-            "messages": [{"role": "user", "content": prompt}],
+    body = await gemini.generate_content(
+        model=settings.image_model,
+        user=prompt,
+        generation_config={
+            "responseModalities": ["TEXT", "IMAGE"],
             "temperature": _IMAGE_TEMPERATURE,
-            "max_tokens": _IMAGE_MAX_TOKENS,
+            # No maxOutputTokens: an image is billed as output tokens, and the
+            # gateway-era cap of 4096 is close enough to what one image costs
+            # that a cap risks a MAX_TOKENS finish with no image attached.
         },
+        label=_LABEL,
     )
 
     duration_ms = int((time.perf_counter() - started) * 1000)

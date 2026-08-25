@@ -9,8 +9,13 @@ outcomes, so:
   * no grounding material  → 502, which Node turns into "No current source
     material was found for that topic. Try a more specific prompt."
   * unusable model output  → 502
-  * gateway unconfigured   → 503
+  * a provider unconfigured → 503
 Anything else raises and is caught by the central handler.
+
+Synthesis needs both providers: Gemini to write and Exa to ground. A missing Exa
+key would otherwise surface as "no current source material for that topic" on
+every single request — a content message for a configuration fault — so it is
+checked up front and reported as unavailable instead.
 """
 
 from __future__ import annotations
@@ -44,7 +49,7 @@ logger = get_logger(__name__)
 
 async def synthesize(request: SynthesizeRequest) -> SynthesizeResponse:
     """Run the full grounded-generation pipeline for one topic."""
-    if not settings.ai_enabled:
+    if not settings.ai_enabled or not settings.search_enabled:
         raise GatewayUnavailableError()
 
     # Screened before a single token is spent. Raises PromptRejectedError (400)

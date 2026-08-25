@@ -1,9 +1,20 @@
-"""Chat-completions client and defensive JSON extraction.
+"""Text-generation client and defensive JSON extraction.
 
-The gateway does not support `response_format: {"type": "json_object"}` for every
-model, so JSON is requested in the prompt and parsed defensively — the model may
-wrap it in prose or a code fence. This ports `extractJsonObject` from
-`blacknexa-backend/src/utils/http.util.ts`.
+Both text callers — synthesis and translation — want one JSON object back, so
+this asks Gemini for `application/json` directly. That is a real upgrade over the
+gateway path this replaces: the old OpenAI-compatible endpoint did not honour
+`response_format` for every model, so JSON was requested in the prose of the
+prompt and hoped for.
+
+`extract_json_object` is kept anyway, and still ports `extractJsonObject` from
+`blacknexa-backend/src/utils/http.util.ts`. Two reasons it is not dead code: a
+JSON-mode response can still be truncated mid-object, and `AI_SYNTHESIS_MODEL` is
+operator-configurable, so a model that ignores the mime type must not take the
+feed down.
+
+The public surface here (`chat_completion`, `message_content`,
+`extract_json_object`) is unchanged from the gateway implementation, so the
+synthesis node and the translation service are untouched by the provider swap.
 """
 
 from __future__ import annotations
@@ -12,12 +23,11 @@ import json
 import re
 from typing import Any
 
+from app.core.config import settings
 from app.core.logging import get_logger
-from app.integrations.gateway import post_json
+from app.integrations.llm import gemini
 
 logger = get_logger(__name__)
-
-CHAT_PATH = "/v2/vercel/v1/chat/completions"
 
 _FENCED = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.IGNORECASE)
 
@@ -29,42 +39,33 @@ async def chat_completion(
     user: str,
     temperature: float,
     max_tokens: int,
-    extra_payload: dict[str, Any] | None = None,
+    json_output: bool = True,
+    label: str = "gemini_text",
 ) -> dict[str, Any] | None:
-    """Call chat-completions. Returns the raw body, or `None` on failure."""
-    payload: dict[str, Any] = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
+    """Generate text. Returns the raw Gemini body, or `None` on failure."""
+    generation_config: dict[str, Any] = {
         "temperature": temperature,
-        "max_tokens": max_tokens,
+        "maxOutputTokens": max_tokens,
+        # Off by default — see `GEMINI_THINKING_BUDGET`. Sent explicitly rather
+        # than left to the model default so latency does not change under the
+        # service when Google shifts that default.
+        "thinkingConfig": {"thinkingBudget": settings.gemini_thinking_budget},
     }
-    if extra_payload:
-        payload.update(extra_payload)
+    if json_output:
+        generation_config["responseMimeType"] = "application/json"
 
-    return await post_json(CHAT_PATH, payload)
-
-
-def first_message(body: dict[str, Any] | None) -> dict[str, Any] | None:
-    """`choices[0].message`, or None."""
-    if not body:
-        return None
-    choices = body.get("choices")
-    if not isinstance(choices, list) or not choices:
-        return None
-    message = choices[0].get("message") if isinstance(choices[0], dict) else None
-    return message if isinstance(message, dict) else None
+    return await gemini.generate_content(
+        model=model,
+        system=system,
+        user=user,
+        generation_config=generation_config,
+        label=label,
+    )
 
 
 def message_content(body: dict[str, Any] | None) -> str:
-    """`choices[0].message.content`, or an empty string."""
-    message = first_message(body)
-    if not message:
-        return ""
-    content = message.get("content")
-    return content if isinstance(content, str) else ""
+    """The generated text, or an empty string."""
+    return gemini.text_from(body, label="gemini_text")
 
 
 def extract_json_object(text: str) -> dict[str, Any] | None:

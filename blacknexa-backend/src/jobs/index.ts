@@ -22,6 +22,7 @@ import queueService from "@/services/queue.service";
 import platformCacheService from "@/services/platform_cache.service";
 import persistenceService from "@/services/persistence.service";
 import seoService from "@/services/seo.service";
+import reportMaintenanceService from "@/services/report_maintenance.service";
 import { backgroundOrigin } from "@/utils/origin.util";
 import { DEFAULTS } from "@/config/constants";
 
@@ -33,7 +34,7 @@ const tasks: ScheduledTask[] = [];
  * The daily batch generates 30 articles and can outlast a minute-scale schedule if
  * the gateway is slow; the maintenance job is short but runs every minute.
  */
-const running = { dailyNews: false, maintenance: false };
+const running = { dailyNews: false, maintenance: false, reports: false };
 
 /** Run the daily grounded-article batch, then ping the search engines. */
 export async function runDailyNewsJob(): Promise<void> {
@@ -109,6 +110,39 @@ export async function runPlatformMaintenanceJob(): Promise<void> {
   running.maintenance = false;
 }
 
+/**
+ * Nightly report housekeeping — the evidence purge, the counter reconciliation and
+ * the code/session pruning.
+ *
+ * Separate from `runPlatformMaintenanceJob` because the cadences are nothing alike:
+ * that one runs every minute and touches caches, this one runs once a night and
+ * deletes files. Putting a destructive job on a minute schedule is a mistake nobody
+ * gets to make twice.
+ */
+export async function runReportMaintenanceJob(): Promise<void> {
+  if (running.reports) {
+    logger.warn("[cron] report maintenance already running — skipping this tick");
+    return;
+  }
+  running.reports = true;
+  const startedAt = Date.now();
+
+  try {
+    const result = await reportMaintenanceService.run();
+    logger.info("[cron] report maintenance finished", {
+      ...result,
+      durationMs: Date.now() - startedAt,
+    });
+  } catch (err) {
+    // Never rethrow from a cron callback — see the daily batch above.
+    logger.error("[cron] report maintenance failed", {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    running.reports = false;
+  }
+}
+
 /** Register the schedules. No-op when `ENABLE_CRON` is false. */
 export function startJobs(): void {
   if (!env.jobs.enableCron) {
@@ -143,6 +177,20 @@ export function startJobs(): void {
       }),
     );
     logger.info(`[cron] platform maintenance scheduled: ${env.jobs.platformMaintenanceCron} UTC`);
+  }
+
+  if (!cron.validate(env.jobs.reportMaintenanceCron)) {
+    logger.error(
+      "[cron] CRON_REPORT_MAINTENANCE is not a valid expression — the evidence purge will not run",
+      { expression: env.jobs.reportMaintenanceCron },
+    );
+  } else {
+    tasks.push(
+      cron.schedule(env.jobs.reportMaintenanceCron, () => void runReportMaintenanceJob(), {
+        timezone: "UTC",
+      }),
+    );
+    logger.info(`[cron] report maintenance scheduled: ${env.jobs.reportMaintenanceCron} UTC`);
   }
 }
 

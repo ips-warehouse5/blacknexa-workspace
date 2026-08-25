@@ -1,9 +1,14 @@
-"""Shared AI-gateway transport.
+"""Shared outbound HTTP transport.
 
 Ports `fetchWithRetry` / `fetchWithTimeout` from `blacknexa-backend/src/utils/http.util.ts`:
-a bounded timeout plus one retry absorbs the transient 5xx/520 responses that
-occur between the edge and the gateway's origin, so a briefing request fails fast
-instead of hanging.
+a bounded timeout plus one retry absorbs the transient 5xx responses that occur
+between the edge and a provider's origin, so a briefing request fails fast instead
+of hanging.
+
+Provider-agnostic by design. It used to point at a single aggregating gateway;
+now that Gemini and Exa are called directly, callers pass an absolute URL and
+their own auth header, and this module owns only the connection pool and the
+retry policy. Nothing here knows an API key.
 
 Two deliberate differences from the Node original, both fixes rather than changes
 of behaviour:
@@ -41,7 +46,8 @@ def _build_client() -> httpx.AsyncClient:
         timeout=httpx.Timeout(settings.ai_timeout_seconds),
         limits=httpx.Limits(max_connections=64, max_keepalive_connections=32),
         headers={"User-Agent": "blacknexa-ai-engine/1.0"},
-        # The gateway is a known host; never chase a redirect to somewhere else.
+        # Both providers are known hosts; never chase a redirect to somewhere
+        # else, because the redirect target would receive the API key.
         follow_redirects=False,
     )
 
@@ -62,37 +68,26 @@ async def close_client() -> None:
     _client = None
 
 
-def auth_headers(extra: dict[str, str] | None = None) -> dict[str, str]:
-    """Gateway auth headers. The secret never appears in a log line."""
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {settings.ai_toolkit_secret_key}",
-    }
-    if extra:
-        headers.update(extra)
-    return headers
-
-
 async def post_json(
-    path: str,
+    url: str,
     payload: dict[str, Any],
     *,
-    extra_headers: dict[str, str] | None = None,
+    label: str,
+    headers: dict[str, str] | None = None,
     timeout_seconds: float | None = None,
     max_attempts: int | None = None,
 ) -> dict[str, Any] | None:
-    """POST JSON to the gateway, retrying once on a non-OK status or a transport error.
+    """POST JSON, retrying once on a non-OK status or a transport error.
+
+    `label` is what appears in the logs — a stable name for the call site, not the
+    URL, so a rotated key or a changed base URL never widens what gets logged.
 
     Returns the decoded body, or `None` on definitive failure. `None` is the
     contract every caller in this service is written against.
     """
-    if not settings.ai_enabled:
-        logger.warning("gateway_not_configured", path=path)
-        return None
-
-    url = f"{settings.ai_toolkit_url}{path}"
     attempts = max_attempts if max_attempts is not None else settings.ai_max_attempts
     timeout = timeout_seconds if timeout_seconds is not None else settings.ai_timeout_seconds
+    request_headers = {"Content-Type": "application/json", **(headers or {})}
     client = await get_client()
 
     last_status: int | None = None
@@ -102,13 +97,13 @@ async def post_json(
             response = await client.post(
                 url,
                 json=payload,
-                headers=auth_headers(extra_headers),
+                headers=request_headers,
                 timeout=timeout,
             )
         except (httpx.TimeoutException, httpx.TransportError) as exc:
             logger.warning(
-                "gateway_request_failed",
-                path=path,
+                "provider_request_failed",
+                call=label,
                 attempt=attempt,
                 error_type=type(exc).__name__,
                 error=str(exc),
@@ -121,8 +116,8 @@ async def post_json(
                     # A 200 with an unparseable body is a provider fault; a retry
                     # is worth one shot before giving up.
                     logger.warning(
-                        "gateway_bad_json",
-                        path=path,
+                        "provider_bad_json",
+                        call=label,
                         attempt=attempt,
                         body_preview=response.text[:200],
                     )
@@ -131,8 +126,8 @@ async def post_json(
                 # The body is logged, never returned — provider errors can echo
                 # request content back.
                 logger.warning(
-                    "gateway_non_ok",
-                    path=path,
+                    "provider_non_ok",
+                    call=label,
                     attempt=attempt,
                     status=response.status_code,
                     body_preview=response.text[:200],
@@ -144,5 +139,5 @@ async def post_json(
         if attempt < attempts:
             await asyncio.sleep(settings.ai_retry_delay_seconds)
 
-    logger.error("gateway_exhausted", path=path, attempts=attempts, last_status=last_status)
+    logger.error("provider_exhausted", call=label, attempts=attempts, last_status=last_status)
     return None

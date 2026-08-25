@@ -25,9 +25,17 @@ export type Settings = {
   promptMediaConsent: boolean;
   /** Whether to redact sensitive details in public reports. */
   redactPublicDetails: boolean;
-  /** User's vault PIN/passphrase for zero-knowledge encryption. Never logged. */
-  vaultPin: string;
-  /** Whether the user has set up a vault PIN. */
+  /**
+   * Whether a vault PIN has been set.
+   *
+   * The PIN itself is deliberately absent from this type. It used to be stored here
+   * as a plain string, which meant an unencrypted secret sat in AsyncStorage — and
+   * it bought nothing, because nothing ever read it. A PIN that guards anything is
+   * typed when it is needed and derives a key on the spot; one that is persisted is
+   * just a password written down next to the lock.
+   *
+   * `loadSettings` strips any value left behind by an earlier install.
+   */
   vaultPinSet: boolean;
   /** Preferred reading language for news articles. Defaults to English. */
   preferredLanguage: LanguageCode;
@@ -51,7 +59,6 @@ const DEFAULTS: Settings = {
   dataProcessingAgreed: false,
   promptMediaConsent: true,
   redactPublicDetails: true,
-  vaultPin: "",
   vaultPinSet: false,
   preferredLanguage: "en",
 };
@@ -60,8 +67,21 @@ async function loadSettings(): Promise<Settings> {
   try {
     const raw = await AsyncStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<Settings>;
+    const parsed = JSON.parse(raw) as Partial<Settings> & { vaultPin?: string };
+    /*
+     * Drop a PIN written by an earlier version. Deleting the key from the type is
+     * not enough on its own — the string is already on disk on existing installs,
+     * and it stays there until something overwrites the record.
+     */
+    const hadStoredPin = typeof parsed.vaultPin === "string" && parsed.vaultPin.length > 0;
+    delete parsed.vaultPin;
+
     const merged = { ...DEFAULTS, ...parsed };
+    if (hadStoredPin) {
+      // Rewrite immediately rather than waiting for the next settings change, so the
+      // plaintext is gone from disk on the first launch after this ships.
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(merged)).catch(() => {});
+    }
     // Guard against a stale or invalid language code stored on disk.
     if (!isSupportedLanguage(merged.preferredLanguage)) {
       merged.preferredLanguage = "en";

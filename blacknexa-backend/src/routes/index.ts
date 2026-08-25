@@ -16,6 +16,13 @@ import geoLegalRoutes from "@/routes/geo_legal.route";
 import platformRoutes from "@/routes/platform.route";
 import enterpriseRoutes from "@/routes/enterprise.route";
 import adminRoutes from "@/routes/admin.route";
+import authRoutes, { userRouter } from "@/routes/auth.route";
+import reportRoutes, {
+  commentRouter,
+  notificationRouter,
+} from "@/routes/report.route";
+import moderationRoutes from "@/routes/moderation.route";
+import reportShareController from "@/controllers/report_share.controller";
 import seoController from "@/controllers/seo.controller";
 import newsService from "@/services/news.service";
 import { apiLimiter, readLimiter } from "@/middlewares/rate_limit.middleware";
@@ -34,6 +41,7 @@ export const ROUTE_MANIFEST: string[] = [
   "GET    /sitemap-news.xml",
   "GET    /sitemap-index.xml",
   "GET    /news/:slug (server-rendered HTML for crawlers)",
+  "GET    /r/:caseRef?t= (server-rendered shared report page)",
   "GET    /api/v1/podcast/feed.json",
   // News
   "GET    /api/v1/news/feed?category=&scope=&search=&limit=",
@@ -54,9 +62,9 @@ export const ROUTE_MANIFEST: string[] = [
   "GET    /api/v1/geo-legal/lookup?country=&lat=&lng=&lang=",
   "POST   /api/v1/geo-legal/validate",
   "POST   /api/v1/geo-legal/dispatch",
-  "POST   /api/v1/geo-legal/incident/create",
-  "GET    /api/v1/geo-legal/incident/:id",
-  "DELETE /api/v1/geo-legal/incident/:id",
+  "POST   /api/v1/geo-legal/incident/create (deprecated — use /api/v1/reports)",
+  "GET    /api/v1/geo-legal/incident/:id (deprecated — use /api/v1/reports/:id)",
+  "DELETE /api/v1/geo-legal/incident/:id (deprecated — use /api/v1/reports/:id)",
   "POST   /api/v1/geo-legal/refresh (admin)",
   // Platform
   "GET    /api/v1/platform/ping",
@@ -103,12 +111,69 @@ export const ROUTE_MANIFEST: string[] = [
   "POST   /api/v1/blacknexa/hardware/beacon-trigger",
   "GET    /api/v1/blacknexa/weather?lat=&lon=",
   "GET    /api/v1/blacknexa/live-chat (WebSocket)",
+  // End-user account (screens A5–A15)
+  "POST   /api/v1/auth/register",
+  "POST   /api/v1/auth/verify-email",
+  "POST   /api/v1/auth/resend-code",
+  "POST   /api/v1/auth/login",
+  "POST   /api/v1/auth/oauth/:provider (apple | google)",
+  "POST   /api/v1/auth/refresh",
+  "POST   /api/v1/auth/logout",
+  "POST   /api/v1/auth/logout-all",
+  "POST   /api/v1/auth/password/forgot",
+  "POST   /api/v1/auth/password/reset",
+  "GET    /api/v1/auth/me",
+  "PATCH  /api/v1/users/me",
+  "GET    /api/v1/users/me/sessions",
+  "POST   /api/v1/users/me/consents",
+  "POST   /api/v1/users/me/devices",
+  "POST   /api/v1/users/me/deletion-code",
+  "DELETE /api/v1/users/me",
+  // Reports (design sections B, C, D)
+  "POST   /api/v1/reports/drafts",
+  "GET    /api/v1/reports/drafts",
+  "GET    /api/v1/reports/drafts/:id/evidence",
+  "DELETE /api/v1/reports/drafts/:id",
+  "POST   /api/v1/reports/evidence/presign",
+  "POST   /api/v1/reports/evidence/:id/commit",
+  "DELETE /api/v1/reports/evidence/:id",
+  "POST   /api/v1/reports",
+  "GET    /api/v1/reports?category=&when=&sort=&cursor=&verifiedOnly=&urgentOnly=&mine=",
+  "GET    /api/v1/reports/facets",
+  "GET    /api/v1/reports/search?q=",
+  "GET    /api/v1/reports/:idOrRef",
+  "PATCH  /api/v1/reports/:id",
+  "DELETE /api/v1/reports/:id",
+  "GET    /api/v1/reports/:id/trust",
+  "POST   /api/v1/reports/:id/support",
+  "POST   /api/v1/reports/:id/corroborate",
+  "POST   /api/v1/reports/:id/flags",
+  "POST   /api/v1/reports/:id/hide",
+  "POST   /api/v1/reports/:id/share-link",
+  "GET    /api/v1/reports/:id/comments?sort=top|new",
+  "POST   /api/v1/reports/:id/comments",
+  "POST   /api/v1/comments/:id/like",
+  "POST   /api/v1/comments/:id/flags",
+  "DELETE /api/v1/comments/:id",
+  "GET    /api/v1/notifications",
+  "POST   /api/v1/notifications/read-all",
   // Admin
   "POST   /api/v1/admin/auth/login",
   "POST   /api/v1/admin/auth/refresh",
   "POST   /api/v1/admin/auth/logout",
   "GET    /api/v1/admin/auth/me",
   "POST   /api/v1/admin/auth/admins (super-admin)",
+  // Moderation — the surface that makes the status/verified story real
+  "GET    /api/v1/admin/moderation (internal HTML queue)",
+  "GET    /api/v1/admin/moderation/stats",
+  "GET    /api/v1/admin/moderation/reports?status=&urgent=&flagged=",
+  "GET    /api/v1/admin/moderation/reports/:id",
+  "GET    /api/v1/admin/moderation/reports/:id/evidence/:evidenceId",
+  "POST   /api/v1/admin/moderation/reports/:id/status",
+  "POST   /api/v1/admin/moderation/flags/:id/resolve",
+  "POST   /api/v1/admin/moderation/comments/:id/hide",
+  "POST   /api/v1/admin/moderation/broadcast (super-admin | admin)",
+  "POST   /api/v1/admin/moderation/maintenance (super-admin)",
 ];
 
 export function mountRoutes(app: Express): void {
@@ -154,11 +219,17 @@ export function mountRoutes(app: Express): void {
     asyncHandler((req, res) => seoController.podcastFeed(req, res)),
   );
 
+  api.use("/auth", authRoutes);
+  api.use("/users", userRouter);
+  api.use("/reports", reportRoutes);
+  api.use("/comments", commentRouter);
+  api.use("/notifications", notificationRouter);
   api.use("/news", newsRoutes);
   api.use("/geo-legal", geoLegalRoutes);
   api.use("/platform", platformRoutes);
   api.use("/blacknexa", enterpriseRoutes);
   api.use("/admin/auth", adminRoutes);
+  api.use("/admin/moderation", moderationRoutes);
 
   // Route discovery, mirroring the Worker's 404 payload. Outside production only:
   // publishing the full surface in production is free reconnaissance.
@@ -169,6 +240,23 @@ export function mountRoutes(app: Express): void {
   }
 
   app.use("/api/v1", api);
+
+  /*
+   * ── The shared report page (domain root) ─────────────────────────────────
+   *
+   * At the root because that is the URL D10 shows the owner and hands out —
+   * `blacknexa.org/r/BNX-4471`. It is a page for people and link previewers, not an
+   * API call, so it does not live under `/api/v1`.
+   *
+   * `readLimiter` rather than the API tier: a link posted in a group chat gets
+   * opened by everyone in it at once, and rate-limiting that looks like the report
+   * has been taken down.
+   */
+  app.get(
+    "/r/:caseRef",
+    readLimiter,
+    asyncHandler((req, res) => reportShareController.page(req, res)),
+  );
 
   // ── Server-rendered article page (domain root, mounted last) ────────────────
   app.get(

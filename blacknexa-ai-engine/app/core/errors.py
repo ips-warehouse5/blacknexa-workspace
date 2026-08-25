@@ -57,10 +57,13 @@ class SynthesisFailedError(EngineError):
 
 
 class GatewayUnavailableError(EngineError):
-    """The AI gateway is unconfigured or unreachable."""
+    """An upstream AI provider is unconfigured or unreachable.
+
+    Name kept: it is what the Node client's error mapping matches on.
+    """
 
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    detail = "AI gateway is not configured or is unreachable."
+    detail = "An AI provider is not configured or is unreachable."
 
 
 class PromptRejectedError(EngineError):

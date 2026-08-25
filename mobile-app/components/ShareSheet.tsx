@@ -174,7 +174,7 @@ function GoogleGMark({ size = 20 }: { size?: number }): React.ReactElement {
 }
 
 export default function ShareSheet({ visible, onClose, headline, summary, url }: Props) {
-  const { user, signIn, signOut, isSigningIn } = useAuth();
+  const { user, signOut, busy } = useAuth();
   const [copied, setCopied] = useState<boolean>(false);
   const [sharing, setSharing] = useState<boolean>(false);
 
@@ -228,21 +228,23 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
     onClose();
   }, [headline, shareText, url, onClose]);
 
+  /**
+   * Sign-in no longer happens here.
+   *
+   * The old flow called an in-place `signIn("google")` against the Rork OAuth
+   * host. Authentication is now a first-class flow (screens A5–A10) with its own
+   * consent step, so a share sheet must not mint a session as a side effect —
+   * it sends the person to Welcome instead.
+   *
+   * The native share sheet still opens either way: sign-in only unlocks the
+   * smoother connected-apps row, so nobody is blocked from sharing by it.
+   */
   const onContinueWithGoogle = useCallback(async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
-    try {
-      await signIn("google");
-    } catch (err) {
-      console.warn("[ShareSheet] Google signIn threw:", err);
-    }
-    // Whether or not sign-in completed, open the native system share sheet so
-    // the story routes to every installed social app (Gmail, WhatsApp, X,
-    // Instagram, etc.). Sign-in unlocks the smoother connected-apps button;
-    // the native sheet works regardless, so the user is never blocked.
     await openSystemShare();
-  }, [signIn, openSystemShare]);
+  }, [openSystemShare]);
 
   const copyToClipboard = useCallback(async () => {
     if (Platform.OS !== "web") {
@@ -294,7 +296,7 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
               <GoogleGMark size={22} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.googleConnectedTitle}>
-                  Share via {user.name ?? user.email.split("@")[0]}'s apps
+                  Share via {user.displayName || user.email.split("@")[0]}'s apps
                 </Text>
                 <Text style={styles.googleConnectedSub}>
                   One tap routes to every installed social app
@@ -308,18 +310,18 @@ export default function ShareSheet({ visible, onClose, headline, summary, url }:
             </Pressable>
           ) : (
             <Pressable
-              style={[styles.googleBtn, isSigningIn && styles.googleBtnDisabled]}
+              style={[styles.googleBtn, busy && styles.googleBtnDisabled]}
               onPress={onContinueWithGoogle}
-              disabled={isSigningIn}
+              disabled={busy}
               accessibilityLabel="Continue with Google to share everywhere"
             >
-              {isSigningIn ? (
+              {busy ? (
                 <ActivityIndicator color="#1F1F1F" size="small" />
               ) : (
                 <GoogleGMark size={22} />
               )}
               <Text style={styles.googleBtnText}>
-                {isSigningIn ? "Connecting\u2026" : "Continue with Google to share everywhere"}
+                {busy ? "Opening\u2026" : "Share to every installed app"}
               </Text>
             </Pressable>
           )}

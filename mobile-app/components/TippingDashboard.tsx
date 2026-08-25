@@ -92,8 +92,8 @@ export default function TippingDashboard(): React.ReactElement | null {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user.id,
-            displayName: settings.displayName || user.name || user.email,
-            handle: deriveHandle(settings.displayName || user.name || "", user.id),
+            displayName: settings.displayName || user.displayName || user.email,
+            handle: deriveHandle(settings.displayName || user.displayName || "", user.id),
           }),
         },
       );

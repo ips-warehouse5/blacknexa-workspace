@@ -30,7 +30,7 @@ from app.core.config import settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger, set_request_id
 from app.db.session import dispose_engine, init_engine, is_enabled
-from app.integrations.gateway import close_client
+from app.integrations.transport import close_client
 from app.schemas.news import HealthResponse
 
 configure_logging()
@@ -47,7 +47,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         service=SERVICE_NAME,
         version=VERSION,
         environment=settings.environment,
-        ai_gateway="configured" if settings.ai_enabled else "not configured",
+        gemini="configured" if settings.ai_enabled else "not configured",
+        exa_search="configured" if settings.search_enabled else "not configured",
         persistence="enabled" if settings.persistence_enabled else "disabled",
     )
 
@@ -55,10 +56,22 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         # Same warning the Node service prints: the process is healthy, but every
         # AI path will return a null result until a key is supplied.
         logger.warning(
-            "ai_gateway_unconfigured",
+            "gemini_unconfigured",
             detail=(
-                "AI_TOOLKIT_SECRET_KEY is not set. Synthesis returns 503, image and "
+                "GEMINI_API_KEY is not set. Synthesis returns 503, image and "
                 "audio return null, and translation falls back to English."
+            ),
+        )
+
+    if not settings.search_enabled:
+        # A distinct failure worth its own line: generation is configured and will
+        # be attempted, then stop at `no_source_material` on every single topic,
+        # which looks like a content problem rather than a missing key.
+        logger.warning(
+            "exa_unconfigured",
+            detail=(
+                "EXA_API_KEY is not set. Search returns no hits, so synthesis "
+                "fails with no_source_material for every topic."
             ),
         )
 
@@ -158,12 +171,16 @@ app.include_router(api_router)
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health() -> HealthResponse:
-    """Liveness. Reports configuration state without touching the gateway."""
+    """Liveness. Reports configuration state without calling a provider."""
     return HealthResponse(
         status="ok",
         service=SERVICE_NAME,
         version=VERSION,
+        # Kept under the original name: `server.ts` in the Node backend reads
+        # `aiGatewayConfigured` at boot, and it still answers the same question —
+        # "can this engine generate?" — now about Gemini.
         aiGatewayConfigured=settings.ai_enabled,
+        searchConfigured=settings.search_enabled,
         persistenceEnabled=is_enabled(),
         now=datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
     )
@@ -173,12 +190,15 @@ async def health() -> HealthResponse:
 async def ready() -> dict[str, object]:
     """Readiness — distinguishes "process is up" from "can actually serve".
 
-    Not ready without a gateway key: the engine would accept requests and fail
-    every one of them, which is worse than being taken out of rotation.
+    Both provider keys are required to be ready. Without Gemini nothing generates
+    at all; without Exa every synthesis fails for lack of grounding. In either
+    case the engine would accept requests and fail them, which is worse than
+    being taken out of rotation.
     """
     return {
-        "ready": settings.ai_enabled,
+        "ready": settings.ai_enabled and settings.search_enabled,
         "aiGatewayConfigured": settings.ai_enabled,
+        "searchConfigured": settings.search_enabled,
         "persistenceEnabled": is_enabled(),
     }
 

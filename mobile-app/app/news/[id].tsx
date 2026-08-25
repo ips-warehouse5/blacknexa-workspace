@@ -251,7 +251,8 @@ export default function NewsArticleScreen(): React.ReactElement {
 
       const backendAudioUrl = article.audioUrl;
       if (backendAudioUrl && backendAudioUrl.includes("/api/v1/news/audio/")) {
-        // Backend has a pre-generated MP3. Try to play it; if the mobile player
+        // Backend has a pre-generated briefing — WAV from the AI engine's Gemini
+        // TTS, or MP3 from an older run. Try to play it; if the mobile player
         // rejects the format, fall back to native TTS in the same language.
         try {
           const sound = await playAudioUri(backendAudioUrl);

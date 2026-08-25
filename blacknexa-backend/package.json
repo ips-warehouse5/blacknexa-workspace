@@ -18,7 +18,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:sync": "ts-node -r tsconfig-paths/register src/scripts/sync_db.ts",
     "db:seed": "ts-node -r tsconfig-paths/register src/scripts/seed_db.ts",
-    "db:snapshot": "ts-node -r tsconfig-paths/register src/scripts/snapshot.ts"
+    "db:snapshot": "ts-node -r tsconfig-paths/register src/scripts/snapshot.ts",
+    "smoke:auth": "bash scripts/smoke_auth.sh",
+    "smoke:reports": "bash scripts/smoke_reports.sh",
+    "job:reports": "ts-node -r tsconfig-paths/register src/scripts/run_report_maintenance.ts",
+    "smoke:moderation": "bash scripts/smoke_moderation.sh"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.716.0",
@@ -34,6 +38,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.2.0",
     "node-cron": "^4.6.0",
+    "nodemailer": "^6.9.16",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.5",
@@ -49,6 +54,7 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.5",
+    "@types/nodemailer": "^6.4.17",
     "@types/ws": "^8.5.13",
     "nodemon": "^3.1.9",
     "rimraf": "^6.0.1",

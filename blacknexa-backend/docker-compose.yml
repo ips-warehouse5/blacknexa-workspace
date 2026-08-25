@@ -1,0 +1,83 @@
+# Local development dependencies.
+#
+# Postgres carries `pg_trgm` (the B6 "Did you mean" suggestions) and `unaccent`.
+# PostGIS is deliberately *not* required: the report module stores lat/lng plus a
+# truncated geohash and filters by bounding box then Haversine, so location works
+# on plain Postgres. Using the postgis image anyway costs nothing and leaves the
+# door open — see docs/FEATURE_BUILD_PLAN.md §5 "Location precision".
+#
+# MinIO stands in for S3 so evidence upload can be exercised without an AWS
+# account. Console at http://localhost:9001 (blacknexa / blacknexa-dev-secret).
+#
+#   docker compose up -d
+#   npm run db:sync
+#   npm run dev
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: blacknexa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blacknexa_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d blacknexa_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  minio:
+    image: minio/minio:latest
+    container_name: blacknexa-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: blacknexa
+      MINIO_ROOT_PASSWORD: blacknexa-dev-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # One-shot: create the evidence bucket so the first upload does not 404.
+  minio-init:
+    image: minio/mc:latest
+    container_name: blacknexa-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 blacknexa blacknexa-dev-secret &&
+      mc mb --ignore-existing local/blacknexa-evidence &&
+      mc anonymous set none local/blacknexa-evidence &&
+      echo 'evidence bucket ready (private)'
+      "
+
+  # Catches every outbound message and shows it at http://localhost:8025 so the
+  # A8 / A14 codes can be read without a real provider — and without the codes
+  # ending up in the application log, which is what happens with SMTP_HOST unset.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: blacknexa-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  postgres-data:
+  minio-data:

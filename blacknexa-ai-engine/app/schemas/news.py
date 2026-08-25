@@ -263,6 +263,10 @@ class HealthResponse(_Response):
     status: str
     service: str
     version: str
+    #: Gemini is configured. Name predates the direct-provider migration and is
+    #: kept because `server.ts` in the Node backend reads it by that name.
     aiGatewayConfigured: bool
+    #: Exa is configured. Additive — an older Node client simply ignores it.
+    searchConfigured: bool = False
     persistenceEnabled: bool
     now: str

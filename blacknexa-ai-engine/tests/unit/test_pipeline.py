@@ -1,7 +1,7 @@
-"""The generation pipeline, end to end against a mocked gateway.
+"""The generation pipeline, end to end against mocked providers.
 
 `respx` intercepts the outbound HTTP calls, so these exercise the real nodes, the
-real graph runner and the real parsing without spending anything at the gateway.
+real graph runner and the real parsing without spending anything at Gemini or Exa.
 """
 
 from __future__ import annotations
@@ -14,13 +14,19 @@ import respx
 
 from app.ai.graph import run_generation
 from app.ai.state import GenerationState
-from app.core.config import settings
-from app.integrations.gateway import close_client
-from app.integrations.llm.chat import CHAT_PATH, extract_json_object
+from app.integrations.llm.chat import extract_json_object
 from app.integrations.search.exa import build_sources_block
-
-SEARCH_URL = f"{settings.ai_toolkit_url}/v2/exa/search"
-CHAT_URL = f"{settings.ai_toolkit_url}{CHAT_PATH}"
+from app.integrations.transport import close_client
+from tests.support import (
+    EXA_SEARCH_URL,
+    IMAGE_URL,
+    SYNTHESIS_URL,
+    exa_results,
+    gemini_inline,
+    gemini_text,
+    sent_system_text,
+    sent_user_text,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -29,24 +35,6 @@ async def _reset_client():  # type: ignore[no-untyped-def]
     await close_client()
     yield
     await close_client()
-
-
-def _exa_payload(urls: list[str]) -> dict[str, object]:
-    return {
-        "results": [
-            {
-                "title": f"Report {i}",
-                "url": url,
-                "publishedDate": "2026-08-01T00:00:00Z",
-                "highlights": [f"Verified excerpt {i}."],
-            }
-            for i, url in enumerate(urls)
-        ]
-    }
-
-
-def _chat_payload(content: str) -> dict[str, object]:
-    return {"choices": [{"message": {"content": content}}]}
 
 
 def _synthesis_json(cited: list[str]) -> str:
@@ -74,12 +62,12 @@ def _state(mode: str = "fast", want_image: bool = False) -> GenerationState:
 
 @respx.mock
 async def test_fast_path_produces_a_grounded_briefing() -> None:
-    respx.post(SEARCH_URL).mock(
-        return_value=httpx.Response(200, json=_exa_payload(["https://reuters.com/a"]))
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
     )
-    respx.post(CHAT_URL).mock(
+    respx.post(SYNTHESIS_URL).mock(
         return_value=httpx.Response(
-            200, json=_chat_payload(_synthesis_json(["https://reuters.com/a"]))
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
         )
     )
 
@@ -94,10 +82,61 @@ async def test_fast_path_produces_a_grounded_briefing() -> None:
 
 
 @respx.mock
+async def test_exa_is_called_with_its_own_key_not_a_gateway_token() -> None:
+    """Auth moved from a bearer gateway secret to Exa's own header."""
+    from app.core.config import settings
+
+    search = respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
+    )
+    respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
+        )
+    )
+
+    await run_generation(_state())
+
+    headers = search.calls.last.request.headers
+    assert headers["x-api-key"] == settings.exa_api_key
+    assert "authorization" not in {k.lower() for k in headers}
+
+
+@respx.mock
+async def test_gemini_is_called_with_the_api_key_header_and_json_mode() -> None:
+    """The key travels in a header, never the query string, and JSON is requested
+    of the model rather than hoped for in prose."""
+    from app.core.config import settings
+
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
+    )
+    synth = respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
+        )
+    )
+
+    await run_generation(_state())
+
+    request = synth.calls.last.request
+    assert request.headers["x-goog-api-key"] == settings.gemini_api_key
+    assert "key=" not in str(request.url)
+
+    body = json.loads(request.content)
+    assert body["generationConfig"]["responseMimeType"] == "application/json"
+    assert body["generationConfig"]["thinkingConfig"]["thinkingBudget"] == 0
+    # The loosened safety threshold is what keeps accountability reporting from
+    # being filtered as harmful.
+    assert body["safetySettings"]
+    assert all(s["threshold"] == settings.gemini_safety_threshold for s in body["safetySettings"])
+
+
+@respx.mock
 async def test_no_search_results_halts_before_synthesis() -> None:
     """Without grounding the engine must stop, not invent."""
-    respx.post(SEARCH_URL).mock(return_value=httpx.Response(200, json={"results": []}))
-    synth = respx.post(CHAT_URL).mock(return_value=httpx.Response(200, json=_chat_payload("{}")))
+    respx.post(EXA_SEARCH_URL).mock(return_value=httpx.Response(200, json={"results": []}))
+    synth = respx.post(SYNTHESIS_URL).mock(return_value=httpx.Response(200, json=gemini_text("{}")))
 
     state = await run_generation(_state())
 
@@ -107,11 +146,48 @@ async def test_no_search_results_halts_before_synthesis() -> None:
 
 @respx.mock
 async def test_unparseable_model_output_fails_the_run() -> None:
-    respx.post(SEARCH_URL).mock(
-        return_value=httpx.Response(200, json=_exa_payload(["https://reuters.com/a"]))
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
     )
-    respx.post(CHAT_URL).mock(
-        return_value=httpx.Response(200, json=_chat_payload("I cannot help with that."))
+    respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(200, json=gemini_text("I cannot help with that."))
+    )
+
+    state = await run_generation(_state())
+
+    assert state.failure == "synthesis_failed"
+
+
+@respx.mock
+async def test_truncated_candidate_is_not_half_consumed() -> None:
+    """A MAX_TOKENS finish yields a partial JSON object. Taking it would ship a
+    briefing with a cut-off body, so it must fail the run instead."""
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
+    )
+    respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(
+            200,
+            json=gemini_text(
+                '{"headline": "Half a headline", "summary": "cut off here',
+                finish_reason="MAX_TOKENS",
+            ),
+        )
+    )
+
+    state = await run_generation(_state())
+
+    assert state.failure == "synthesis_failed"
+
+
+@respx.mock
+async def test_blocked_prompt_fails_the_run() -> None:
+    """Gemini answers a filtered prompt with 200 and no candidates."""
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
+    )
+    respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(200, json={"promptFeedback": {"blockReason": "SAFETY"}})
     )
 
     state = await run_generation(_state())
@@ -122,13 +198,13 @@ async def test_unparseable_model_output_fails_the_run() -> None:
 @respx.mock
 async def test_hallucinated_citation_is_dropped() -> None:
     """The model cites a URL that was never retrieved."""
-    respx.post(SEARCH_URL).mock(
-        return_value=httpx.Response(200, json=_exa_payload(["https://reuters.com/a"]))
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
     )
-    respx.post(CHAT_URL).mock(
+    respx.post(SYNTHESIS_URL).mock(
         return_value=httpx.Response(
             200,
-            json=_chat_payload(
+            json=gemini_text(
                 _synthesis_json(["https://reuters.com/a", "https://invented.test/x"])
             ),
         )
@@ -144,7 +220,7 @@ async def test_hallucinated_citation_is_dropped() -> None:
 @respx.mock
 async def test_injected_page_content_is_neutralised_before_the_prompt() -> None:
     """A retrieved page carrying a directive must not reach the model as one."""
-    respx.post(SEARCH_URL).mock(
+    respx.post(EXA_SEARCH_URL).mock(
         return_value=httpx.Response(
             200,
             json={
@@ -161,44 +237,44 @@ async def test_injected_page_content_is_neutralised_before_the_prompt() -> None:
             },
         )
     )
-    chat = respx.post(CHAT_URL).mock(
+    synth = respx.post(SYNTHESIS_URL).mock(
         return_value=httpx.Response(
-            200, json=_chat_payload(_synthesis_json(["https://reuters.com/a"]))
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
         )
     )
 
     state = await run_generation(_state())
 
-    sent = json.loads(chat.calls.last.request.content)
-    user_message = sent["messages"][1]["content"]
+    user_message = sent_user_text(synth.calls.last.request.content)
 
     assert "[redacted-directive]" in user_message
     assert "Ignore all previous instructions" not in user_message
     # The factual content still reaches the model.
     assert "$50m" in user_message
-    # And the system prompt carries the untrusted-data framing.
-    assert "SOURCE HANDLING — SECURITY DIRECTIVE" in sent["messages"][0]["content"]
+    # And the system instruction carries the untrusted-data framing.
+    assert "SOURCE HANDLING — SECURITY DIRECTIVE" in sent_system_text(
+        synth.calls.last.request.content
+    )
     assert not state.failed
 
 
 @respx.mock
 async def test_deep_path_requests_more_sources_and_awaits_the_image() -> None:
-    search = respx.post(SEARCH_URL).mock(
-        return_value=httpx.Response(200, json=_exa_payload(["https://reuters.com/a"]))
+    search = respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
+    )
+    respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
+        )
     )
     png = "iVBORw0KGgo=" + "A" * 120
-    respx.post(CHAT_URL).mock(
-        side_effect=[
-            httpx.Response(200, json=_chat_payload(_synthesis_json(["https://reuters.com/a"]))),
-            httpx.Response(
-                200,
-                json={
-                    "choices": [
-                        {"message": {"images": [f"data:image/png;base64,{png}"], "content": ""}}
-                    ]
-                },
-            ),
-        ]
+    image = respx.post(IMAGE_URL).mock(
+        return_value=httpx.Response(
+            200,
+            # The image model narrates what it drew alongside the image itself.
+            json=gemini_inline(png, "image/png", text="Here is the photograph."),
+        )
     )
 
     state = await run_generation(_state(mode="deep", want_image=True))
@@ -207,23 +283,29 @@ async def test_deep_path_requests_more_sources_and_awaits_the_image() -> None:
     assert body["numResults"] == 12
     assert body["contents"]["text"]["maxCharacters"] == 2400
 
+    # An image request must ask for the IMAGE modality, or Gemini returns prose.
+    image_config = json.loads(image.calls.last.request.content)["generationConfig"]
+    assert "IMAGE" in image_config["responseModalities"]
+    # No output cap: an image is billed as output tokens and a cap truncates it.
+    assert "maxOutputTokens" not in image_config
+
     assert state.image is not None
+    assert state.image.base64 == png
     assert state.image.mediaType == "image/png"
 
 
 @respx.mock
 async def test_image_failure_does_not_fail_the_article() -> None:
     """A missing image is survivable — Node falls back to a curated photo."""
-    respx.post(SEARCH_URL).mock(
-        return_value=httpx.Response(200, json=_exa_payload(["https://reuters.com/a"]))
+    respx.post(EXA_SEARCH_URL).mock(
+        return_value=httpx.Response(200, json=exa_results(["https://reuters.com/a"]))
     )
-    respx.post(CHAT_URL).mock(
-        side_effect=[
-            httpx.Response(200, json=_chat_payload(_synthesis_json(["https://reuters.com/a"]))),
-            httpx.Response(500, json={"error": "upstream"}),
-            httpx.Response(500, json={"error": "upstream"}),
-        ]
+    respx.post(SYNTHESIS_URL).mock(
+        return_value=httpx.Response(
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
+        )
     )
+    respx.post(IMAGE_URL).mock(return_value=httpx.Response(500, json={"error": "upstream"}))
 
     state = await run_generation(_state(mode="deep", want_image=True))
 
@@ -235,15 +317,15 @@ async def test_image_failure_does_not_fail_the_article() -> None:
 @respx.mock
 async def test_transient_5xx_is_retried() -> None:
     """One retry, matching the Node transport."""
-    route = respx.post(SEARCH_URL).mock(
+    route = respx.post(EXA_SEARCH_URL).mock(
         side_effect=[
             httpx.Response(503, json={"error": "temporarily unavailable"}),
-            httpx.Response(200, json=_exa_payload(["https://reuters.com/a"])),
+            httpx.Response(200, json=exa_results(["https://reuters.com/a"])),
         ]
     )
-    respx.post(CHAT_URL).mock(
+    respx.post(SYNTHESIS_URL).mock(
         return_value=httpx.Response(
-            200, json=_chat_payload(_synthesis_json(["https://reuters.com/a"]))
+            200, json=gemini_text(_synthesis_json(["https://reuters.com/a"]))
         )
     )
 
@@ -256,7 +338,7 @@ async def test_transient_5xx_is_retried() -> None:
 @respx.mock
 async def test_client_error_is_not_retried() -> None:
     """A 400 will not improve on a retry — spending a second call is waste."""
-    route = respx.post(SEARCH_URL).mock(
+    route = respx.post(EXA_SEARCH_URL).mock(
         return_value=httpx.Response(400, json={"error": "bad request"})
     )
 
@@ -270,13 +352,31 @@ async def test_client_error_is_not_retried() -> None:
 
 
 def test_json_extraction_handles_fences_and_prose() -> None:
-    """The gateway does not enforce JSON mode for every model."""
+    """Belt and braces behind JSON mode: `AI_SYNTHESIS_MODEL` is operator-set, so
+    a model that ignores `responseMimeType` must not take the feed down."""
     assert extract_json_object('{"a": 1}') == {"a": 1}
     assert extract_json_object('```json\n{"a": 1}\n```') == {"a": 1}
     assert extract_json_object('Sure!\n```\n{"a": 1}\n```\nHope that helps.') == {"a": 1}
     assert extract_json_object('Here you go: {"a": 1} — done.') == {"a": 1}
     assert extract_json_object("no json here") is None
     assert extract_json_object("") is None
+
+
+def test_text_parts_are_concatenated() -> None:
+    """Gemini may split one JSON answer across parts; taking parts[0] would leave
+    an unparseable fragment."""
+    from app.integrations.llm.chat import message_content
+
+    body = {
+        "candidates": [
+            {
+                "content": {"parts": [{"text": '{"a":'}, {"text": " 1}"}]},
+                "finishReason": "STOP",
+            }
+        ]
+    }
+    assert message_content(body) == '{"a": 1}'
+    assert extract_json_object(message_content(body)) == {"a": 1}
 
 
 def test_sources_block_layout_matches_node(exa_hit_factory) -> None:  # type: ignore[no-untyped-def]

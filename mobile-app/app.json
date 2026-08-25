@@ -5,30 +5,46 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rork-499r3rz679a2j9vr4ap98",
-    "userInterfaceStyle": "automatic",
+    "scheme": "blacknexa",
+    "//userInterfaceStyle": "Locked to light. The design has no dark variant of the signal theme — its only dark palette is `gold`, supplied at token level, and none of the 51 artboards is drawn in it. Left on `automatic`, every native surface the app does not paint (share sheet, Alert, keyboard accessory, Android nav bar) would flip to dark while the app stayed light.",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.rork.499r3rz679a2j9vr4ap98",
+      "usesAppleSignIn": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "BlackNexa uses the microphone so you can dictate a news topic or record an audio briefing.",
-        "NSLocationWhenInUseUsageDescription": "BlackNexa uses your location to surface local news and briefings relevant to your community.",
-        "UIBackgroundModes": ["audio"]
+        "NSMicrophoneUsageDescription": "BlackNexa records audio you attach to a report. Recordings are stored as files with the report and are never transcribed.",
+        "NSCameraUsageDescription": "BlackNexa uses the camera so you can photograph or film evidence for a report.",
+        "NSPhotoLibraryUsageDescription": "BlackNexa attaches photos and video from your library to a report as evidence.",
+        "NSLocationWhenInUseUsageDescription": "BlackNexa records where an incident happened, at the precision you choose, and surfaces local news and nearby help.",
+        "NSFaceIDUsageDescription": "BlackNexa uses Face ID to unlock your session and your evidence vault.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "app.rork.499r3rz679a2j9vr4ap98",
-      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.MODIFY_AUDIO_SETTINGS", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"]
+      "//softwareKeyboardLayoutMode": "`resize` rather than `pan`: the wizard and the comment composer both need the layout to shrink so a sticky footer can ride the keyboard instead of being pushed off-screen.",
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -42,7 +58,9 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-local-authentication"
     ],
     "experiments": {
       "typedRoutes": true

@@ -11,25 +11,58 @@
  * callable by anyone who knew the URL.
  */
 
-/** Roles recognised by `checkRole`. */
-export type AdminRole = "super-admin" | "admin" | "editor" | "auditor";
+import type { UserRole } from "@/types/user.interface";
 
-export const ALL_ADMIN_ROLES: AdminRole[] = ["super-admin", "admin", "editor", "auditor"];
+/**
+ * Roles recognised by `checkRole`.
+ *
+ * `moderator` lives here rather than with the member roles. Moderation is an
+ * operational function: every decision writes an actor id onto a report's
+ * timeline, and that actor has to be an account an administrator can grant and
+ * revoke. Making it a member role would also blur the two token audiences, which
+ * are deliberately disjoint.
+ */
+export type AdminRole = "super-admin" | "admin" | "editor" | "auditor" | "moderator";
 
-/** Token audience — distinguishes an operator token from a future app-user token. */
+export const ALL_ADMIN_ROLES: AdminRole[] = [
+  "super-admin",
+  "admin",
+  "editor",
+  "auditor",
+  "moderator",
+];
+
+/**
+ * Any role a token can carry.
+ *
+ * The two role sets are deliberately disjoint and are never interchangeable: the
+ * `aud` claim decides which set applies, and `checkRole` still accepts only
+ * `AdminRole`, so widening this union cannot accidentally let a member role
+ * satisfy an operator route.
+ */
+export type ActorRole = AdminRole | UserRole;
+
+/** Token audience — distinguishes an operator token from an app-user token. */
 export type TokenAudience = "admin" | "user";
 
 /** Access-token claims. */
 export interface AccessTokenPayload {
   sub: string;
   email: string;
-  role: AdminRole;
+  role: ActorRole;
   aud: TokenAudience;
   /** Token type discriminator so a refresh token can never be used as an access token. */
   typ: "access";
 }
 
-/** Refresh-token claims. `jti` allows rotation/revocation. */
+/**
+ * Refresh-token claims.
+ *
+ * `jti` allows rotation and revocation. For an operator it is matched against the
+ * single `admin_users.refresh_token_id` column; for a member it is matched against
+ * a row in `user_sessions`, because screen A15 promises "every other device has
+ * been signed out" while this one stays — which one column cannot express.
+ */
 export interface RefreshTokenPayload {
   sub: string;
   aud: TokenAudience;
@@ -41,8 +74,10 @@ export interface RefreshTokenPayload {
 export interface AuthenticatedActor {
   id: string;
   email: string;
-  role: AdminRole;
+  role: ActorRole;
   audience: TokenAudience;
+  /** Present on member tokens: the `user_sessions` row this request came from. */
+  sessionId?: string;
 }
 
 /** Public (password-free) admin representation. */

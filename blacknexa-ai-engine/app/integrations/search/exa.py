@@ -4,6 +4,17 @@ Ports `aiGatewayService.searchWeb()`. This is what makes the engine "grounded":
 the hits it returns become the *only* sources the article may cite, and everything
 downstream intersects against them.
 
+Called directly against `api.exa.ai` with `EXA_API_KEY`. It used to be proxied
+through the AI gateway, and the request body is unchanged — the gateway passed it
+straight to the same Exa endpoint — so only the host and the auth header moved.
+
+Exa stays in the stack rather than being folded into Gemini because of what the
+next three nodes need: a real publisher URL to render on a source card, a
+publication date to prove currency, and a highlight excerpt for the model to
+ground on. Gemini's built-in search grounding returns opaque redirect links and no
+excerpts, which would leave the citation-intersection check with nothing to
+intersect.
+
 Results are untrusted by construction — `title` and `highlights` are lifted from
 live web pages — so each hit is neutralised through `prompt_safety` before it can
 reach a prompt, and its URL is validated before it can be published as a source.
@@ -20,12 +31,13 @@ from app.core.prompt_safety import (
     neutralise_untrusted_text,
     sanitise_model_text,
 )
-from app.integrations.gateway import post_json
+from app.integrations.transport import post_json
 from app.schemas.news import ExaHit
 
 logger = get_logger(__name__)
 
-_SEARCH_PATH = "/v2/exa/search"
+_SEARCH_PATH = "/search"
+_LABEL = "exa_search"
 
 # Titles are one line; anything longer is padding or a payload.
 _MAX_TITLE_CHARS = 300
@@ -41,6 +53,12 @@ async def search_web(
     Returns `[]` on any failure, matching the Node contract — a search miss means
     "no grounding available", which the caller turns into a 502, not a crash.
     """
+    if not settings.search_enabled:
+        # Same shape as a genuine miss, so the caller's `no_source_material`
+        # path handles an unconfigured key without a second branch.
+        logger.warning("exa_not_configured")
+        return []
+
     payload: dict[str, Any] = {
         "query": query,
         "type": "auto",
@@ -51,7 +69,12 @@ async def search_web(
         },
     }
 
-    data = await post_json(_SEARCH_PATH, payload)
+    data = await post_json(
+        f"{settings.exa_base_url}{_SEARCH_PATH}",
+        payload,
+        label=_LABEL,
+        headers={"x-api-key": settings.exa_api_key},
+    )
     if data is None:
         return []
 

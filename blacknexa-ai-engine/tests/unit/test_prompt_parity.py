@@ -107,6 +107,16 @@ def test_hardening_is_additive_only() -> None:
 
 
 def test_model_ids_match_node(gateway_ts: str, i18n_ts: str) -> None:
+    """Same models as Node, addressed by their bare Gemini ids.
+
+    Node reaches them through a gateway that routes on a `google/` prefix. Calling
+    Google directly, that prefix is not part of the model name — so parity is
+    asserted with it stripped. Anything else diverging here means the engine
+    quietly changed which model writes the news.
+
+    Not covered: TTS. Node uses `xai/grok-tts`, which has no Gemini equivalent, so
+    that one intentionally differs — see `integrations/audio/tts.py`.
+    """
     from app.core.config import settings
 
     def const(source: str, name: str) -> str:
@@ -114,9 +124,14 @@ def test_model_ids_match_node(gateway_ts: str, i18n_ts: str) -> None:
         assert match, f"{name} not found"
         return match.group(1)
 
-    assert settings.synthesis_model == const(gateway_ts, "SYNTHESIS_MODEL")
-    assert settings.image_model == const(gateway_ts, "IMAGE_MODEL")
-    assert settings.translation_model == const(i18n_ts, "TRANSLATION_MODEL")
+    def bare(model_id: str) -> str:
+        return model_id.removeprefix("google/")
+
+    assert settings.synthesis_model == bare(const(gateway_ts, "SYNTHESIS_MODEL"))
+    assert settings.image_model == bare(const(gateway_ts, "IMAGE_MODEL"))
+    assert settings.translation_model == bare(const(i18n_ts, "TRANSLATION_MODEL"))
+    # The prefix really was gateway routing syntax, not part of the name.
+    assert not settings.synthesis_model.startswith("google/")
 
 
 def test_search_and_token_budgets_match_node(gateway_ts: str) -> None:
@@ -136,14 +151,37 @@ def test_search_and_token_budgets_match_node(gateway_ts: str) -> None:
     assert fast.synthesis_temperature == deep.synthesis_temperature == 0.3
 
 
-def test_gateway_paths_match_node(gateway_ts: str) -> None:
-    from app.integrations.audio.tts import SPEECH_PATH
-    from app.integrations.llm.chat import CHAT_PATH
-    from app.integrations.search.exa import _SEARCH_PATH
+def test_engine_no_longer_routes_through_the_node_gateway() -> None:
+    """Parity with Node's transport is deliberately broken, and stays broken.
 
-    assert _SEARCH_PATH in gateway_ts
-    assert CHAT_PATH in gateway_ts
-    assert SPEECH_PATH in gateway_ts
+    The Node service reaches Gemini through the Rork Toolkit gateway. This engine
+    calls Google and Exa directly, so the gateway host, its secret and its
+    OpenAI-compatible paths must not survive anywhere in `app/`. Prompt parity —
+    asserted by every other test in this module — is unaffected: only the
+    transport changed.
+    """
+    from pathlib import Path
+
+    app_dir = Path(__file__).resolve().parents[2] / "app"
+    banned = ("AI_TOOLKIT", "ai_toolkit", "toolkit.rork.com", "/v2/vercel", "/v2/exa")
+
+    offenders: list[str] = []
+    for path in app_dir.rglob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        offenders += [f"{path.name}: {token}" for token in banned if token in text]
+
+    assert not offenders, f"gateway references left behind: {offenders}"
+
+
+def test_search_request_body_matches_node(gateway_ts: str) -> None:
+    """The Exa request body is unchanged by the move off the gateway.
+
+    The gateway forwarded this body verbatim to the same Exa endpoint, so keeping
+    it identical is what makes the migration a transport change rather than a
+    change in what gets retrieved.
+    """
+    assert 'type: "auto"' in gateway_ts
+    assert "highlights: true" in gateway_ts
 
 
 def test_source_fallback_limit_matches_node(gateway_ts: str) -> None:

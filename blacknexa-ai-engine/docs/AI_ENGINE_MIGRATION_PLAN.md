@@ -290,3 +290,74 @@ without spending anything upstream.
 | Rate limiting | 3/minute cap throttles the fourth call with a JSON 429 |
 | Auth | 401 unauthenticated on all 8 protected routes; wrong-audience, expired and garbage tokens refused; `service` role gets 403 on `/admin/*`; auditor may read but not prune |
 | **Degradation with the engine stopped** | feed/briefings/local all still **200**; generate returned **502** with the app's existing copy, not a 500; `translate?lang=sw` returned **200** with English and the fallback logged |
+
+---
+
+## 9. Follow-up migration — off the Rork Toolkit gateway
+
+Everything above describes the Node → Python move, during which both services
+still reached their models through the Rork Toolkit gateway and shared
+`AI_TOOLKIT_SECRET_KEY`. That dependency has since been removed from this engine.
+The section is kept because §1–§8 still describe the Node source of truth
+faithfully, including its gateway-era model ids.
+
+### What changed
+
+| Capability | Before (gateway) | After (direct) |
+|---|---|---|
+| Synthesis / translation | `POST /v2/vercel/v1/chat/completions`, `google/gemini-2.5-flash-lite` | `POST {gemini}/models/gemini-2.5-flash-lite:generateContent` |
+| Imagery | same chat endpoint, `modalities: ["text","image"]` | same endpoint family, `responseModalities: ["TEXT","IMAGE"]` |
+| Audio | `POST /v2/vercel/v4/ai/speech-model`, `xai/grok-tts`, MP3 | `gemini-2.5-flash-preview-tts`, PCM framed as WAV |
+| Search | `POST /v2/exa/search` (gateway proxy) | `POST api.exa.ai/search` with `x-api-key` |
+| Auth | one `Authorization: Bearer` gateway secret | `x-goog-api-key` (Gemini) + `x-api-key` (Exa) |
+
+`AI_TOOLKIT_URL` and `AI_TOOLKIT_SECRET_KEY` are gone; `GEMINI_API_KEY` and
+`EXA_API_KEY` replace them. A test asserts no reference to either survives in
+`app/`, so the dependency cannot creep back in.
+
+### The three decisions worth recording
+
+1. **Exa was kept rather than folded into Gemini's search grounding.** Gemini can
+   ground on Google Search, but returns opaque redirect URLs and no page
+   excerpts. Three things downstream need what it does not give: the source card
+   needs a real publisher URL, currency needs a publication date, and — most
+   importantly — the anti-hallucination filter in §1 needs retrieved text to
+   intersect the model's citations against. Folding search into the model would
+   have made the model both the retriever and the thing being checked. Cost of
+   keeping it: a second API key.
+
+2. **Audio is now `audio/wav`.** Gemini TTS emits raw headerless PCM. The
+   alternative to framing it as WAV was transcoding to MP3, which needs a codec
+   dependency and an `ffmpeg` binary in the image, to preserve a media type
+   nothing actually requires — `expo-av` plays WAV on iOS, Android and web.
+   `wrap_pcm_as_wav` is 44 bytes of `struct.pack` and no new dependency. Two
+   places downstream learned the type: `sniffMediaType` and the S3 extension map.
+
+3. **Two Gemini knobs are set away from their defaults, deliberately.**
+   `GEMINI_THINKING_BUDGET=0` — thought tokens bill against `maxOutputTokens` and
+   add latency, and a thought-heavy answer can return no text at all, which on the
+   fast path is a two-second budget spent on nothing. `GEMINI_SAFETY_THRESHOLD=
+   BLOCK_ONLY_HIGH` — at stricter thresholds, factual reporting on civil rights,
+   police accountability and geopolitics is filtered often enough to break the
+   feed, and those are three of the eight categories this platform exists to
+   cover. Editorial control stays where §5 put it: the synthesis prompt and the
+   injection screen.
+
+### What did not change
+
+The editorial prompts, all tuning parameters in §44, the source-filter logic, the
+injection screen, the service contract in §3 and every failure code in §151. The
+prompt-parity tests still assert the prompts byte-identical against the
+TypeScript source, and model-id parity still holds with the gateway's `google/`
+routing prefix stripped. `/health` keeps the field name `aiGatewayConfigured`
+because `server.ts` reads it; it now answers "is Gemini configured?", and
+`searchConfigured` was added alongside it.
+
+### New failure modes
+
+| Condition | Behaviour |
+|---|---|
+| No `GEMINI_API_KEY` | `/ready` false; synthesis 503; image/audio null; translation falls back to English |
+| No `EXA_API_KEY` | `/ready` false; synthesis 503 up front, rather than a per-topic `no_source_material` that reads like a content problem |
+| Gemini blocks the prompt (200, no candidates) | logged as `gemini_prompt_blocked`, run fails `synthesis_failed` |
+| Candidate truncated (`finishReason: MAX_TOKENS`) | treated as unusable, not half-consumed — a partial JSON object would ship a cut-off briefing |

@@ -83,7 +83,7 @@ export default function LiveChatSheet({ visible, onClose }: Props): React.ReactE
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flatListRef = useRef<FlatList<ChatMessage> | null>(null);
   const selfUserId = user?.id ?? `guest_${Date.now().toString(36)}`;
-  const selfDisplayName = user?.name ?? "Member";
+  const selfDisplayName = user?.displayName || "Member";
 
   /** Establish the WebSocket connection with auto-reconnect. */
   const connect = useCallback(() => {

@@ -16,11 +16,14 @@ from fastapi.testclient import TestClient
 
 from app.core.config import settings
 from app.core.security import create_service_token
-from app.integrations.llm.chat import CHAT_PATH
 from app.main import app
-
-SEARCH_URL = f"{settings.ai_toolkit_url}/v2/exa/search"
-CHAT_URL = f"{settings.ai_toolkit_url}{CHAT_PATH}"
+from tests.support import (
+    EXA_SEARCH_URL,
+    IMAGE_URL,
+    SYNTHESIS_URL,
+    TRANSLATION_URL,
+    gemini_text,
+)
 
 PROTECTED = [
     ("post", "/api/v1/internal/news/search", {"query": "hbcu funding"}),
@@ -41,12 +44,19 @@ def test_health_is_open(client: TestClient) -> None:
     body = client.get("/health").json()
     assert body["status"] == "ok"
     assert body["service"] == "blacknexa-ai-engine"
+    # Retains the pre-migration name: `server.ts` reads it. Now means "Gemini".
     assert body["aiGatewayConfigured"] is True
+    assert body["searchConfigured"] is True
 
 
-def test_ready_reflects_gateway_configuration(client: TestClient) -> None:
-    """Not ready without a key — accepting requests it will all fail is worse."""
-    assert client.get("/ready").json()["ready"] is True
+def test_ready_requires_both_providers(client: TestClient) -> None:
+    """Not ready without both keys — accepting requests it will all fail is
+    worse. Gemini missing means nothing generates; Exa missing means nothing
+    grounds, and every synthesis fails."""
+    body = client.get("/ready").json()
+    assert body["ready"] is True
+    assert body["aiGatewayConfigured"] is True
+    assert body["searchConfigured"] is True
 
 
 # ── Authentication ───────────────────────────────────────────────────────────
@@ -185,7 +195,7 @@ def test_daily_prompts_contract(auth_client: TestClient) -> None:
 @respx.mock
 def test_synthesize_contract(auth_client: TestClient) -> None:
     """The exact shape the Node client parses."""
-    respx.post(SEARCH_URL).mock(
+    respx.post(EXA_SEARCH_URL).mock(
         return_value=httpx.Response(
             200,
             json={
@@ -200,29 +210,23 @@ def test_synthesize_contract(auth_client: TestClient) -> None:
             },
         )
     )
-    respx.post(CHAT_URL).mock(
+    respx.post(SYNTHESIS_URL).mock(
         return_value=httpx.Response(
             200,
-            json={
-                "choices": [
+            json=gemini_text(
+                json.dumps(
                     {
-                        "message": {
-                            "content": json.dumps(
-                                {
-                                    "headline": "HBCU Endowments Rise",
-                                    "summary": "Two sentences.",
-                                    "content": "Body copy.",
-                                    "verifiedSources": [
-                                        {"name": "Reuters", "url": "https://reuters.com/a"}
-                                    ],
-                                    "godlyPrincipleAlignment": "Stewardship.",
-                                    "imagePrompt": "A campus scene.",
-                                }
-                            )
-                        }
+                        "headline": "HBCU Endowments Rise",
+                        "summary": "Two sentences.",
+                        "content": "Body copy.",
+                        "verifiedSources": [
+                            {"name": "Reuters", "url": "https://reuters.com/a"}
+                        ],
+                        "godlyPrincipleAlignment": "Stewardship.",
+                        "imagePrompt": "A campus scene.",
                     }
-                ]
-            },
+                )
+            ),
         )
     )
 
@@ -254,7 +258,7 @@ def test_synthesize_contract(auth_client: TestClient) -> None:
 @respx.mock
 def test_synthesize_returns_502_without_grounding(auth_client: TestClient) -> None:
     """Node maps this onto the message the app already shows."""
-    respx.post(SEARCH_URL).mock(return_value=httpx.Response(200, json={"results": []}))
+    respx.post(EXA_SEARCH_URL).mock(return_value=httpx.Response(200, json={"results": []}))
 
     response = auth_client.post(
         "/api/v1/internal/news/synthesize", json={"topicPrompt": "an obscure topic"}
@@ -266,7 +270,7 @@ def test_synthesize_returns_502_without_grounding(auth_client: TestClient) -> No
 def test_translate_en_short_circuits(auth_client: TestClient) -> None:
     """English is the source language — no model call at all."""
     with respx.mock:
-        chat = respx.post(CHAT_URL).mock(return_value=httpx.Response(200, json={}))
+        chat = respx.post(TRANSLATION_URL).mock(return_value=httpx.Response(200, json={}))
         body = auth_client.post(
             "/api/v1/internal/news/translate",
             json={
@@ -295,7 +299,7 @@ def test_translate_en_short_circuits(auth_client: TestClient) -> None:
 @respx.mock
 def test_translate_failure_returns_200_with_null(auth_client: TestClient) -> None:
     """A null translation is valid — Node then serves the English source."""
-    respx.post(CHAT_URL).mock(return_value=httpx.Response(500, json={"error": "upstream"}))
+    respx.post(TRANSLATION_URL).mock(return_value=httpx.Response(500, json={"error": "upstream"}))
 
     response = auth_client.post(
         "/api/v1/internal/news/translate",
@@ -308,7 +312,7 @@ def test_translate_failure_returns_200_with_null(auth_client: TestClient) -> Non
 @respx.mock
 def test_image_failure_returns_200_with_null(auth_client: TestClient) -> None:
     """A null image is valid — Node falls back to a curated photo."""
-    respx.post(CHAT_URL).mock(return_value=httpx.Response(500, json={"error": "upstream"}))
+    respx.post(IMAGE_URL).mock(return_value=httpx.Response(500, json={"error": "upstream"}))
 
     response = auth_client.post(
         "/api/v1/internal/news/image",

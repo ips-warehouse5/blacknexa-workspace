@@ -1,279 +1,492 @@
+/**
+ * Authentication state for the whole app.
+ *
+ * Replaces the previous provider, which authenticated against an external Rork
+ * OAuth host. That arrangement cannot work with this design: every report has an
+ * owner in *our* database (screen C9 — "Moderators can still see who filed it"),
+ * so the identity has to be ours too. Apple and Google now sign in natively and
+ * the backend verifies the provider's identity token.
+ *
+ * ── What this provider is responsible for ──────────────────────────────────
+ *   • The signed-in member, and the boot-time restore of a stored session.
+ *   • The sign-up flow's own state (A6 → A9), which spans four screens and must
+ *     survive a back-navigation without losing what was typed.
+ *   • Reacting to an involuntary sign-out — a revoked device, a rotated refresh
+ *     token — which the API client reports and which no screen should have to
+ *     detect for itself.
+ *
+ * Token storage, refresh and the single-flight mutex all live in
+ * `lib/api/client.ts`; this provider never touches a token directly.
+ */
+
 import createContextHook from "@nkzw/create-context-hook";
-import * as Linking from "expo-linking";
-import * as SecureStore from "expo-secure-store";
-import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as LocalAuthentication from "expo-local-authentication";
+import api, { ApiError } from "@/lib/api/client";
+import authApi, {
+  type AuthResult,
+  type AvatarMode,
+  type LocationPrecision,
+  type UserProfile,
+  type Visibility,
+} from "@/lib/api/auth";
 
-const AUTH_URL = process.env.EXPO_PUBLIC_RORK_AUTH_URL ?? "";
-const APP_KEY = process.env.EXPO_PUBLIC_RORK_APP_KEY ?? "";
-const PROJECT_ID = process.env.EXPO_PUBLIC_PROJECT_ID ?? "";
+/** How the gate should route. Kept explicit so no screen infers it from nulls. */
+export type AuthStatus =
+  /** Session being restored — show the splash, not the Welcome screen. */
+  | "restoring"
+  | "signedOut"
+  /** Signed in but the account setup (A7 → A9) is unfinished. */
+  | "onboarding"
+  | "signedIn";
 
-/** Authenticated user surfaced from the Rork JWT payload. */
-export type AuthUser = {
-  id: string;
+/**
+ * Sign-up draft, held across A6 → A9.
+ *
+ * The password is kept in memory only, never persisted: it is needed until the
+ * A8 code is accepted, and after that it has no reason to exist anywhere.
+ */
+export interface SignUpDraft {
   email: string;
-  name?: string;
-  picture?: string;
-};
+  password: string;
+  /** Set once A8 succeeds, so A9 knows the account is real. */
+  verified: boolean;
+}
 
-type AuthState = {
-  user: AuthUser | null;
-  isLoading: boolean;
-  isSigningIn: boolean;
+interface AuthState {
+  status: AuthStatus;
+  user: UserProfile | null;
+  /** Last error from an explicit action, for a screen to display inline. */
   error: string | null;
-  signIn: (provider: "google" | "apple") => Promise<AuthUser | null>;
+  busy: boolean;
+
+  signUpDraft: SignUpDraft | null;
+  beginSignUp: (email: string, password: string) => void;
+  markVerified: () => void;
+  clearSignUpDraft: () => void;
+
+  register: (email: string, password: string) => Promise<{ resendAfterSeconds: number } | null>;
+  verifyEmail: (code: string) => Promise<boolean>;
+  resendVerification: () => Promise<number | null>;
+  login: (email: string, password: string) => Promise<boolean>;
+  signInWithApple: () => Promise<boolean>;
+  /**
+   * Google's identity token, obtained by the caller.
+   *
+   * The provider takes a token rather than running the flow itself because
+   * `expo-auth-session` exposes the request as a hook, which has to live in a
+   * component. The screen owns the hook; the verification and account resolution
+   * happen here and on the server.
+   */
+  signInWithGoogleToken: (identityToken: string) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<{ resendAfterSeconds: number } | null>;
+  resetPassword: (email: string, code: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
+  signOutEverywhere: () => Promise<void>;
+  /** Clear the local session only — used after the account itself is deleted. */
+  forgetSession: () => void;
+
+  updateProfile: (patch: {
+    displayName?: string;
+    avatarMode?: AvatarMode;
+    anonymousByDefault?: boolean;
+    defaultVisibility?: Visibility;
+    defaultPrecision?: LocationPrecision;
+    notificationsEnabled?: boolean;
+    language?: string;
+  }) => Promise<boolean>;
+  recordConsents: (version: number) => Promise<boolean>;
+  /** Marks account setup complete so the gate stops routing to onboarding. */
+  completeOnboarding: () => void;
+
+  biometricsAvailable: boolean;
+  unlockWithBiometrics: () => Promise<boolean>;
   clearError: () => void;
-};
-
-function generateCodeVerifier(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-async function generateCodeChallenge(verifier: string): Promise<string> {
-  const data = new TextEncoder().encode(verifier);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return btoa(String.fromCharCode(...new Uint8Array(hash)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-/** Decode the JWT payload to extract user info and check expiration. */
-function userFromToken(token: string): AuthUser | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(base64));
-    if (payload.exp && payload.exp * 1000 < Date.now()) return null;
-    return {
-      id: payload.sub,
-      email: payload.email ?? "",
-      name: payload.name,
-      picture: payload.picture,
-    };
-  } catch {
-    return null;
-  }
 }
 
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
+  const [status, setStatus] = useState<AuthStatus>("restoring");
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const codeVerifierRef = useRef<string | null>(null);
-  /** Dedup ref: if two callers (Linking listener + WebBrowser result) race to
-   * exchange the same OAuth code, they share one in-flight promise instead of
-   * the second one silently failing because the verifier was already cleared. */
-  const pendingExchangeRef = useRef<Promise<AuthUser | null> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [signUpDraft, setSignUpDraft] = useState<SignUpDraft | null>(null);
+  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  /**
+   * A9 sets this once the profile step is done. Held locally because the server
+   * has no "onboarded" flag — a display name is a weak proxy, and someone who
+   * deliberately publishes as Anonymous has no display name to check.
+   */
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   const clearError = useCallback(() => setError(null), []);
 
-  const refreshToken = useCallback(async (): Promise<void> => {
-    const storedRefreshToken = await SecureStore.getItemAsync("refresh_token");
-    if (!storedRefreshToken) {
-      setUser(null);
-      return;
+  /** Translate a thrown error into the sentence a screen shows. */
+  const capture = useCallback((err: unknown): null => {
+    if (err instanceof ApiError) {
+      setError(err.message);
+    } else {
+      setError("Something went wrong. Please try again.");
     }
+    return null;
+  }, []);
+
+  const adopt = useCallback((result: AuthResult) => {
+    setUser(result.user);
+    setError(null);
+    // A fresh sign-in on an existing account skips onboarding; a brand-new
+    // account is walked through A7 → A9 by the sign-up flow itself, which calls
+    // `completeOnboarding` at the end.
+    setStatus("signedIn");
+    setOnboardingComplete(true);
+  }, []);
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+
+  const restore = useCallback(async () => {
     try {
-      const response = await fetch(`${AUTH_URL}/oauth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_key: APP_KEY, refresh_token: storedRefreshToken }),
-      });
-      if (!response.ok) {
-        await SecureStore.deleteItemAsync("access_token");
-        await SecureStore.deleteItemAsync("refresh_token");
-        setUser(null);
+      const hasTokens = await api.loadSession();
+      if (!hasTokens) {
+        setStatus("signedOut");
         return;
       }
-      const { access_token } = await response.json();
-      await SecureStore.setItemAsync("access_token", access_token);
-      setUser(userFromToken(access_token));
-    } catch {
-      setUser(null);
+      const profile = await authApi.me();
+      setUser(profile);
+      setOnboardingComplete(true);
+      setStatus("signedIn");
+    } catch (err) {
+      // An expired-and-unrefreshable session means signed out. A network failure
+      // does not — but there is nothing to show without a profile either, so the
+      // gate sends the person to Welcome and a retry costs one tap.
+      if (err instanceof ApiError && err.isAuthError) {
+        await api.clearTokens();
+      }
+      setStatus("signedOut");
     }
   }, []);
 
-  const checkAuth = useCallback(async (): Promise<void> => {
-    try {
-      const accessToken = await SecureStore.getItemAsync("access_token");
-      if (!accessToken) {
-        const refreshTokenStored = await SecureStore.getItemAsync("refresh_token");
-        if (refreshTokenStored) await refreshToken();
-        return;
-      }
-      const decoded = userFromToken(accessToken);
-      if (decoded) {
-        setUser(decoded);
-      } else {
-        await refreshToken();
-      }
-    } catch {
-      /* ignore — user stays signed out */
-    } finally {
-      setIsLoading(false);
-    }
-  }, [refreshToken]);
-
   useEffect(() => {
-    void checkAuth();
-  }, [checkAuth]);
+    void restore();
+  }, [restore]);
 
-  const exchangeCode = useCallback(
-    async (code: string): Promise<AuthUser | null> => {
-      // Deduplicate: the Linking URL listener and WebBrowser.openAuthSessionAsync
-      // can both resolve with the same code on native. Share one exchange.
-      if (pendingExchangeRef.current) return pendingExchangeRef.current;
-      const verifier = codeVerifierRef.current;
-      if (!verifier) {
-        // Already consumed by a parallel caller — surface the signed-in user if
-        // the first exchange succeeded, otherwise null.
-        return null;
-      }
-      const promise = (async (): Promise<AuthUser | null> => {
-        codeVerifierRef.current = null;
-        try {
-          const response = await fetch(`${AUTH_URL}/oauth/token`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ app_key: APP_KEY, code, code_verifier: verifier }),
-          });
-          if (!response.ok) {
-            const body = await response.json().catch(() => ({}));
-            const message =
-              (body as { error?: string }).error ??
-              `Token exchange failed (${response.status})`;
-            throw new Error(message);
-          }
-          const { access_token, refresh_token, user: userData } = await response.json();
-          await SecureStore.setItemAsync("access_token", access_token);
-          await SecureStore.setItemAsync("refresh_token", refresh_token);
-          const decoded = userFromToken(access_token);
-          setUser(decoded ?? (userData as AuthUser) ?? null);
-          return (decoded ?? (userData as AuthUser)) ?? null;
-        } finally {
-          pendingExchangeRef.current = null;
-        }
-      })();
-      pendingExchangeRef.current = promise;
-      return promise;
-    },
-    [],
-  );
-
+  /** Involuntary sign-out: the API client hit an unrecoverable 401. */
   useEffect(() => {
-    const subscription = Linking.addEventListener("url", (event: { url: string }) => {
-      try {
-        const url = new URL(event.url);
-        if (url.pathname === "/auth/callback") {
-          const code = url.searchParams.get("code");
-          if (code) void exchangeCode(code);
-        }
-      } catch {
-        /* malformed deep link */
-      }
+    return api.onSignOut(() => {
+      setUser(null);
+      setOnboardingComplete(false);
+      setStatus("signedOut");
+      setError("You have been signed out. Please log in again.");
     });
-    return () => subscription.remove();
-  }, [exchangeCode]);
+  }, []);
 
-  const signIn = useCallback(
-    async (provider: "google" | "apple"): Promise<AuthUser | null> => {
-      setIsSigningIn(true);
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    void (async () => {
+      const [hasHardware, isEnrolled] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+      ]);
+      setBiometricsAvailable(hasHardware && isEnrolled);
+    })();
+  }, []);
+
+  // ── Sign-up draft (A6 → A9) ───────────────────────────────────────────────
+
+  const beginSignUp = useCallback((email: string, password: string) => {
+    setSignUpDraft({ email: email.trim().toLowerCase(), password, verified: false });
+  }, []);
+
+  const markVerified = useCallback(() => {
+    setSignUpDraft((draft) => (draft ? { ...draft, verified: true } : draft));
+  }, []);
+
+  const clearSignUpDraft = useCallback(() => setSignUpDraft(null), []);
+
+  // ── Flows ─────────────────────────────────────────────────────────────────
+
+  const register = useCallback(
+    async (email: string, password: string) => {
+      setBusy(true);
       setError(null);
       try {
-        const verifier = generateCodeVerifier();
-        const challenge = await generateCodeChallenge(verifier);
-        codeVerifierRef.current = verifier;
-        const isWeb = Platform.OS === "web";
-        const target = "rn";
-        const env = isWeb ? "preview" : "native";
-        const response = await fetch(`${AUTH_URL}/oauth/initiate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ app_key: APP_KEY, provider, code_challenge: challenge, target, env }),
-        });
-        if (!response.ok) {
-          codeVerifierRef.current = null;
-          const body = await response.json().catch(() => ({}));
-          const message = (body as { error?: string }).error ?? `Sign in failed (${response.status})`;
-          setError(message);
-          return null;
-        }
-        const { auth_url } = await response.json();
-        if (isWeb) {
-          const popup = window.open(auth_url, "_blank", "width=500,height=650");
-          return await new Promise<AuthUser | null>((resolve) => {
-            const onMessage = (event: MessageEvent) => {
-              if (event.data?.type !== "rork_auth_callback") return;
-              window.removeEventListener("message", onMessage);
-              if (pollTimer) clearInterval(pollTimer);
-              const code = event.data.code as string | undefined;
-              if (code) {
-                exchangeCode(code).then(resolve, () => resolve(null));
-              } else {
-                resolve(null);
-              }
-            };
-            window.addEventListener("message", onMessage);
-            const pollTimer = setInterval(() => {
-              if (popup?.closed) {
-                clearInterval(pollTimer);
-                window.removeEventListener("message", onMessage);
-                codeVerifierRef.current = null;
-                resolve(null);
-              }
-            }, 500);
-          });
-        }
-        const result = await WebBrowser.openAuthSessionAsync(
-          auth_url,
-          `rork-${PROJECT_ID}://auth/callback`,
-        );
-        if (result.type === "success") {
-          const url = new URL(result.url);
-          const code = url.searchParams.get("code");
-          if (code) {
-            // The Linking listener may have already exchanged this code; if so,
-            // exchangeCode returns the shared in-flight promise (or the user).
-            const exchanged = await exchangeCode(code);
-            if (exchanged) return exchanged;
-            // Fall back to the user set by the Linking listener's exchange.
-            return user;
-          }
-        }
-        return user;
+        const challenge = await authApi.register(email, password);
+        beginSignUp(email, password);
+        return { resendAfterSeconds: challenge.resendAfterSeconds };
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Sign in failed");
-        return null;
+        return capture(err);
       } finally {
-        setIsSigningIn(false);
+        setBusy(false);
       }
     },
-    [exchangeCode, user],
+    [beginSignUp, capture],
   );
 
-  const signOut = useCallback(async (): Promise<void> => {
-    await SecureStore.deleteItemAsync("access_token");
-    await SecureStore.deleteItemAsync("refresh_token");
+  const verifyEmail = useCallback(
+    async (code: string) => {
+      const draft = signUpDraft;
+      if (!draft) {
+        setError("Start again — we lost track of which address to verify.");
+        return false;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        const result = await authApi.verifyEmail(draft.email, code);
+        setUser(result.user);
+        markVerified();
+        // Not `signedIn` yet: A7 and A9 still have to run, and the gate uses this
+        // to keep the tab bar out of reach until they do.
+        setStatus("onboarding");
+        setOnboardingComplete(false);
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [capture, markVerified, signUpDraft],
+  );
+
+  const resendVerification = useCallback(async () => {
+    const draft = signUpDraft;
+    if (!draft) return null;
+    try {
+      const challenge = await authApi.resendCode(draft.email, "verify_email");
+      return challenge.resendAfterSeconds;
+    } catch (err) {
+      return capture(err) as null;
+    }
+  }, [capture, signUpDraft]);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      setBusy(true);
+      setError(null);
+      try {
+        adopt(await authApi.login(email, password));
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [adopt, capture],
+  );
+
+  /**
+   * A5's "Continue with Apple".
+   *
+   * Apple returns the name only on the *first* authorisation for an app, so it is
+   * forwarded here and persisted server-side — asking again later is impossible.
+   */
+  const signInWithApple = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!credential.identityToken) {
+        setError("That sign-in did not complete. Please try again.");
+        return false;
+      }
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(" ");
+      adopt(
+        await authApi.socialLogin("apple", credential.identityToken, fullName || undefined),
+      );
+      return true;
+    } catch (err) {
+      // A cancelled sheet is not an error worth showing.
+      if (err instanceof Error && err.message.includes("ERR_REQUEST_CANCELED")) {
+        return false;
+      }
+      capture(err);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [adopt, capture]);
+
+  const signInWithGoogleToken = useCallback(
+    async (identityToken: string) => {
+      setBusy(true);
+      setError(null);
+      try {
+        adopt(await authApi.socialLogin("google", identityToken));
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [adopt, capture],
+  );
+
+  const forgotPassword = useCallback(
+    async (email: string) => {
+      setBusy(true);
+      setError(null);
+      try {
+        const challenge = await authApi.forgotPassword(email);
+        return { resendAfterSeconds: challenge.resendAfterSeconds };
+      } catch (err) {
+        return capture(err);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [capture],
+  );
+
+  const resetPassword = useCallback(
+    async (email: string, code: string, password: string) => {
+      setBusy(true);
+      setError(null);
+      try {
+        adopt(await authApi.resetPassword(email, code, password));
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [adopt, capture],
+  );
+
+  const signOut = useCallback(async () => {
+    await authApi.logout();
     setUser(null);
+    setSignUpDraft(null);
+    setOnboardingComplete(false);
+    setStatus("signedOut");
   }, []);
 
+  /**
+   * Drop the local session without telling the server.
+   *
+   * For the one case where the account is already gone: after a delete, the tokens
+   * cannot be refreshed and `POST /auth/logout` would fail against an account that
+   * no longer exists — turning a successful deletion into a visible error. The API
+   * layer has already cleared the stored tokens by then; this clears the state that
+   * decides which stack renders.
+   */
+  const forgetSession = useCallback(() => {
+    setUser(null);
+    setSignUpDraft(null);
+    setOnboardingComplete(false);
+    setStatus("signedOut");
+  }, []);
+
+  const signOutEverywhere = useCallback(async () => {
+    await authApi.logoutEverywhere();
+    setUser(null);
+    setSignUpDraft(null);
+    setOnboardingComplete(false);
+    setStatus("signedOut");
+  }, []);
+
+  const updateProfile = useCallback(
+    async (patch: Parameters<AuthState["updateProfile"]>[0]) => {
+      setBusy(true);
+      setError(null);
+      try {
+        setUser(await authApi.updateProfile(patch));
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [capture],
+  );
+
+  const recordConsents = useCallback(
+    async (version: number) => {
+      try {
+        await authApi.recordConsents(["tos", "privacy"], version);
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      }
+    },
+    [capture],
+  );
+
+  const completeOnboarding = useCallback(() => {
+    setOnboardingComplete(true);
+    setStatus("signedIn");
+    setSignUpDraft(null);
+  }, []);
+
+  /** A10's "Use Face ID". Gates the stored session rather than replacing it. */
+  const unlockWithBiometrics = useCallback(async () => {
+    if (!biometricsAvailable) return false;
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Unlock BlackNexa",
+      // Falls back to the device passcode rather than dead-ending when a face or
+      // fingerprint is not recognised.
+      disableDeviceFallback: false,
+    });
+    if (!result.success) return false;
+    // The refresh token is already on the device; a successful prompt is
+    // permission to use it.
+    await restore();
+    return true;
+  }, [biometricsAvailable, restore]);
+
+  /** Guards against a stale status flicker if `restore` resolves after a sign-in. */
+  const settled = useRef(false);
+  useEffect(() => {
+    if (status !== "restoring") settled.current = true;
+  }, [status]);
+
+  const effectiveStatus = useMemo<AuthStatus>(() => {
+    if (status === "signedIn" && !onboardingComplete) return "onboarding";
+    return status;
+  }, [onboardingComplete, status]);
+
   return {
+    status: effectiveStatus,
     user,
-    isLoading,
-    isSigningIn,
     error,
-    signIn,
+    busy,
+    signUpDraft,
+    beginSignUp,
+    markVerified,
+    clearSignUpDraft,
+    register,
+    verifyEmail,
+    resendVerification,
+    login,
+    signInWithApple,
+    signInWithGoogleToken,
+    forgotPassword,
+    resetPassword,
     signOut,
+    signOutEverywhere,
+    forgetSession,
+    updateProfile,
+    recordConsents,
+    completeOnboarding,
+    biometricsAvailable,
+    unlockWithBiometrics,
     clearError,
   };
 });

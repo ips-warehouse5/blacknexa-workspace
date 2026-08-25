@@ -19,6 +19,9 @@ import { geoLegalSchemas } from "@/validations/geo_legal.validation";
 import { platformSchemas } from "@/validations/platform.validation";
 import { enterpriseSchemas } from "@/validations/enterprise.validation";
 import { adminSchemas } from "@/validations/admin.validation";
+import { userAuthSchemas } from "@/validations/user_auth.validation";
+import { reportSchemas } from "@/validations/report.validation";
+import { moderationSchemas } from "@/validations/moderation.validation";
 
 export type ValidationTarget = "body" | "query" | "params";
 
@@ -32,6 +35,9 @@ const registry: SchemaRegistry = {
   ...platformSchemas,
   ...enterpriseSchemas,
   ...adminSchemas,
+  ...userAuthSchemas,
+  ...reportSchemas,
+  ...moderationSchemas,
 };
 
 /** Look up a schema set by name. */

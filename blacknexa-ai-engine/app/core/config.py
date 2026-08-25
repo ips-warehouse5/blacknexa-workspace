@@ -5,8 +5,12 @@ in one settings model and validated before anything boots. A missing or malforme
 value aborts startup with a readable list rather than surfacing later as a runtime
 failure or, worse, a silently insecure default.
 
-No secret has a usable default. `AI_TOOLKIT_SECRET_KEY` and `SERVICE_JWT_SECRET`
-must be supplied.
+No secret has a usable default. `GEMINI_API_KEY`, `EXA_API_KEY` and
+`SERVICE_JWT_SECRET` must be supplied.
+
+The engine talks to two providers directly — Google's Generative Language API for
+every model call, and Exa for web search. There is no aggregating gateway in
+between, so each provider is keyed, validated and reported on independently.
 """
 
 from __future__ import annotations
@@ -38,25 +42,50 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     log_json: bool = Field(default=False, alias="LOG_JSON")
 
-    # ── AI gateway (Rork Toolkit) ────────────────────────────────────────────
-    # Same upstream the Node service uses, so the engine is a drop-in for it.
-    ai_toolkit_url: str = Field(default="https://toolkit.rork.com", alias="AI_TOOLKIT_URL")
-    ai_toolkit_secret_key: str = Field(default="", alias="AI_TOOLKIT_SECRET_KEY")
+    # ── Gemini (Google Generative Language API) ──────────────────────────────
+    # Every model call — synthesis, imagery, TTS, translation — goes here.
+    gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    gemini_base_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta",
+        alias="GEMINI_BASE_URL",
+    )
 
-    # Ported verbatim from ai_gateway.service.ts / http.util.ts.
+    # ── Exa (web search) ─────────────────────────────────────────────────────
+    # Grounding is the one capability Gemini cannot supply in the shape this
+    # pipeline needs — real publisher URLs with dated highlight excerpts — so Exa
+    # is called directly with its own key.
+    exa_api_key: str = Field(default="", alias="EXA_API_KEY")
+    exa_base_url: str = Field(default="https://api.exa.ai", alias="EXA_BASE_URL")
+
+    # Transport tuning, ported verbatim from ai_gateway.service.ts / http.util.ts.
     ai_timeout_seconds: float = Field(default=20.0, gt=0, alias="AI_TIMEOUT_SECONDS")
     ai_retry_delay_seconds: float = Field(default=0.3, ge=0, alias="AI_RETRY_DELAY_SECONDS")
     ai_max_attempts: int = Field(default=2, ge=1, le=5, alias="AI_MAX_ATTEMPTS")
 
-    synthesis_model: str = Field(
-        default="google/gemini-2.5-flash-lite", alias="AI_SYNTHESIS_MODEL"
+    # Bare Gemini model ids — no `google/` provider prefix, which was a gateway
+    # routing convention rather than part of the model name.
+    synthesis_model: str = Field(default="gemini-2.5-flash-lite", alias="AI_SYNTHESIS_MODEL")
+    image_model: str = Field(default="gemini-2.5-flash-image", alias="AI_IMAGE_MODEL")
+    translation_model: str = Field(default="gemini-2.5-flash-lite", alias="AI_TRANSLATION_MODEL")
+    tts_model: str = Field(default="gemini-2.5-flash-preview-tts", alias="AI_TTS_MODEL")
+    # Gemini's prebuilt voice names are a fixed, capitalised set; "Kore" is the
+    # closest match to the newsreader delivery the old `eve` voice gave.
+    tts_voice: str = Field(default="Kore", alias="AI_TTS_VOICE")
+
+    # 2.5 models can spend output tokens on internal reasoning before emitting a
+    # single character. For a two-second briefing that is pure latency, and a
+    # thought-heavy response can exhaust max_output_tokens and return no text at
+    # all — so thinking is off by default. Raise it only to debug output quality.
+    gemini_thinking_budget: int = Field(default=0, ge=0, alias="GEMINI_THINKING_BUDGET")
+
+    # This platform covers civil rights, police accountability and geopolitics.
+    # At Gemini's default thresholds, factual reporting on those beats is blocked
+    # as harmful often enough to break the feed, so the engine asks for the
+    # least-restrictive setting the API allows and relies on its own editorial
+    # prompt plus `prompt_safety` for control.
+    gemini_safety_threshold: str = Field(
+        default="BLOCK_ONLY_HIGH", alias="GEMINI_SAFETY_THRESHOLD"
     )
-    image_model: str = Field(default="google/gemini-2.5-flash-image", alias="AI_IMAGE_MODEL")
-    translation_model: str = Field(
-        default="google/gemini-2.5-flash-lite", alias="AI_TRANSLATION_MODEL"
-    )
-    tts_model: str = Field(default="xai/grok-tts", alias="AI_TTS_MODEL")
-    tts_voice: str = Field(default="eve", alias="AI_TTS_VOICE")
 
     # ── Service auth ─────────────────────────────────────────────────────────
     service_jwt_secret: str = Field(default="", alias="SERVICE_JWT_SECRET")
@@ -103,12 +132,23 @@ class Settings(BaseSettings):
 
     @property
     def ai_enabled(self) -> bool:
-        """True when a gateway call can actually be made.
+        """True when a Gemini call can actually be made.
 
         Mirrors `env.ai.enabled` in Node. When false every AI path degrades to a
         null result rather than raising, so the caller's feed keeps working.
         """
-        return bool(self.ai_toolkit_url and self.ai_toolkit_secret_key)
+        return bool(self.gemini_base_url and self.gemini_api_key)
+
+    @property
+    def search_enabled(self) -> bool:
+        """True when Exa can be reached.
+
+        Tracked separately from `ai_enabled` because the failure modes differ: no
+        Gemini key means nothing generates at all, while no Exa key means search
+        returns no hits and synthesis stops at `no_source_material` — the same
+        path a genuinely empty result set already takes.
+        """
+        return bool(self.exa_base_url and self.exa_api_key)
 
     @property
     def persistence_enabled(self) -> bool:
@@ -120,10 +160,25 @@ class Settings(BaseSettings):
 
     # ── Validation ───────────────────────────────────────────────────────────
 
-    @field_validator("ai_toolkit_url")
+    @field_validator("gemini_base_url", "exa_base_url")
     @classmethod
     def _strip_trailing_slash(cls, v: str) -> str:
         return v.rstrip("/")
+
+    @field_validator("gemini_safety_threshold")
+    @classmethod
+    def _valid_safety_threshold(cls, v: str) -> str:
+        allowed = {
+            "BLOCK_NONE",
+            "BLOCK_ONLY_HIGH",
+            "BLOCK_MEDIUM_AND_ABOVE",
+            "BLOCK_LOW_AND_ABOVE",
+            "OFF",
+        }
+        upper = v.upper()
+        if upper not in allowed:
+            raise ValueError(f"GEMINI_SAFETY_THRESHOLD must be one of {sorted(allowed)}")
+        return upper
 
     @field_validator("log_level")
     @classmethod
@@ -146,8 +201,12 @@ class Settings(BaseSettings):
             problems.append("SERVICE_JWT_SECRET must be at least 32 characters")
 
         if self.is_production:
-            if not self.ai_toolkit_secret_key:
-                problems.append("AI_TOOLKIT_SECRET_KEY is required in production")
+            if not self.gemini_api_key:
+                problems.append("GEMINI_API_KEY is required in production")
+            # Without grounding the engine can only invent, which the product
+            # forbids outright — so this is required, not optional.
+            if not self.exa_api_key:
+                problems.append("EXA_API_KEY is required in production")
             if "*" in self.cors_origin_list:
                 problems.append("CORS_ORIGINS must not contain '*'")
             if not self.log_json:

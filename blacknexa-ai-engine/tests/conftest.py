@@ -11,8 +11,10 @@ from pathlib import Path
 
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("SERVICE_JWT_SECRET", "test-service-secret-that-is-long-enough-32")
-os.environ.setdefault("AI_TOOLKIT_URL", "https://toolkit.test")
-os.environ.setdefault("AI_TOOLKIT_SECRET_KEY", "test-gateway-key")
+os.environ.setdefault("GEMINI_BASE_URL", "https://gemini.test/v1beta")
+os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
+os.environ.setdefault("EXA_BASE_URL", "https://exa.test")
+os.environ.setdefault("EXA_API_KEY", "test-exa-key")
 os.environ.setdefault("DATABASE_URL", "")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 os.environ.setdefault("LOG_LEVEL", "ERROR")

@@ -69,6 +69,15 @@ export function sniffMediaType(buffer: Buffer): string | null {
   ) {
     return "image/webp";
   }
+  // WAV: "RIFF"...."WAVE" — same container family as WEBP, different form type.
+  // Produced by the AI engine's TTS: Gemini returns headerless PCM, which the
+  // engine frames as WAV rather than pulling in an MP3 encoder.
+  if (
+    buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+    buffer.subarray(8, 12).toString("ascii") === "WAVE"
+  ) {
+    return "audio/wav";
+  }
   // PDF: "%PDF"
   if (buffer.subarray(0, 4).toString("ascii") === "%PDF") return "application/pdf";
   // MP3: "ID3" tag, or an MPEG frame sync

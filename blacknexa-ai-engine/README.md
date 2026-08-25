@@ -17,7 +17,7 @@ Boundary, contract and the reasoning behind both:
 ## Quick start
 
 ```bash
-cp .env.example .env       # set SERVICE_JWT_SECRET, and AI_TOOLKIT_SECRET_KEY to generate
+cp .env.example .env       # set SERVICE_JWT_SECRET, GEMINI_API_KEY and EXA_API_KEY
 uv venv && uv pip install -e ".[dev]"
 uv run uvicorn app.main:app --reload --port 8100
 ```
@@ -37,6 +37,46 @@ uv run python -c "from app.core.security import create_service_token; print(crea
 
 With `AI_ENGINE_URL` unset, Node keeps using its own in-process AI implementation,
 so adopting this service is reversible without a redeploy.
+
+---
+
+## Providers
+
+Two, called directly. There is no aggregating AI gateway in front of them, and no
+`AI_TOOLKIT_SECRET_KEY`.
+
+| Capability | Provider | Model / endpoint |
+| --- | --- | --- |
+| Synthesis, translation | Gemini | `gemini-2.5-flash-lite` |
+| Imagery | Gemini | `gemini-2.5-flash-image` |
+| Audio briefings | Gemini | `gemini-2.5-flash-preview-tts` |
+| Grounded search | Exa | `POST api.exa.ai/search` |
+
+`GEMINI_API_KEY` and `EXA_API_KEY` are both required in production, and `/ready`
+reports false without either. The failure modes differ and are logged separately:
+no Gemini key means nothing generates at all; no Exa key means nothing grounds, so
+every synthesis stops at `no_source_material`.
+
+**Why Exa is still its own provider.** Gemini can search via its built-in
+grounding tool, but it returns opaque redirect URLs and no page excerpts. The
+source cards need a real publisher URL and a dated excerpt, and the citation
+filter needs retrieved text to intersect the model's claims against — so
+retrieval stays with Exa.
+
+**Audio is `audio/wav`, not `audio/mpeg`.** Gemini's TTS returns raw headerless
+PCM; `audio/tts.py` frames it in a 44-byte RIFF/WAVE header in pure Python, which
+is what keeps this service free of an audio codec dependency. `expo-av` plays WAV
+on every target. The backend's `sniffMediaType` and its S3 extension map both know
+`audio/wav`.
+
+**Two settings worth understanding before changing them.**
+`GEMINI_THINKING_BUDGET` is `0`: thought tokens are billed against
+`maxOutputTokens` and add seconds of latency, and a thought-heavy answer can
+return no text at all. `GEMINI_SAFETY_THRESHOLD` is `BLOCK_ONLY_HIGH`, because at
+Gemini's stricter defaults, straight reporting on police accountability, civil
+rights and geopolitics — four of this platform's eight categories — gets filtered
+often enough to break the feed. Editorial control comes from the synthesis prompt
+and the injection screen instead.
 
 ### Commands
 
@@ -95,11 +135,12 @@ app/
     nodes/           search → synthesis → source_filter → image
     prompts/         verbatim ports of the editorial prompts + daily rotation
   integrations/
-    search/exa.py    grounded web search
-    llm/chat.py      chat-completions + defensive JSON extraction
+    search/exa.py    grounded web search — api.exa.ai
+    llm/gemini.py    generateContent client: request shape + part extraction
+    llm/chat.py      text generation + defensive JSON extraction
     llm/image.py     multimodal image generation
-    audio/tts.py     speech synthesis
-    gateway.py       shared transport with retry/timeout parity
+    audio/tts.py     speech synthesis + PCM→WAV framing
+    transport.py     shared pooled HTTP with retry/timeout parity
   services/          orchestration above the graph
   models/            SQLAlchemy run-log model
   repositories/      run-log queries
@@ -194,8 +235,11 @@ Defences, none of which change what a legitimate request produces:
   it can be persisted or rendered.
 
 There is no tool execution, no shell, no filesystem write and no model-directed
-outbound call anywhere in this service. The only network egress is the configured
-gateway, which removes the entire unsafe-tool-execution class.
+outbound call anywhere in this service. The only network egress is to two fixed,
+configured hosts — Gemini and Exa — which removes the entire
+unsafe-tool-execution class. Notably, Gemini's own search-grounding tool is *not*
+enabled: retrieval stays under this service's control, where every hit is screened
+by `prompt_safety` before it can reach a prompt.
 
 `GET /api/v1/admin/runs/summary` surfaces `injectionFlagged` and `sourcesRejected`
 — a rise in either means the model is being steered or is inventing citations.
@@ -222,7 +266,7 @@ correctly. Details in the migration plan §7.
 
 1. **Image generation had no retry** while synthesis did, so a transient 5xx
    silently dropped an article's unique image and left the curated fallback. All
-   gateway calls now share one retry policy.
+   provider calls now share one retry policy.
 2. **`topicPrompt` was unbounded** on a public endpoint — a direct route to
    inflated token spend.
 3. **Retrieved source content was trusted** and passed straight into the prompt.

@@ -80,6 +80,8 @@ export interface AppEnv {
     enableCron: boolean;
     dailyNewsCron: string;
     platformMaintenanceCron: string;
+    /** Evidence purge, counter reconciliation and code pruning. */
+    reportMaintenanceCron: string;
     enableSearchEnginePing: boolean;
   };
 
@@ -100,6 +102,64 @@ export interface AppEnv {
     s3SecretAccessKey: string;
     s3Endpoint?: string;
     presignExpiresSeconds: number;
+  };
+
+  /**
+   * Outbound email. Without this the account flow cannot complete: screens A8,
+   * A13 and A14 all wait on a code that arrives by email, so a transport is
+   * required whenever the reports/account surface is switched on.
+   */
+  mail: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    password: string;
+    from: string;
+    replyTo: string;
+    /** True when a transport can actually be built. */
+    enabled: boolean;
+  };
+
+  /** One-time codes for email verification and password reset. */
+  otp: {
+    /** A13 promises in copy that the code is "good for fifteen minutes". */
+    ttlSeconds: number;
+    maxAttempts: number;
+    /** Backs the A8 / A14 resend countdown. */
+    resendCooldownSeconds: number;
+    length: number;
+  };
+
+  /** Push delivery for the four notification types named on screen A11. */
+  push: {
+    expoAccessToken: string;
+    enabled: boolean;
+  };
+
+  /**
+   * Native social sign-in. Identity tokens are verified against each provider's
+   * JWKS server-side, so the app never asserts its own identity.
+   */
+  social: {
+    appleBundleId: string;
+    appleServiceId: string;
+    googleClientIds: string[];
+    appleEnabled: boolean;
+    googleEnabled: boolean;
+  };
+
+  /** The report module's own switches. */
+  reports: {
+    /** Master switch. When on, SMTP and S3 become required in production. */
+    enabled: boolean;
+    /** D2: "Sealed files are destroyed after 30 days." */
+    evidenceRetentionDays: number;
+    /** C6: an urgent report is seen "within the hour". */
+    urgentSlaMinutes: number;
+    /** Caps across one report, alongside the per-file `maxUploadBytes`. */
+    maxEvidencePerReport: number;
+    maxEvidenceBytesPerReport: number;
   };
 
   adminBootstrap: {
@@ -188,6 +248,12 @@ const schema = Joi.object({
   ENABLE_CRON: Joi.boolean().truthy("true").falsy("false").default(false),
   CRON_DAILY_NEWS: Joi.string().default("0 6 * * *"),
   CRON_PLATFORM_MAINTENANCE: Joi.string().default("* * * * *"),
+  /*
+   * 03:20 UTC — off the hour and off the half hour, so it does not land on top of
+   * every other cron in the estate, and late enough that a same-day retention
+   * boundary has actually passed everywhere.
+   */
+  CRON_REPORT_MAINTENANCE: Joi.string().default("20 3 * * *"),
   ENABLE_SEARCH_ENGINE_PING: Joi.boolean().truthy("true").falsy("false").default(false),
 
   RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).default(900_000),
@@ -197,13 +263,50 @@ const schema = Joi.object({
   RATE_LIMIT_READ_MAX: Joi.number().integer().min(1).default(600),
 
   STORAGE_DRIVER: Joi.string().valid("db", "s3").default("db"),
-  MAX_UPLOAD_BYTES: Joi.number().integer().min(1024).default(10 * 1024 * 1024),
+  // Screen C5 attaches a 24.8 MB video, so the previous 10 MB default rejected
+  // the design's own worked example.
+  MAX_UPLOAD_BYTES: Joi.number().integer().min(1024).default(64 * 1024 * 1024),
   S3_REGION: Joi.string().allow("").default("us-east-1"),
   S3_BUCKET: Joi.string().allow("").default(""),
   S3_ACCESS_KEY_ID: Joi.string().allow("").default(""),
   S3_SECRET_ACCESS_KEY: Joi.string().allow("").default(""),
   S3_ENDPOINT: Joi.string().uri().allow("").default(""),
   S3_PRESIGN_EXPIRES_SECONDS: Joi.number().integer().min(60).max(604800).default(900),
+
+  // ── Outbound email ────────────────────────────────────────────────────────
+  SMTP_HOST: Joi.string().allow("").default(""),
+  SMTP_PORT: Joi.number().port().default(587),
+  SMTP_SECURE: Joi.boolean().truthy("true").falsy("false").default(false),
+  SMTP_USER: Joi.string().allow("").default(""),
+  SMTP_PASSWORD: Joi.string().allow("").default(""),
+  MAIL_FROM: Joi.string().allow("").default("BlackNexa <no-reply@blacknexa.com>"),
+  MAIL_REPLY_TO: Joi.string().allow("").default(""),
+
+  // ── One-time codes ────────────────────────────────────────────────────────
+  OTP_TTL_SECONDS: Joi.number().integer().min(60).max(3600).default(900),
+  OTP_MAX_ATTEMPTS: Joi.number().integer().min(3).max(10).default(5),
+  OTP_RESEND_COOLDOWN_SECONDS: Joi.number().integer().min(15).max(300).default(30),
+  OTP_LENGTH: Joi.number().integer().min(4).max(8).default(6),
+
+  // ── Push ──────────────────────────────────────────────────────────────────
+  EXPO_ACCESS_TOKEN: Joi.string().allow("").default(""),
+  PUSH_ENABLED: Joi.boolean().truthy("true").falsy("false").default(false),
+
+  // ── Native social sign-in ─────────────────────────────────────────────────
+  APPLE_BUNDLE_ID: Joi.string().allow("").default(""),
+  APPLE_SERVICE_ID: Joi.string().allow("").default(""),
+  // Comma-separated: the iOS, Android and web client ids are all valid audiences.
+  GOOGLE_CLIENT_IDS: Joi.string().allow("").default(""),
+
+  // ── Report module ─────────────────────────────────────────────────────────
+  REPORTS_ENABLED: Joi.boolean().truthy("true").falsy("false").default(true),
+  REPORT_EVIDENCE_RETENTION_DAYS: Joi.number().integer().min(1).max(3650).default(30),
+  MODERATION_URGENT_SLA_MINUTES: Joi.number().integer().min(5).max(1440).default(60),
+  MAX_EVIDENCE_PER_REPORT: Joi.number().integer().min(1).max(50).default(10),
+  MAX_EVIDENCE_BYTES_PER_REPORT: Joi.number()
+    .integer()
+    .min(1024)
+    .default(256 * 1024 * 1024),
 
   // `tlds: { allow: false }` validates the address format without requiring an
   // IANA-registered TLD, so an internal ops address (admin@company.internal,
@@ -266,6 +369,34 @@ const schema = Joi.object({
           custom: `STORAGE_DRIVER=s3 requires ${missing.join(", ")}`,
         });
       }
+    }
+    // The report module cannot function without somewhere to put evidence or a
+    // way to email a verification code, so both are demanded at boot rather than
+    // failing at a user's first sign-up attempt.
+    if (value.REPORTS_ENABLED && value.NODE_ENV === "production") {
+      if (value.STORAGE_DRIVER !== "s3") {
+        return helpers.message({
+          custom:
+            "REPORTS_ENABLED=true requires STORAGE_DRIVER=s3 in production — evidence cannot be stored in PostgreSQL",
+        });
+      }
+      if (!value.SMTP_HOST) {
+        return helpers.message({
+          custom:
+            "REPORTS_ENABLED=true requires SMTP_HOST — account verification and password reset both send a code by email",
+        });
+      }
+    }
+    if (value.PUSH_ENABLED && !value.EXPO_ACCESS_TOKEN) {
+      return helpers.message({
+        custom: "PUSH_ENABLED=true requires EXPO_ACCESS_TOKEN",
+      });
+    }
+    if (value.MAX_EVIDENCE_BYTES_PER_REPORT < value.MAX_UPLOAD_BYTES) {
+      return helpers.message({
+        custom:
+          "MAX_EVIDENCE_BYTES_PER_REPORT must be at least MAX_UPLOAD_BYTES, or a single permitted file could not be attached",
+      });
     }
     if (Boolean(value.ADMIN_BOOTSTRAP_EMAIL) !== Boolean(value.ADMIN_BOOTSTRAP_PASSWORD)) {
       return helpers.message({
@@ -352,6 +483,7 @@ export const env: AppEnv = {
     enableCron: raw.ENABLE_CRON,
     dailyNewsCron: raw.CRON_DAILY_NEWS,
     platformMaintenanceCron: raw.CRON_PLATFORM_MAINTENANCE,
+    reportMaintenanceCron: raw.CRON_REPORT_MAINTENANCE,
     enableSearchEnginePing: raw.ENABLE_SEARCH_ENGINE_PING,
   },
 
@@ -372,6 +504,45 @@ export const env: AppEnv = {
     s3SecretAccessKey: raw.S3_SECRET_ACCESS_KEY,
     s3Endpoint: raw.S3_ENDPOINT || undefined,
     presignExpiresSeconds: raw.S3_PRESIGN_EXPIRES_SECONDS,
+  },
+
+  mail: {
+    host: raw.SMTP_HOST,
+    port: raw.SMTP_PORT,
+    secure: raw.SMTP_SECURE,
+    user: raw.SMTP_USER,
+    password: raw.SMTP_PASSWORD,
+    from: raw.MAIL_FROM,
+    replyTo: raw.MAIL_REPLY_TO,
+    enabled: Boolean(raw.SMTP_HOST),
+  },
+
+  otp: {
+    ttlSeconds: raw.OTP_TTL_SECONDS,
+    maxAttempts: raw.OTP_MAX_ATTEMPTS,
+    resendCooldownSeconds: raw.OTP_RESEND_COOLDOWN_SECONDS,
+    length: raw.OTP_LENGTH,
+  },
+
+  push: {
+    expoAccessToken: raw.EXPO_ACCESS_TOKEN,
+    enabled: raw.PUSH_ENABLED && Boolean(raw.EXPO_ACCESS_TOKEN),
+  },
+
+  social: {
+    appleBundleId: raw.APPLE_BUNDLE_ID,
+    appleServiceId: raw.APPLE_SERVICE_ID,
+    googleClientIds: parseList(raw.GOOGLE_CLIENT_IDS),
+    appleEnabled: Boolean(raw.APPLE_BUNDLE_ID),
+    googleEnabled: parseList(raw.GOOGLE_CLIENT_IDS).length > 0,
+  },
+
+  reports: {
+    enabled: raw.REPORTS_ENABLED,
+    evidenceRetentionDays: raw.REPORT_EVIDENCE_RETENTION_DAYS,
+    urgentSlaMinutes: raw.MODERATION_URGENT_SLA_MINUTES,
+    maxEvidencePerReport: raw.MAX_EVIDENCE_PER_REPORT,
+    maxEvidenceBytesPerReport: raw.MAX_EVIDENCE_BYTES_PER_REPORT,
   },
 
   adminBootstrap: {

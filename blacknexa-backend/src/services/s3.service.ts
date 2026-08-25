@@ -84,6 +84,9 @@ class S3Service {
       "image/webp": ".webp",
       "application/pdf": ".pdf",
       "audio/mpeg": ".mp3",
+      // The AI engine's TTS briefings. Without this an audio key would get no
+      // extension at all, which breaks Content-Type inference on plain CDN reads.
+      "audio/wav": ".wav",
       "video/mp4": ".mp4",
     };
     return map[mediaType] ?? "";
@@ -118,6 +121,26 @@ class S3Service {
     );
     logger.info("[s3] object stored", { key, bytes: body.length });
     return { key, bucket: env.storage.s3Bucket };
+  }
+
+  /**
+   * Read an object back into memory.
+   *
+   * Added for evidence sealing: on commit the server hashes the stored bytes and
+   * compares them to the SHA-256 the client declared, so "Sealed" on screens C5,
+   * C9, D3 and D12 is a statement the server has actually verified rather than one
+   * it has taken on trust. Bounded by `MAX_UPLOAD_BYTES`, which the presign step
+   * has already enforced.
+   */
+  async getObjectBytes(key: string): Promise<Buffer> {
+    const response = await this.getClient().send(
+      new GetObjectCommand({ Bucket: env.storage.s3Bucket, Key: key }),
+    );
+    if (!response.Body) throw new Error(`Object ${key} has no body`);
+    // `transformToByteArray` is the SDK v3 way to drain the stream without
+    // pulling in a Node-specific stream helper.
+    const bytes = await response.Body.transformToByteArray();
+    return Buffer.from(bytes);
   }
 
   /** A short-lived download URL. This is how private files are ever served. */
