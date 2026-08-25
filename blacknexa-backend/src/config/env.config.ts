@@ -52,7 +52,7 @@ export interface AppEnv {
     refreshExpiresIn: string;
   };
   bcryptSaltRounds: number;
-
+  bcryptDummyHash: string;
   ai: {
     toolkitUrl: string;
     secretKey: string;
@@ -228,6 +228,9 @@ const schema = Joi.object({
   BCRYPT_SALT_ROUNDS: Joi.number().integer().min(10).max(15).default(12).messages({
     "number.min": "BCRYPT_SALT_ROUNDS must be at least 10",
   }),
+  BCRYPT_DUMMY_HASH: Joi.string()
+    .default("$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva"),
+  SERVER_ENCRYPTION_SECRET: Joi.string().allow("").default(""),
 
   AI_TOOLKIT_URL: Joi.string().uri().allow("").default("https://toolkit.rork.com"),
   AI_TOOLKIT_SECRET_KEY: Joi.string().allow("").default(""),
@@ -417,7 +420,7 @@ if (error) {
   // Written straight to stderr: the logger itself depends on this config.
   process.stderr.write(
     `\n[env] Invalid environment configuration — refusing to start:\n${details}\n\n` +
-      `Copy .env.example to .env and fill in the required values.\n\n`,
+    `Copy .env.example to .env and fill in the required values.\n\n`,
   );
   process.exit(1);
 }
@@ -456,7 +459,7 @@ export const env: AppEnv = {
     refreshExpiresIn: raw.JWT_REFRESH_EXPIRES_IN,
   },
   bcryptSaltRounds: raw.BCRYPT_SALT_ROUNDS,
-
+  bcryptDummyHash: raw.BCRYPT_DUMMY_HASH,
   ai: {
     // The Worker read EXPO_PUBLIC_* names; both are accepted so an existing
     // deployment's secrets can be reused verbatim.
@@ -465,7 +468,7 @@ export const env: AppEnv = {
     secretKey: raw.AI_TOOLKIT_SECRET_KEY || raw.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY || "",
     enabled: Boolean(
       (raw.AI_TOOLKIT_URL || raw.EXPO_PUBLIC_TOOLKIT_URL) &&
-        (raw.AI_TOOLKIT_SECRET_KEY || raw.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY),
+      (raw.AI_TOOLKIT_SECRET_KEY || raw.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY),
     ),
   },
 
