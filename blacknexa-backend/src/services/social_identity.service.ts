@@ -55,12 +55,24 @@ interface JwksCacheEntry {
   fetchedAt: number;
 }
 
-/** What the caller gets back — the only two facts we need from a provider. */
+/** What the caller gets back — the facts we need from a provider. */
 export interface VerifiedIdentity {
   /** The provider's stable user id. Never changes, unlike an email. */
   subject: string;
   /** Present only when the provider asserts the address is verified. */
   email: string | null;
+  /**
+   * Apple's "Hide My Email" was used, so `email` is an `@privaterelay.appleid.com`
+   * forwarding address and the person's real one is not knowable — there is no API
+   * that returns it, by design.
+   *
+   * Worth recording because it changes what a delivery failure *means*. Mail to a
+   * relay address is dropped by Apple unless the sending domain and address are
+   * registered under "Sign in with Apple for Email Communication"; an unregistered
+   * sender fails silently, with no bounce. Without this flag, an A8 code that never
+   * arrives looks identical to a typo, and this app gates sign-up on that code.
+   */
+  isPrivateEmail: boolean;
 }
 
 class SocialIdentityService {
@@ -181,6 +193,20 @@ class SocialIdentityService {
     return verified ? email : null;
   }
 
+  /**
+   * Whether Apple is forwarding rather than disclosing the address.
+   *
+   * `is_private_email` arrives as a boolean or the string `"true"`, the same
+   * inconsistency as `email_verified`, so it is compared the same careful way. The
+   * domain is checked too: the claim is absent on some older token shapes, and the
+   * suffix is definitive when it is.
+   */
+  private isPrivateEmail(claims: Record<string, unknown>, email: string | null): boolean {
+    const flag = claims.is_private_email;
+    if (flag === true || flag === "true") return true;
+    return Boolean(email?.endsWith("@privaterelay.appleid.com"));
+  }
+
   /** Verify an identity token and reduce it to a subject plus a verified email. */
   async verify(provider: SocialProvider, identityToken: string): Promise<VerifiedIdentity> {
     if (provider === "apple") {
@@ -199,7 +225,8 @@ class SocialIdentityService {
       );
       const subject = typeof claims.sub === "string" ? claims.sub : "";
       if (!subject) throw new AuthError("That sign-in did not identify an account.", 400);
-      return { subject, email: this.verifiedEmail(claims) };
+      const email = this.verifiedEmail(claims);
+      return { subject, email, isPrivateEmail: this.isPrivateEmail(claims, email) };
     }
 
     if (!env.social.googleEnabled) {
@@ -213,7 +240,8 @@ class SocialIdentityService {
     );
     const subject = typeof claims.sub === "string" ? claims.sub : "";
     if (!subject) throw new AuthError("That sign-in did not identify an account.", 400);
-    return { subject, email: this.verifiedEmail(claims) };
+    // Google has no equivalent of Hide My Email; the address is the real one.
+    return { subject, email: this.verifiedEmail(claims), isPrivateEmail: false };
   }
 }
 

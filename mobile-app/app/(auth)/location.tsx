@@ -13,23 +13,36 @@ import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import * as Location from "expo-location";
+import { Camera, Newspaper, Scale, type LucideIcon } from "lucide-react-native";
 import { colors, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button, { TextButton } from "@/components/ui/Button";
 import { Screen, StickyFooter } from "@/components/ui/Screen";
 
-const BENEFITS = [
+/**
+ * One icon per benefit.
+ *
+ * These were a single hand-drawn empty square repeated three times, which read as
+ * an unfinished placeholder rather than an icon — three identical blank boxes say
+ * nothing about the three different things being promised. `lucide-react-native`
+ * is what the other 28 icon sites in the app already use, so this screen no
+ * longer draws its own primitives.
+ */
+const BENEFITS: { title: string; body: string; Icon: LucideIcon }[] = [
   {
     title: "Evidence capture",
     body: "A report carries where it happened, at the precision you choose.",
+    Icon: Camera,
   },
   {
     title: "Local news",
     body: "Stories from your city instead of the whole country.",
+    Icon: Newspaper,
   },
   {
     title: "Regional help",
     body: "Lawyers and clinics that actually serve where you are.",
+    Icon: Scale,
   },
 ];
 
@@ -101,15 +114,7 @@ export default function LocationPrimingScreen(): React.ReactElement {
                   justifyContent: "center",
                 }}
               >
-                <View
-                  style={{
-                    width: 13,
-                    height: 13,
-                    borderRadius: 3,
-                    borderWidth: 1.6,
-                    borderColor: colors.acc,
-                  }}
-                />
+                <benefit.Icon size={17} color={colors.acc} strokeWidth={1.8} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="labelLg" color={colors.t0}>

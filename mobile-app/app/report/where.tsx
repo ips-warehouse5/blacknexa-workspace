@@ -40,6 +40,29 @@ const PRECISION_COPY: Record<LocationPrecision, { label: string; detail: string 
   hidden: { label: "Hidden", detail: "Hidden — no location is published" },
 };
 
+/**
+ * Above this radius, in metres, a fix is too coarse to honestly call "Exact".
+ *
+ * `Accuracy.Balanced` asks for roughly 100 m and a real GPS fix in a city lands
+ * well inside that. The number that matters is what iOS returns when the person
+ * granted location with **Precise Location off**: a deliberately fuzzed fix,
+ * typically 1–5 km. 200 m sits clearly between the two, so this flags the fuzzed
+ * case without nagging anyone whose fix is merely indoors-and-imperfect.
+ *
+ * This exists because "Exact" is an evidentiary claim. Without the check the app
+ * would label a report Exact while carrying a point kilometres from where the
+ * incident happened, and neither the person filing nor a moderator reading it
+ * later would have any way to tell.
+ */
+const EXACT_ACCURACY_LIMIT_M = 200;
+
+/** "1.2 km" / "450 m" — a radius in the units someone actually reads. */
+function formatRadius(metres: number): string {
+  return metres >= 1000
+    ? `${(metres / 1000).toFixed(metres < 10000 ? 1 : 0)} km`
+    : `${Math.round(metres)} m`;
+}
+
 export default function WhereStep(): React.ReactElement {
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const { user } = useAuth();
@@ -60,6 +83,12 @@ export default function WhereStep(): React.ReactElement {
   const [locating, setLocating] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /**
+   * Radius of the last device fix, in metres, or null when the coordinates did
+   * not come from the device — a typed address is geocoded and carries no
+   * accuracy, and there is nothing to warn about in that case.
+   */
+  const [fixRadiusM, setFixRadiusM] = useState<number | null>(null);
 
   const userDefault = user?.preferences.defaultPrecision ?? "approximate";
 
@@ -75,6 +104,9 @@ export default function WhereStep(): React.ReactElement {
         if (results && results.length > 0) {
           const first = results[0];
           setCoords({ lat: first.latitude, lng: first.longitude });
+          // A geocoded address is not a device fix, so the previous fix's radius
+          // no longer describes these coordinates and must not be judged against.
+          setFixRadiusM(null);
         }
       } catch {
         // Geocode failure is non-blocking
@@ -101,6 +133,8 @@ export default function WhereStep(): React.ReactElement {
       });
       const next = { lat: position.coords.latitude, lng: position.coords.longitude };
       setCoords(next);
+      // Null on platforms that do not report it; treated as "unknown", not "good".
+      setFixRadiusM(position.coords.accuracy ?? null);
       setMode("locate");
 
       // Reverse-geocode for the area label the feed and D1 print. Failure here is
@@ -214,6 +248,26 @@ export default function WhereStep(): React.ReactElement {
         style={{ marginTop: 9 }}
       />
 
+      {/*
+        Exact was chosen, but the device did not give an exact fix.
+
+        Stated rather than blocked: A4's rule is that either answer moves forward,
+        and refusing the choice would stop someone filing over a phone setting.
+        What it must not do is let "Exact" stand unqualified when it is not true.
+      */}
+      {precision === "exact" && fixRadiusM !== null && fixRadiusM > EXACT_ACCURACY_LIMIT_M ? (
+        <View style={styles.accuracyNote} testID="where-accuracy-warning">
+          <Text variant="label" color={colors.t0} style={{ fontSize: 13 }}>
+            Your device gave a rough position — about {formatRadius(fixRadiusM)} across.
+          </Text>
+          <Text variant="metaSm" color={colors.t2} style={{ marginTop: 3, lineHeight: 16 }}>
+            Filing this as Exact would publish a point that is not where you are. Turn on
+            Precise Location for BlackNexa in Settings and tap Use my location again, or
+            choose Approximate instead.
+          </Text>
+        </View>
+      ) : null}
+
       {/* The preview is the answer to "what will people see". */}
       <MapPreview
         precision={precision ?? "approximate"}
@@ -246,6 +300,19 @@ export default function WhereStep(): React.ReactElement {
 }
 
 const styles = {
+  /**
+   * Warn-toned, not error-toned: nothing has gone wrong and nothing is blocked —
+   * the app is correcting a claim the person is about to make.
+   */
+  accuracyNote: {
+    backgroundColor: alpha(colors.warn, 0.09),
+    borderRadius: radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.warn,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+    marginTop: 10,
+  },
   summary: {
     flexDirection: "row" as const,
     alignItems: "center" as const,

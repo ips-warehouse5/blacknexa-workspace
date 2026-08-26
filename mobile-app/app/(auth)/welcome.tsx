@@ -28,23 +28,53 @@ import { useAuth } from "@/providers/AuthProvider";
 // hands the result back to the app; without this the flow can hang after login.
 WebBrowser.maybeCompleteAuthSession();
 
+/**
+ * Google's OAuth client ids.
+ *
+ * Not secrets — an OAuth client id is public by design, and on native it is
+ * useless without the signing fingerprint or bundle id it is bound to. The
+ * literals are the fallback for a checkout without `.env`, which matters here
+ * because `.env`, `firebase/*.json` and `firebase/*.plist` are all gitignored:
+ * a fresh clone has no other source for these values.
+ */
+const GOOGLE_IOS_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+  "47943475561-ddp7kapksdsdov6c81bqttohhupgm3qm.apps.googleusercontent.com";
+const GOOGLE_ANDROID_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
+  "47943475561-gliss3g4ak20npfl72s3kieid2gph481.apps.googleusercontent.com";
+const GOOGLE_WEB_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+  "47943475561-flfnufkktbim5kdiqe06f53ts0gkbo4f.apps.googleusercontent.com";
+
 export default function WelcomeScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  /**
+   * Covers the window the provider's own `busy` cannot: the browser prompt and
+   * the code-for-token exchange, both of which happen before `signInWithGoogleToken`
+   * is ever called. Without it the button looks inert for several seconds.
+   */
+  const [googleBusy, setGoogleBusy] = useState(false);
 
-  const googleIosClientId =
-    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
-    "47943475561-ddp7kapksdsdov6c81bqttohhupgm3qm.apps.googleusercontent.com";
-  const googleAndroidClientId =
-    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
-    "47943475561-gliss3g4ak20npfl72s3kieid2gph481.apps.googleusercontent.com";
-
+  // `useIdTokenAuthRequest`, not `useAuthRequest`: on web it asks Google for the
+  // id token directly, and on native it falls through to the PKCE code flow and
+  // exchanges the code itself, surfacing the id token on `params.id_token`. Plain
+  // `useAuthRequest` would hand back only an access token on web, which the
+  // backend cannot verify — it checks an RS256 identity token's signature and
+  // audience.
+  //
+  // `redirectUri` is deliberately not set: the library default,
+  // `<applicationId>:/oauthredirect`, is accepted by both the iOS and the Android
+  // OAuth client. That was checked against Google's authorize endpoint rather
+  // than assumed — a deliberately bogus scheme returns `redirect_uri_mismatch`
+  // there, and `com.blacknexa.app:/oauthredirect` does not.
   const [googleRequest, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
-    iosClientId: googleIosClientId,
-    androidClientId: googleAndroidClientId,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
   });
 
   useEffect(() => {
@@ -57,29 +87,50 @@ export default function WelcomeScreen(): React.ReactElement {
   useEffect(() => {
     if (!googleResponse) return;
     // A cancelled prompt is not an error worth showing, matching Apple's flow.
-    if (googleResponse.type === "dismiss" || googleResponse.type === "cancel") return;
-    if (googleResponse.type === "error") {
-      setGoogleError("That sign-in did not complete. Please try again.");
+    if (googleResponse.type === "dismiss" || googleResponse.type === "cancel") {
+      setGoogleBusy(false);
       return;
     }
-    if (googleResponse.type !== "success") return;
-    const idToken = googleResponse.params?.id_token;
-    if (idToken) {
-      void signInWithGoogleToken(idToken);
-    } else {
-      setGoogleError("That sign-in did not complete. Please try again.");
+    if (googleResponse.type === "error") {
+      // Google's own `error_description` names the actual cause — a redirect
+      // mismatch, a disabled client — where the generic sentence hides it.
+      setGoogleError(
+        googleResponse.params?.error_description ??
+          googleResponse.error?.message ??
+          "That sign-in did not complete. Please try again.",
+      );
+      setGoogleBusy(false);
+      return;
     }
+    if (googleResponse.type !== "success") {
+      setGoogleBusy(false);
+      return;
+    }
+    const idToken = googleResponse.params?.id_token;
+    if (!idToken) {
+      // On native the token exchange runs asynchronously after the browser
+      // closes, so the first success carries only `code`. Stay busy and wait for
+      // the provider to re-emit with the exchanged token rather than declaring
+      // failure on a result that is merely not ready yet.
+      if (googleResponse.params?.code) return;
+      setGoogleError("That sign-in did not complete. Please try again.");
+      setGoogleBusy(false);
+      return;
+    }
+    void signInWithGoogleToken(idToken).finally(() => setGoogleBusy(false));
   }, [googleResponse, signInWithGoogleToken]);
 
   const onGoogle = useCallback(async () => {
     clearError();
     setGoogleError(null);
-    if (!googleRequest) {
-      await promptGoogle().catch(() => setGoogleError("That sign-in did not complete. Please try again."));
-      return;
+    setGoogleBusy(true);
+    try {
+      await promptGoogle();
+    } catch {
+      setGoogleError("That sign-in did not complete. Please try again.");
+      setGoogleBusy(false);
     }
-    await promptGoogle().catch(() => setGoogleError("That sign-in did not complete. Please try again."));
-  }, [clearError, googleRequest, promptGoogle]);
+  }, [clearError, promptGoogle]);
 
   const onApple = useCallback(async () => {
     clearError();
@@ -141,6 +192,10 @@ export default function WelcomeScreen(): React.ReactElement {
             style={{ borderRadius: radius.lg }}
             icon={<GoogleMark />}
             onPress={onGoogle}
+            loading={googleBusy}
+            // The request loads asynchronously (it generates the PKCE verifier);
+            // prompting before it exists silently does nothing.
+            disabled={!googleRequest}
             testID="welcome-google"
           />
 

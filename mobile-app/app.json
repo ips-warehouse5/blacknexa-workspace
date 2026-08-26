@@ -7,6 +7,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "//scheme": "Single string on purpose. This was briefly an array to register Google's OAuth redirect scheme, but `expo-linking` warns on every launch when it finds more than one and silently picks the first — so the app's own deep-link scheme lives here alone, and the OAuth redirect is registered per-platform instead: `android.intentFilters` below, and nothing on iOS because Expo already registers the bundle identifier as a scheme automatically.",
     "scheme": "blacknexa",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -20,6 +21,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.blacknexa.app",
       "googleServicesFile": "./firebase/GoogleService-Info.plist",
+      "//appleTeamId": "NewsMovesMarketsForex llc. Declared here because `ios/` is gitignored and regenerated: without it, `expo prebuild --clean` produces a project with an empty DEVELOPMENT_TEAM and the next device build fails to sign until someone re-picks the team in Xcode by hand. `usesAppleSignIn` below is what puts `com.apple.developer.applesignin` in the entitlements, and automatic signing is what registers that capability on the App ID.",
+      "appleTeamId": "M3V2DKWAH3",
       "usesAppleSignIn": true,
       "config": {
         "googleMapsApiKey": "AIzaSyAaTYX2TyoVcLmXc4iNnLr7X8LSAK5x4wY"
@@ -29,7 +32,6 @@
         "NSCameraUsageDescription": "BlackNexa uses the camera so you can photograph or film evidence for a report.",
         "NSPhotoLibraryUsageDescription": "BlackNexa attaches photos and video from your library to a report as evidence.",
         "NSLocationWhenInUseUsageDescription": "BlackNexa records where an incident happened, at the precision you choose, and surfaces local news and nearby help.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "BlackNexa records where an incident happened, at the precision you choose, and surfaces local news and nearby help.",
         "NSFaceIDUsageDescription": "BlackNexa uses Face ID to unlock your session and your evidence vault.",
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -53,6 +55,14 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
+      ],
+      "//intentFilters": "Google's OAuth redirect. `expo-auth-session` sends an Android OAuth client to `<applicationId>:/oauthredirect`, and unlike iOS — where Expo registers the bundle identifier as a URL scheme automatically — Android gets no such filter for free. Without this the consent screen succeeds and the redirect lands nowhere, which fails silently in the browser with nothing for the app to report. Verified absent from the generated manifest before this was added.",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["DEFAULT", "BROWSABLE"],
+          "data": [{ "scheme": "com.blacknexa.app" }]
+        }
       ]
     },
     "web": {
@@ -77,9 +87,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "BlackNexa records where an incident happened, at the precision you choose, and surfaces local news and nearby help."
+          "//": "The two `false` values DELETE Info.plist keys rather than set them. This plugin injects all three location strings by default, so without them the build shipped `NSLocationAlwaysUsageDescription` carrying the plugin's stock text — 'Allow BlackNexa to access your location' — plus an AlwaysAndWhenInUse key. The app only ever calls `requestForegroundPermissionsAsync` (A4 priming, C4 where-it-happened, LocationProvider): no background task, no geofencing, no UIBackgroundModes, and Android correspondingly has no ACCESS_BACKGROUND_LOCATION. Declaring Always invites an App Store rejection asking why it is needed, and requests more than the app uses — the opposite of what its own privacy copy promises. Re-add only alongside a real background implementation.",
+          "locationWhenInUsePermission": "BlackNexa records where an incident happened, at the precision you choose, and surfaces local news and nearby help.",
+          "locationAlwaysPermission": false,
+          "locationAlwaysAndWhenInUsePermission": false
         }
-      ]
+      ],
+      "expo-audio",
+      "./plugins/withIPhoneOnlyDestinations"
     ],
     "experiments": {
       "typedRoutes": true

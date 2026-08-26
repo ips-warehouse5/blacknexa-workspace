@@ -312,6 +312,16 @@ export class UserIdentity extends Model<
   declare provider_subject: string;
   /** Email as the provider reported it, for support — not used for lookup. */
   declare provider_email: CreationOptional<string | null>;
+  /**
+   * True when `provider_email` is an Apple "Hide My Email" forwarding address.
+   *
+   * The real address is not obtainable — Apple exposes no API for it. What this
+   * records is that mail to this account depends on Apple's forwarder, which drops
+   * anything from a sender not registered for Sign in with Apple email
+   * communication, and does so without a bounce. It is the difference between
+   * "they mistyped their address" and "our sender is not registered".
+   */
+  declare provider_email_is_private: CreationOptional<boolean>;
   declare linked_at: string;
 }
 
@@ -327,6 +337,11 @@ UserIdentity.init(
     provider: { type: DataTypes.STRING(16), allowNull: false },
     provider_subject: { type: DataTypes.STRING(255), allowNull: false },
     provider_email: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
+    provider_email_is_private: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     linked_at: { type: DataTypes.STRING(32), allowNull: false },
   },
   {

@@ -11,6 +11,7 @@
  */
 
 import path from "path";
+import { readFileSync } from "fs";
 import dotenv from "dotenv";
 import Joi from "joi";
 
@@ -147,6 +148,14 @@ export interface AppEnv {
     googleClientIds: string[];
     appleEnabled: boolean;
     googleEnabled: boolean;
+    /** Team the Sign in with Apple key belongs to (`M3V2DKWAH3`). */
+    appleTeamId: string;
+    /** The key's 10-character id, from its filename `AuthKey_<KEYID>.p8`. */
+    appleKeyId: string;
+    /** PEM contents of the .p8, resolved from either env var. */
+    applePrivateKey: string;
+    /** True only when a client secret can actually be signed. */
+    appleRevocationEnabled: boolean;
   };
 
   /** The report module's own switches. */
@@ -298,6 +307,17 @@ const schema = Joi.object({
   // ── Native social sign-in ─────────────────────────────────────────────────
   APPLE_BUNDLE_ID: Joi.string().allow("").default(""),
   APPLE_SERVICE_ID: Joi.string().allow("").default(""),
+  // Apple token revocation on account deletion. Required by the App Store for any
+  // app offering Sign in with Apple. All three must be present together — a key
+  // without its id, or an id without a team, signs nothing.
+  //
+  // Supply the key EITHER inline (APPLE_PRIVATE_KEY, newlines as \n — best for a
+  // container where there is no file to mount) OR as a path to the .p8 on disk
+  // (APPLE_PRIVATE_KEY_PATH — easier locally). Inline wins if both are set.
+  APPLE_TEAM_ID: Joi.string().allow("").default(""),
+  APPLE_KEY_ID: Joi.string().allow("").default(""),
+  APPLE_PRIVATE_KEY: Joi.string().allow("").default(""),
+  APPLE_PRIVATE_KEY_PATH: Joi.string().allow("").default(""),
   // Comma-separated: the iOS, Android and web client ids are all valid audiences.
   GOOGLE_CLIENT_IDS: Joi.string().allow("").default(""),
 
@@ -427,6 +447,39 @@ if (error) {
 
 const nodeEnv = raw.NODE_ENV as NodeEnv;
 
+/**
+ * The Sign in with Apple private key, from whichever source is configured.
+ *
+ * Inline wins over path: a deployment that sets the variable explicitly means it,
+ * and a stale file left in the image should not silently override it.
+ *
+ * A path that cannot be read is reported and treated as absent rather than
+ * thrown. Apple revocation is not required to serve traffic, and taking the whole
+ * API down over it would turn a deletion-flow problem into an outage — but it is
+ * said out loud, because failing silently here means discovering at App Review
+ * that revocation never ran.
+ */
+function resolveApplePrivateKey(): string {
+  const inline = (raw.APPLE_PRIVATE_KEY as string) || "";
+  // Env vars cannot hold real newlines, so PEMs are conventionally escaped.
+  if (inline) return inline.replace(/\\n/g, "\n");
+
+  const keyPath = (raw.APPLE_PRIVATE_KEY_PATH as string) || "";
+  if (!keyPath) return "";
+  try {
+    return readFileSync(path.resolve(process.cwd(), keyPath), "utf8");
+  } catch (err) {
+    process.stderr.write(
+      `\n[env] APPLE_PRIVATE_KEY_PATH is set but could not be read: ${keyPath}\n` +
+      `      ${err instanceof Error ? err.message : String(err)}\n` +
+      `      Apple token revocation on account deletion is DISABLED.\n\n`,
+    );
+    return "";
+  }
+}
+
+const applePrivateKey = resolveApplePrivateKey();
+
 export const env: AppEnv = {
   nodeEnv,
   isProduction: nodeEnv === "production",
@@ -538,6 +591,14 @@ export const env: AppEnv = {
     googleClientIds: parseList(raw.GOOGLE_CLIENT_IDS),
     appleEnabled: Boolean(raw.APPLE_BUNDLE_ID),
     googleEnabled: parseList(raw.GOOGLE_CLIENT_IDS).length > 0,
+    appleTeamId: raw.APPLE_TEAM_ID,
+    appleKeyId: raw.APPLE_KEY_ID,
+    applePrivateKey: applePrivateKey,
+    // All three or nothing: signing a client secret needs the key, the id that
+    // names it in the JWT header, and the team that issued it.
+    appleRevocationEnabled: Boolean(
+      applePrivateKey && raw.APPLE_KEY_ID && raw.APPLE_TEAM_ID,
+    ),
   },
 
   reports: {
