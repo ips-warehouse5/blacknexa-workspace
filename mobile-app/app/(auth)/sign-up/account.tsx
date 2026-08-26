@@ -14,7 +14,7 @@
 
 import React, { useCallback, useRef, useState } from "react";
 import { View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import type { TextInput } from "react-native";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { colors, screenPadding } from "@/constants/theme";
@@ -40,12 +40,39 @@ export default function SignUpAccountScreen(): React.ReactElement {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      clearError();
+      return () => {
+        clearError();
+      };
+    }, [clearError]),
+  );
+
   const scrollRef = useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const passwordRef = useRef<TextInput>(null);
   /** Field offsets, captured at layout so the scroll is instant on tap. */
   const offsets = useRef<{ email: number; password: number }>({ email: 0, password: 0 });
 
   const strength = evaluatePassword(password);
+
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      if (error) clearError();
+      if (emailError) setEmailError(null);
+      setEmail(text);
+    },
+    [clearError, emailError, error],
+  );
+
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      if (error) clearError();
+      if (passwordError) setPasswordError(null);
+      setPassword(text);
+    },
+    [clearError, error, passwordError],
+  );
 
   /** Scroll a field into view with room above it for its label. */
   const scrollTo = useCallback((y: number) => {
@@ -128,7 +155,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
       <TextField
         label="EMAIL"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={handleEmailChange}
         error={emailError}
         keyboardType="email-address"
         autoCapitalize="none"
@@ -150,7 +177,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
         isNew
         label="PASSWORD"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={handlePasswordChange}
         error={passwordError}
         returnKeyType="go"
         onSubmitEditing={submit}

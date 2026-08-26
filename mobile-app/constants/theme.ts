@@ -359,4 +359,7 @@ export const scrim = {
   coach: 0.78,
 } as const;
 
+export * from "./typography";
+export { fonts, type, type as typography } from "./typography";
+
 export default colors;

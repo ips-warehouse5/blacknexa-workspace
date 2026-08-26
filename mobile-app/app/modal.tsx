@@ -1,24 +1,25 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import Colors from "@/constants/colors";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { colors, radius } from "@/constants/theme";
+import Text from "@/components/ui/Text";
+import Button from "@/components/ui/Button";
 import { safeBack } from "@/utils/navigation";
 
 export default function ModalScreen(): React.ReactElement {
   return (
     <View style={styles.root}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>BlackNexa</Text>
-        <Text style={styles.tm}>TM</Text>
+        <Text variant="displaySm" color={colors.t0}>BlackNexa</Text>
+        <Text variant="eyebrowSm" color={colors.acc} style={styles.tm}>TM</Text>
       </View>
-      <Text style={styles.text}>
+      <Text variant="body" color={colors.t2} center style={styles.text}>
         Secure, privacy-first community platform.
       </Text>
-      <Text style={styles.legal}>
+      <Text variant="metaSm" color={colors.t4} center style={styles.legal}>
         BlackNexa™ · Trademark pending with the USPTO. All intellectual
         property and platform content are protected.
       </Text>
-      <Pressable style={styles.btn} onPress={() => safeBack()}>
-        <Text style={styles.btnText}>Close</Text>
-      </Pressable>
+      <Button label="Close" onPress={() => safeBack()} style={styles.btn} />
     </View>
   );
 }
@@ -26,7 +27,7 @@ export default function ModalScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -37,38 +38,19 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 8,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.text,
-  },
   tm: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: Colors.gold,
-    marginTop: 3,
-    letterSpacing: 0.5,
+    marginTop: 4,
   },
   legal: {
-    fontSize: 10,
-    color: Colors.textMute,
-    textAlign: "center",
     marginTop: 14,
-    marginBottom: 18,
+    marginBottom: 24,
     paddingHorizontal: 12,
-    lineHeight: 14,
   },
   text: {
-    fontSize: 14,
-    color: Colors.textDim,
-    textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   btn: {
-    backgroundColor: Colors.gold,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 999,
+    minWidth: 140,
+    borderRadius: radius.lg,
   },
-  btnText: { color: Colors.bg, fontWeight: "800" },
 });

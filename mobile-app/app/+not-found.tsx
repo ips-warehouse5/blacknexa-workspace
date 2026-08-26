@@ -1,7 +1,9 @@
+import React from "react";
 import { Link, Stack } from "expo-router";
 import { Compass } from "lucide-react-native";
-import { StyleSheet, Text, View } from "react-native";
-import Colors from "@/constants/colors";
+import { StyleSheet, View } from "react-native";
+import { alpha, colors, radius } from "@/constants/theme";
+import Text from "@/components/ui/Text";
 
 export default function NotFoundScreen(): React.ReactElement {
   return (
@@ -9,14 +11,16 @@ export default function NotFoundScreen(): React.ReactElement {
       <Stack.Screen options={{ title: "Not found" }} />
       <View style={styles.container}>
         <View style={styles.iconWrap}>
-          <Compass size={28} color={Colors.gold} />
+          <Compass size={28} color={colors.acc} />
         </View>
-        <Text style={styles.title}>We couldn&apos;t find that page.</Text>
-        <Text style={styles.subtitle}>
+        <Text variant="cardTitle" color={colors.t0} center style={styles.title}>
+          We couldn&apos;t find that page.
+        </Text>
+        <Text variant="body" color={colors.t2} center style={styles.subtitle}>
           The record may have been moved or sealed.
         </Text>
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Back to feed</Text>
+          <Text variant="buttonSm" color={colors.onAcc}>Back to feed</Text>
         </Link>
       </View>
     </>
@@ -26,7 +30,7 @@ export default function NotFoundScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -35,31 +39,23 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: Colors.gold + "18",
+    backgroundColor: colors.s5,
     borderWidth: 1,
-    borderColor: Colors.gold + "44",
+    borderColor: alpha(colors.acc, 0.3),
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 18,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: Colors.text,
     marginBottom: 6,
-    textAlign: "center",
   },
   subtitle: {
-    fontSize: 13,
-    color: Colors.textDim,
-    textAlign: "center",
     marginBottom: 24,
   },
   link: {
-    backgroundColor: Colors.gold,
+    backgroundColor: colors.acc,
     paddingHorizontal: 22,
     paddingVertical: 12,
-    borderRadius: 999,
+    borderRadius: radius.lg,
   },
-  linkText: { color: Colors.bg, fontWeight: "800", fontSize: 14 },
 });

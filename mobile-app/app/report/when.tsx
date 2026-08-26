@@ -14,7 +14,7 @@
  * and is never held against a report."
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,15 +50,34 @@ export default function WhenStep(): React.ReactElement {
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const exit = useWizardExit();
 
-  const [occurred, setOccurred] = useState<Date>(() =>
-    payload.occurredAt ? new Date(payload.occurredAt) : new Date(),
-  );
-  const [tempDate, setTempDate] = useState<Date>(occurred);
+  // Ensure we always have a valid Date instance and never an invalid Date or Unix epoch 0
+  const initialDate = useMemo(() => {
+    if (payload.occurredAt) {
+      const parsed = new Date(payload.occurredAt);
+      if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1970) {
+        return parsed;
+      }
+    }
+    return new Date();
+  }, [payload.occurredAt]);
+
+  const [occurred, setOccurred] = useState<Date>(initialDate);
+  const [tempDate, setTempDate] = useState<Date>(initialDate);
   const [happeningNow, setHappeningNow] = useState(payload.happeningNow ?? false);
   const [timeUnknown, setTimeUnknown] = useState(payload.occurredPrecision === "day_part");
   const [dayPart, setDayPart] = useState<DayPart>(payload.occurredDayPart ?? "afternoon");
   const [picker, setPicker] = useState<"date" | "time" | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+
+  // Sync if draft is loaded after initial mount
+  useEffect(() => {
+    if (payload.occurredAt) {
+      const parsed = new Date(payload.occurredAt);
+      if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1970) {
+        setOccurred(parsed);
+      }
+    }
+  }, [payload.occurredAt]);
 
   const filedAt = useMemo(() => new Date().toISOString(), []);
 
@@ -102,19 +121,30 @@ export default function WhenStep(): React.ReactElement {
 
   const openPicker = useCallback(
     (mode: "date" | "time") => {
-      setTempDate(occurred);
+      const startValue = !isNaN(occurred.getTime()) && occurred.getFullYear() > 1970
+        ? new Date(occurred)
+        : new Date();
+      setTempDate(startValue);
       setPicker(mode);
     },
     [occurred],
   );
 
   const onConfirmIos = useCallback(() => {
-    const clamped = tempDate.getTime() > Date.now() ? new Date() : tempDate;
+    const base = new Date(occurred);
+    if (picker === "date") {
+      // Merge selected year/month/date with existing hour/minute
+      base.setFullYear(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+    } else if (picker === "time") {
+      // Merge selected hour/minute with existing year/month/date
+      base.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
+    }
+    const clamped = base.getTime() > Date.now() ? new Date() : base;
     setOccurred(clamped);
     commit({ when: clamped });
     setProblem(null);
     setPicker(null);
-  }, [commit, tempDate]);
+  }, [commit, occurred, picker, tempDate]);
 
   const onCancelIos = useCallback(() => {
     setPicker(null);
@@ -122,15 +152,22 @@ export default function WhenStep(): React.ReactElement {
 
   const onPickedAndroid = useCallback(
     (event: DateTimePickerEvent, value?: Date) => {
+      const currentPicker = picker;
       setPicker(null);
       if (event.type === "dismissed" || !value) return;
 
-      const clamped = value.getTime() > Date.now() ? new Date() : value;
+      const base = new Date(occurred);
+      if (currentPicker === "date") {
+        base.setFullYear(value.getFullYear(), value.getMonth(), value.getDate());
+      } else if (currentPicker === "time") {
+        base.setHours(value.getHours(), value.getMinutes(), 0, 0);
+      }
+      const clamped = base.getTime() > Date.now() ? new Date() : base;
       setOccurred(clamped);
       commit({ when: clamped });
       setProblem(null);
     },
-    [commit],
+    [commit, occurred, picker],
   );
 
   const next = useCallback(() => {
@@ -138,7 +175,7 @@ export default function WhenStep(): React.ReactElement {
       setProblem("That is in the future — pick when it actually happened.");
       return;
     }
-    commit({});
+    commit({ when: occurred });
     setStep(4);
     router.push("/report/where");
   }, [commit, happeningNow, occurred, setStep]);

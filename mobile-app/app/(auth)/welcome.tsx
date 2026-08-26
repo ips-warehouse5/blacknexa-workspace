@@ -18,6 +18,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import Svg, { Path } from "react-native-svg";
+import { Mail } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, controlHeight, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
@@ -240,91 +242,43 @@ export default function WelcomeScreen(): React.ReactElement {
 
 function AppleMark(): React.ReactElement {
   return (
-    <View style={{ width: 17, height: 20, alignItems: "center", justifyContent: "center" }}>
-      <View
-        style={{
-          width: 12,
-          height: 13,
-          borderRadius: 6,
-          backgroundColor: colors.bg,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 4,
-          width: 4,
-          height: 5,
-          borderRadius: 2,
-          backgroundColor: colors.bg,
-          transform: [{ rotate: "20deg" }],
-        }}
-      />
-    </View>
+    <Svg width={17} height={20} viewBox="0 0 384 512" fill={colors.bg}>
+      <Path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+    </Svg>
   );
 }
 
-/** Google's four-colour mark, quartered — a monochrome fallback is off-brand. */
+/** Google's official 4-color "G" mark via SVG. */
 function GoogleMark(): React.ReactElement {
   return (
-    <View style={styles.googleMark}>
-      <View style={[styles.googleQuad, { backgroundColor: "#4285F4", top: 0, right: 0 }]} />
-      <View style={[styles.googleQuad, { backgroundColor: "#34A853", bottom: 0, right: 0 }]} />
-      <View style={[styles.googleQuad, { backgroundColor: "#FBBC05", bottom: 0, left: 0 }]} />
-      <View style={[styles.googleQuad, { backgroundColor: "#EA4335", top: 0, left: 0 }]} />
-      <View style={styles.googleHole} />
-    </View>
+    <Svg width={18} height={18} viewBox="0 0 48 48">
+      <Path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <Path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <Path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <Path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+      <Path fill="none" d="M0 0h48v48H0z" />
+    </Svg>
   );
 }
 
 function MailMark(): React.ReactElement {
-  return (
-    <View
-      style={{
-        width: 18,
-        height: 13,
-        borderRadius: 3,
-        borderWidth: 1.6,
-        borderColor: colors.t0,
-        overflow: "hidden",
-      }}
-    >
-      <View
-        style={{
-          position: "absolute",
-          top: -4,
-          left: 1,
-          width: 12,
-          height: 12,
-          borderRightWidth: 1.6,
-          borderBottomWidth: 1.6,
-          borderColor: colors.t0,
-          transform: [{ rotate: "45deg" }],
-        }}
-      />
-    </View>
-  );
+  return <Mail size={18} color={colors.t0} strokeWidth={2} />;
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   band: { position: "absolute", top: 0, left: 0, right: 0 },
   routes: { paddingHorizontal: screenPadding.hero, paddingTop: 34, gap: 10 },
-
-  googleMark: {
-    width: 17,
-    height: 17,
-    borderRadius: 8.5,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleQuad: { position: "absolute", width: 8.5, height: 8.5 },
-  googleHole: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.s6,
-  },
 });

@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
   },
-  summaryText: { fontSize: 12.5, color: Colors.text, lineHeight: 19, fontFamily: undefined },
+  summaryText: { fontSize: 12.5, color: Colors.text, lineHeight: 19 },
   expandBtn: {
     marginTop: 8,
     alignItems: "center",

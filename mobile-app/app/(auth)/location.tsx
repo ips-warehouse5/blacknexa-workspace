@@ -9,6 +9,7 @@
  * forward, because A4's own footnote is "You can file a report without it."
  */
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
@@ -18,6 +19,8 @@ import { colors, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button, { TextButton } from "@/components/ui/Button";
 import { Screen, StickyFooter } from "@/components/ui/Screen";
+
+export const INTRO_SEEN_KEY = "bn.intro_seen";
 
 /**
  * One icon per benefit.
@@ -50,7 +53,10 @@ export default function LocationPrimingScreen(): React.ReactElement {
   const [denied, setDenied] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const next = useCallback(() => router.replace("/(auth)/welcome"), []);
+  const next = useCallback(() => {
+    void AsyncStorage.setItem(INTRO_SEEN_KEY, "true").catch(() => {});
+    router.replace("/(auth)/welcome");
+  }, []);
 
   const allow = useCallback(async () => {
     setBusy(true);
