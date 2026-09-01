@@ -335,7 +335,7 @@ body.dark .note-item{background:#1e293b}
       <!-- AI Flags Card (Only shown if AI flags exist) -->
       <div class="detail-card" id="aiFlagsCard" style="display:none">
         <div class="detail-card-head">
-          <div class="card-section-label">Automated Detection / AI Flags</div>
+          <div class="card-section-label">AI Flags</div>
         </div>
         <table class="mini">
           <thead>
@@ -351,15 +351,14 @@ body.dark .note-item{background:#1e293b}
       <!-- User Reports Card (Only shown if user reports exist) -->
       <div class="detail-card" id="userReportsCard" style="display:none">
         <div class="detail-card-head">
-          <div class="card-section-label">Community / User Reports</div>
+          <div class="card-section-label">User Reports</div>
         </div>
         <table class="mini">
           <thead>
             <tr>
-              <th style="width:28%">Reported By</th>
-              <th style="width:30%">Report Reason</th>
-              <th style="width:24%">Policy Category</th>
-              <th style="width:18%">Reported At</th>
+              <th style="width:38%">Reported By</th>
+              <th style="width:38%">Report Reason</th>
+              <th style="width:24%">Reported At</th>
             </tr>
           </thead>
           <tbody id="userReportsBody"></tbody>
@@ -657,7 +656,7 @@ const posts=[
     content:'I am documenting repeated inappropriate conduct at my workplace and would like this incident reviewed by the community.',
     evidence:['Image evidence'],
     ai:[],
-    reports:[['Sarah Miller','Harassment','Aug 31, 2026 · 10:32 AM'],['Alex Wilson','Untrue','Aug 31, 2026 · 10:02 AM']]
+    reports:[['Sarah Miller','Harassment','Aug 31, 2026 · 10:32 AM'],['Alex Wilson','Untrue','Aug 31, 2026 · 10:32 AM']]
   },
   {
     id:'INC-20475',
@@ -894,27 +893,11 @@ function openDetails(id) {
   if (hasUserReports) {
     $('#userReportsBody').innerHTML = current.reports.map(r => {
       const reasonText = r[1] || '';
-      const reasonLower = reasonText.toLowerCase();
-
-      // Match against active keyword rules (Threat, Harassment, Violence, Abuse)
-      const matchedRule = keywordRulesList.find(kw => {
-        const kwLower = kw.title.toLowerCase();
-        if (kwLower === 'threat' && (reasonLower.includes('threat') || reasonLower.includes('targets'))) return true;
-        if (kwLower === 'harassment' && (reasonLower.includes('harass') || reasonLower.includes('private details') || reasonLower.includes('exposes'))) return true;
-        if (kwLower === 'violence' && (reasonLower.includes('graphic') || reasonLower.includes('violence'))) return true;
-        if (kwLower === 'abuse' && (reasonLower.includes('spam') || reasonLower.includes('abuse'))) return true;
-        return reasonLower.includes(kwLower);
-      });
-
-      const matchBadge = matchedRule 
-        ? `<span class="badge" style="background:#e8f2ff;color:var(--accent);font-weight:700;font-size:11.5px">${matchedRule.title}</span>`
-        : `<span style="color:var(--muted);font-size:11.5px">—</span>`;
 
       return `
         <tr>
           <td><strong>${r[0]}</strong></td>
           <td><span style="color:var(--text);font-weight:600;font-size:13px">${reasonText}</span></td>
-          <td>${matchBadge}</td>
           <td style="color:var(--muted);font-size:12px">${r[2]}</td>
         </tr>
       `;
@@ -1293,12 +1276,15 @@ const keywordPage = document.createElement('section');
 keywordPage.className = 'keyword-page';
 
 let keywordRulesList = [
-  { title: 'Direct Threat & Violence', detected: 2 },
-  { title: 'Harassment & Bullying', detected: 3 },
-  { title: 'Hate Speech & Discrimination', detected: 1 },
-  { title: 'Private Details / Doxxing', detected: 1 },
-  { title: 'Misleading or Untrue Content', detected: 2 },
-  { title: 'Spam or Advertising', detected: 1 }
+  { title: 'Direct Threat & Violence', type: 'System Policy', source: 'Admin Defined', pattern: 'threat, kill, assault, come down to station', detected: 2 },
+  { title: 'Harassment & Bullying', type: 'System Policy', source: 'Admin Defined', pattern: 'harass, find a reason, repeatedly followed', detected: 3 },
+  { title: 'Hate Speech & Discrimination', type: 'System Policy', source: 'Admin Defined', pattern: 'racial abuse, slurs, profiling', detected: 1 },
+  { title: 'Private Details / Doxxing', type: 'System Policy', source: 'Admin Defined', pattern: 'phone number, street address, postal code', detected: 1 },
+  { title: 'Misleading or Untrue Content', type: 'System Policy', source: 'Admin Defined', pattern: 'fake report, untrue, fabricated', detected: 2 },
+  { title: 'Spam or Advertising', type: 'System Policy', source: 'Admin Defined', pattern: 'promo link, buy crypto, telegram spam', detected: 1 },
+  { title: 'handle it ourselves', type: 'AI Discovered', source: 'AI Pattern Match', pattern: 'Vigilante & offline threat language', detected: 1 },
+  { title: 'find a reason', type: 'AI Discovered', source: 'AI Pattern Match', pattern: 'Retaliatory police intimidation phrasing', detected: 1 },
+  { title: 'thrown out on the street', type: 'AI Discovered', source: 'AI Pattern Match', pattern: 'Housing harassment & eviction hostility', detected: 1 }
 ];
 
 let keywordToDeleteIndex = null;
@@ -1964,10 +1950,12 @@ function renderIncidentLifecycle() {
       title: 'Case Assignment & Review',
       by: hasAssignee ? assigneeName : 'Pending Assignment',
       time: hasAssignee ? assignTime : 'In Queue',
-      status: hasAssignee ? 'completed' : (status === 'submitted' ? 'current' : 'pending'),
-      badge: hasAssignee ? 'Under Review' : 'Pending',
-      color: '#3b82f6',
-      desc: hasAssignee ? 'Assigned for evidence validation.' : 'Waiting for advocate assignment.'
+      status: (status === 'verified' || status === 'dismissed' || status === 'rejected' || status === 'deactivated') 
+        ? 'completed' 
+        : (status === 'under_review' || hasAssignee ? 'in_progress' : 'pending'),
+      badge: (status === 'under_review' || hasAssignee) && (status !== 'verified' && status !== 'dismissed' && status !== 'deactivated') ? 'Under Review' : (hasAssignee ? 'Under Review' : 'Pending'),
+      color: '#d97706',
+      desc: hasAssignee ? 'Investigation and evidence review actively under review.' : 'Waiting for advocate assignment.'
     }
   ];
 
@@ -2017,17 +2005,18 @@ function renderIncidentLifecycle() {
   container.innerHTML = steps.map((s, idx) => {
     const isLast = idx === steps.length - 1;
     const isDone = s.status === 'completed';
+    const isProg = s.status === 'in_progress';
     const isRej = s.status === 'rejected';
     const isDeact = s.status === 'deactivated';
-    const isCurr = s.status === 'current';
 
-    const dotBg = isDone ? '#10b981' : isRej ? '#dc2626' : isDeact ? '#6b7280' : isCurr ? 'var(--accent)' : '#d1d5db';
-    const icon = isDone ? '✓' : isRej ? '✕' : isDeact ? '⊘' : isCurr ? '●' : '○';
+    const dotBg = isDone ? '#10b981' : isProg ? '#d97706' : isRej ? '#dc2626' : isDeact ? '#6b7280' : '#d1d5db';
+    const dotBorder = isProg ? `box-shadow: 0 0 0 4px #fef3c7` : `box-shadow: 0 0 0 3px var(--surface)`;
+    const icon = isDone ? '✓' : isProg ? '⏳' : isRej ? '✕' : isDeact ? '⊘' : '○';
 
     return `
       <div style="display:flex;gap:12px;position:relative;padding-bottom:${isLast ? '0' : '18px'}">
-        ${!isLast ? `<div style="position:absolute;left:10px;top:20px;bottom:0;width:2px;background:${isDone ? '#86efac' : 'var(--line)'};z-index:1"></div>` : ''}
-        <div style="width:22px;height:22px;border-radius:50%;background:${dotBg};color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0;z-index:2;box-shadow:0 0 0 3px var(--surface)">
+        ${!isLast ? `<div style="position:absolute;left:10px;top:20px;bottom:0;width:2px;background:${isDone ? '#86efac' : isProg ? '#fde68a' : 'var(--line)'};z-index:1"></div>` : ''}
+        <div style="width:22px;height:22px;border-radius:50%;background:${dotBg};color:#fff;display:grid;place-items:center;font-size:10px;font-weight:800;flex-shrink:0;z-index:2;${dotBorder}">
           ${icon}
         </div>
         <div style="flex:1;min-width:0">
@@ -2316,13 +2305,22 @@ $('#confirm').onclick = () => {
     return;
   }
   if (action === 'add_keyword') {
-    const input = document.querySelector('#newKeywordInput');
-    const val = input ? input.value.trim() : '';
-    if (!val) {
+    const titleInput = document.querySelector('#newKeywordInput');
+    const patternInput = document.querySelector('#newKeywordPatterns');
+    const titleVal = titleInput ? titleInput.value.trim() : '';
+    const patternVal = patternInput ? patternInput.value.trim() : '';
+
+    if (!titleVal) {
       alert('Please enter a keyword title.');
       return;
     }
-    keywordRulesList.push({ title: val, detected: 0 });
+    keywordRulesList.push({ 
+      title: titleVal, 
+      type: 'Custom Rule', 
+      source: 'Admin Defined', 
+      pattern: patternVal || titleVal.toLowerCase(), 
+      detected: 0 
+    });
     renderKeywordRules();
     $('#confirm').className = 'btn primary';
     $('#confirm').style.background = '';
