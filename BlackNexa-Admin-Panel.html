@@ -473,11 +473,12 @@
         line-height: 1.4;
       }
       .custom-select-label {
-        white-space: normal;
+        white-space: nowrap;
         line-height: 1.35;
-        word-break: break-word;
         text-align: left;
         flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .custom-select-trigger:hover {
         border-color: var(--accent);
@@ -505,7 +506,8 @@
         top: calc(100% + 6px);
         left: 0;
         min-width: 100%;
-        max-width: 100%;
+        width: max-content;
+        max-width: 320px;
         box-sizing: border-box;
         max-height: 280px;
         overflow-y: auto;
@@ -556,9 +558,8 @@
         border-radius: 6px;
         cursor: pointer;
         transition: background 0.12s;
-        white-space: normal;
+        white-space: nowrap;
         line-height: 1.35;
-        word-break: break-word;
         text-align: left;
         box-sizing: border-box;
       }
@@ -618,7 +619,13 @@
         gap: 4px;
         padding: 8px 0;
         border-bottom: 1px solid var(--line);
-        overflow: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE / Edge */
+      }
+      .tabs::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
       }
       .tab {
         white-space: nowrap;
@@ -1174,6 +1181,36 @@
         color: var(--muted);
         background: transparent;
       }
+      .pagination-left-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .page-size-select {
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12.5px;
+        font-weight: 500;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.15s;
+        margin-left: 2px;
+      }
+      .page-size-select:focus,
+      .page-size-select:hover {
+        border-color: var(--accent);
+      }
+      body.dark .page-size-select {
+        background: var(--surface);
+        border-color: var(--line);
+        color: var(--text);
+      }
       .pagination-controls {
         display: flex;
         gap: 6px;
@@ -1555,8 +1592,10 @@
         background: var(--accent-soft);
         border: 1px solid var(--accent);
         border-radius: 8px;
-        padding: 8px 16px;
-        margin: 0 20px 14px;
+        padding: 10px 16px;
+        margin: 0 0 14px 0;
+        width: 100%;
+        box-sizing: border-box;
         color: var(--accent);
         font-size: 12.5px;
         font-weight: 600;
@@ -1565,6 +1604,155 @@
         display: flex;
         align-items: center;
         gap: 8px;
+      }
+
+      /* Modern iOS-style Toggle Switch */
+      .switch-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        transition: border-color 0.15s;
+      }
+      .switch-toggle-row:hover {
+        border-color: var(--accent);
+      }
+      .switch-toggle-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .switch-toggle-sub {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .switch-toggle {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+        margin: 0;
+      }
+      .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        margin: 0;
+      }
+      .switch-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 24px;
+      }
+      .switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: #fff;
+        transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      }
+      .switch-toggle input:checked + .switch-slider {
+        background-color: var(--accent);
+      }
+      .switch-toggle input:focus + .switch-slider {
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+      .switch-toggle input:checked + .switch-slider:before {
+        transform: translateX(20px);
+      }
+      body.dark .switch-slider {
+        background-color: #334155;
+      }
+
+      /* Delete Account Modal Details Card */
+      .delete-lifecycle-card {
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      body.dark .delete-lifecycle-card {
+        background: #101622;
+      }
+      .delete-lifecycle-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
+      }
+      .delete-timeline-row {
+        display: grid;
+        grid-template-columns: 75px 1fr;
+        gap: 12px;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .delete-tag-today {
+        color: #2563eb;
+        font-weight: 700;
+      }
+      .delete-tag-30 {
+        color: #0284c7;
+        font-weight: 700;
+      }
+      .delete-tag-day31 {
+        color: #dc2626;
+        font-weight: 700;
+      }
+      .delete-confirm-box {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #9b2c2c;
+        cursor: pointer;
+        margin: 4px 0 0 !important;
+        font-weight: normal !important;
+      }
+      .delete-confirm-box input[type="checkbox"] {
+        width: 16px !important;
+        height: 16px !important;
+        flex-shrink: 0 !important;
+        margin: 2px 0 0 0 !important;
+        cursor: pointer;
+        display: inline-block !important;
+      }
+      .delete-confirm-box span {
+        flex: 1;
+        line-height: 1.4;
+        color: #9b2c2c;
+      }
+      body.dark .delete-confirm-box {
+        background: #2a1215;
+        border-color: #742a2a;
+        color: #feb2b2;
+      }
+      body.dark .delete-confirm-box span {
+        color: #feb2b2;
       }
 
       /* Details View */
@@ -1631,12 +1819,251 @@
         gap: 18px;
       }
 
+      /* Dashboard Overview Styling */
+      .dashboard-page {
+        display: none;
+        width: 100%;
+      }
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+      }
+      .kpi-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .kpi-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .kpi-icon-wrap {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+      }
+      .kpi-icon-wrap svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+      .kpi-value {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.5px;
+        line-height: 1.2;
+        margin-bottom: 6px;
+      }
+      .kpi-sub {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .kpi-growth-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .kpi-growth-pill.positive {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .kpi-growth-pill.urgent {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+      body.dark .kpi-card {
+        background: #151c29;
+        border-color: var(--line);
+      }
+      body.dark .kpi-growth-pill.positive {
+        background: #064e3b;
+        color: #6ee7b7;
+      }
+      body.dark .kpi-growth-pill.urgent {
+        background: #7f1d1d;
+        color: #fca5a5;
+      }
+
+      .dash-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+      .dash-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 22px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      }
+      body.dark .dash-card {
+        background: #151c29;
+        border-color: var(--line);
+      }
+      .dash-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      .dash-card-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dash-card-sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* Bar Chart Styles */
+      .chart-bars-wrap {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        height: 180px;
+        padding-top: 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .chart-bar-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        height: 100%;
+        justify-content: flex-end;
+      }
+      .chart-bar {
+        width: 100%;
+        max-width: 34px;
+        background: var(--accent);
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        transition:
+          height 0.3s ease,
+          opacity 0.15s;
+        cursor: pointer;
+        position: relative;
+      }
+      .chart-bar:hover {
+        opacity: 0.85;
+      }
+      .chart-bar-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      /* Progress Breakdown List */
+      .cat-progress-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .cat-progress-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .cat-progress-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12.5px;
+      }
+      .cat-progress-bar-bg {
+        width: 100%;
+        height: 7px;
+        background: var(--line);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .cat-progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 999px;
+      }
+
+      /* Alerts & Geo Items */
+      .dash-alert-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        border-radius: 8px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        margin-bottom: 8px;
+        transition: background 0.15s;
+      }
+      .dash-alert-item:hover {
+        background: var(--accent-soft);
+      }
+
+      @media (max-width: 1100px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .dash-grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .kpi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .detail-card {
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: 12px;
         padding: 20px 24px;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+        box-shadow:
+          0 4px 18px rgba(0, 0, 0, 0.06),
+          0 1px 4px rgba(0, 0, 0, 0.03);
       }
       .label {
         font-size: 11.5px;
@@ -1979,20 +2406,527 @@
         border-color: var(--accent);
       }
 
-      @media (max-width: 960px) {
-        .details-grid {
-          grid-template-columns: 1fr;
-        }
-        .content-info-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-        .evidence-grid {
-          grid-template-columns: 1fr;
-        }
+      /* =========================================================
+         ADMIN LOGIN, MFA & AUTHENTICATION STYLING
+         ========================================================= */
+      #authScreen {
+        position: fixed;
+        inset: 0;
+        background: #0f172a;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(8px);
+      }
+      .login-container {
+        width: min(440px, 100%);
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 36px 32px 30px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        color: #1e293b;
+        font-family: "Work Sans", sans-serif;
+      }
+      body.dark .login-container {
+        background: #18202d;
+        color: #f1f5f9;
+        border: 1px solid #334155;
+      }
+      .login-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .login-brand-icon {
+        width: 42px;
+        height: 42px;
+        background: var(--accent, #0a7cff);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 20px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 4px 12px rgba(10, 124, 255, 0.3);
+      }
+      .login-brand-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: inherit;
+        letter-spacing: -0.3px;
+      }
+      .login-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        color: inherit;
+      }
+      .login-subtitle {
+        font-size: 13.5px;
+        color: #64748b;
+        margin: 0 0 22px;
+        line-height: 1.45;
+      }
+      body.dark .login-subtitle {
+        color: #94a3b8;
+      }
+      .login-error-alert {
+        display: none;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        margin-bottom: 18px;
+        line-height: 1.4;
+      }
+      body.dark .login-error-alert {
+        background: #450a0a;
+        border-color: #7f1d1d;
+        color: #fca5a5;
+      }
+      .login-field {
+        margin-bottom: 16px;
+      }
+      .login-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: inherit;
+        margin-bottom: 6px;
+      }
+      .login-field input {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        background: #f8fafc;
+        color: #0f172a;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        box-sizing: border-box;
+      }
+      body.dark .login-field input {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+      }
+      .login-field input.field-invalid {
+        border-color: #ef4444 !important;
+        background-color: #fff5f5 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+      }
+      body.dark .login-field input.field-invalid {
+        background-color: #450a0a !important;
+        border-color: #ef4444 !important;
+      }
+      .field-error-msg {
+        display: none;
+        color: #ef4444;
+        font-size: 11.5px;
+        font-weight: 500;
+        margin-top: 4px;
+        line-height: 1.3;
+      }
+      .password-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .password-input-wrap input {
+        padding-right: 42px;
+      }
+      .password-toggle-btn {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        display: grid;
+        place-items: center;
+        color: #64748b;
+        border-radius: 6px;
+        transition: color 0.15s;
+      }
+      .password-toggle-btn:hover {
+        color: var(--accent);
+      }
+      .password-toggle-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+      }
+      .login-submit-btn {
+        width: 100%;
+        padding: 12px;
+        background: var(--accent, #0a7cff);
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        margin-top: 10px;
+      }
+      .login-submit-btn:hover {
+        opacity: 0.94;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(10, 124, 255, 0.35);
+      }
+
+      /* MFA OTP Screen Styles */
+      .mfa-code-grid {
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        margin: 20px 0 24px;
+      }
+      .mfa-digit-input {
+        width: 48px;
+        height: 54px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
+        color: #0f172a;
+        outline: none;
+        font-family: inherit;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      body.dark .mfa-digit-input {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+      }
+      .mfa-digit-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .mfa-help-text {
+        font-size: 12.5px;
+        color: #64748b;
+        text-align: center;
+        margin-top: 16px;
+      }
+      .mfa-resend-btn {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 12.5px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .mfa-resend-btn:disabled {
+        color: #94a3b8;
+        cursor: not-allowed;
+      }
+
+      /* Role Badges for Admin & Staff */
+      .role-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 600;
+      }
+      .role-badge-pill.superadmin {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+      .role-badge-pill.moderator {
+        background: #f3e8ff;
+        color: #7e22ce;
+      }
+      .role-badge-pill.advocate {
+        background: #e0f2fe;
+        color: #0284c7;
+      }
+      .role-badge-pill.staff {
+        background: #ecfdf5;
+        color: #047857;
+      }
+      body.dark .role-badge-pill.superadmin {
+        background: #7f1d1d;
+        color: #fca5a5;
+      }
+      body.dark .role-badge-pill.moderator {
+        background: #3b0764;
+        color: #c084fc;
+      }
+      body.dark .role-badge-pill.advocate {
+        background: #082f49;
+        color: #38bdf8;
+      }
+      body.dark .role-badge-pill.staff {
+        background: #064e3b;
+        color: #6ee7b7;
+      }
+
+      /* Card Header Bar */
+      .card-header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 0;
+      }
+
+      /* Admin & Staff Roles Equal Spacing (8px top and bottom) */
+      #adminRolesView .kpi-grid {
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
       }
     </style>
   </head>
   <body>
+    <!-- =========================================================
+         ADMIN LOGIN & MFA VERIFICATION SCREEN OVERLAY
+         ========================================================= -->
+    <div id="authScreen">
+      <div class="login-container">
+        <!-- Step 1: Admin Credentials Form -->
+        <div id="loginStepCredentials">
+          <div class="login-brand">
+            <div class="login-brand-icon">B</div>
+            <div>
+              <div class="login-brand-title">
+                BlackNexa<span style="font-size: 10px; vertical-align: super"
+                  >TM</span
+                >
+              </div>
+              <div
+                style="
+                  font-size: 10.5px;
+                  font-weight: 600;
+                  letter-spacing: 1px;
+                  color: #64748b;
+                "
+              >
+                ADMIN CONSOLE
+              </div>
+            </div>
+          </div>
+
+          <h2 class="login-title">Sign In</h2>
+          <p class="login-subtitle">
+            Enter your administrator credentials to access the console.
+          </p>
+
+          <div class="login-error-alert" id="loginErrorAlert">
+            <strong>Authentication failed:</strong> Invalid email or password.
+          </div>
+
+          <form id="adminLoginForm" onsubmit="return false;" novalidate>
+            <div class="login-field">
+              <label for="adminEmailInput">Admin Email Address</label>
+              <input
+                type="email"
+                id="adminEmailInput"
+                placeholder="name@blacknexa.com"
+                autocomplete="username"
+              />
+              <div class="field-error-msg" id="emailErrorMsg">
+                Please enter a valid administrator email address.
+              </div>
+            </div>
+
+            <div class="login-field">
+              <label for="adminPasswordInput">Password</label>
+              <div class="password-input-wrap">
+                <input
+                  type="password"
+                  id="adminPasswordInput"
+                  placeholder="••••••••"
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  class="password-toggle-btn"
+                  id="btnTogglePassword"
+                  aria-label="Toggle password visibility"
+                  title="Show/Hide Password"
+                >
+                  <svg id="eyeIconShow" viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg
+                    id="eyeIconHide"
+                    viewBox="0 0 24 24"
+                    style="display: none"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </button>
+              </div>
+              <div class="field-error-msg" id="passwordErrorMsg">
+                Please enter your password.
+              </div>
+            </div>
+
+            <button type="submit" class="login-submit-btn" id="btnAdminLogin">
+              Sign In
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: MFA Verification Code Screen -->
+        <div id="loginStepMfa" style="display: none">
+          <div class="login-brand">
+            <div class="login-brand-icon">
+              <svg
+                style="
+                  width: 20px;
+                  height: 20px;
+                  stroke: #fff;
+                  fill: none;
+                  stroke-width: 2.2;
+                "
+                viewBox="0 0 24 24"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <div>
+              <div class="login-brand-title">
+                Two-Factor Auth<span
+                  style="font-size: 10px; vertical-align: super"
+                  >MFA</span
+                >
+              </div>
+              <div
+                style="
+                  font-size: 10.5px;
+                  font-weight: 600;
+                  letter-spacing: 1px;
+                  color: #64748b;
+                "
+              >
+                SECURITY VERIFICATION
+              </div>
+            </div>
+          </div>
+
+          <h2 class="login-title">Enter Security Code</h2>
+          <p class="login-subtitle">
+            A 6-digit security code was sent to
+            <strong id="mfaTargetEmail" style="color: var(--text)"
+              >admin@blacknexa.com</strong
+            >.
+          </p>
+
+          <div class="login-error-alert" id="mfaErrorAlert">
+            Invalid security code. Please try again.
+          </div>
+
+          <form id="mfaForm" onsubmit="return false;">
+            <div class="mfa-code-grid">
+              <input
+                type="text"
+                class="mfa-digit-input"
+                maxlength="1"
+                data-idx="0"
+                inputmode="numeric"
+                autofocus
+              />
+              <input
+                type="text"
+                class="mfa-digit-input"
+                maxlength="1"
+                data-idx="1"
+                inputmode="numeric"
+              />
+              <input
+                type="text"
+                class="mfa-digit-input"
+                maxlength="1"
+                data-idx="2"
+                inputmode="numeric"
+              />
+              <input
+                type="text"
+                class="mfa-digit-input"
+                maxlength="1"
+                data-idx="3"
+                inputmode="numeric"
+              />
+              <input
+                type="text"
+                class="mfa-digit-input"
+                maxlength="1"
+                data-idx="4"
+                inputmode="numeric"
+              />
+              <input
+                type="text"
+                class="mfa-digit-input"
+                maxlength="1"
+                data-idx="5"
+                inputmode="numeric"
+              />
+            </div>
+
+            <button type="submit" class="login-submit-btn" id="btnVerifyMfa">
+              Verify & Access Console
+            </button>
+
+            <div class="mfa-help-text">
+              Didn't receive the code?
+              <button
+                type="button"
+                class="mfa-resend-btn"
+                id="btnResendMfa"
+                disabled
+              >
+                Resend in <span id="mfaTimerCount">30</span>s
+              </button>
+            </div>
+
+            <div style="text-align: center; margin-top: 14px">
+              <button
+                type="button"
+                id="btnBackToCredentials"
+                style="
+                  background: none;
+                  border: none;
+                  color: #64748b;
+                  font-size: 12px;
+                  cursor: pointer;
+                  text-decoration: underline;
+                "
+              >
+                ← Back to Login
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     <div class="app">
       <aside class="side">
         <div class="brand-wrap">
@@ -2015,7 +2949,7 @@
           </div>
         </div>
         <div class="side-menu">
-          <div class="nav soon-nav" data-target="Dashboard Overview">
+          <div class="nav active" id="dashboardNavMenu">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
                 <rect x="3" y="3" width="7" height="7" />
@@ -2061,17 +2995,6 @@
             <div class="sub-nav active" id="subKeyword">Keyword Rules</div>
           </div>
 
-          <div class="nav" id="userMgmtMenu">
-            <span class="nav-icon"
-              ><svg viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg
-            ></span>
-            <span class="nav-label">User Management</span>
-          </div>
-
           <div class="nav soon-nav" data-target="Resource Management">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
@@ -2112,6 +3035,28 @@
             ></span>
             <span class="nav-label">Content Management</span>
           </div>
+
+          <div class="nav" id="userMgmtMenu">
+            <span class="nav-icon"
+              ><svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg
+            ></span>
+            <span class="nav-label">User Management</span>
+          </div>
+
+          <div class="nav" id="adminRolesNavMenu">
+            <span class="nav-icon"
+              ><svg viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <circle cx="12" cy="11" r="3" />
+                <path d="M12 14v3" /></svg
+            ></span>
+            <span class="nav-label">Admin & Roles</span>
+          </div>
+
           <div class="nav soon-nav" data-target="Settings">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
@@ -2167,14 +3112,15 @@
           </div>
 
           <div class="user-account">
-            <div class="user-avatar">MK</div>
+            <div class="user-avatar" id="currentAdminAvatar">SA</div>
             <div class="user-info">
-              <div class="user-name">M. Kaur</div>
-              <div class="user-role">Moderator</div>
+              <div class="user-name" id="currentAdminName">Devon Vance</div>
+              <div class="user-role" id="currentAdminRole">Super Admin</div>
             </div>
             <button
               class="logout-btn"
-              onclick="alert('Logged out successfully.')"
+              id="btnAdminLogout"
+              title="Sign out of Admin Panel"
             >
               Logout
             </button>
@@ -2182,7 +3128,465 @@
         </div>
       </aside>
       <main class="main">
-        <section id="queue">
+        <!-- DASHBOARD OVERVIEW: Command Center Section -->
+        <section id="dashboardView">
+          <div class="card">
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div>
+                <h1 class="title">Dashboard Overview</h1>
+                <p
+                  style="color: var(--muted); font-size: 13px; margin: 4px 0 0"
+                >
+                  Real-time command center monitoring platform safety, user
+                  activity, incident volume, and queue health.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center"></div>
+            </div>
+
+            <!-- Top KPI Metric Cards Grid -->
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <span class="kpi-label">Total Users</span>
+                  <div class="kpi-icon-wrap">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="kpi-value">1,280</div>
+                <div class="kpi-sub">
+                  <span class="kpi-growth-pill positive">↑ +14.8%</span>
+                  <span>vs last month</span>
+                </div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <span class="kpi-label">Active Incidents</span>
+                  <div
+                    class="kpi-icon-wrap"
+                    style="background: #e0f2fe; color: #0284c7"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                      />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="kpi-value">84</div>
+                <div class="kpi-sub">
+                  <span style="font-weight: 500; color: var(--text)"
+                    >18 Under Review</span
+                  >
+                  <span>· 62 Verified</span>
+                </div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <span class="kpi-label">Pending Moderation</span>
+                  <div
+                    class="kpi-icon-wrap"
+                    style="background: #fee2e2; color: #dc2626"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="kpi-value">12</div>
+                <div class="kpi-sub">
+                  <span class="kpi-growth-pill urgent">4 Urgent</span>
+                  <span>need review</span>
+                </div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <span class="kpi-label">Verified Advocates</span>
+                  <div
+                    class="kpi-icon-wrap"
+                    style="background: #f3e8ff; color: #7e22ce"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="kpi-value">46</div>
+                <div class="kpi-sub">
+                  <span class="kpi-growth-pill positive">100% Verified</span>
+                  <span>active duty</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Charts & Distribution Grid -->
+            <div class="dash-grid-2">
+              <!-- Incident Trends Chart -->
+              <div class="dash-card">
+                <div class="dash-card-header">
+                  <div>
+                    <div class="dash-card-title">Incident Activity Trend</div>
+                    <div class="dash-card-sub">
+                      Report submissions over the last 7 days
+                    </div>
+                  </div>
+                  <span class="badge" style="font-size: 11.5px"
+                    >Aug 25 - Aug 31</span
+                  >
+                </div>
+                <div class="chart-bars-wrap">
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 45%"
+                      data-tooltip="Aug 25: 6 Reports"
+                    ></div>
+                    <span class="chart-bar-label">Mon</span>
+                  </div>
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 60%"
+                      data-tooltip="Aug 26: 9 Reports"
+                    ></div>
+                    <span class="chart-bar-label">Tue</span>
+                  </div>
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 35%"
+                      data-tooltip="Aug 27: 5 Reports"
+                    ></div>
+                    <span class="chart-bar-label">Wed</span>
+                  </div>
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 80%"
+                      data-tooltip="Aug 28: 14 Reports"
+                    ></div>
+                    <span class="chart-bar-label">Thu</span>
+                  </div>
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 55%"
+                      data-tooltip="Aug 29: 8 Reports"
+                    ></div>
+                    <span class="chart-bar-label">Fri</span>
+                  </div>
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 90%"
+                      data-tooltip="Aug 30: 16 Reports"
+                    ></div>
+                    <span class="chart-bar-label">Sat</span>
+                  </div>
+                  <div class="chart-bar-group">
+                    <div
+                      class="chart-bar"
+                      style="height: 100%"
+                      data-tooltip="Aug 31: 18 Reports"
+                    ></div>
+                    <span
+                      class="chart-bar-label"
+                      style="font-weight: 700; color: var(--text)"
+                      >Sun</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Category Distribution Breakdown -->
+              <div class="dash-card">
+                <div class="dash-card-header">
+                  <div>
+                    <div class="dash-card-title">Incident Categories</div>
+                    <div class="dash-card-sub">
+                      Distribution across community report domains
+                    </div>
+                  </div>
+                  <span class="badge active" style="font-size: 11.5px"
+                    >Live Breakdown</span
+                  >
+                </div>
+                <div class="cat-progress-list">
+                  <div class="cat-progress-row">
+                    <div class="cat-progress-meta">
+                      <span style="font-weight: 500"
+                        >Policing & Stop-and-Search</span
+                      >
+                      <strong style="color: var(--text)">38% (32)</strong>
+                    </div>
+                    <div class="cat-progress-bar-bg">
+                      <div
+                        class="cat-progress-fill"
+                        style="width: 38%; background: #0a7cff"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="cat-progress-row">
+                    <div class="cat-progress-meta">
+                      <span style="font-weight: 500"
+                        >Workplace & Labor Discrimination</span
+                      >
+                      <strong style="color: var(--text)">24% (20)</strong>
+                    </div>
+                    <div class="cat-progress-bar-bg">
+                      <div
+                        class="cat-progress-fill"
+                        style="width: 24%; background: #0e8a5f"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="cat-progress-row">
+                    <div class="cat-progress-meta">
+                      <span style="font-weight: 500"
+                        >Housing & Unlawful Eviction</span
+                      >
+                      <strong style="color: var(--text)">18% (15)</strong>
+                    </div>
+                    <div class="cat-progress-bar-bg">
+                      <div
+                        class="cat-progress-fill"
+                        style="width: 18%; background: #b78a00"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="cat-progress-row">
+                    <div class="cat-progress-meta">
+                      <span style="font-weight: 500"
+                        >Public Harassment & Hate Speech</span
+                      >
+                      <strong style="color: var(--text)">14% (12)</strong>
+                    </div>
+                    <div class="cat-progress-bar-bg">
+                      <div
+                        class="cat-progress-fill"
+                        style="width: 14%; background: #c63d49"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="cat-progress-row">
+                    <div class="cat-progress-meta">
+                      <span style="font-weight: 500">Education & Campus</span>
+                      <strong style="color: var(--text)">6% (5)</strong>
+                    </div>
+                    <div class="cat-progress-bar-bg">
+                      <div
+                        class="cat-progress-fill"
+                        style="width: 6%; background: #4f46e5"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lower Grid: Regional Heatmap & Urgent Action Alerts -->
+            <div class="dash-grid-2">
+              <!-- Regional Incident Heatmap Table -->
+              <div class="dash-card">
+                <div class="dash-card-header">
+                  <div>
+                    <div class="dash-card-title">Top Regional Clusters</div>
+                    <div class="dash-card-sub">
+                      Active community safety reports by location
+                    </div>
+                  </div>
+                </div>
+                <table class="table" style="table-layout: fixed; margin-top: 0">
+                  <thead>
+                    <tr>
+                      <th style="width: 45%">Region / City</th>
+                      <th style="width: 25%">Active Cases</th>
+                      <th style="width: 30%; text-align: right">Risk Level</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Hackney, London</strong></td>
+                      <td>28 cases</td>
+                      <td style="text-align: right">
+                        <span class="badge suspended" style="font-size: 11px"
+                          >High Risk</span
+                        >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Manchester, UK</strong></td>
+                      <td>19 cases</td>
+                      <td style="text-align: right">
+                        <span
+                          class="badge"
+                          style="
+                            background: #fef3c7;
+                            color: #b45309;
+                            font-size: 11px;
+                          "
+                          >Moderate</span
+                        >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Toronto, Canada</strong></td>
+                      <td>14 cases</td>
+                      <td style="text-align: right">
+                        <span class="badge active" style="font-size: 11px"
+                          >Normal</span
+                        >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Chicago, US</strong></td>
+                      <td>12 cases</td>
+                      <td style="text-align: right">
+                        <span
+                          class="badge"
+                          style="
+                            background: #fef3c7;
+                            color: #b45309;
+                            font-size: 11px;
+                          "
+                          >Moderate</span
+                        >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Birmingham, UK</strong></td>
+                      <td>11 cases</td>
+                      <td style="text-align: right">
+                        <span class="badge active" style="font-size: 11px"
+                          >Normal</span
+                        >
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Urgent Attention Alerts Widget -->
+              <div class="dash-card">
+                <div class="dash-card-header">
+                  <div>
+                    <div class="dash-card-title">⚠️ Urgent Queue Alerts</div>
+                    <div class="dash-card-sub">
+                      Reports requiring immediate operator attention
+                    </div>
+                  </div>
+                  <span class="badge suspended" style="font-size: 11px"
+                    >Action Required</span
+                  >
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <div class="dash-alert-item">
+                    <div>
+                      <div
+                        style="
+                          font-weight: 600;
+                          font-size: 13px;
+                          color: var(--text);
+                        "
+                      >
+                        INC-20481 · Stopped and searched
+                      </div>
+                      <div
+                        style="
+                          font-size: 11.5px;
+                          color: var(--muted);
+                          margin-top: 2px;
+                        "
+                      >
+                        Hackney, London · Unassigned Advocate
+                      </div>
+                    </div>
+                    <button
+                      class="btn outline"
+                      onclick="showIncidentQueuePage()"
+                      style="font-size: 11.5px; padding: 5px 10px"
+                    >
+                      Review
+                    </button>
+                  </div>
+                  <div class="dash-alert-item">
+                    <div>
+                      <div
+                        style="
+                          font-weight: 600;
+                          font-size: 13px;
+                          color: var(--text);
+                        "
+                      >
+                        CMT-90412 · Threatening comment
+                      </div>
+                      <div
+                        style="
+                          font-size: 11.5px;
+                          color: var(--muted);
+                          margin-top: 2px;
+                        "
+                      >
+                        AI Threat Flag · Multiple User Reports
+                      </div>
+                    </div>
+                    <button
+                      class="btn outline"
+                      onclick="showQueuePage()"
+                      style="font-size: 11.5px; padding: 5px 10px"
+                    >
+                      Moderate
+                    </button>
+                  </div>
+                  <div class="dash-alert-item">
+                    <div>
+                      <div
+                        style="
+                          font-weight: 600;
+                          font-size: 13px;
+                          color: var(--text);
+                        "
+                      >
+                        INC-20475 · Targeted public abuse
+                      </div>
+                      <div
+                        style="
+                          font-size: 11.5px;
+                          color: var(--muted);
+                          margin-top: 2px;
+                        "
+                      >
+                        Manchester, UK · Audio & Image Evidence
+                      </div>
+                    </div>
+                    <button
+                      class="btn outline"
+                      onclick="showIncidentQueuePage()"
+                      style="font-size: 11.5px; padding: 5px 10px"
+                    >
+                      Review
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CONTENT MODERATION: Queue Section -->
+        <section id="queue" style="display: none">
           <div class="card">
             <div class="card-header-bar">
               <div>
@@ -2444,7 +3848,7 @@
                             font-size: 11.5px;
                             margin-left: 6px;
                           "
-                          >· Aug 31, 2026 · 11:15 AM</span
+                          >· Aug 31, 2026  11:15 AM</span
                         >
                       </div>
                     </div>
@@ -2632,10 +4036,7 @@
                     <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
                   </div>
                   <div class="custom-select-menu">
-                    <div
-                      class="custom-select-option selected"
-                      data-value="all"
-                    >
+                    <div class="custom-select-option selected" data-value="all">
                       All Dates
                     </div>
                     <div class="custom-select-option" data-value="today">
@@ -2668,7 +4069,14 @@
                   "
                 >
                   <div style="display: flex; align-items: center; gap: 6px">
-                    <span style="font-size: 12px; color: var(--muted); font-weight: 500">From:</span>
+                    <span
+                      style="
+                        font-size: 12px;
+                        color: var(--muted);
+                        font-weight: 500;
+                      "
+                      >From:</span
+                    >
                     <input
                       type="date"
                       id="incDateFrom"
@@ -2686,7 +4094,14 @@
                     />
                   </div>
                   <div style="display: flex; align-items: center; gap: 6px">
-                    <span style="font-size: 12px; color: var(--muted); font-weight: 500">To:</span>
+                    <span
+                      style="
+                        font-size: 12px;
+                        color: var(--muted);
+                        font-weight: 500;
+                      "
+                      >To:</span
+                    >
                     <input
                       type="date"
                       id="incDateTo"
@@ -2834,7 +4249,7 @@
                   <div class="info-cell">
                     <div class="info-cell-label">Submitted At</div>
                     <div class="info-cell-value" id="incSubmitted">
-                      Aug 27, 2026 · 09:41 AM
+                      Aug 27, 2026  09:41 AM
                     </div>
                   </div>
                 </div>
@@ -3088,7 +4503,7 @@
                       style="font-size: 13px; color: var(--text)"
                       id="incAssignedAt"
                     >
-                      27 Aug 2026 · 10:40
+                      27 Aug 2026  10:40
                     </div>
                   </div>
 
@@ -3200,7 +4615,6 @@
                 </p>
               </div>
             </div>
-            <div class="tabs" id="userTabs"></div>
             <div class="filters">
               <input
                 class="search"
@@ -3209,13 +4623,18 @@
               />
               <div style="display: flex; gap: 10px; align-items: center">
                 <!-- Role Filter Dropdown -->
-                <div class="custom-select-wrap" id="userRoleFilterWrap">
+                <div
+                  class="custom-select-wrap"
+                  id="userRoleFilterWrap"
+                  style="min-width: 140px"
+                >
                   <input type="hidden" id="userRoleFilter" value="All" />
                   <button
                     type="button"
                     class="custom-select-trigger"
                     aria-haspopup="listbox"
                     aria-expanded="false"
+                    style="min-width: 140px"
                   >
                     <span class="custom-select-label">All Roles</span>
                     <svg viewBox="0 0 24 24">
@@ -3255,13 +4674,18 @@
                 </div>
 
                 <!-- Status Filter Dropdown -->
-                <div class="custom-select-wrap" id="userStatusFilterWrap">
+                <div
+                  class="custom-select-wrap"
+                  id="userStatusFilterWrap"
+                  style="min-width: 155px"
+                >
                   <input type="hidden" id="userStatusFilter" value="All" />
                   <button
                     type="button"
                     class="custom-select-trigger"
                     aria-haspopup="listbox"
                     aria-expanded="false"
+                    style="min-width: 155px"
                   >
                     <span class="custom-select-label">All Statuses</span>
                     <svg viewBox="0 0 24 24">
@@ -3301,15 +4725,20 @@
                 </div>
 
                 <!-- Sort Filter Dropdown -->
-                <div class="custom-select-wrap" id="userSortFilterWrap">
+                <div
+                  class="custom-select-wrap"
+                  id="userSortFilterWrap"
+                  style="min-width: 160px"
+                >
                   <input type="hidden" id="userSortFilter" value="newest" />
                   <button
                     type="button"
                     class="custom-select-trigger"
                     aria-haspopup="listbox"
                     aria-expanded="false"
+                    style="min-width: 160px"
                   >
-                    <span class="custom-select-label">Newest Joined</span>
+                    <span class="custom-select-label">Newest First</span>
                     <svg viewBox="0 0 24 24">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
@@ -3320,21 +4749,14 @@
                       data-value="newest"
                       role="option"
                     >
-                      Newest Joined
+                      Newest First
                     </div>
                     <div
                       class="custom-select-option"
                       data-value="oldest"
                       role="option"
                     >
-                      Oldest Joined
-                    </div>
-                    <div
-                      class="custom-select-option"
-                      data-value="incidents"
-                      role="option"
-                    >
-                      Most Incidents
+                      Oldest First
                     </div>
                   </div>
                 </div>
@@ -3343,7 +4765,16 @@
 
             <!-- Bulk Actions Toolbar -->
             <div class="bulk-bar" id="userBulkBar">
-              <div><span id="bulkSelectedCount">0</span> users selected</div>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <input
+                  type="checkbox"
+                  id="bulkBarMasterCheckbox"
+                  checked
+                  style="cursor: pointer; width: 15px; height: 15px; margin: 0"
+                  title="Select / Deselect all users"
+                />
+                <span><strong id="bulkSelectedCount">0</strong> users selected</span>
+              </div>
               <div class="bulk-actions">
                 <button
                   class="btn outline"
@@ -3370,13 +4801,6 @@
                   style="font-size: 12px; padding: 6px 12px"
                 >
                   Delete Accounts
-                </button>
-                <button
-                  class="btn outline"
-                  id="btnBulkDeselect"
-                  style="font-size: 12px; padding: 6px 12px"
-                >
-                  Deselect
                 </button>
               </div>
             </div>
@@ -3414,7 +4838,13 @@
         <!-- USER MANAGEMENT: Profile & Incident Activity Details Section -->
         <section id="userDetails" class="details-page" style="display: none">
           <div class="details-top-bar">
-            <button class="back-btn-pill" id="btnBackToUsers" title="Back to Users">←</button>
+            <button
+              class="back-btn-pill"
+              id="btnBackToUsers"
+              title="Back to Users"
+            >
+              ←
+            </button>
             <div class="meta-chip-wrap">
               <span>USER</span>
               <span>·</span>
@@ -3447,10 +4877,25 @@
                     <div class="label">Display Name</div>
                     <div
                       class="value"
-                      id="userProfName"
-                      style="font-weight: 400"
+                      style="
+                        font-weight: 400;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                      "
                     >
-                      —
+                      <span
+                        class="user-avatar-badge"
+                        id="userProfAvatarBadge"
+                        style="
+                          margin-right: 0;
+                          width: 26px;
+                          height: 26px;
+                          font-size: 11px;
+                        "
+                        >—</span
+                      >
+                      <span id="userProfName">—</span>
                     </div>
                   </div>
                   <div>
@@ -3468,7 +4913,11 @@
                       <span id="userProfEmailText">—</span>
                       <span
                         id="userProfVerified"
-                        style="color: #059669; font-size: 12px; font-weight: 400"
+                        style="
+                          color: #059669;
+                          font-size: 12px;
+                          font-weight: 400;
+                        "
                         >✓ Verified</span
                       >
                     </div>
@@ -3606,6 +5055,272 @@
             </div>
           </div>
         </section>
+
+        <!-- =========================================================
+             MODULE 1: ADMIN & STAFF ROLES DIRECTORY (RBAC)
+             ========================================================= -->
+        <section id="adminRolesView" style="display: none">
+          <div class="card">
+            <div class="card-header-bar">
+              <div>
+                <h1 class="title">Admin & Staff Roles</h1>
+                <p
+                  style="color: var(--muted); font-size: 13px; margin: 4px 0 0"
+                >
+                  Manage administrator accounts, assign role-based access
+                  permissions, reset credentials, and control console access.
+                </p>
+              </div>
+              <div>
+                <button class="add-keyword-btn" id="btnOpenAddStaffModal">
+                  <svg
+                    style="
+                      width: 15px;
+                      height: 15px;
+                      stroke: currentColor;
+                      fill: none;
+                      stroke-width: 2.5;
+                    "
+                    viewBox="0 0 24 24"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Add</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Role Summary KPI Tiles -->
+            <div
+              class="kpi-grid"
+              id="staffKpiGrid"
+              style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px"
+            >
+              <div
+                class="kpi-card"
+                id="kpiCardSuperAdmin"
+                style="padding: 16px 18px"
+              >
+                <div class="kpi-top" style="margin-bottom: 6px">
+                  <span class="kpi-label">Super Admins</span>
+                  <span class="role-badge-pill superadmin">Full Access</span>
+                </div>
+                <div
+                  class="kpi-value"
+                  id="countSuperAdmin"
+                  style="font-size: 22px"
+                >
+                  1
+                </div>
+              </div>
+              <div
+                class="kpi-card"
+                id="kpiCardModerator"
+                style="padding: 16px 18px"
+              >
+                <div class="kpi-top" style="margin-bottom: 6px">
+                  <span class="kpi-label">Moderators</span>
+                  <span class="role-badge-pill moderator">Content Queue</span>
+                </div>
+                <div
+                  class="kpi-value"
+                  id="countModerators"
+                  style="font-size: 22px"
+                >
+                  1
+                </div>
+              </div>
+              <div
+                class="kpi-card"
+                id="kpiCardAdvocate"
+                style="padding: 16px 18px"
+              >
+                <div class="kpi-top" style="margin-bottom: 6px">
+                  <span class="kpi-label">Advocates</span>
+                  <span class="role-badge-pill advocate">Case Handling</span>
+                </div>
+                <div
+                  class="kpi-value"
+                  id="countAdvocates"
+                  style="font-size: 22px"
+                >
+                  1
+                </div>
+              </div>
+              <div
+                class="kpi-card"
+                id="kpiCardStaff"
+                style="padding: 16px 18px"
+              >
+                <div class="kpi-top" style="margin-bottom: 6px">
+                  <span class="kpi-label">Support Staff</span>
+                  <span class="role-badge-pill staff">Inquiries & Triage</span>
+                </div>
+                <div class="kpi-value" id="countStaff" style="font-size: 22px">
+                  1
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div
+              class="filters"
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 12px;
+                flex-wrap: nowrap;
+                margin-bottom: 8px;
+              "
+            >
+              <div
+                class="search-wrap"
+                style="flex: 1; max-width: 440px; min-width: 260px; margin: 0"
+              >
+                <input
+                  type="text"
+                  class="search"
+                  id="staffSearchInput"
+                  placeholder="Search staff by name or email..."
+                  style="width: 100%; max-width: none"
+                />
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  flex-shrink: 0;
+                "
+              >
+                <!-- Role Filter Dropdown -->
+                <div
+                  class="custom-select-wrap"
+                  id="staffRoleFilterContainer"
+                  data-select-for="staffRoleFilter"
+                  style="min-width: 160px"
+                >
+                  <input type="hidden" id="staffRoleFilter" value="All Roles" />
+                  <button
+                    type="button"
+                    class="custom-select-trigger"
+                    aria-haspopup="listbox"
+                    tabindex="0"
+                  >
+                    <span
+                      class="custom-select-label"
+                      style="white-space: nowrap"
+                      >All Roles</span
+                    >
+                    <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+                  </button>
+                  <div
+                    class="custom-select-menu"
+                    role="listbox"
+                    id="staffRoleFilterMenu"
+                  >
+                    <div
+                      class="custom-select-option selected"
+                      data-value="All Roles"
+                    >
+                      All Roles
+                    </div>
+                    <div class="custom-select-option" data-value="Super Admin">
+                      Super Admin
+                    </div>
+                    <div class="custom-select-option" data-value="Moderator">
+                      Moderator
+                    </div>
+                    <div class="custom-select-option" data-value="Advocate">
+                      Advocate
+                    </div>
+                    <div
+                      class="custom-select-option"
+                      data-value="Support Staff"
+                    >
+                      Support Staff
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status Filter Dropdown -->
+                <div
+                  class="custom-select-wrap"
+                  id="staffStatusFilterContainer"
+                  data-select-for="staffStatusFilter"
+                  style="min-width: 140px"
+                >
+                  <input
+                    type="hidden"
+                    id="staffStatusFilter"
+                    value="All Statuses"
+                  />
+                  <button
+                    type="button"
+                    class="custom-select-trigger"
+                    aria-haspopup="listbox"
+                    tabindex="0"
+                  >
+                    <span
+                      class="custom-select-label"
+                      style="white-space: nowrap"
+                      >All Statuses</span
+                    >
+                    <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+                  </button>
+                  <div class="custom-select-menu" role="listbox">
+                    <div
+                      class="custom-select-option selected"
+                      data-value="All Statuses"
+                    >
+                      All Statuses
+                    </div>
+                    <div class="custom-select-option" data-value="active">
+                      Active
+                    </div>
+                    <div class="custom-select-option" data-value="disabled">
+                      Disabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Staff Directory Table -->
+            <div style="overflow-x: auto; width: 100%">
+              <table
+                class="table"
+                style="table-layout: fixed; width: 100%; min-width: 820px"
+              >
+                <thead>
+                  <tr>
+                    <th style="width: 28%">Staff Member</th>
+                    <th style="width: 32%">Email Address</th>
+                    <th style="width: 18%">Assigned Role</th>
+                    <th style="width: 12%">Status</th>
+                    <th
+                      style="width: 10%; text-align: right; padding-right: 18px"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="staffTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div
+              class="pagination-bar"
+              id="staffPaginationBar"
+              style="display: none"
+            >
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </section>
       </main>
     </div>
     <div class="modal-wrap" id="modal">
@@ -3630,7 +5345,7 @@
           status: "Public",
           location: "Hackney, London",
           urgent: true,
-          submitted: "Aug 27, 2026 · 09:41 AM",
+          submitted: "Aug 27, 2026  09:41 AM",
           content:
             'Third time this month. The officer said I "matched a description" and would not repeat it when I asked twice. I was held against the wall by the entry door for about eleven minutes while neighbours walked past.\n\nI told him I live here and offered my post. He said people like me always say that, and that if I kept talking he would find a reason. I want this on record because the same two officers work this street every week.',
           evidence: ["Image evidence", "Document evidence", "Audio evidence"],
@@ -3651,14 +5366,14 @@
           status: "Public",
           location: "Hackney, London",
           urgent: true,
-          submitted: "Aug 31, 2026 · 11:15 AM",
+          submitted: "Aug 31, 2026  11:15 AM",
           content:
             "Stop making excuses for these people or we will come down to your station and handle it ourselves.",
           evidence: [],
           ai: [],
           reports: [
-            ["Jason Dilo", "Threatening", "Aug 31, 2026 · 11:20 AM"],
-            ["Sarah Miller", "Threatening", "Aug 31, 2026 · 11:35 AM"],
+            ["Jason Dilo", "Threatening", "Aug 31, 2026  11:20 AM"],
+            ["Sarah Miller", "Threatening", "Aug 31, 2026  11:35 AM"],
           ],
         },
         {
@@ -3670,14 +5385,14 @@
           status: "Private",
           location: "London",
           urgent: false,
-          submitted: "Aug 31, 2026 · 09:48 AM",
+          submitted: "Aug 31, 2026  09:48 AM",
           content:
             "I am documenting repeated inappropriate conduct at my workplace and would like this incident reviewed by the community.",
           evidence: ["Image evidence"],
           ai: [],
           reports: [
-            ["Sarah Miller", "Harassment", "Aug 31, 2026 · 10:32 AM"],
-            ["Alex Wilson", "Untrue", "Aug 31, 2026 · 10:32 AM"],
+            ["Sarah Miller", "Harassment", "Aug 31, 2026  10:32 AM"],
+            ["Alex Wilson", "Untrue", "Aug 31, 2026  10:32 AM"],
           ],
         },
         {
@@ -3689,7 +5404,7 @@
           status: "Public",
           location: "Manchester, UK",
           urgent: true,
-          submitted: "Aug 31, 2026 · 08:30 AM",
+          submitted: "Aug 31, 2026  08:30 AM",
           content:
             "Individual repeatedly hurled targeted racial abuse and profane slurs at park visitors while obstructing the pedestrian footpath.",
           evidence: ["Audio evidence", "Image evidence"],
@@ -3709,15 +5424,15 @@
           status: "Public",
           location: "Toronto, Canada",
           urgent: false,
-          submitted: "Aug 30, 2026 · 06:10 PM",
+          submitted: "Aug 30, 2026  06:10 PM",
           content:
             "You deserve to get thrown out on the street, stop crying online.",
           evidence: [],
           ai: [],
           reports: [
-            ["Karan Patel", "Threatening", "Aug 30, 2026 · 06:15 PM"],
-            ["Mia Brown", "Private Details", "Aug 30, 2026 · 06:22 PM"],
-            ["David Brown", "Spam or advertising", "Aug 30, 2026 · 06:30 PM"],
+            ["Karan Patel", "Threatening", "Aug 30, 2026  06:15 PM"],
+            ["Mia Brown", "Private Details", "Aug 30, 2026  06:22 PM"],
+            ["David Brown", "Spam or advertising", "Aug 30, 2026  06:30 PM"],
           ],
         },
         {
@@ -3729,7 +5444,7 @@
           status: "Public",
           location: "Birmingham, UK",
           urgent: false,
-          submitted: "Aug 30, 2026 · 05:30 PM",
+          submitted: "Aug 30, 2026  05:30 PM",
           content:
             "A harassment incident was reported at a public venue where someone repeatedly followed and shouted.",
           evidence: ["Image evidence"],
@@ -3748,14 +5463,14 @@
           status: "Private",
           location: "Chicago, US",
           urgent: true,
-          submitted: "Aug 30, 2026 · 03:18 PM",
+          submitted: "Aug 30, 2026  03:18 PM",
           content:
             "Security guard stopped and searched me without any valid reason.",
           evidence: ["Video evidence"],
           ai: [],
           reports: [
-            ["Nina Patel", "Untrue", "Aug 30, 2026 · 03:25 PM"],
-            ["Arun Verma", "Private Details", "Aug 30, 2026 · 03:40 PM"],
+            ["Nina Patel", "Untrue", "Aug 30, 2026  03:25 PM"],
+            ["Arun Verma", "Private Details", "Aug 30, 2026  03:40 PM"],
           ],
         },
         {
@@ -3767,7 +5482,7 @@
           status: "Public",
           location: "London, UK",
           urgent: false,
-          submitted: "Aug 30, 2026 · 01:12 PM",
+          submitted: "Aug 30, 2026  01:12 PM",
           content:
             "Verbal threats made in broad daylight on school premises, revealing student home address at 12 Maple Street.",
           evidence: ["Image evidence"],
@@ -3786,14 +5501,14 @@
           status: "Public",
           location: "Manchester, UK",
           urgent: false,
-          submitted: "Aug 29, 2026 · 06:45 PM",
+          submitted: "Aug 29, 2026  06:45 PM",
           content:
             "Persistent abusive messages sent by landlord demanding illegal eviction.",
           evidence: ["Image evidence"],
           ai: [],
           reports: [
-            ["Mia Brown", "Harassment", "Aug 29, 2026 · 06:52 PM"],
-            ["Karan Patel", "Threatening", "Aug 29, 2026 · 07:10 PM"],
+            ["Mia Brown", "Harassment", "Aug 29, 2026  06:52 PM"],
+            ["Karan Patel", "Threatening", "Aug 29, 2026  07:10 PM"],
           ],
         },
         {
@@ -3805,7 +5520,7 @@
           status: "Public",
           location: "New York, US",
           urgent: true,
-          submitted: "Aug 29, 2026 · 04:08 PM",
+          submitted: "Aug 29, 2026  04:08 PM",
           content:
             "Report of physical fight and violent assault during stop and search.",
           evidence: ["Image evidence", "Video evidence"],
@@ -3824,7 +5539,7 @@
           status: "Private",
           location: "Vancouver, Canada",
           urgent: false,
-          submitted: "Aug 29, 2026 · 10:14 AM",
+          submitted: "Aug 29, 2026  10:14 AM",
           content:
             "Repeated targeted harassment by apartment committee members.",
           evidence: ["Document evidence"],
@@ -3843,7 +5558,7 @@
           status: "Public",
           location: "Toronto, Canada",
           urgent: false,
-          submitted: "Aug 28, 2026 · 08:02 PM",
+          submitted: "Aug 28, 2026  08:02 PM",
           content:
             "Abusive language, slurs, and persistent verbal abuse posted in university discussion board.",
           evidence: ["Image evidence"],
@@ -3865,15 +5580,35 @@
       const $ = (s) => document.querySelector(s);
 
       function hideAllSections() {
+        if ($("#dashboardView")) $("#dashboardView").style.display = "none";
         if ($("#queue")) $("#queue").style.display = "none";
         if ($("#details")) $("#details").style.display = "none";
         if ($("#incidentQueue")) $("#incidentQueue").style.display = "none";
         if ($("#incidentDetails")) $("#incidentDetails").style.display = "none";
         if ($("#userQueue")) $("#userQueue").style.display = "none";
         if ($("#userDetails")) $("#userDetails").style.display = "none";
+        if ($("#adminRolesView")) $("#adminRolesView").style.display = "none";
         if (typeof keywordPage !== "undefined")
           keywordPage.style.display = "none";
         if (typeof soon !== "undefined") soon.style.display = "none";
+      }
+
+      function showDashboardPage() {
+        clearAllActive();
+        closeAllSubMenus();
+        const dashNav = document.querySelector("#dashboardNavMenu");
+        if (dashNav) dashNav.classList.add("active");
+        hideAllSections();
+        const dashView = document.querySelector("#dashboardView");
+        if (dashView) dashView.style.display = "block";
+      }
+
+      const dashboardNavBtn = document.querySelector("#dashboardNavMenu");
+      if (dashboardNavBtn) {
+        dashboardNavBtn.onclick = (e) => {
+          e.preventDefault();
+          showDashboardPage();
+        };
       }
 
       function openDetails(id) {
@@ -3916,7 +5651,7 @@
         $("#valPrivacy").textContent = current.status || "Public";
         $("#valArea").textContent = current.location || "London";
         $("#valDate").textContent =
-          current.submitted || "Aug 27, 2026 · 09:41 AM";
+          current.submitted || "Aug 27, 2026  09:41 AM";
 
         // Handle Incident vs Comment view cards
         const isComment = current.type === "Comment";
@@ -4010,19 +5745,19 @@
             type: "IMG",
             name: "entry-door-01.jpg",
             meta: "Image · 2.4 MB",
-            date: "27 Aug 2026 · 09:39",
+            date: "27 Aug 2026  09:39",
           },
           {
             type: "PDF",
             name: "witness-statement.pdf",
             meta: "Document · 1.8 MB",
-            date: "27 Aug 2026 · 09:40",
+            date: "27 Aug 2026  09:40",
           },
           {
             type: "AUD",
             name: "voice-note-21.m4a",
             meta: "Audio · 3:12 · 11 MB",
-            date: "27 Aug 2026 · 09:41",
+            date: "27 Aug 2026  09:41",
           },
         ];
 
@@ -4518,7 +6253,7 @@
           .map((p) => {
             // Format Submitted At into 2 lines (Line 1: Date, Line 2: Time)
             const rawDate = p.submitted || "";
-            const dateParts = rawDate.split(" · ");
+            const dateParts = rawDate.split(/  | · /);
             const formattedDate =
               dateParts.length === 2
                 ? `<div>${dateParts[0]}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${dateParts[1]}</div>`
@@ -4569,55 +6304,79 @@
             );
         });
 
-        // Render Pagination Bar only if more than pageSize or multiple items
-        if (totalItems > pageSize) {
-          paginationBar.style.display = "flex";
-          paginationBar.innerHTML = `
-      <div>Showing <strong>${startIndex + 1}</strong> to <strong>${Math.min(startIndex + pageSize, totalItems)}</strong> of <strong>${totalItems}</strong> entries</div>
-      <div class="pagination-controls">
-        <button class="page-btn" id="prevPage" ${currentPage === 1 ? "disabled" : ""}>Previous</button>
-        ${Array.from(
-          { length: totalPages },
-          (_, i) => `
-          <button class="page-btn ${currentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
-        `,
-        ).join("")}
-        <button class="page-btn" id="nextPage" ${currentPage === totalPages ? "disabled" : ""}>Next</button>
-      </div>
-    `;
+        // Render Pagination Bar
+        if (paginationBar) {
+          if (totalItems > 0) {
+            paginationBar.style.display = "flex";
+            const startRecord = startIndex + 1;
+            const endRecord = Math.min(startIndex + pageSize, totalItems);
 
-          document
-            .querySelectorAll(".pagination-controls [data-page]")
-            .forEach((btn) => {
-              btn.onclick = () => {
-                currentPage = Number(btn.dataset.page);
+            paginationBar.innerHTML = `
+        <div class="pagination-left-info">
+          <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+          <select class="page-size-select" id="contentModPageSizeSelect">
+            <option value="10" ${pageSize === 10 ? "selected" : ""}>10</option>
+            <option value="25" ${pageSize === 25 ? "selected" : ""}>25</option>
+            <option value="50" ${pageSize === 50 ? "selected" : ""}>50</option>
+            <option value="75" ${pageSize === 75 ? "selected" : ""}>75</option>
+            <option value="100" ${pageSize === 100 ? "selected" : ""}>100</option>
+            <option value="500" ${pageSize === 500 ? "selected" : ""}>500</option>
+          </select>
+        </div>
+        <div class="pagination-controls">
+          <button class="page-btn" id="prevPage" ${currentPage === 1 ? "disabled" : ""}>Previous</button>
+          ${
+            totalPages > 1
+              ? Array.from(
+                  { length: totalPages },
+                  (_, i) => `
+              <button class="page-btn ${currentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
+            `,
+                ).join("")
+              : `<button class="page-btn active" data-page="1">1</button>`
+          }
+          <button class="page-btn" id="nextPage" ${currentPage === totalPages ? "disabled" : ""}>Next</button>
+        </div>
+      `;
+
+            const sizeSelect = document.querySelector(
+              "#contentModPageSizeSelect",
+            );
+            if (sizeSelect) {
+              sizeSelect.onchange = (e) => {
+                pageSize = Number(e.target.value);
+                currentPage = 1;
                 renderRows();
               };
-            });
-          const prev = document.querySelector("#prevPage");
-          if (prev)
-            prev.onclick = () => {
-              if (currentPage > 1) {
-                currentPage--;
-                renderRows();
-              }
-            };
-          const next = document.querySelector("#nextPage");
-          if (next)
-            next.onclick = () => {
-              if (currentPage < totalPages) {
-                currentPage++;
-                renderRows();
-              }
-            };
-        } else {
-          paginationBar.style.display = totalItems > 0 ? "flex" : "none";
-          paginationBar.innerHTML = `
-      <div>Showing <strong>${totalItems}</strong> of <strong>${totalItems}</strong> entries</div>
-      <div class="pagination-controls">
-        <span style="font-size:11.5px;color:var(--muted)">Page 1 of 1</span>
-      </div>
-    `;
+            }
+
+            paginationBar
+              .querySelectorAll(".pagination-controls [data-page]")
+              .forEach((btn) => {
+                btn.onclick = () => {
+                  currentPage = Number(btn.dataset.page);
+                  renderRows();
+                };
+              });
+            const prev = document.querySelector("#prevPage");
+            if (prev)
+              prev.onclick = () => {
+                if (currentPage > 1) {
+                  currentPage--;
+                  renderRows();
+                }
+              };
+            const next = document.querySelector("#nextPage");
+            if (next)
+              next.onclick = () => {
+                if (currentPage < totalPages) {
+                  currentPage++;
+                  renderRows();
+                }
+              };
+          } else {
+            paginationBar.style.display = "none";
+          }
         }
       };
 
@@ -4660,7 +6419,8 @@
               if (hiddenInput && hiddenInput.id === "incidentDateFilter") {
                 const customPanel = $("#incCustomDatePanel");
                 if (customPanel) {
-                  customPanel.style.display = hiddenInput.value === "custom" ? "flex" : "none";
+                  customPanel.style.display =
+                    hiddenInput.value === "custom" ? "flex" : "none";
                 }
               }
             }
@@ -4724,13 +6484,22 @@
               ) {
                 userCurrentPage = 1;
                 renderUserRows();
+              } else if (
+                hiddenInput &&
+                (hiddenInput.id === "staffRoleFilter" ||
+                  hiddenInput.id === "staffStatusFilter")
+              ) {
+                staffCurrentPage = 1;
+                renderStaffTable();
               }
             };
           });
         });
 
         // Apply Custom Date Range
-        const btnApplyCustomDate = document.querySelector("#btnApplyCustomDate");
+        const btnApplyCustomDate = document.querySelector(
+          "#btnApplyCustomDate",
+        );
         if (btnApplyCustomDate) {
           btnApplyCustomDate.onclick = (e) => {
             e.stopPropagation();
@@ -4740,7 +6509,9 @@
         }
 
         // Reset Custom Date Range
-        const btnResetCustomDate = document.querySelector("#btnResetCustomDate");
+        const btnResetCustomDate = document.querySelector(
+          "#btnResetCustomDate",
+        );
         if (btnResetCustomDate) {
           btnResetCustomDate.onclick = (e) => {
             e.stopPropagation();
@@ -4751,7 +6522,9 @@
 
             const wrap = document.querySelector("#incidentDateFilterWrap");
             const hiddenInput = $("#incidentDateFilter");
-            const label = wrap ? wrap.querySelector(".custom-select-label") : null;
+            const label = wrap
+              ? wrap.querySelector(".custom-select-label")
+              : null;
 
             if (hiddenInput) hiddenInput.value = "all";
             if (label) label.textContent = "All Dates";
@@ -4932,8 +6705,26 @@
       ];
 
       let keywordToDeleteIndex = null;
+      let keywordSearchQuery = "";
+      let keywordCurrentPage = 1;
+      let keywordPageSize = 10;
 
       function renderKeywordRules() {
+        const q = keywordSearchQuery.trim().toLowerCase();
+        const filtered = keywordRulesList.filter((r) => {
+          if (!q) return true;
+          return (r.title || "").toLowerCase().includes(q) || (r.pattern || "").toLowerCase().includes(q);
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / keywordPageSize) || 1;
+        if (keywordCurrentPage > totalPages) keywordCurrentPage = totalPages;
+
+        const startIndex = (keywordCurrentPage - 1) * keywordPageSize;
+        const paginated = filtered.slice(startIndex, startIndex + keywordPageSize);
+        const showingStart = totalItems === 0 ? 0 : startIndex + 1;
+        const showingEnd = Math.min(startIndex + keywordPageSize, totalItems);
+
         keywordPage.innerHTML = `
     <div class="card">
       <div class="card-header-bar">
@@ -4943,33 +6734,116 @@
         </div>
         <button class="add-keyword-btn" id="addKeywordBtn">+ Add Keyword</button>
       </div>
+      <div class="filters">
+        <input class="search" id="keywordSearchInput" placeholder="Search keywords..." value="${keywordSearchQuery}" />
+      </div>
       <table class="table">
         <thead>
           <tr>
             <th style="width:50%">Keyword</th>
             <th style="width:30%">Detected Count</th>
-            <th style="width:20%">Actions</th>
+            <th style="width:20%;text-align:right">Actions</th>
           </tr>
         </thead>
         <tbody>
-          ${keywordRulesList
-            .map(
-              (r, i) => `
+          ${
+            paginated.length === 0
+              ? `<tr><td colspan="3" class="empty" style="padding: 36px; text-align: center; color: var(--muted)">No keyword rules found matching "${keywordSearchQuery}".</td></tr>`
+              : paginated
+                  .map(
+                    (r, i) => `
             <tr>
-              <td><span style="font-size:13.5px;color:var(--text)">${r.title}</span></td>
+              <td><span style="font-size:13.5px;color:var(--text);font-weight:500">${r.title}</span></td>
               <td style="color:var(--text)">${r.detected}</td>
-              <td>
-                <button class="action-icon-btn delete-icon-btn delete-keyword" data-index="${i}" aria-label="Delete Keyword Rule">
+              <td style="text-align:right">
+                <button class="action-icon-btn delete-icon-btn delete-keyword" data-title="${r.title}" aria-label="Delete Keyword Rule">
                   <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 </button>
               </td>
             </tr>
           `,
-            )
-            .join("")}
+                  )
+                  .join("")
+          }
         </tbody>
       </table>
+
+      <!-- Unified Bottom Pagination -->
+      <div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 10px">
+        <div class="pagination-left-info" style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted)">
+          <span>Showing <strong>${showingStart}–${showingEnd}</strong> of <strong>${totalItems}</strong> records</span>
+          <select class="page-size-select" id="keywordPageSizeSelect">
+            ${[10, 25, 50, 75, 100, 500]
+              .map(
+                (sz) =>
+                  `<option value="${sz}" ${keywordPageSize === sz ? "selected" : ""}>${sz}</option>`,
+              )
+              .join("")}
+          </select>
+        </div>
+        <div class="pages" style="display: flex; gap: 6px">
+          <button class="page-btn prev-btn" id="kwPrevBtn" ${keywordCurrentPage === 1 ? "disabled" : ""}>Previous</button>
+          ${Array.from({ length: totalPages }, (_, idx) => idx + 1)
+            .map(
+              (p) =>
+                `<button class="page-btn num-btn ${p === keywordCurrentPage ? "active" : ""}" data-page="${p}">${p}</button>`,
+            )
+            .join("")}
+          <button class="page-btn next-btn" id="kwNextBtn" ${keywordCurrentPage === totalPages || totalPages === 0 ? "disabled" : ""}>Next</button>
+        </div>
+      </div>
     </div>`;
+
+        // Search Input Handler
+        const searchInput = keywordPage.querySelector("#keywordSearchInput");
+        if (searchInput) {
+          searchInput.oninput = (e) => {
+            keywordSearchQuery = e.target.value;
+            keywordCurrentPage = 1;
+            renderKeywordRules();
+            const reFocus = keywordPage.querySelector("#keywordSearchInput");
+            if (reFocus) {
+              reFocus.focus();
+              reFocus.setSelectionRange(reFocus.value.length, reFocus.value.length);
+            }
+          };
+        }
+
+        // Page Size Select Handler
+        const pageSizeSelect = keywordPage.querySelector("#keywordPageSizeSelect");
+        if (pageSizeSelect) {
+          pageSizeSelect.onchange = (e) => {
+            keywordPageSize = Number(e.target.value);
+            keywordCurrentPage = 1;
+            renderKeywordRules();
+          };
+        }
+
+        // Pagination Navigation Handlers
+        const kwPrev = keywordPage.querySelector("#kwPrevBtn");
+        if (kwPrev) {
+          kwPrev.onclick = () => {
+            if (keywordCurrentPage > 1) {
+              keywordCurrentPage--;
+              renderKeywordRules();
+            }
+          };
+        }
+        const kwNext = keywordPage.querySelector("#kwNextBtn");
+        if (kwNext) {
+          kwNext.onclick = () => {
+            if (keywordCurrentPage < totalPages) {
+              keywordCurrentPage++;
+              renderKeywordRules();
+            }
+          };
+        }
+        keywordPage.querySelectorAll(".num-btn").forEach((btn) => {
+          btn.onclick = () => {
+            keywordCurrentPage = Number(btn.dataset.page);
+            renderKeywordRules();
+          };
+        });
 
         // Add Keyword Button Handler
         const addBtn = keywordPage.querySelector("#addKeywordBtn");
@@ -4993,7 +6867,9 @@
         // Delete Keyword Buttons
         keywordPage.querySelectorAll(".delete-keyword").forEach((b) => {
           b.onclick = () => {
-            const idx = Number(b.dataset.index);
+            const title = b.dataset.title;
+            const idx = keywordRulesList.findIndex((k) => k.title === title);
+            if (idx === -1) return;
             const kw = keywordRulesList[idx];
             keywordToDeleteIndex = idx;
             action = "delete_keyword";
@@ -5156,7 +7032,7 @@
           status: "Submitted",
           visibility: "Public",
           location: "Hackney, London",
-          submitted: "Aug 27, 2026 · 09:41 AM",
+          submitted: "Aug 27, 2026  09:41 AM",
           story:
             'Third time this month. The officer said I "matched a description" and would not repeat it when I asked twice. I was held against the wall by the entry door for about eleven minutes while neighbours walked past.\n\nI told him I live here and offered my post. He said people like me always say that, and that if I kept talking he would find a reason. I want this on record because the same two officers work this street every week.',
           assignee: "Unassigned",
@@ -5176,7 +7052,7 @@
           notes: [
             {
               author: "System",
-              date: "Aug 27, 2026 · 09:41 AM",
+              date: "Aug 27, 2026  09:41 AM",
               text: "Incident submitted by verified user.",
             },
           ],
@@ -5189,12 +7065,12 @@
           status: "Under Review",
           visibility: "Private",
           location: "London",
-          submitted: "Aug 26, 2026 · 02:15 PM",
+          submitted: "Aug 26, 2026  02:15 PM",
           story:
             "Documenting systemic exclusion from senior management reviews despite meeting all performance criteria. HR dismissed the internal complaint without investigation.",
           assignee: "Advocate Sarah Miller",
           assignedRole: "Advocate",
-          assignedAt: "26 Aug 2026 · 14:15",
+          assignedAt: "26 Aug 2026  14:15",
           evidence: [
             {
               type: "PDF",
@@ -5210,7 +7086,7 @@
           notes: [
             {
               author: "Advocate Sarah Miller",
-              date: "Aug 26, 2026 · 04:00 PM",
+              date: "Aug 26, 2026  04:00 PM",
               text: "Contacted client for employment contract verification.",
             },
           ],
@@ -5223,12 +7099,12 @@
           status: "Verified",
           visibility: "Public",
           location: "New York",
-          submitted: "Aug 25, 2026 · 11:30 AM",
+          submitted: "Aug 25, 2026  11:30 AM",
           story:
             "Hospital triage nurse refused immediate intake and made discriminatory remarks regarding insurance status and race. Treatment delayed by 3 hours.",
           assignee: "Advocate Jason Ross",
           assignedRole: "Advocate",
-          assignedAt: "25 Aug 2026 · 11:45",
+          assignedAt: "25 Aug 2026  11:45",
           evidence: [
             { type: "IMG", name: "er-wristband.jpg", meta: "Image · 1.9 MB" },
             {
@@ -5240,12 +7116,12 @@
           notes: [
             {
               author: "Advocate Jason Ross",
-              date: "Aug 25, 2026 · 01:20 PM",
+              date: "Aug 25, 2026  01:20 PM",
               text: "Hospital records verified. Hospital oversight board contacted.",
             },
             {
               author: "Moderator M. Kaur",
-              date: "Aug 25, 2026 · 02:00 PM",
+              date: "Aug 25, 2026  02:00 PM",
               text: "Marked as Verified.",
             },
           ],
@@ -5258,7 +7134,7 @@
           status: "Submitted",
           visibility: "Public",
           location: "Birmingham, UK",
-          submitted: "Aug 24, 2026 · 08:20 PM",
+          submitted: "Aug 24, 2026  08:20 PM",
           story:
             "Repeated harassment and intimidation by two passengers on the metro bus line. Security personnel failed to intervene.",
           assignee: "Unassigned",
@@ -5277,12 +7153,12 @@
           status: "Under Review",
           visibility: "Private",
           location: "Chicago, US",
-          submitted: "Aug 24, 2026 · 03:10 PM",
+          submitted: "Aug 24, 2026  03:10 PM",
           story:
             "Campus security detained and searched my backpack without probable cause while allowing other students through without inspection.",
           assignee: "Moderator David Lee",
           assignedRole: "Moderator",
-          assignedAt: "24 Aug 2026 · 15:30",
+          assignedAt: "24 Aug 2026  15:30",
           evidence: [
             {
               type: "IMG",
@@ -5293,7 +7169,7 @@
           notes: [
             {
               author: "Moderator David Lee",
-              date: "Aug 24, 2026 · 04:30 PM",
+              date: "Aug 24, 2026  04:30 PM",
               text: "Requesting statement from student union representative.",
             },
           ],
@@ -5306,12 +7182,12 @@
           status: "Dismissed",
           visibility: "Public",
           location: "Manchester, UK",
-          submitted: "Aug 23, 2026 · 10:45 AM",
+          submitted: "Aug 23, 2026  10:45 AM",
           story:
             "Landlord served a handwritten 24-hour notice without court authorization or contractual violation.",
           assignee: "Moderator M. Kaur",
           assignedRole: "Moderator",
-          assignedAt: "23 Aug 2026 · 11:00",
+          assignedAt: "23 Aug 2026  11:00",
           evidence: [
             {
               type: "PDF",
@@ -5322,7 +7198,7 @@
           notes: [
             {
               author: "Moderator M. Kaur",
-              date: "Aug 23, 2026 · 12:00 PM",
+              date: "Aug 23, 2026  12:00 PM",
               text: "Dismissed: Tenant and landlord resolved dispute via rental authority mediation.",
             },
           ],
@@ -5335,12 +7211,12 @@
           status: "Verified",
           visibility: "Public",
           location: "London, UK",
-          submitted: "Aug 22, 2026 · 01:15 PM",
+          submitted: "Aug 22, 2026  01:15 PM",
           story:
             "Disciplinary panel denied right to legal representation and passed unilateral suspension without hearing evidence.",
           assignee: "Advocate Sarah Miller",
           assignedRole: "Advocate",
-          assignedAt: "22 Aug 2026 · 13:40",
+          assignedAt: "22 Aug 2026  13:40",
           evidence: [
             {
               type: "PDF",
@@ -5356,7 +7232,7 @@
           notes: [
             {
               author: "Advocate Sarah Miller",
-              date: "Aug 22, 2026 · 03:00 PM",
+              date: "Aug 22, 2026  03:00 PM",
               text: "Hearing transcript confirmed due process breach.",
             },
           ],
@@ -5369,7 +7245,7 @@
           status: "Submitted",
           visibility: "Public",
           location: "New York, US",
-          submitted: "Aug 21, 2026 · 04:00 PM",
+          submitted: "Aug 21, 2026  04:00 PM",
           story:
             "Mortgage application rejected despite superior credit score and 30% down payment, while identical profiles in adjacent zip codes were approved.",
           assignee: "Unassigned",
@@ -5397,12 +7273,12 @@
           status: "Under Review",
           visibility: "Private",
           location: "Vancouver, Canada",
-          submitted: "Aug 20, 2026 · 09:30 AM",
+          submitted: "Aug 20, 2026  09:30 AM",
           story:
             "Personal home address and phone numbers leaked across community discussion boards following an activist event.",
           assignee: "Moderator David Lee",
           assignedRole: "Moderator",
-          assignedAt: "20 Aug 2026 · 10:00",
+          assignedAt: "20 Aug 2026  10:00",
           evidence: [
             {
               type: "IMG",
@@ -5420,12 +7296,12 @@
           status: "Verified",
           visibility: "Public",
           location: "Toronto, Canada",
-          submitted: "Aug 19, 2026 · 06:15 PM",
+          submitted: "Aug 19, 2026  06:15 PM",
           story:
             "Fired 48 hours after submitting written OSHA compliance concern regarding warehouse machinery.",
           assignee: "Advocate Jason Ross",
           assignedRole: "Advocate",
-          assignedAt: "19 Aug 2026 · 18:30",
+          assignedAt: "19 Aug 2026  18:30",
           evidence: [
             {
               type: "PDF",
@@ -5441,7 +7317,7 @@
           notes: [
             {
               author: "Advocate Jason Ross",
-              date: "Aug 19, 2026 · 08:00 PM",
+              date: "Aug 19, 2026  08:00 PM",
               text: "Whistleblower protection claim verified with labour counsel.",
             },
           ],
@@ -5454,17 +7330,17 @@
           status: "Deactivated",
           visibility: "Private",
           location: "Dublin, Ireland",
-          submitted: "Aug 19, 2026 · 11:20 AM",
+          submitted: "Aug 19, 2026  11:20 AM",
           story:
             "Initial occupational safety hazard report. Case deactivated following formal settlement between union and company.",
           assignee: "Moderator M. Kaur",
           assignedRole: "Moderator",
-          assignedAt: "19 Aug 2026 · 11:30",
+          assignedAt: "19 Aug 2026  11:30",
           evidence: [],
           notes: [
             {
               author: "Lead Admin",
-              date: "Aug 19, 2026 · 02:00 PM",
+              date: "Aug 19, 2026  02:00 PM",
               text: "Incident deactivated. Reason: Reporter requested removal after union agreement.",
             },
           ],
@@ -5514,7 +7390,7 @@
 
           // Date filter logic
           if (dateFilter !== "all") {
-            // Parse submitted date (e.g. 'Aug 27, 2026 · 09:41 AM')
+            // Parse submitted date (e.g. 'Aug 27, 2026  09:41 AM')
             const datePart = item.submitted.split("·")[0].trim();
             const itemDate = new Date(datePart);
             const diffDays = (now - itemDate) / (1000 * 60 * 60 * 24);
@@ -5608,7 +7484,7 @@
             .map((item) => {
               const statusKey = item.status.toLowerCase().replace(" ", "_");
               const rawDate = item.submitted || "";
-              const dateParts = rawDate.split(" · ");
+              const dateParts = rawDate.split(/  | · /);
               const formattedDate =
                 dateParts.length === 2
                   ? `<div>${dateParts[0]}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${dateParts[1]}</div>`
@@ -5641,55 +7517,79 @@
             b.onclick = () => openCaseDetails(b.dataset.id);
           });
 
-          if (totalItems > incPageSize) {
-            paginationBar.style.display = "flex";
-            paginationBar.innerHTML = `
-        <div>Showing <strong>${startIndex + 1}</strong> to <strong>${Math.min(startIndex + incPageSize, totalItems)}</strong> of <strong>${totalItems}</strong> entries</div>
-        <div class="pagination-controls">
-          <button class="page-btn" id="prevIncPage" ${incidentPage === 1 ? "disabled" : ""}>Previous</button>
-          ${Array.from(
-            { length: totalPages },
-            (_, i) => `
-            <button class="page-btn ${incidentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
-          `,
-          ).join("")}
-          <button class="page-btn" id="nextIncPage" ${incidentPage === totalPages ? "disabled" : ""}>Next</button>
-        </div>
-      `;
+          if (paginationBar) {
+            if (totalItems > 0) {
+              paginationBar.style.display = "flex";
+              const startRecord = startIndex + 1;
+              const endRecord = Math.min(startIndex + incPageSize, totalItems);
 
-            paginationBar
-              .querySelectorAll(".pagination-controls [data-page]")
-              .forEach((btn) => {
-                btn.onclick = () => {
-                  incidentPage = Number(btn.dataset.page);
+              paginationBar.innerHTML = `
+          <div class="pagination-left-info">
+            <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+            <select class="page-size-select" id="incidentPageSizeSelect">
+              <option value="10" ${incPageSize === 10 ? "selected" : ""}>10</option>
+              <option value="25" ${incPageSize === 25 ? "selected" : ""}>25</option>
+              <option value="50" ${incPageSize === 50 ? "selected" : ""}>50</option>
+              <option value="75" ${incPageSize === 75 ? "selected" : ""}>75</option>
+              <option value="100" ${incPageSize === 100 ? "selected" : ""}>100</option>
+              <option value="500" ${incPageSize === 500 ? "selected" : ""}>500</option>
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button class="page-btn" id="prevIncPage" ${incidentPage === 1 ? "disabled" : ""}>Previous</button>
+            ${
+              totalPages > 1
+                ? Array.from(
+                    { length: totalPages },
+                    (_, i) => `
+                <button class="page-btn ${incidentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
+              `,
+                  ).join("")
+                : `<button class="page-btn active" data-page="1">1</button>`
+            }
+            <button class="page-btn" id="nextIncPage" ${incidentPage === totalPages ? "disabled" : ""}>Next</button>
+          </div>
+        `;
+
+              const sizeSelect = document.querySelector(
+                "#incidentPageSizeSelect",
+              );
+              if (sizeSelect) {
+                sizeSelect.onchange = (e) => {
+                  incPageSize = Number(e.target.value);
+                  incidentPage = 1;
                   renderIncidentRows();
                 };
-              });
+              }
 
-            const prev = document.querySelector("#prevIncPage");
-            if (prev)
-              prev.onclick = () => {
-                if (incidentPage > 1) {
-                  incidentPage--;
-                  renderIncidentRows();
-                }
-              };
-            const next = document.querySelector("#nextIncPage");
-            if (next)
-              next.onclick = () => {
-                if (incidentPage < totalPages) {
-                  incidentPage++;
-                  renderIncidentRows();
-                }
-              };
-          } else {
-            paginationBar.style.display = totalItems > 0 ? "flex" : "none";
-            paginationBar.innerHTML = `
-        <div>Showing <strong>${totalItems}</strong> of <strong>${totalItems}</strong> entries</div>
-        <div class="pagination-controls">
-          <span style="font-size:11.5px;color:var(--muted)">Page 1 of 1</span>
-        </div>
-      `;
+              paginationBar
+                .querySelectorAll(".pagination-controls [data-page]")
+                .forEach((btn) => {
+                  btn.onclick = () => {
+                    incidentPage = Number(btn.dataset.page);
+                    renderIncidentRows();
+                  };
+                });
+
+              const prev = document.querySelector("#prevIncPage");
+              if (prev)
+                prev.onclick = () => {
+                  if (incidentPage > 1) {
+                    incidentPage--;
+                    renderIncidentRows();
+                  }
+                };
+              const next = document.querySelector("#nextIncPage");
+              if (next)
+                next.onclick = () => {
+                  if (incidentPage < totalPages) {
+                    incidentPage++;
+                    renderIncidentRows();
+                  }
+                };
+            } else {
+              paginationBar.style.display = "none";
+            }
           }
         }
       }
@@ -5766,13 +7666,13 @@
         // Build complete dynamic lifecycle steps based on currentIncident state
         const status = (currentIncident.status || "Submitted").toLowerCase();
         const authorName = currentIncident.author || "User";
-        const subTime = currentIncident.submitted || "Aug 27, 2026 · 09:41 AM";
+        const subTime = currentIncident.submitted || "Aug 27, 2026  09:41 AM";
         const hasAssignee =
           currentIncident.assignee && currentIncident.assignee !== "Unassigned";
         const assigneeName =
           currentIncident.assignee || "Advocate Sarah Miller";
         const assignTime =
-          currentIncident.assignedAt || "Aug 27, 2026 · 10:15 AM";
+          currentIncident.assignedAt || "Aug 27, 2026  10:15 AM";
 
         const steps = [
           {
@@ -5818,7 +7718,7 @@
           steps.push({
             title: "Verified & Shield Active",
             by: currentIncident.verifiedBy || "Moderator M. Kaur",
-            time: currentIncident.verifiedAt || "Aug 27, 2026 · 02:00 PM",
+            time: currentIncident.verifiedAt || "Aug 27, 2026  02:00 PM",
             status: "completed",
             badge: "Verified",
             color: "#059669",
@@ -5828,7 +7728,7 @@
           steps.push({
             title: "Incident Dismissed / Rejected",
             by: currentIncident.verifiedBy || "Moderator M. Kaur",
-            time: currentIncident.verifiedAt || "Aug 27, 2026 · 02:00 PM",
+            time: currentIncident.verifiedAt || "Aug 27, 2026  02:00 PM",
             status: "rejected",
             badge: "Dismissed",
             color: "#dc2626",
@@ -5956,7 +7856,7 @@
           $("#incAssignedName").textContent = cleanName;
           $("#incAssignedRole").textContent = role;
           $("#incAssignedAt").textContent =
-            currentIncident.assignedAt || "27 Aug 2026 · 10:40";
+            currentIncident.assignedAt || "27 Aug 2026  10:40";
         } else {
           assignedView.style.display = "none";
           assignForm.style.display = "block";
@@ -6274,6 +8174,7 @@
           const emailInput = $("#editUserEmail");
           const visInput = $("#editUserVisibility");
           const precInput = $("#editUserPrecision");
+          const anonToggle = $("#editUserAnonymousToggle");
 
           if (targetUserForAction && nameInput && emailInput) {
             targetUserForAction.display_name =
@@ -6284,6 +8185,8 @@
               targetUserForAction.default_visibility = visInput.value;
             if (precInput)
               targetUserForAction.default_precision = precInput.value;
+            if (anonToggle)
+              targetUserForAction.anonymous_by_default = anonToggle.checked;
 
             if (
               $("#userDetails").style.display !== "none" &&
@@ -6357,11 +8260,20 @@
           const notesInput = $("#suspendNotesInput");
 
           if (targetUserForAction && typeSelect) {
-            targetUserForAction.status = typeSelect.value;
+            const rawVal = typeSelect.value;
+            const newStatus = rawVal === "active" ? "active" : "suspended";
+            const actionLabel =
+              rawVal === "temp_suspend"
+                ? "Temporary Suspension (30 Days)"
+                : rawVal === "indefinite_suspend"
+                  ? "Indefinite Suspension"
+                  : "Reactivated";
+
+            targetUserForAction.status = newStatus;
             const noteText = notesInput ? notesInput.value.trim() : "";
             const reasonText = reasonSelect ? reasonSelect.value : "";
             if (noteText || reasonText) {
-              targetUserForAction.notes = `Status set to ${typeSelect.value} (${reasonText})${noteText ? ": " + noteText : ""}`;
+              targetUserForAction.notes = `Action: ${actionLabel} (${reasonText})${noteText ? ": " + noteText : ""}`;
             }
             if (
               $("#userDetails").style.display !== "none" &&
@@ -6548,8 +8460,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "May 12, 2026 · 10:30 AM",
-          last_login_at: "Aug 31, 2026 · 09:41 AM",
+          created_at: "May 12, 2026  10:30 AM",
+          last_login_at: "Aug 31, 2026  09:41 AM",
           notes:
             "Verified civil rights community advocate for London East jurisdiction.",
           incidents: [
@@ -6558,14 +8470,14 @@
               title: "Stopped and searched outside my own building",
               category: "Policing",
               status: "Public",
-              submitted: "Aug 27, 2026 · 09:41 AM",
+              submitted: "Aug 27, 2026  09:41 AM",
             },
             {
               id: "INC-20455",
               title: "Discriminatory tenancy notice received without cause",
               category: "Housing",
               status: "Verified",
-              submitted: "Aug 14, 2026 · 02:15 PM",
+              submitted: "Aug 14, 2026  02:15 PM",
             },
           ],
         },
@@ -6581,8 +8493,8 @@
           default_precision: "exact",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "Apr 01, 2026 · 08:20 AM",
-          last_login_at: "Aug 31, 2026 · 11:35 AM",
+          created_at: "Apr 01, 2026  08:20 AM",
+          last_login_at: "Aug 31, 2026  11:35 AM",
           notes:
             "Lead pro-bono labor legal advocate. Handling active workplace cases.",
           incidents: [
@@ -6591,7 +8503,7 @@
               title: "Workplace harassment report",
               category: "Workplace",
               status: "Private",
-              submitted: "Aug 31, 2026 · 09:48 AM",
+              submitted: "Aug 31, 2026  09:48 AM",
             },
           ],
         },
@@ -6607,8 +8519,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: false,
-          created_at: "Jun 18, 2026 · 02:10 PM",
-          last_login_at: "Aug 31, 2026 · 11:15 AM",
+          created_at: "Jun 18, 2026  02:10 PM",
+          last_login_at: "Aug 31, 2026  11:15 AM",
           notes:
             "Suspended for threatening comments on community threads (CMT-90412).",
           incidents: [],
@@ -6625,8 +8537,8 @@
           default_precision: "exact",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "May 20, 2026 · 11:00 AM",
-          last_login_at: "Aug 31, 2026 · 08:30 AM",
+          created_at: "May 20, 2026  11:00 AM",
+          last_login_at: "Aug 31, 2026  08:30 AM",
           notes: "Regular community contributor.",
           incidents: [
             {
@@ -6634,7 +8546,7 @@
               title: "Targeted verbal abuse and slurs at public park",
               category: "Abuse",
               status: "Public",
-              submitted: "Aug 31, 2026 · 08:30 AM",
+              submitted: "Aug 31, 2026  08:30 AM",
             },
           ],
         },
@@ -6650,8 +8562,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "Jan 15, 2026 · 09:00 AM",
-          last_login_at: "Aug 31, 2026 · 12:00 PM",
+          created_at: "Jan 15, 2026  09:00 AM",
+          last_login_at: "Aug 31, 2026  12:00 PM",
           notes: "Regional queue moderation team member.",
           incidents: [],
         },
@@ -6667,8 +8579,8 @@
           default_precision: "hidden",
           anonymous_by_default: true,
           notifications_enabled: true,
-          created_at: "Jul 04, 2026 · 04:45 PM",
-          last_login_at: "Aug 29, 2026 · 03:12 PM",
+          created_at: "Jul 04, 2026  04:45 PM",
+          last_login_at: "Aug 29, 2026  03:12 PM",
           notes: "",
           incidents: [
             {
@@ -6677,7 +8589,7 @@
                 "Unlawful surveillance camera installation opposite bedroom window",
               category: "Privacy",
               status: "Under Review",
-              submitted: "Aug 29, 2026 · 03:12 PM",
+              submitted: "Aug 29, 2026  03:12 PM",
             },
           ],
         },
@@ -6693,8 +8605,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "Mar 10, 2026 · 12:00 PM",
-          last_login_at: "Aug 28, 2026 · 01:20 PM",
+          created_at: "Mar 10, 2026  12:00 PM",
+          last_login_at: "Aug 28, 2026  01:20 PM",
           notes: "",
           incidents: [
             {
@@ -6703,7 +8615,7 @@
                 "Security guard refusal of entry based on racial profiling",
               category: "Discrimination",
               status: "Submitted",
-              submitted: "Aug 28, 2026 · 01:20 PM",
+              submitted: "Aug 28, 2026  01:20 PM",
             },
           ],
         },
@@ -6719,8 +8631,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: false,
-          created_at: "Feb 11, 2026 · 09:15 AM",
-          last_login_at: "Jul 15, 2026 · 11:20 AM",
+          created_at: "Feb 11, 2026  09:15 AM",
+          last_login_at: "Jul 15, 2026  11:20 AM",
           notes:
             "Account soft-deleted per user request under GDPR Right to Erasure.",
           incidents: [],
@@ -6737,8 +8649,8 @@
           default_precision: "exact",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "Jun 01, 2026 · 10:00 AM",
-          last_login_at: "Aug 30, 2026 · 05:40 PM",
+          created_at: "Jun 01, 2026  10:00 AM",
+          last_login_at: "Aug 30, 2026  05:40 PM",
           notes: "",
           incidents: [],
         },
@@ -6754,8 +8666,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "Feb 28, 2026 · 02:30 PM",
-          last_login_at: "Aug 26, 2026 · 04:10 PM",
+          created_at: "Feb 28, 2026  02:30 PM",
+          last_login_at: "Aug 26, 2026  04:10 PM",
           notes: "",
           incidents: [],
         },
@@ -6771,8 +8683,8 @@
           default_precision: "approximate",
           anonymous_by_default: false,
           notifications_enabled: true,
-          created_at: "May 05, 2026 · 08:45 AM",
-          last_login_at: "Aug 31, 2026 · 10:00 AM",
+          created_at: "May 05, 2026  08:45 AM",
+          last_login_at: "Aug 31, 2026  10:00 AM",
           notes: "",
           incidents: [],
         },
@@ -6788,8 +8700,8 @@
           default_precision: "hidden",
           anonymous_by_default: true,
           notifications_enabled: false,
-          created_at: "Aug 01, 2026 · 12:00 PM",
-          last_login_at: "Aug 25, 2026 · 06:15 PM",
+          created_at: "Aug 01, 2026  12:00 PM",
+          last_login_at: "Aug 25, 2026  06:15 PM",
           notes:
             "Suspended for automated spam and promotional link distribution.",
           incidents: [],
@@ -6864,20 +8776,6 @@
 
         return allUsers
           .filter((u) => {
-            // Tab filter
-            if (userActiveTab === "Active" && u.status !== "active")
-              return false;
-            if (userActiveTab === "Advocates" && u.role !== "advocate")
-              return false;
-            if (userActiveTab === "Moderators" && u.role !== "moderator")
-              return false;
-            if (
-              userActiveTab === "Suspended / Banned" &&
-              u.status !== "suspended" &&
-              u.status !== "deleted"
-            )
-              return false;
-
             // Role dropdown
             if (roleVal !== "All" && u.role !== roleVal) return false;
 
@@ -6911,21 +8809,25 @@
         const bulkBar = document.querySelector("#userBulkBar");
         const countSpan = document.querySelector("#bulkSelectedCount");
         const selectAllCb = document.querySelector("#selectAllUsersCheckbox");
+        const bulkMasterCb = document.querySelector("#bulkBarMasterCheckbox");
         if (!bulkBar || !countSpan) return;
 
         const count = selectedUserIds.size;
+        const filtered = getFilteredUsers();
+        const isAllSelected =
+          filtered.length > 0 && filtered.every((u) => selectedUserIds.has(u.id));
+
         if (count > 0) {
           bulkBar.style.display = "flex";
           countSpan.textContent = count;
+          if (bulkMasterCb) bulkMasterCb.checked = isAllSelected || count > 0;
         } else {
           bulkBar.style.display = "none";
+          if (bulkMasterCb) bulkMasterCb.checked = false;
         }
 
-        const filtered = getFilteredUsers();
         if (selectAllCb) {
-          selectAllCb.checked =
-            filtered.length > 0 &&
-            filtered.every((u) => selectedUserIds.has(u.id));
+          selectAllCb.checked = isAllSelected;
         }
       }
 
@@ -6962,7 +8864,7 @@
             const incCount = u.incidents ? u.incidents.length : 0;
             const isVerified = Boolean(u.email_verified_at);
             const rawDate = u.created_at || "";
-            const dateParts = rawDate.split(" · ");
+            const dateParts = rawDate.split(/  | · /);
             const formattedDate =
               dateParts.length === 2
                 ? `<div>${dateParts[0]}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${dateParts[1]}</div>`
@@ -6974,12 +8876,9 @@
           <input type="checkbox" class="user-row-cb" data-id="${u.id}" ${isChecked ? "checked" : ""} style="cursor:pointer" />
         </td>
         <td>
-          <div style="display:flex;align-items:center">
-            <span class="user-avatar-badge">${initials}</span>
-            <div style="min-width:0;flex:1">
-              <span class="title-truncate user-view-trigger" data-id="${u.id}" style="font-size:13.5px">${u.display_name}</span>
-              <span class="sub" style="font-size:11px;color:var(--muted);margin-top:2px">${u.id}</span>
-            </div>
+          <div style="min-width:0">
+            <span class="title-truncate user-view-trigger" data-id="${u.id}" style="font-size:13.5px">${u.display_name}</span>
+            <span class="sub" style="font-size:11px;color:var(--muted);margin-top:2px;display:block">${u.id}</span>
           </div>
         </td>
         <td>
@@ -7039,21 +8938,47 @@
 
         // Pagination bar
         if (paginationBar) {
-          if (totalItems > userPageSize) {
+          if (totalItems > 0) {
             paginationBar.style.display = "flex";
+            const startRecord = startIndex + 1;
+            const endRecord = Math.min(startIndex + userPageSize, totalItems);
+
             paginationBar.innerHTML = `
-        <div>Showing <strong>${startIndex + 1}</strong> to <strong>${Math.min(startIndex + userPageSize, totalItems)}</strong> of <strong>${totalItems}</strong> entries</div>
+        <div class="pagination-left-info">
+          <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+          <select class="page-size-select" id="userPageSizeSelect">
+            <option value="10" ${userPageSize === 10 ? "selected" : ""}>10</option>
+            <option value="25" ${userPageSize === 25 ? "selected" : ""}>25</option>
+            <option value="50" ${userPageSize === 50 ? "selected" : ""}>50</option>
+            <option value="75" ${userPageSize === 75 ? "selected" : ""}>75</option>
+            <option value="100" ${userPageSize === 100 ? "selected" : ""}>100</option>
+            <option value="500" ${userPageSize === 500 ? "selected" : ""}>500</option>
+          </select>
+        </div>
         <div class="pagination-controls">
           <button class="page-btn" id="prevUserPage" ${userCurrentPage === 1 ? "disabled" : ""}>Previous</button>
-          ${Array.from(
-            { length: totalPages },
-            (_, i) => `
-            <button class="page-btn ${userCurrentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
-          `,
-          ).join("")}
+          ${
+            totalPages > 1
+              ? Array.from(
+                  { length: totalPages },
+                  (_, i) => `
+              <button class="page-btn ${userCurrentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
+            `,
+                ).join("")
+              : `<button class="page-btn active" data-page="1">1</button>`
+          }
           <button class="page-btn" id="nextUserPage" ${userCurrentPage === totalPages ? "disabled" : ""}>Next</button>
         </div>
       `;
+
+            const sizeSelect = document.querySelector("#userPageSizeSelect");
+            if (sizeSelect) {
+              sizeSelect.onchange = (e) => {
+                userPageSize = Number(e.target.value);
+                userCurrentPage = 1;
+                renderUserRows();
+              };
+            }
 
             paginationBar
               .querySelectorAll(".pagination-controls [data-page]")
@@ -7081,13 +9006,7 @@
                 }
               };
           } else {
-            paginationBar.style.display = totalItems > 0 ? "flex" : "none";
-            paginationBar.innerHTML = `
-        <div>Showing <strong>${totalItems}</strong> of <strong>${totalItems}</strong> entries</div>
-        <div class="pagination-controls">
-          <span style="font-size:11.5px;color:var(--muted)">Page 1 of 1</span>
-        </div>
-      `;
+            paginationBar.style.display = "none";
           }
         }
 
@@ -7106,7 +9025,17 @@
         $("#userDetailRolePill").textContent = currentUser.role;
         $("#userDetailRolePill").className = `role-pill ${currentUser.role}`;
 
+        const initials = (currentUser.display_name || "U")
+          .split(" ")
+          .map((w) => w[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase();
+
         $("#userProfName").textContent = currentUser.display_name;
+        if ($("#userProfAvatarBadge")) {
+          $("#userProfAvatarBadge").textContent = initials;
+        }
         $("#userProfEmailText").textContent = currentUser.email;
         $("#userProfVerified").style.display = currentUser.email_verified_at
           ? "inline"
@@ -7221,7 +9150,6 @@
             actionsBox.innerHTML = `
         <button class="btn outline" id="btnEditUserProfile" style="width:100%;justify-content:center">Edit Profile Info</button>
         <button class="btn outline" id="btnChangeUserRole" style="width:100%;justify-content:center">Change User Role</button>
-        <button class="btn outline" id="btnRevokeUserSessions" style="width:100%;justify-content:center;color:var(--text)">Revoke All Active Sessions</button>
         <button class="btn outline" id="btnSuspendUser" style="width:100%;justify-content:center;color:#d97706;border-color:#fcd34d">Suspend / Ban User</button>
         <button class="btn danger" id="btnDeleteUserAccount" style="width:100%;justify-content:center">Delete Account</button>
       `;
@@ -7231,9 +9159,6 @@
             if ($("#btnChangeUserRole"))
               $("#btnChangeUserRole").onclick = () =>
                 openChangeRoleModal(currentUser.id);
-            if ($("#btnRevokeUserSessions"))
-              $("#btnRevokeUserSessions").onclick = () =>
-                openRevokeSessionsModal(currentUser.id);
             if ($("#btnSuspendUser"))
               $("#btnSuspendUser").onclick = () =>
                 openSuspendUserModal(currentUser.id);
@@ -7271,7 +9196,7 @@
         btnBackToUsers.onclick = () => showUserQueuePage();
       }
 
-      // Select all users checkbox handler
+      // Select all users checkbox handler (Table Header)
       const selectAllUsersCb = document.querySelector(
         "#selectAllUsersCheckbox",
       );
@@ -7287,11 +9212,16 @@
         };
       }
 
-      // Bulk deselect handler
-      const btnBulkDeselect = document.querySelector("#btnBulkDeselect");
-      if (btnBulkDeselect) {
-        btnBulkDeselect.onclick = () => {
-          selectedUserIds.clear();
+      // Bulk Bar Master Checkbox handler
+      const bulkBarMasterCb = document.querySelector("#bulkBarMasterCheckbox");
+      if (bulkBarMasterCb) {
+        bulkBarMasterCb.onchange = () => {
+          const filtered = getFilteredUsers();
+          if (bulkBarMasterCb.checked) {
+            filtered.forEach((u) => selectedUserIds.add(u.id));
+          } else {
+            selectedUserIds.clear();
+          }
           renderUserRows();
         };
       }
@@ -7314,8 +9244,10 @@
       // ═════════════════════════════════════════════════════════════════════════════════
 
       function createCustomSelectHTML(id, options, selectedValue) {
-        const selectedOpt =
-          options.find((o) => o.value === selectedValue) || options[0];
+        const selectedIndex = options.findIndex((o) => o.value === selectedValue);
+        const actualIndex = selectedIndex >= 0 ? selectedIndex : 0;
+        const selectedOpt = options[actualIndex];
+
         return `
     <div class="custom-select-wrap" style="width:100%">
       <div class="custom-select-trigger" tabindex="0" style="width:100%;box-sizing:border-box">
@@ -7325,8 +9257,8 @@
       <div class="custom-select-menu" style="width:100%;box-sizing:border-box;z-index:10000">
         ${options
           .map(
-            (opt) => `
-          <div class="custom-select-option ${opt.value === selectedOpt.value ? "selected" : ""}" data-value="${opt.value}">
+            (opt, idx) => `
+          <div class="custom-select-option ${idx === actualIndex ? "selected" : ""}" data-value="${opt.value}">
             ${opt.label}
           </div>
         `,
@@ -7344,6 +9276,12 @@
 
         action = "edit_user_profile";
         const isVerified = Boolean(targetUserForAction.email_verified_at);
+        const initials = (targetUserForAction.display_name || "U")
+          .split(" ")
+          .map((w) => w[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase();
 
         const visOptions = [
           { value: "trusted", label: "Trusted Circle (Verified Advocates)" },
@@ -7362,6 +9300,11 @@
           "Update account details, profile display name, and default visibility preferences.";
         $("#form").innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:center;align-items:center;padding:4px 0 6px">
+        <div class="user-avatar-badge" id="modalUserAvatarPreview" style="width:54px;height:54px;font-size:20px;font-weight:700;margin:0;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+          ${initials}
+        </div>
+      </div>
       <div>
         <label style="margin-top:0">Display Name</label>
         <input type="text" id="editUserDisplayName" value="${targetUserForAction.display_name}" style="width:100%" />
@@ -7382,12 +9325,36 @@
         <label style="margin-top:0">Location Precision</label>
         ${createCustomSelectHTML("editUserPrecision", precOptions, targetUserForAction.default_precision || "approximate")}
       </div>
+      <div class="switch-toggle-row">
+        <div>
+          <div class="switch-toggle-label">Stay Anonymous by Default</div>
+          <div class="switch-toggle-sub">Hide display name and identity automatically on submitted incident reports</div>
+        </div>
+        <label class="switch-toggle">
+          <input type="checkbox" id="editUserAnonymousToggle" ${targetUserForAction.anonymous_by_default ? "checked" : ""} />
+          <span class="switch-slider"></span>
+        </label>
+      </div>
     </div>
   `;
         $("#confirm").textContent = "Save Profile";
         $("#confirm").className = "btn primary";
         $("#confirm").style.background = "";
         openModal();
+
+        const nameInput = $("#editUserDisplayName");
+        const avatarPreview = $("#modalUserAvatarPreview");
+        if (nameInput && avatarPreview) {
+          nameInput.addEventListener("input", () => {
+            const typedInitials = (nameInput.value.trim() || "U")
+              .split(" ")
+              .map((w) => w[0])
+              .slice(0, 2)
+              .join("")
+              .toUpperCase();
+            avatarPreview.textContent = typedInitials;
+          });
+        }
       }
 
       function openChangeRoleModal(id) {
@@ -7434,8 +9401,8 @@
 
         action = "suspend_user";
         const typeOptions = [
-          { value: "suspended", label: "Temporary Suspension (30 Days)" },
-          { value: "suspended", label: "Indefinite Suspension" },
+          { value: "temp_suspend", label: "Temporary Suspension (30 Days)" },
+          { value: "indefinite_suspend", label: "Indefinite Suspension" },
           { value: "active", label: "Reactivate Account" },
         ];
 
@@ -7548,8 +9515,7 @@
         const dispOptions = [
           {
             value: "sever",
-            label:
-              "Sever Identity & Preserve Reports Anonymously (Recommended)",
+            label: "Sever Identity & Preserve Reports Anonymously",
           },
           {
             value: "purge",
@@ -7560,23 +9526,71 @@
         $("#modalTitle").textContent =
           `Delete Account: ${targetUserForAction.display_name}`;
         $("#modalText").textContent =
-          `Select how existing community reports and account data should be handled under GDPR Article 17 compliance.`;
+          `Permanent deletion workflow under GDPR Article 17 compliance.`;
         $("#form").innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
       <div>
         <label style="margin-top:0">Deletion Disposition</label>
         ${createCustomSelectHTML("deleteDispositionSelect", dispOptions, "sever")}
       </div>
-      <div style="font-size:12px;color:var(--muted);background:var(--accent-soft);padding:10px 12px;border-radius:8px;line-height:1.4">
-        • <strong>Sever Identity:</strong> Erases personal data (email, name, password) but preserves ${incCount} report(s) under "Anonymous Record" for ongoing community defense.<br>
-        • <strong>Hard Purge:</strong> Permanently deletes account, comments, and all ${incCount} attached reports.
+
+      <!-- Deletion Timeline & Lifecycle Card -->
+      <div class="delete-lifecycle-card">
+        <div class="delete-lifecycle-title">What happens after deletion</div>
+        <div class="delete-timeline-row">
+          <span class="delete-tag-today">Today</span>
+          <span style="color:var(--text)">User is signed out everywhere. Account status is marked deleted, and personal tokens are revoked.</span>
+        </div>
+        <div class="delete-timeline-row">
+          <span class="delete-tag-30">30 Days</span>
+          <span style="color:var(--text)">30-day grace window. An admin can restore this account if requested by the user.</span>
+        </div>
+        <div class="delete-timeline-row">
+          <span class="delete-tag-day31">Day 31</span>
+          <span style="color:var(--text)">All sealed files and credentials are permanently destroyed. Nothing can be recovered after this point.</span>
+        </div>
       </div>
+
+      <!-- Type Confirmation Verification -->
+      <div>
+        <label style="margin-top:0">Type <span style="font-weight:700;color:#dc2626">DELETE</span> to confirm</label>
+        <input type="text" id="deleteConfirmTextInput" placeholder="DELETE" style="width:100%;font-weight:600;letter-spacing:1px" autocomplete="off" />
+      </div>
+
+      <!-- Checkbox Acknowledgement -->
+      <label class="delete-confirm-box">
+        <input type="checkbox" id="deleteAcknowledgeCb" style="cursor:pointer;margin-top:2px" />
+        <span>I understand that this action will purge or sever user records and cannot be undone after 30 days.</span>
+      </label>
     </div>
   `;
-        $("#confirm").textContent = "Confirm Account Deletion";
-        $("#confirm").className = "btn danger";
-        $("#confirm").style.background = "";
+        const confirmBtn = $("#confirm");
+        confirmBtn.textContent = "Delete Account";
+        confirmBtn.className = "btn danger";
+        confirmBtn.style.background = "";
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = "0.5";
+        confirmBtn.style.cursor = "not-allowed";
         openModal();
+
+        const checkInputs = () => {
+          const typedText = ($("#deleteConfirmTextInput")?.value || "").trim();
+          const isAckChecked = Boolean($("#deleteAcknowledgeCb")?.checked);
+          if (typedText === "DELETE" && isAckChecked) {
+            confirmBtn.disabled = false;
+            confirmBtn.style.opacity = "1";
+            confirmBtn.style.cursor = "pointer";
+          } else {
+            confirmBtn.disabled = true;
+            confirmBtn.style.opacity = "0.5";
+            confirmBtn.style.cursor = "not-allowed";
+          }
+        };
+
+        const confirmInput = $("#deleteConfirmTextInput");
+        const ackCb = $("#deleteAcknowledgeCb");
+        if (confirmInput) confirmInput.addEventListener("input", checkInputs);
+        if (ackCb) ackCb.addEventListener("change", checkInputs);
       }
 
       // Bulk Action Button Bindings
@@ -7653,8 +9667,970 @@
         };
       }
 
-      // Default to Content Moderation Queue
-      showQueuePage();
+      // ═════════════════════════════════════════════════════════════════════════════════
+      // MODULE 1: ADMIN & STAFF ROLES DIRECTORY (RBAC) CONTROLLER
+      // ═════════════════════════════════════════════════════════════════════════════════
+
+      let staffAccounts = [
+        {
+          id: "STF-101",
+          name: "Devon Vance",
+          email: "superadmin@blacknexa.com",
+          password: "blacknexa",
+          role: "Super Admin",
+          roleKey: "superadmin",
+          avatar: "DV",
+          status: "active",
+          last_login_at: "Sep 02, 2026  12:15 AM",
+          created_at: "Jan 10, 2026",
+        },
+        {
+          id: "STF-102",
+          name: "M. Kaur",
+          email: "moderator@blacknexa.com",
+          password: "blacknexa",
+          role: "Moderator",
+          roleKey: "moderator",
+          avatar: "MK",
+          status: "active",
+          last_login_at: "Sep 01, 2026  11:30 PM",
+          created_at: "Feb 14, 2026",
+        },
+        {
+          id: "STF-103",
+          name: "R. Idris",
+          email: "advocate@blacknexa.com",
+          password: "blacknexa",
+          role: "Advocate",
+          roleKey: "advocate",
+          avatar: "RI",
+          status: "active",
+          last_login_at: "Sep 01, 2026  09:40 PM",
+          created_at: "Mar 01, 2026",
+        },
+        {
+          id: "STF-104",
+          name: "Elena Ramos",
+          email: "staff@blacknexa.com",
+          password: "blacknexa",
+          role: "Support Staff",
+          roleKey: "staff",
+          avatar: "ER",
+          status: "active",
+          last_login_at: "Aug 31, 2026  04:20 PM",
+          created_at: "Apr 18, 2026",
+        },
+      ];
+
+      let staffCurrentPage = 1;
+      let staffPageSize = 10;
+      let targetStaffForAction = null;
+
+      function updateStaffKPICounters() {
+        const isSuperAdmin =
+          currentAdminUser && currentAdminUser.role === "Super Admin";
+
+        // Show/Hide Super Admin KPI card according to RBAC rule
+        const saKpiCard = $("#kpiCardSuperAdmin");
+        const staffKpiGrid = $("#staffKpiGrid");
+        if (saKpiCard)
+          saKpiCard.style.display = isSuperAdmin ? "block" : "none";
+        if (staffKpiGrid) {
+          staffKpiGrid.style.gridTemplateColumns = isSuperAdmin
+            ? "repeat(4, 1fr)"
+            : "repeat(3, 1fr)";
+        }
+
+        const countSA = staffAccounts.filter(
+          (s) => s.role === "Super Admin" && s.status === "active",
+        ).length;
+        const countMod = staffAccounts.filter(
+          (s) => s.role === "Moderator" && s.status === "active",
+        ).length;
+        const countAdv = staffAccounts.filter(
+          (s) => s.role === "Advocate" && s.status === "active",
+        ).length;
+        const countStf = staffAccounts.filter(
+          (s) => s.role === "Support Staff" && s.status === "active",
+        ).length;
+
+        if ($("#countSuperAdmin")) $("#countSuperAdmin").textContent = countSA;
+        if ($("#countModerators")) $("#countModerators").textContent = countMod;
+        if ($("#countAdvocates")) $("#countAdvocates").textContent = countAdv;
+        if ($("#countStaff")) $("#countStaff").textContent = countStf;
+      }
+
+      function renderStaffTable() {
+        const tbody = $("#staffTableBody");
+        const paginationBar = $("#staffPaginationBar");
+        if (!tbody) return;
+
+        const isSuperAdmin =
+          currentAdminUser && currentAdminUser.role === "Super Admin";
+
+        updateStaffKPICounters();
+
+        const searchQ = ($("#staffSearchInput")?.value || "")
+          .toLowerCase()
+          .trim();
+        const roleFilter = $("#staffRoleFilter")?.value || "All Roles";
+        const statusFilter = $("#staffStatusFilter")?.value || "All Statuses";
+
+        let filtered = staffAccounts.filter((stf) => {
+          // Non-super-admins cannot see Super Admin accounts
+          if (!isSuperAdmin && stf.role === "Super Admin") return false;
+
+          // Role filter matching
+          if (roleFilter !== "All Roles" && stf.role !== roleFilter)
+            return false;
+
+          // Status filter matching
+          if (statusFilter !== "All Statuses" && stf.status !== statusFilter)
+            return false;
+
+          // Search query matching by name or email
+          if (searchQ) {
+            const matchName = (stf.name || "").toLowerCase().includes(searchQ);
+            const matchEmail = (stf.email || "")
+              .toLowerCase()
+              .includes(searchQ);
+            if (!matchName && !matchEmail) return false;
+          }
+          return true;
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / staffPageSize) || 1;
+        if (staffCurrentPage > totalPages) staffCurrentPage = totalPages;
+
+        const startIndex = (staffCurrentPage - 1) * staffPageSize;
+        const paginated = filtered.slice(
+          startIndex,
+          startIndex + staffPageSize,
+        );
+
+        if (paginated.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="empty" style="padding: 36px; text-align: center; color: var(--muted)">No staff accounts found matching the selected filters.</td></tr>`;
+        } else {
+          tbody.innerHTML = paginated
+            .map((stf) => {
+              const roleKey = stf.roleKey || "staff";
+              const isCurrUser =
+                currentAdminUser &&
+                currentAdminUser.email.toLowerCase() ===
+                  stf.email.toLowerCase();
+
+              // Super Admin has full action controls; other roles are view only
+              const canManage = isSuperAdmin;
+
+              return `
+              <tr>
+                <td>
+                  <div>
+                    <div style="font-weight: 600; font-size: 13.5px; color: var(--text)">${stf.name} ${isCurrUser ? '<span style="font-size:10.5px;color:var(--accent);font-weight:600">(You)</span>' : ""}</div>
+                    <div class="sub" style="font-size: 11px; color: var(--muted)">ID: ${stf.id}</div>
+                  </div>
+                </td>
+                <td><span style="font-size: 13px; color: var(--text)">${stf.email}</span></td>
+                <td><span class="role-badge-pill ${roleKey}">${stf.role}</span></td>
+                <td>
+                  <span class="badge ${stf.status === "active" ? "active" : "suspended"}">
+                    ${stf.status === "active" ? "Active" : "Disabled"}
+                  </span>
+                </td>
+                <td style="text-align: right; padding-right: 18px">
+                  ${
+                    canManage
+                      ? `
+                    <div style="display: inline-flex; gap: 4px; justify-content: flex-end">
+                      <button class="action-icon-btn edit-staff-btn" data-id="${stf.id}" title="Edit Role & Permissions">
+                        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button class="action-icon-btn reset-staff-btn" data-id="${stf.id}" title="Reset Password">
+                        <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-1.5 1.5L4 19l-2 3 3-2 13.5-13.5z"/><circle cx="15.5" cy="8.5" r="2.5"/></svg>
+                      </button>
+                      <button class="action-icon-btn ${stf.status === "active" ? "delete-icon-btn" : ""} toggle-staff-btn" data-id="${stf.id}" title="${stf.status === "active" ? "Disable Account" : "Enable Account"}">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                      </button>
+                    </div>
+                  `
+                      : `<span style="font-size: 12px; color: var(--muted)">View Only</span>`
+                  }
+                </td>
+              </tr>
+            `;
+            })
+            .join("");
+        }
+
+        // Pagination Bar
+        if (paginationBar) {
+          if (totalItems > 0) {
+            paginationBar.style.display = "flex";
+            const startRecord = startIndex + 1;
+            const endRecord = Math.min(startIndex + staffPageSize, totalItems);
+
+            paginationBar.innerHTML = `
+              <div class="pagination-left-info">
+                <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+                <select class="page-size-select" id="staffPageSizeSelect">
+                  <option value="10" ${staffPageSize === 10 ? "selected" : ""}>10</option>
+                  <option value="25" ${staffPageSize === 25 ? "selected" : ""}>25</option>
+                  <option value="50" ${staffPageSize === 50 ? "selected" : ""}>50</option>
+                  <option value="75" ${staffPageSize === 75 ? "selected" : ""}>75</option>
+                  <option value="100" ${staffPageSize === 100 ? "selected" : ""}>100</option>
+                  <option value="500" ${staffPageSize === 500 ? "selected" : ""}>500</option>
+                </select>
+              </div>
+              <div class="pagination-controls">
+                <button class="page-btn" id="prevStaffPage" ${staffCurrentPage === 1 ? "disabled" : ""}>Previous</button>
+                ${
+                  totalPages > 1
+                    ? Array.from(
+                        { length: totalPages },
+                        (_, i) => `
+                    <button class="page-btn ${staffCurrentPage === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
+                  `,
+                      ).join("")
+                    : `<button class="page-btn active" data-page="1">1</button>`
+                }
+                <button class="page-btn" id="nextStaffPage" ${staffCurrentPage === totalPages ? "disabled" : ""}>Next</button>
+              </div>
+            `;
+
+            const sizeSelect = $("#staffPageSizeSelect");
+            if (sizeSelect) {
+              sizeSelect.onchange = (e) => {
+                staffPageSize = Number(e.target.value);
+                staffCurrentPage = 1;
+                renderStaffTable();
+              };
+            }
+
+            paginationBar
+              .querySelectorAll(".pagination-controls [data-page]")
+              .forEach((btn) => {
+                btn.onclick = () => {
+                  staffCurrentPage = Number(btn.dataset.page);
+                  renderStaffTable();
+                };
+              });
+
+            const prev = $("#prevStaffPage");
+            if (prev)
+              prev.onclick = () => {
+                if (staffCurrentPage > 1) {
+                  staffCurrentPage--;
+                  renderStaffTable();
+                }
+              };
+            const next = $("#nextStaffPage");
+            if (next)
+              next.onclick = () => {
+                if (staffCurrentPage < totalPages) {
+                  staffCurrentPage++;
+                  renderStaffTable();
+                }
+              };
+          } else {
+            paginationBar.style.display = "none";
+          }
+        }
+
+        // Attach Row Action Handlers
+        tbody.querySelectorAll(".edit-staff-btn").forEach((btn) => {
+          btn.onclick = () => openEditStaffModal(btn.dataset.id);
+        });
+        tbody.querySelectorAll(".reset-staff-btn").forEach((btn) => {
+          btn.onclick = () => openResetStaffPasswordModal(btn.dataset.id);
+        });
+        tbody.querySelectorAll(".toggle-staff-btn").forEach((btn) => {
+          btn.onclick = () => openToggleStaffStatusModal(btn.dataset.id);
+        });
+      }
+
+      function updateStaffRoleFilterMenu() {
+        const isSuperAdmin =
+          currentAdminUser && currentAdminUser.role === "Super Admin";
+        const roleMenu = $("#staffRoleFilterMenu");
+        if (!roleMenu) return;
+
+        const currentVal = $("#staffRoleFilter")?.value || "All Roles";
+
+        roleMenu.innerHTML = `
+          <div class="custom-select-option ${currentVal === "All Roles" ? "selected" : ""}" data-value="All Roles">All Roles</div>
+          ${isSuperAdmin ? `<div class="custom-select-option ${currentVal === "Super Admin" ? "selected" : ""}" data-value="Super Admin">Super Admin</div>` : ""}
+          <div class="custom-select-option ${currentVal === "Moderator" ? "selected" : ""}" data-value="Moderator">Moderator</div>
+          <div class="custom-select-option ${currentVal === "Advocate" ? "selected" : ""}" data-value="Advocate">Advocate</div>
+          <div class="custom-select-option ${currentVal === "Support Staff" ? "selected" : ""}" data-value="Support Staff">Support Staff</div>
+        `;
+      }
+
+      function showAdminRolesPage() {
+        clearAllActive();
+        closeAllSubMenus();
+        const navBtn = $("#adminRolesNavMenu");
+        if (navBtn) navBtn.classList.add("active");
+        hideAllSections();
+        const rolesView = $("#adminRolesView");
+        if (rolesView) rolesView.style.display = "block";
+        updateStaffRoleFilterMenu();
+        initCustomDropdowns();
+        renderStaffTable();
+      }
+
+      const adminRolesNavMenuBtn = $("#adminRolesNavMenu");
+      if (adminRolesNavMenuBtn) {
+        adminRolesNavMenuBtn.onclick = (e) => {
+          e.preventDefault();
+          showAdminRolesPage();
+        };
+      }
+
+      // Search input filter listener
+      const staffSearchInput = $("#staffSearchInput");
+      if (staffSearchInput) {
+        staffSearchInput.oninput = () => {
+          staffCurrentPage = 1;
+          renderStaffTable();
+        };
+      }
+
+      // =========================================================
+      // STAFF ACTION MODALS
+      // =========================================================
+      function openAddStaffModal() {
+        action = "add_staff";
+        $("#modalTitle").textContent = "Add Administrator / Staff Member";
+        $("#modalText").textContent =
+          "Create a new operator account and assign administrative role permissions.";
+
+        const roleOptions = [
+          { value: "Moderator", label: "Moderator (Content Queue & Flags)" },
+          { value: "Advocate", label: "Advocate (Case Review & Legal Aid)" },
+          {
+            value: "Support Staff",
+            label: "Support Staff (Inquiries & Triage)",
+          },
+          { value: "Super Admin", label: "Super Admin (Full Console Access)" },
+        ];
+
+        $("#form").innerHTML = `
+          <label style="margin-top:0">Full Name</label>
+          <input type="text" id="newStaffName" placeholder="e.g. Marcus Wright" required style="width:100%;box-sizing:border-box" />
+
+          <label>Email Address</label>
+          <input type="email" id="newStaffEmail" placeholder="e.g. m.wright@blacknexa.com" required style="width:100%;box-sizing:border-box" />
+
+          <label>Assigned Role</label>
+          ${createCustomSelectHTML("newStaffRole", roleOptions, "Moderator")}
+
+          <label>Initial Temporary Password</label>
+          <input type="text" id="newStaffPassword" value="blacknexa" style="width:100%;box-sizing:border-box" />
+        `;
+
+        $("#confirm").textContent = "Create Staff Account";
+        $("#confirm").className = "btn primary";
+        $("#confirm").style.background = "";
+        openModal();
+      }
+
+      const btnOpenAddStaffModal = $("#btnOpenAddStaffModal");
+      if (btnOpenAddStaffModal) {
+        btnOpenAddStaffModal.onclick = () => openAddStaffModal();
+      }
+
+      function openEditStaffModal(id) {
+        const staff = staffAccounts.find((s) => s.id === id);
+        if (!staff) return;
+        targetStaffForAction = staff;
+        action = "edit_staff_role";
+
+        $("#modalTitle").textContent = `Edit Role: ${staff.name}`;
+        $("#modalText").textContent =
+          `Update assigned role and operational permissions for ${staff.email}.`;
+
+        const isSuperAdmin =
+          currentAdminUser && currentAdminUser.role === "Super Admin";
+
+        const roleOptions = [
+          ...(isSuperAdmin
+            ? [
+                {
+                  value: "Super Admin",
+                  label: "Super Admin (Full Console Access)",
+                },
+              ]
+            : []),
+          { value: "Moderator", label: "Moderator (Content Queue & Flags)" },
+          { value: "Advocate", label: "Advocate (Case Review & Legal Aid)" },
+          {
+            value: "Support Staff",
+            label: "Support Staff (Inquiries & Triage)",
+          },
+        ];
+
+        $("#form").innerHTML = `
+          <label style="margin-top:0">Staff Name</label>
+          <input type="text" id="editStaffName" value="${staff.name}" required style="width:100%;box-sizing:border-box" />
+
+          <label>Assigned Role</label>
+          ${createCustomSelectHTML("editStaffRole", roleOptions, staff.role)}
+        `;
+
+        $("#confirm").textContent = "Save Changes";
+        $("#confirm").className = "btn primary";
+        $("#confirm").style.background = "";
+        openModal();
+      }
+
+      function openResetStaffPasswordModal(id) {
+        const staff = staffAccounts.find((s) => s.id === id);
+        if (!staff) return;
+        targetStaffForAction = staff;
+        action = "reset_staff_password";
+
+        $("#modalTitle").textContent = `Reset Password: ${staff.name}`;
+        $("#modalText").textContent =
+          `Set a new temporary password for operator ${staff.email}.`;
+
+        $("#form").innerHTML = `
+          <label style="margin-top:0">New Temporary Password</label>
+          <input type="text" id="resetStaffNewPassword" value="blacknexa2026" required style="width:100%;box-sizing:border-box" />
+        `;
+
+        $("#confirm").textContent = "Update Password";
+        $("#confirm").className = "btn primary";
+        $("#confirm").style.background = "";
+        openModal();
+      }
+
+      function openToggleStaffStatusModal(id) {
+        const staff = staffAccounts.find((s) => s.id === id);
+        if (!staff) return;
+        targetStaffForAction = staff;
+        action = "toggle_staff_status";
+
+        const isDisabling = staff.status === "active";
+        $("#modalTitle").textContent = isDisabling
+          ? `Disable Staff Account: ${staff.name}?`
+          : `Enable Staff Account: ${staff.name}?`;
+        $("#modalText").textContent = isDisabling
+          ? `Disabling this account will immediately revoke all active console sessions and prevent login for ${staff.email}.`
+          : `Enabling this account will restore console login permissions for ${staff.email}.`;
+
+        $("#form").innerHTML = "";
+        $("#confirm").textContent = isDisabling
+          ? "Disable Account"
+          : "Enable Account";
+        $("#confirm").className = isDisabling ? "btn danger" : "btn primary";
+        $("#confirm").style.background = isDisabling ? "" : "#059669";
+        openModal();
+      }
+
+      // Modal Confirm Handler Extensions
+      const originalConfirmHandler = $("#confirm").onclick;
+      $("#confirm").onclick = () => {
+        if (action === "add_staff") {
+          const name = $("#newStaffName")?.value.trim();
+          const email = $("#newStaffEmail")?.value.trim();
+          const role = $("#newStaffRole")?.value || "Moderator";
+          const pass = $("#newStaffPassword")?.value.trim() || "blacknexa";
+
+          if (!name || !email) {
+            alert("Please enter both staff name and email address.");
+            return;
+          }
+
+          const roleKeyMap = {
+            "Super Admin": "superadmin",
+            Moderator: "moderator",
+            Advocate: "advocate",
+            "Support Staff": "staff",
+          };
+
+          const initials = name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .substring(0, 2)
+            .toUpperCase();
+
+          const newStaff = {
+            id: `STF-${Math.floor(100 + Math.random() * 900)}`,
+            name,
+            email,
+            password: pass,
+            role,
+            roleKey: roleKeyMap[role] || "staff",
+            avatar: initials || "ST",
+            status: "active",
+            last_login_at: "Never",
+            created_at: "Just now",
+          };
+
+          staffAccounts.unshift(newStaff);
+          closeModal();
+          renderStaffTable();
+          alert(`Staff member ${name} (${role}) added successfully.`);
+          return;
+        }
+
+        if (action === "edit_staff_role" && targetStaffForAction) {
+          const newName =
+            $("#editStaffName")?.value.trim() || targetStaffForAction.name;
+          const newRole =
+            $("#editStaffRole")?.value || targetStaffForAction.role;
+          const roleKeyMap = {
+            "Super Admin": "superadmin",
+            Moderator: "moderator",
+            Advocate: "advocate",
+            "Support Staff": "staff",
+          };
+
+          targetStaffForAction.name = newName;
+          targetStaffForAction.role = newRole;
+          targetStaffForAction.roleKey = roleKeyMap[newRole] || "staff";
+
+          // If updating currently logged in user, refresh sidebar
+          if (
+            currentAdminUser &&
+            currentAdminUser.email.toLowerCase() ===
+              targetStaffForAction.email.toLowerCase()
+          ) {
+            currentAdminUser.name = newName;
+            currentAdminUser.role = newRole;
+            saveAdminSession(currentAdminUser);
+            applyAdminRoleUI(currentAdminUser);
+          }
+
+          closeModal();
+          renderStaffTable();
+          alert(`Staff member ${targetStaffForAction.name} updated.`);
+          return;
+        }
+
+        if (action === "reset_staff_password" && targetStaffForAction) {
+          const newPass =
+            $("#resetStaffNewPassword")?.value.trim() || "blacknexa2026";
+          targetStaffForAction.password = newPass;
+          closeModal();
+          renderStaffTable();
+          alert(
+            `Password for ${targetStaffForAction.name} has been reset to: ${newPass}`,
+          );
+          return;
+        }
+
+        if (action === "toggle_staff_status" && targetStaffForAction) {
+          const nextStatus =
+            targetStaffForAction.status === "active" ? "disabled" : "active";
+          targetStaffForAction.status = nextStatus;
+
+          // If current user is disabled, force logout
+          if (
+            nextStatus === "disabled" &&
+            currentAdminUser &&
+            currentAdminUser.email.toLowerCase() ===
+              targetStaffForAction.email.toLowerCase()
+          ) {
+            alert(
+              "Your administrator account has been disabled. You will be logged out immediately.",
+            );
+            logoutAdmin();
+            closeModal();
+            return;
+          }
+
+          closeModal();
+          renderStaffTable();
+          alert(
+            `Staff account ${targetStaffForAction.name} has been ${nextStatus === "active" ? "Enabled" : "Disabled"}.`,
+          );
+          return;
+        }
+
+        if (typeof originalConfirmHandler === "function") {
+          originalConfirmHandler();
+        }
+      };
+
+      // ═════════════════════════════════════════════════════════════════════════════════
+      // ADMIN AUTHENTICATION, MFA & SESSION MANAGEMENT
+      // ═════════════════════════════════════════════════════════════════════════════════
+      const AUTH_STORAGE_KEY = "blacknexa_active_admin_session";
+      let currentAdminUser = null;
+      let pendingMfaUser = null;
+      let mfaTimerInterval = null;
+
+      function getSavedAdminSession() {
+        try {
+          const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function saveAdminSession(user) {
+        try {
+          sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        } catch (e) {}
+      }
+
+      function clearAdminSession() {
+        try {
+          sessionStorage.removeItem(AUTH_STORAGE_KEY);
+        } catch (e) {}
+      }
+
+      function applyAdminRoleUI(user) {
+        if (!user) return;
+        currentAdminUser = user;
+
+        const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
+        let initials = "ST";
+        if (nameParts.length >= 2) {
+          initials = (
+            nameParts[0][0] + nameParts[nameParts.length - 1][0]
+          ).toUpperCase();
+        } else if (nameParts.length === 1 && nameParts[0].length > 0) {
+          initials = nameParts[0][0].toUpperCase();
+        } else if (user.avatar && user.avatar.length <= 3) {
+          initials = user.avatar.toUpperCase();
+        }
+
+        // Update Sidebar Operator Display
+        const avatarEl = document.querySelector("#currentAdminAvatar");
+        const nameEl = document.querySelector("#currentAdminName");
+        const roleEl = document.querySelector("#currentAdminRole");
+
+        if (avatarEl) avatarEl.textContent = initials;
+        if (nameEl) nameEl.textContent = user.name;
+        if (roleEl) {
+          roleEl.textContent = user.role;
+          roleEl.className = "user-role";
+        }
+
+        // Hide auth modal overlay
+        const authScreen = document.querySelector("#authScreen");
+        if (authScreen) authScreen.style.display = "none";
+      }
+
+      function validateEmailFormat(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+      }
+
+      function startMfaTimer() {
+        if (mfaTimerInterval) clearInterval(mfaTimerInterval);
+        let count = 30;
+        const countSpan = document.querySelector("#mfaTimerCount");
+        const resendBtn = document.querySelector("#btnResendMfa");
+        if (resendBtn) resendBtn.disabled = true;
+
+        mfaTimerInterval = setInterval(() => {
+          count--;
+          if (countSpan) countSpan.textContent = count;
+          if (count <= 0) {
+            clearInterval(mfaTimerInterval);
+            if (resendBtn) {
+              resendBtn.disabled = false;
+              resendBtn.innerHTML = "Resend Code";
+            }
+          }
+        }, 1000);
+      }
+
+      function showMfaStep(user) {
+        pendingMfaUser = user;
+        const step1 = document.querySelector("#loginStepCredentials");
+        const step2 = document.querySelector("#loginStepMfa");
+        const targetEmailEl = document.querySelector("#mfaTargetEmail");
+        const mfaError = document.querySelector("#mfaErrorAlert");
+
+        if (mfaError) mfaError.style.display = "none";
+        if (targetEmailEl) targetEmailEl.textContent = user.email;
+        if (step1) step1.style.display = "none";
+        if (step2) step2.style.display = "block";
+
+        // Reset and auto-focus MFA digit inputs
+        const digitInputs = document.querySelectorAll(".mfa-digit-input");
+        digitInputs.forEach((inp) => (inp.value = ""));
+        if (digitInputs.length > 0) digitInputs[0].focus();
+
+        startMfaTimer();
+      }
+
+      function showCredentialsStep() {
+        pendingMfaUser = null;
+        if (mfaTimerInterval) clearInterval(mfaTimerInterval);
+        const step1 = document.querySelector("#loginStepCredentials");
+        const step2 = document.querySelector("#loginStepMfa");
+        if (step2) step2.style.display = "none";
+        if (step1) step1.style.display = "block";
+      }
+
+      function performAdminLogin(email, password) {
+        const errorAlert = document.querySelector("#loginErrorAlert");
+        const emailInput = document.querySelector("#adminEmailInput");
+        const passwordInput = document.querySelector("#adminPasswordInput");
+        const emailError = document.querySelector("#emailErrorMsg");
+        const passwordError = document.querySelector("#passwordErrorMsg");
+
+        if (errorAlert) errorAlert.style.display = "none";
+        if (emailInput) emailInput.classList.remove("field-invalid");
+        if (passwordInput) passwordInput.classList.remove("field-invalid");
+        if (emailError) emailError.style.display = "none";
+        if (passwordError) passwordError.style.display = "none";
+
+        const cleanEmail = (email || "").trim();
+        const cleanPassword = (password || "").trim();
+
+        let hasError = false;
+
+        if (!cleanEmail) {
+          if (emailInput) emailInput.classList.add("field-invalid");
+          if (emailError) {
+            emailError.textContent = "Please enter your email address.";
+            emailError.style.display = "block";
+          }
+          hasError = true;
+        } else if (!validateEmailFormat(cleanEmail)) {
+          if (emailInput) emailInput.classList.add("field-invalid");
+          if (emailError) {
+            emailError.textContent =
+              "Please enter a valid email format (e.g. name@blacknexa.com).";
+            emailError.style.display = "block";
+          }
+          hasError = true;
+        }
+
+        if (!cleanPassword) {
+          if (passwordInput) passwordInput.classList.add("field-invalid");
+          if (passwordError) {
+            passwordError.textContent = "Please enter your password.";
+            passwordError.style.display = "block";
+          }
+          hasError = true;
+        } else if (cleanPassword.length < 4) {
+          if (passwordInput) passwordInput.classList.add("field-invalid");
+          if (passwordError) {
+            passwordError.textContent =
+              "Password must be at least 4 characters.";
+            passwordError.style.display = "block";
+          }
+          hasError = true;
+        }
+
+        if (hasError) return false;
+
+        // Match against staff accounts
+        const match = staffAccounts.find(
+          (u) =>
+            u.email.toLowerCase() === cleanEmail.toLowerCase() &&
+            u.password === cleanPassword,
+        );
+
+        if (match) {
+          if (match.status === "disabled") {
+            if (errorAlert) {
+              errorAlert.style.display = "block";
+              errorAlert.innerHTML = `<strong>Account Disabled:</strong> Your administrator account is disabled. Please contact a Super Admin.`;
+            }
+            return false;
+          }
+
+          // Advance to Step 2: MFA Verification
+          showMfaStep(match);
+          return true;
+        } else {
+          if (errorAlert) {
+            errorAlert.style.display = "block";
+            errorAlert.innerHTML = `<strong>Authentication failed:</strong> Invalid email or password. Please verify your credentials.`;
+          }
+          if (emailInput) emailInput.classList.add("field-invalid");
+          if (passwordInput) passwordInput.classList.add("field-invalid");
+          return false;
+        }
+      }
+
+      function verifyMfaCode() {
+        const digitInputs = document.querySelectorAll(".mfa-digit-input");
+        const code = Array.from(digitInputs)
+          .map((i) => i.value.trim())
+          .join("");
+        const mfaError = document.querySelector("#mfaErrorAlert");
+
+        if (mfaError) mfaError.style.display = "none";
+
+        // Accept demo code "123456" or any 6-digit number in prototype
+        if (code.length === 6 && pendingMfaUser) {
+          if (mfaTimerInterval) clearInterval(mfaTimerInterval);
+          saveAdminSession(pendingMfaUser);
+          applyAdminRoleUI(pendingMfaUser);
+          showDashboardPage();
+          pendingMfaUser = null;
+          return true;
+        } else {
+          if (mfaError) {
+            mfaError.textContent =
+              "Please enter a valid 6-digit security code (e.g. 123456).";
+            mfaError.style.display = "block";
+          }
+          return false;
+        }
+      }
+
+      function logoutAdmin() {
+        clearAdminSession();
+        currentAdminUser = null;
+        pendingMfaUser = null;
+        showCredentialsStep();
+        const authScreen = document.querySelector("#authScreen");
+        const emailInput = document.querySelector("#adminEmailInput");
+        const passwordInput = document.querySelector("#adminPasswordInput");
+        const errorAlert = document.querySelector("#loginErrorAlert");
+        const emailError = document.querySelector("#emailErrorMsg");
+        const passwordError = document.querySelector("#passwordErrorMsg");
+
+        if (emailInput) {
+          emailInput.value = "";
+          emailInput.classList.remove("field-invalid");
+        }
+        if (passwordInput) {
+          passwordInput.value = "";
+          passwordInput.classList.remove("field-invalid");
+        }
+        if (emailError) emailError.style.display = "none";
+        if (passwordError) passwordError.style.display = "none";
+        if (errorAlert) errorAlert.style.display = "none";
+        if (authScreen) authScreen.style.display = "flex";
+      }
+
+      // Wire up Login Form and live validation
+      const adminLoginForm = document.querySelector("#adminLoginForm");
+      if (adminLoginForm) {
+        adminLoginForm.onsubmit = (e) => {
+          e.preventDefault();
+          const email = document.querySelector("#adminEmailInput")?.value;
+          const password = document.querySelector("#adminPasswordInput")?.value;
+          performAdminLogin(email, password);
+        };
+      }
+
+      const adminEmailInput = document.querySelector("#adminEmailInput");
+      if (adminEmailInput) {
+        adminEmailInput.oninput = () => {
+          adminEmailInput.classList.remove("field-invalid");
+          const emailError = document.querySelector("#emailErrorMsg");
+          if (emailError) emailError.style.display = "none";
+        };
+      }
+
+      const adminPasswordInput = document.querySelector("#adminPasswordInput");
+      if (adminPasswordInput) {
+        adminPasswordInput.oninput = () => {
+          adminPasswordInput.classList.remove("field-invalid");
+          const passwordError = document.querySelector("#passwordErrorMsg");
+          if (passwordError) passwordError.style.display = "none";
+        };
+      }
+
+      // Wire up Password Visibility Toggle
+      const btnTogglePassword = document.querySelector("#btnTogglePassword");
+      if (btnTogglePassword) {
+        btnTogglePassword.onclick = () => {
+          const passInput = document.querySelector("#adminPasswordInput");
+          const eyeShow = document.querySelector("#eyeIconShow");
+          const eyeHide = document.querySelector("#eyeIconHide");
+          if (!passInput) return;
+
+          if (passInput.type === "password") {
+            passInput.type = "text";
+            if (eyeShow) eyeShow.style.display = "none";
+            if (eyeHide) eyeHide.style.display = "block";
+          } else {
+            passInput.type = "password";
+            if (eyeShow) eyeShow.style.display = "block";
+            if (eyeHide) eyeHide.style.display = "none";
+          }
+        };
+      }
+
+      // MFA Digits Auto-focus & Paste handling
+      const mfaDigitInputs = document.querySelectorAll(".mfa-digit-input");
+      mfaDigitInputs.forEach((inp, idx) => {
+        inp.oninput = (e) => {
+          const val = inp.value.replace(/\D/g, "");
+          inp.value = val ? val[0] : "";
+          if (inp.value && idx < mfaDigitInputs.length - 1) {
+            mfaDigitInputs[idx + 1].focus();
+          }
+          if (idx === mfaDigitInputs.length - 1 && inp.value) {
+            verifyMfaCode();
+          }
+        };
+
+        inp.onkeydown = (e) => {
+          if (e.key === "Backspace" && !inp.value && idx > 0) {
+            mfaDigitInputs[idx - 1].focus();
+          }
+        };
+
+        inp.onpaste = (e) => {
+          e.preventDefault();
+          const paste = (e.clipboardData || window.clipboardData)
+            .getData("text")
+            .replace(/\D/g, "")
+            .slice(0, 6);
+          paste.split("").forEach((char, i) => {
+            if (mfaDigitInputs[i]) mfaDigitInputs[i].value = char;
+          });
+          if (paste.length === 6) verifyMfaCode();
+        };
+      });
+
+      const mfaForm = document.querySelector("#mfaForm");
+      if (mfaForm) {
+        mfaForm.onsubmit = (e) => {
+          e.preventDefault();
+          verifyMfaCode();
+        };
+      }
+
+      const btnBackToCredentials = document.querySelector(
+        "#btnBackToCredentials",
+      );
+      if (btnBackToCredentials) {
+        btnBackToCredentials.onclick = () => showCredentialsStep();
+      }
+
+      const btnResendMfa = document.querySelector("#btnResendMfa");
+      if (btnResendMfa) {
+        btnResendMfa.onclick = () => {
+          alert(
+            `New security code sent to ${pendingMfaUser ? pendingMfaUser.email : "email"}. Demo code: 123456`,
+          );
+          startMfaTimer();
+        };
+      }
+
+      // Wire up Logout Button
+      const btnAdminLogout = document.querySelector("#btnAdminLogout");
+      if (btnAdminLogout) {
+        btnAdminLogout.onclick = () => logoutAdmin();
+      }
+
+      // Initialize Authentication on startup
+      const savedSession = getSavedAdminSession();
+      if (savedSession) {
+        applyAdminRoleUI(savedSession);
+        showDashboardPage();
+      } else {
+        const authScreen = document.querySelector("#authScreen");
+        if (authScreen) authScreen.style.display = "flex";
+      }
     </script>
   </body>
 </html>
