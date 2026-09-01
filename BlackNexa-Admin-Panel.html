@@ -241,7 +241,6 @@ body.dark .note-item{background:#1e293b}
         <th>Type</th>
         <th>User Name</th>
         <th>Category</th>
-        <th>Who Can See It</th>
         <th>Location</th>
         <th>Submitted At</th>
         <th>Flag By</th>
@@ -642,6 +641,21 @@ const posts=[
     evidence:['Image evidence'],
     ai:[],
     reports:[['Sarah Miller','Harassment','Aug 31, 2026 · 10:32 AM'],['Alex Wilson','Untrue','Aug 31, 2026 · 10:02 AM']]
+  },
+  {
+    id:'INC-20475',
+    type:'Incident',
+    title:'Targeted verbal abuse and slurs at public park',
+    user:'Chloe Bennett',
+    category:'Abuse',
+    status:'Public',
+    location:'Manchester, UK',
+    urgent:true,
+    submitted:'Aug 31, 2026 · 08:30 AM',
+    content:'Individual repeatedly hurled targeted racial abuse and profane slurs at park visitors while obstructing the pedestrian footpath.',
+    evidence:['Audio evidence', 'Image evidence'],
+    ai:[['Abuse','racial abuse'],['Abuse','profane slurs']],
+    reports:[]
   },
   {
     id:'CMT-90388',
@@ -1142,7 +1156,6 @@ renderRows = function() {
       </td>
       <td>${p.user}</td>
       <td>${p.category}</td>
-      <td><span class="badge ${p.status === 'Public' ? 'public' : 'private'}">${p.status}</span></td>
       <td>${p.location}</td>
       <td class="date-cell">${p.submitted || ''}</td>
       <td class="flag-cell">${(p.reports && p.reports.length > 0) ? 'User' : 'AI'}</td>
@@ -1225,7 +1238,7 @@ let keywordRulesList = [
   { title: 'Threat', detected: 2 },
   { title: 'Harassment', detected: 2 },
   { title: 'Violence', detected: 1 },
-  { title: 'Abuse', detected: 0 }
+  { title: 'Abuse', detected: 1 }
 ];
 
 let keywordToDeleteIndex = null;
