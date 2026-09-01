@@ -6,48 +6,168 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>BlackNexa · Content Moderation</title>
 <style>
-:root{--accent:#0a7cff;--accent-soft:#e8f2ff;--bg:#f5f7fb;--surface:#fff;--text:#172033;--muted:#6d7789;--line:#e5e9f0;--success:#248a55;--warning:#b76b00;--danger:#c63d49;--shadow:0 8px 24px #1d29400d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}.app{display:flex;min-height:100vh;align-items:flex-start}
+:root{--accent:#0a7cff;--accent-soft:#e8f2ff;--bg:#f5f7fb;--surface:#fff;--text:#172033;--muted:#6d7789;--line:#e5e9f0;--success:#248a55;--warning:#b76b00;--danger:#c63d49;--shadow:0 4px 20px rgba(0,0,0,0.05)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px 'Work Sans',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app{display:flex;min-height:100vh;align-items:stretch}
 /* Sidebar Layout matching Reference Image (Fixed / Sticky - never scrolls page) */
-.side{width:252px;background:#fff;color:#555f71;padding:24px 16px 20px;display:flex;flex-direction:column;border-right:1px solid var(--line);height:100vh;position:sticky;top:0;flex-shrink:0;z-index:100}
+.side{width:252px;background:var(--surface);color:#555f71;padding:24px 16px 20px;display:flex;flex-direction:column;border-right:1px solid var(--line);height:100vh;position:sticky;top:0;flex-shrink:0;z-index:100;transition:background 0.2s,border-color 0.2s}
 .brand-wrap{display:flex;align-items:center;gap:12px;padding:0 8px 26px;border-bottom:1px solid var(--line);margin-bottom:14px}
-.brand-icon{width:38px;height:38px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;box-shadow:0 4px 10px rgba(0,0,0,0.15)}
+.brand-icon{width:38px;height:38px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--accent-text,#fff);font-weight:700;font-size:18px;box-shadow:0 4px 10px rgba(0,0,0,0.15)}
 .brand-text{display:flex;flex-direction:column}
-.brand-title{font-size:17px;font-weight:750;color:#1e232b;letter-spacing:-0.2px;font-family:'Work Sans',sans-serif}
-.brand-sub{font-size:10px;font-weight:700;letter-spacing:1.2px;color:#8590a2;text-transform:uppercase;margin-top:1px}
+.brand-title{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-0.2px;font-family:'Work Sans',sans-serif}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-top:1px}
 .side-menu{flex:1;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
-.nav{display:flex;align-items:center;padding:10px 12px;border-radius:8px;cursor:pointer;color:#55606e;font-size:13.5px;font-weight:500;transition:all 0.15s ease}
-.nav:hover{background:#f4f6fa;color:#1e232b}
-.nav.active{background:transparent;color:#1e232b;font-weight:700}
-.nav-icon{font-size:15px;width:22px;display:inline-flex;align-items:center;color:#808b9c}
-.nav.active .nav-icon{color:var(--accent)}
+.nav{display:flex;align-items:center;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:400;transition:all 0.15s ease}
+.nav:hover{background:var(--accent-soft);color:var(--text)}
+.nav.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav-icon{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:inherit;margin-right:4px;opacity:0.85}
+.nav-icon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav.active .nav-icon{color:var(--accent);opacity:1}
+.nav.active .nav-icon svg{stroke-width:2.2}
 .nav-label{flex:1}
-.nav-badge{background:#e9edf5;color:#4c586e;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;margin-right:6px}
-.nav-dot{width:6px;height:6px;border-radius:50%;background:#a1acbe;display:inline-block;margin-left:auto}
-.nav-arrow{font-size:10px;color:#a1acbe;margin-left:6px}
-.sub-menu{margin-left:14px;padding-left:12px;border-left:2px solid #e7ebf2;display:flex;flex-direction:column;gap:4px;margin-top:2px;margin-bottom:6px}
-.sub-nav{padding:8px 12px;border-radius:7px;font-size:13px;color:#55606e;cursor:pointer;font-weight:500}
-.sub-nav:hover{background:#f4f6fa;color:#1e232b}
-.sub-nav.active{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.nav-badge{background:var(--line);color:var(--text);font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;margin-right:6px}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block;margin-left:auto}
+.nav-arrow{font-size:10px;color:var(--muted);margin-left:6px;transition:transform 0.2s}
+.sub-menu{margin-left:14px;padding-left:12px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:4px;margin-top:2px;margin-bottom:6px}
+.sub-nav{padding:8px 12px;border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;font-weight:400;transition:all 0.15s ease}
+.sub-nav:hover{background:var(--accent-soft);color:var(--text)}
+.sub-nav.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
 
 /* Sidebar Footer (Appearance & Account) */
-.side-footer{border-top:1px solid var(--line);padding-top:18px;margin-top:auto;display:flex;flex-direction:column;gap:14px}
-.accent-title{font-size:10.5px;font-weight:800;letter-spacing:1px;color:#8c96a5;text-transform:uppercase;margin-bottom:4px}
-.accent-palette{display:flex;gap:7px;align-items:center}
-.palette-circle{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform 0.15s}
-.palette-circle:hover{transform:scale(1.1)}
-.palette-circle.active{border-color:#fff;outline:2px solid var(--accent)}
-.theme-switch{display:flex;background:#eef2f7;padding:3px;border-radius:999px;gap:2px}
-.theme-opt{flex:1;text-align:center;padding:7px 0;font-size:12.5px;font-weight:700;color:#616e82;border-radius:999px;cursor:pointer;transition:all 0.15s}
-.theme-opt.active{background:#fff;color:#1e232b;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
-.user-account{display:flex;align-items:center;gap:10px;padding-top:4px}
-.user-avatar{width:34px;height:34px;border-radius:50%;background:#e3f0ff;color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:12px;flex-shrink:0}
+.side-footer{border-top:1px solid var(--line);padding-top:12px;margin-top:auto;display:flex;flex-direction:column;gap:9px}
+.accent-title{font-size:9.5px;font-weight:600;letter-spacing:0.8px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.accent-palette{display:flex;gap:5px;align-items:center}
+.palette-circle{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform 0.15s,box-shadow 0.15s}
+.palette-circle:hover{transform:scale(1.15)}
+.palette-circle.active{border-color:#fff;outline:1.5px solid var(--accent);box-shadow:0 1px 6px rgba(0,0,0,0.25)}
+.theme-switch{display:flex;background:var(--line);padding:2px;border-radius:999px;gap:2px}
+.theme-opt{flex:1;text-align:center;padding:4px 0;font-size:11.5px;font-weight:600;color:var(--muted);border-radius:999px;cursor:pointer;transition:all 0.15s}
+.theme-opt.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.user-account{display:flex;align-items:center;gap:8px;padding-top:2px}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:10.5px;flex-shrink:0}
 .user-info{flex:1;min-width:0}
-.user-name{font-size:13px;font-weight:750;color:#1e232b;line-height:1.2}
-.user-role{font-size:11px;color:#808c9e;margin-top:1px}
-.logout-btn{border:1px solid var(--line);background:#f8f9fb;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:650;color:#465163;cursor:pointer;transition:background 0.15s}
-.logout-btn:hover{background:#eef1f6}
+.user-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.15}
+.user-role{font-size:10px;color:var(--muted);margin-top:1px}
+.logout-btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;transition:background 0.15s,border-color 0.15s}
+.logout-btn:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 
-.main{flex:1;min-width:0;padding:32px 48px;display:flex;flex-direction:column;justify-content:flex-start}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.eyebrow{color:var(--muted);font-size:13px;margin-bottom:6px}.title{font-size:28px;font-weight:750;margin:0}.controls{display:flex;gap:10px;align-items:center}.select,input,textarea{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:11px 13px;color:var(--text);font:inherit;outline:none}.select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}.theme{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);width:100%}.tabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--line);overflow:auto}.tab{white-space:nowrap;padding:10px 13px;border-radius:7px;color:var(--muted);cursor:pointer}.tab.active{background:var(--accent-soft);color:var(--accent);font-weight:700}.filters{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px}.search{flex:1;max-width:420px}.table{width:100%;border-collapse:collapse}.table th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;background:#fafbfc}.table th,.table td{padding:16px 18px;border-top:1px solid var(--line);vertical-align:middle}.table td:first-child{font-weight:650}.sub{display:block;font-size:12px;color:var(--muted);margin-top:4px;font-weight:400}.badge{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:650}.public{background:#e7f7ed;color:var(--success)}.private{background:#f0f1f4;color:#596273}.pending{background:#fff3dc;color:var(--warning)}.review{color:var(--accent);background:none;border:0;font-weight:700;cursor:pointer}.empty{padding:54px;text-align:center;color:var(--muted)}.details{display:none;width:100%}.back{border:0;background:none;color:var(--accent);font-weight:700;padding:0;cursor:pointer;margin-bottom:18px}.detail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.incident{color:var(--muted);margin-top:8px}.urgent{display:inline-block;background:#fff0e4;color:#b54f00;border-radius:6px;padding:6px 9px;font-size:12px;font-weight:800;margin-left:10px}.section{padding:22px;margin-top:14px}.section h2{font-size:16px;margin:0 0 16px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.label{font-size:12px;color:var(--muted);margin-bottom:5px}.value{font-weight:650}.content{line-height:1.7;color:#3f4857}.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.evidence{height:130px;border-radius:9px;background:linear-gradient(135deg,#dbe8fa,#a7bddb);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;cursor:pointer}.evidence.video{background:linear-gradient(135deg,#483c70,#9c72aa)}.mini{width:100%;border-collapse:collapse}.mini th,.mini td{padding:12px 10px;border-top:1px solid var(--line);text-align:left}.mini th{font-size:12px;color:var(--muted)}.keywords{color:var(--accent);font-size:12px}.actions{display:flex;gap:10px}.btn{border:0;border-radius:8px;padding:11px 17px;font-weight:750;cursor:pointer}.primary{background:var(--accent);color:var(--accent-text,#fff)}.outline{background:var(--surface);border:1px solid var(--line)}.danger{background:var(--danger);color:#fff}.enforce{display:flex;justify-content:space-between;align-items:center}.modal-wrap{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;z-index:999}
+.main{flex:1;min-width:0;padding:24px 32px;display:flex;flex-direction:column;justify-content:flex-start}
+.top{display:flex;justify-content:space-between;align-items:center}
+.title{font-size:22px;font-weight:600;margin:0;color:var(--text);white-space:nowrap;line-height:1.2}
+.card-header-bar{padding:20px 24px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-top-left-radius:12px;border-top-right-radius:12px}
+input,textarea{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:9px 13px;color:var(--text);font:inherit;font-size:13px;font-weight:400;outline:none;transition:border-color 0.15s,box-shadow 0.15s}
+input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.search{flex:1;max-width:380px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13px;font-weight:400;color:var(--text);outline:none;font-family:inherit}
+.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+body.dark input,body.dark textarea,body.dark .search{background:#151c29;border-color:var(--line);color:#ecf1f8}
+
+/* Custom SaaS Popover Dropdowns */
+.custom-select-wrap{position:relative;display:inline-block}
+.custom-select-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:9px 12px;color:var(--text);font:inherit;font-size:13px;font-weight:400;cursor:pointer;user-select:none;transition:border-color 0.15s,box-shadow 0.15s;min-width:140px}
+.custom-select-trigger:hover{border-color:var(--accent)}
+.custom-select-trigger.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.custom-select-trigger svg{width:14px;height:14px;stroke:#64748b;stroke-width:2.2;fill:none;transition:transform 0.2s ease;flex-shrink:0}
+.custom-select-trigger.active svg{transform:rotate(180deg);stroke:var(--accent)}
+
+.custom-select-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;max-height:260px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.14),0 2px 8px rgba(0,0,0,0.06);z-index:999;padding:6px;display:none;flex-direction:column;gap:2px;animation:dropFade 0.15s cubic-bezier(0.16, 1, 0.3, 1)}
+.custom-select-wrap.open .custom-select-menu{display:flex!important}
+.custom-select-wrap.open .custom-select-trigger{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.custom-select-wrap.open .custom-select-trigger svg{transform:rotate(180deg);stroke:var(--accent)}
+@keyframes dropFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.custom-select-option{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13px;font-weight:400;color:var(--text);border-radius:6px;cursor:pointer;transition:background 0.12s;white-space:nowrap}
+.custom-select-option:hover{background:var(--accent-soft);color:var(--accent)}
+.custom-select-option.selected{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.custom-select-option.selected::after{content:'✓';font-size:12px;font-weight:600;color:var(--accent);margin-left:8px}
+
+body.dark .custom-select-trigger{background:#151c29;border-color:var(--line);color:#ecf1f8}
+body.dark .custom-select-menu{background:#151c29;border-color:var(--line);box-shadow:0 10px 30px rgba(0,0,0,0.4)}
+body.dark .custom-select-option:hover{background:var(--accent-soft);color:var(--accent)}
+body.dark .custom-select-trigger svg{stroke:#94a3b8}
+
+.theme{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);width:100%}
+.tabs{display:flex;gap:4px;padding:8px 16px;border-bottom:1px solid var(--line);overflow:auto}
+.tab{white-space:nowrap;padding:9px 14px;border-radius:7px;color:var(--muted);cursor:pointer;font-size:13px;font-weight:400;transition:all 0.15s ease}
+.tab.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.filters{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px}
+.table{width:100%;border-collapse:collapse;table-layout:fixed}
+.table th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;background:#f8fafc;font-weight:400;white-space:nowrap}
+.table th,.table td{padding:14px 16px;border-top:1px solid var(--line);vertical-align:middle;text-align:left;font-weight:400;overflow:hidden}
+.table td:first-child{font-weight:400}
+.table th:last-child,.table td:last-child{text-align:right!important;padding-right:20px!important}
+.sub{display:block;font-size:12px;color:var(--muted);margin-top:4px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;font-size:12px;font-weight:400;white-space:nowrap}
+.badge.public{background:#e7f7ed;color:var(--success)}
+.badge.private{background:#f0f1f4;color:#596273}
+.badge.submitted{background:#e0f2fe;color:#0369a1}
+.badge.under_review{background:#fef3c7;color:#d97706}
+.badge.verified{background:#dcfce7;color:#15803d}
+.badge.dismissed{background:#fee2e2;color:#b91c1c}
+.badge.deactivated{background:#f1f5f9;color:#64748b}
+.badge.pending{background:#fff3dc;color:var(--warning)}
+
+.review{color:var(--accent);background:none;border:0;font-weight:400;cursor:pointer}
+.empty{padding:54px;text-align:center;color:var(--muted);font-weight:400}
+.details{display:none;width:100%}
+.back{border:0;background:none;color:var(--accent);font-weight:600;padding:0;cursor:pointer;margin-bottom:18px}
+.detail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.incident{color:var(--muted);margin-top:8px;font-weight:400}
+.urgent{display:inline-flex;align-items:center;background:#fff0e4;color:#b54f00;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:600;margin-left:8px;letter-spacing:0.5px;white-space:nowrap;flex-shrink:0;vertical-align:middle}
+.title-row-wrap{display:flex;align-items:center;width:100%;min-width:0}
+.title-truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--text);font-size:13.5px;cursor:pointer;flex:1;min-width:0}
+.title-truncate:hover{color:var(--accent)}
+
+/* Custom Dark Floating Tooltip matching Reference Design */
+#customTooltip{position:fixed;display:none;background:#181d24;color:#f8fafc;font-size:12.5px;font-weight:500;line-height:1.5;padding:10px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.28),0 2px 6px rgba(0,0,0,0.18);z-index:9999;max-width:340px;pointer-events:none;transition:opacity 0.12s ease;letter-spacing:0.1px}
+#customTooltip::after{content:'';position:absolute;width:0;height:0;border:6px solid transparent}
+#customTooltip.arrow-bottom::after{top:100%;left:20px;border-top-color:#181d24}
+#customTooltip.arrow-top::after{bottom:100%;left:20px;border-bottom-color:#181d24}
+#customTooltip.arrow-left::after{right:100%;top:50%;transform:translateY(-50%);border-right-color:#181d24}
+#customTooltip.arrow-right::after{left:100%;top:50%;transform:translateY(-50%);border-left-color:#181d24}
+
+.section{padding:22px;margin-top:14px}
+.section h2{font-size:16px;margin:0 0 16px;font-weight:700}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.label{font-size:12px;color:var(--muted);margin-bottom:5px}
+.value{font-weight:600}
+.content{line-height:1.7;color:#3f4857}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.evidence{height:130px;border-radius:9px;background:linear-gradient(135deg,#dbe8fa,#a7bddb);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;cursor:pointer}
+.evidence.video{background:linear-gradient(135deg,#483c70,#9c72aa)}
+.mini{width:100%;border-collapse:collapse}
+.mini th,.mini td{padding:12px 10px;border-top:1px solid var(--line);text-align:left}
+.mini th{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.keywords{color:var(--accent);font-size:12px}
+.actions{display:flex;gap:10px}
+.btn{border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-family:inherit}
+.primary{background:var(--accent);color:var(--accent-text,#fff)}
+.outline{background:var(--surface);border:1px solid var(--line);color:var(--text)}
+.danger{background:var(--danger);color:#fff}
+.enforce{display:flex;justify-content:space-between;align-items:center}
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;z-index:999}
+.modal{background:var(--surface);border-radius:14px;width:min(470px,100%);padding:28px 28px 24px;box-shadow:0 25px 65px rgba(0,0,0,0.18);border:1px solid rgba(0,0,0,0.06)}
+.modal h3{margin:0 0 12px;font-size:19px;font-weight:700;color:var(--text)}
+.modal p{color:#55606e;line-height:1.55;font-size:13.5px;margin:0 0 20px}
+.modal label{display:block;font-size:12px;font-weight:700;margin:18px 0 7px}
+.modal textarea{width:100%;min-height:90px;resize:vertical}
+.modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+.modal-actions .btn{padding:10px 20px;font-size:13.5px;border-radius:8px;font-weight:600}
+.modal-actions .btn.outline{background:#fff;border:1px solid #d0d7e2;color:#333f51}
+.modal-actions .btn.outline:hover{background:#f4f6fa}
+.modal-actions .btn.danger{background:#c63d49;color:#fff;border:1px solid #b32f3b}
+.modal-actions .btn.danger:hover{background:#ae2f3b}
+
+/* Modern SaaS Enterprise Action Icon Buttons */
+.action-icon-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;border:1px solid var(--line)!important;border-radius:7px!important;background:var(--surface)!important;color:#475569!important;cursor:pointer!important;transition:all 0.15s ease!important;padding:0!important}
+.action-icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.action-icon-btn:hover{background:var(--accent-soft)!important;color:var(--accent)!important;border-color:var(--accent)!important;box-shadow:0 2px 6px rgba(0,0,0,0.06)!important}
+.action-icon-btn.delete-icon-btn{color:#dc2626!important;border-color:#fecaca!important;background:#fff5f5!important}
+.action-icon-btn.delete-icon-btn:hover{background:#dc2626!important;color:#fff!important;border-color:#dc2626!important}
+
+body.dark .action-icon-btn{background:#18202d!important;border-color:var(--line)!important;color:#94a3b8!important}
+body.dark .action-icon-btn:hover{background:var(--accent-soft)!important;color:var(--accent)!important;border-color:var(--accent)!important}
+body.dark .action-icon-btn.delete-icon-btn{background:#2a1a1e!important;border-color:#5c2429!important;color:#f87171!important}
+body.dark .action-icon-btn.delete-icon-btn:hover{background:#dc2626!important;color:#fff!important}
 .modal{background:var(--surface);border-radius:14px;width:min(470px,100%);padding:28px 28px 24px;box-shadow:0 25px 65px rgba(0,0,0,0.18);border:1px solid rgba(0,0,0,0.06)}
 .modal h3{margin:0 0 12px;font-size:20px;font-weight:700;color:var(--text);font-family:'Work Sans',sans-serif}
 .modal p{color:#55606e;line-height:1.55;font-size:13.5px;margin:0 0 20px}
@@ -69,12 +189,24 @@
 .page-btn.active{background:var(--accent);color:var(--accent-text,#fff);border-color:var(--accent)}
 
 body.dark{--bg:#0c111b;--surface:#151c29;--text:#ecf1f8;--muted:#9aa6b8;--line:#273244;--accent-soft:#102d50}
-body.dark .side{background:#111723;border-color:var(--line);color:#94a1b5}
+body.dark .side{background:#111723;border-color:var(--line);color:#9aa6b8}
 body.dark .brand-title{color:#fff}
+body.dark .brand-sub{color:#768499}
+body.dark .nav{color:#9aa6b8}
+body.dark .nav:hover{background:var(--accent-soft);color:#fff}
+body.dark .nav.active{background:var(--accent-soft);color:var(--accent)}
+body.dark .sub-menu{border-left-color:var(--line)}
+body.dark .sub-nav{color:#9aa6b8}
+body.dark .sub-nav:hover{background:var(--accent-soft);color:#fff}
+body.dark .sub-nav.active{background:var(--accent-soft);color:var(--accent)}
 body.dark .theme-switch{background:#1a2333}
-body.dark .theme-opt.active{background:#232e42;color:#fff}
+body.dark .theme-opt{color:#8c9bb0}
+body.dark .theme-opt.active{background:#232e42;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
 body.dark .user-name{color:#fff}
-body.dark .logout-btn{background:#1a2333;border-color:var(--line);color:#9bb0cc}
+body.dark .user-role{color:#768499}
+body.dark .logout-btn{background:#1a2333;border-color:var(--line);color:#ecf1f8}
+body.dark .logout-btn:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+body.dark .palette-circle.active{border-color:#111723;outline:2px solid var(--accent);box-shadow:0 0 0 2px #fff}
 body.dark .table th{background:#18202d}body.dark .evidence{opacity:.9}
 body.dark .pagination-bar{background:#151c29}
 body.dark .page-btn{background:#18202d;border-color:var(--line);color:#ecf1f8}
@@ -83,29 +215,37 @@ body.dark .brand-icon{color:var(--accent-text,#fff)}
 body.dark .approve-full-btn{color:var(--accent-text,#fff)}
 @media(max-width:800px){.side{display:none}.main{padding:22px 16px}.info-grid{grid-template-columns:1fr 1fr}.gallery{grid-template-columns:1fr 1fr}.table{min-width:720px}.card{overflow:auto}.top{align-items:flex-start;gap:15px}.controls{flex-wrap:wrap}.title{font-size:23px}}
 /* BlackNexa admin-panel visual reference overrides */
-@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
-:root{--bg:#faf9f5;--surface:#fff;--text:#1e232b;--muted:#74777d;--line:#e7e4de;--shadow:0 2px 12px #2525250b}
-body{background:var(--bg);font-family:'Work Sans',sans-serif}
-.brand-title,.title,.section h2,.modal h3{font-family:'Spectral',serif}
-.main{padding:32px 48px;width:100%}.title{font-size:30px;font-weight:600}.card{border-radius:11px;box-shadow:var(--shadow);border-color:var(--line)}.tab{border-radius:6px}.table th{background:#fcfbf8;font-size:11px}.table th,.table td{padding:15px 18px}.btn,.select,input,textarea{border-radius:7px}.btn{font-weight:600}.section h2{font-size:18px}
-.view-btn{display:inline-grid;place-items:center;width:32px;height:32px;padding:0!important;border:1px solid var(--line)!important;border-radius:7px!important;background:var(--surface)!important;color:var(--accent)!important;font-size:15px!important;line-height:1}.view-btn:hover{background:var(--accent-soft)!important}
-.review{font-size:0}.review:after{content:'◉';font-size:15px}
-.review,.view-btn{display:inline-block!important;width:auto!important;height:auto!important;padding:9px 16px!important;border:0!important;border-radius:7px!important;background:var(--accent)!important;color:var(--accent-text, #fff)!important;font-size:13px!important;font-weight:700!important;line-height:1!important}.review:after{content:none!important}.review:hover,.view-btn:hover{opacity:0.9!important;color:var(--accent-text, #fff)!important}
-.duplicate-col,.duplicate-cell{display:none!important}
-.duplicate-cell{display:table-cell!important}
-.keyword-page{display:none}.keyword-page .page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.keyword-page .page-title{font:600 30px Spectral,serif;margin:0}.keyword-page .page-copy{color:var(--muted);line-height:1.5;margin-top:6px;max-width:720px;font-size:13.5px}
-.add-keyword-btn{background:var(--accent);color:var(--accent-text, #fff);border:0;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:all 0.15s ease;font-family:inherit}
-.add-keyword-btn:hover{opacity:0.92;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+:root{--bg:#faf9f5;--surface:#fff;--text:#1e232b;--muted:#74777d;--line:#e7e4de;--shadow:0 2px 12px rgba(0,0,0,0.05)}
+body{background:var(--bg);font-family:'Work Sans',sans-serif;font-weight:400}
+.brand-title,.title,.section h2,.modal h3,.details-main-title,.keyword-page .page-title{font-family:'Work Sans',sans-serif;font-weight:600}
+.main{padding:24px 32px;width:100%}
+.title{font-size:24px;font-weight:600;letter-spacing:-0.2px}
+.card{border-radius:11px;box-shadow:var(--shadow);border-color:var(--line);background:var(--surface)}
+.tab{border-radius:6px;font-weight:400}
+.tab.active{font-weight:600}
+.table th{background:#fcfbf8;font-size:11.5px;font-weight:400;letter-spacing:.05em}
+.table th,.table td{padding:14px 18px;font-weight:400}
+.btn,.select,input,textarea{border-radius:7px;font-weight:400}
+.section h2{font-size:18px;font-weight:600}
+
+.keyword-page{display:none}
+.keyword-page .page-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line);background:var(--surface);border-top-left-radius:11px;border-top-right-radius:11px}
+.keyword-page .page-title{font-size:22px;font-weight:600;margin:0;color:var(--text);font-family:'Work Sans',sans-serif}
+.keyword-page .page-copy{color:var(--muted);line-height:1.4;margin:4px 0 0;font-size:13px;font-weight:400}
+.add-keyword-btn{background:var(--accent);color:var(--accent-text, #fff);border:0;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:400;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);transition:all 0.15s ease;font-family:'Work Sans',sans-serif}
+.add-keyword-btn:hover{opacity:0.92;transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,0.2)}
 .add-keyword-btn:active{transform:translateY(0)}
-.keyword-card{overflow:hidden}.keyword-table{width:100%;border-collapse:collapse}.keyword-table th,.keyword-table td{padding:15px 18px;border-top:1px solid var(--line);text-align:left}.keyword-table th{background:#fcfbf8;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.keyword-table td:first-child{font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px}.keyword-table td:nth-child(2){font-weight:700}.delete-keyword{border:1px solid #e28b8b;background:#fff7f7;color:#c63d49;border-radius:7px;padding:8px 14px;font-weight:600;cursor:pointer}.delete-keyword:hover{background:#c63d49;color:#fff}
-/* Details View matching Reference Image */
+.delete-keyword{border:1px solid #fecaca;background:#fff5f5;color:#dc2626;border-radius:7px;padding:6px 12px;font-weight:400;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s ease}
+.delete-keyword:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+
+/* Details View */
 .details-page{display:none;width:100%}
 .details-top-bar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .back-btn-pill{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--text);font-size:16px;font-weight:700;transition:all 0.15s}
 .back-btn-pill:hover{background:var(--accent-soft);color:var(--accent)}
 .meta-chip-wrap{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);font-weight:600}
 .meta-chip-wrap strong{color:var(--text)}
-.details-main-title{font-size:26px;font-weight:700;margin:0 0 24px;color:var(--text);font-family:'Spectral',serif}
+.details-main-title{font-size:24px;font-weight:700;margin:0 0 20px;color:var(--text)}
 
 .details-grid{display:grid;grid-template-columns:1fr 310px;gap:20px;align-items:start}
 .details-left{display:flex;flex-direction:column;gap:18px}
@@ -183,24 +323,52 @@ body.dark .note-item{background:#1e293b}
     </div>
   </div>
   <div class="side-menu">
-    <div class="nav soon-nav" data-target="Dashboard Overview"><span class="nav-icon">▦</span><span class="nav-label">Dashboard Overview</span><span class="nav-dot"></span></div>
-    <div class="nav" id="incidentMgmtMenu"><span class="nav-icon">⌗</span><span class="nav-label">Incident Management</span><span class="nav-arrow">▸</span></div>
+    <div class="nav soon-nav" data-target="Dashboard Overview">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      <span class="nav-label">Dashboard Overview</span>
+    </div>
+    <div class="nav" id="incidentMgmtMenu">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+      <span class="nav-label">Incident Management</span>
+      <span class="nav-arrow">▸</span>
+    </div>
     <div class="sub-menu" id="incidentSubMenu" style="display:none">
       <div class="sub-nav active" id="subAllIncidents">All Incidents</div>
-      <div class="sub-nav soon-sub-nav" data-target="Verification Queue">Verification Queue<span class="nav-dot"></span></div>
-      <div class="sub-nav soon-sub-nav" data-target="My Assigned Cases">My Assigned Cases<span class="nav-dot"></span></div>
+      <div class="sub-nav soon-sub-nav" data-target="Verification Queue">Verification Queue</div>
+      <div class="sub-nav soon-sub-nav" data-target="My Assigned Cases">My Assigned Cases</div>
     </div>
     
-    <div class="nav active" id="contentModMenu"><span class="nav-icon">◆</span><span class="nav-label">Content Moderation</span><span class="nav-arrow">▾</span></div>
+    <div class="nav active" id="contentModMenu">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      <span class="nav-label">Content Moderation</span>
+      <span class="nav-arrow">▾</span>
+    </div>
     <div class="sub-menu" id="modSubMenu">
       <div class="sub-nav active" id="subKeyword">Keyword Rules</div>
     </div>
 
-    <div class="nav soon-nav" data-target="Resource Management"><span class="nav-icon">⌂</span><span class="nav-label">Resource Management</span><span class="nav-dot"></span><span class="nav-arrow">▸</span></div>
-    <div class="nav soon-nav" data-target="News Management"><span class="nav-icon">❏</span><span class="nav-label">News Management</span><span class="nav-dot"></span><span class="nav-arrow">▸</span></div>
-    <div class="nav soon-nav" data-target="Notifications & Announcements"><span class="nav-icon">◇</span><span class="nav-label">Notifications & Announcements</span><span class="nav-dot"></span></div>
-    <div class="nav soon-nav" data-target="Content Management"><span class="nav-icon">▤</span><span class="nav-label">Content Management</span><span class="nav-dot"></span></div>
-    <div class="nav soon-nav" data-target="Settings"><span class="nav-icon">⚙</span><span class="nav-label">Settings</span><span class="nav-dot"></span></div>
+    <div class="nav soon-nav" data-target="Resource Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
+      <span class="nav-label">Resource Management</span>
+      <span class="nav-arrow">▸</span>
+    </div>
+    <div class="nav soon-nav" data-target="News Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></span>
+      <span class="nav-label">News Management</span>
+      <span class="nav-arrow">▸</span>
+    </div>
+    <div class="nav soon-nav" data-target="Notifications & Announcements">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+      <span class="nav-label">Notifications & Announcements</span>
+    </div>
+    <div class="nav soon-nav" data-target="Content Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+      <span class="nav-label">Content Management</span>
+    </div>
+    <div class="nav soon-nav" data-target="Settings">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="nav-label">Settings</span>
+    </div>
   </div>
 
   <div class="side-footer">
@@ -231,43 +399,66 @@ body.dark .note-item{background:#1e293b}
   </div>
 </aside>
 <main class="main">
-<section id="queue"><div class="top"><div><h1 class="title">Content Moderation</h1></div></div>
-<div class="card">
-  <div class="tabs" id="tabs"></div>
-  <div class="filters">
-    <input class="search" id="search" placeholder="Search posts..." />
-    <select class="select" id="sort">
-      <option>Newest First</option>
-      <option>Oldest First</option>
-    </select>
+<section id="queue">
+  <div class="card">
+    <div class="card-header-bar">
+      <div>
+        <h1 class="title">Content Moderation</h1>
+        <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Review and moderate community posts and comments flagged by automated AI and user reports.</p>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="filters">
+      <input class="search" id="search" placeholder="Search posts..." />
+      <div class="custom-select-wrap" data-select-for="sort">
+        <input type="hidden" id="sort" value="Newest First" />
+        <div class="custom-select-trigger" tabindex="0">
+          <span class="custom-select-label">Newest First</span>
+          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="custom-select-menu">
+          <div class="custom-select-option selected" data-value="Newest First">Newest First</div>
+          <div class="custom-select-option" data-value="Oldest First">Oldest First</div>
+        </div>
+      </div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:28%">Title & ID</th>
+          <th style="width:10%">Type</th>
+          <th style="width:14%">User Name</th>
+          <th style="width:12%">Category</th>
+          <th style="width:14%">Location</th>
+          <th style="width:12%">Submitted At</th>
+          <th id="thFlagBy" style="width:8%">Flag By</th>
+          <th style="width:8%">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">No items require moderation.</div>
+    <div class="pagination-bar" id="paginationBar" style="display:none"></div>
   </div>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Type</th>
-        <th>User Name</th>
-        <th>Category</th>
-        <th>Location</th>
-        <th>Submitted At</th>
-        <th>Flag By</th>
-        <th>Review</th>
-      </tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
-  <div class="empty" id="empty" style="display:none">No items require moderation.</div>
-  <div class="pagination-bar" id="paginationBar" style="display:none"></div>
-</div></section>
+</section>
 <section id="details" class="details-page">
-  <div class="details-top-bar">
-    <button class="back-btn-pill" id="back">←</button>
-    <div class="meta-chip-wrap">
-      <span id="incidentTypeTag">INCIDENT</span>
-      <span>·</span>
-      <strong id="incidentIdTag">INC-40912</strong>
-      <span class="badge pending" id="incidentStatusTag">Pending Review</span>
-      <span class="badge" id="incidentFlagByTag" style="background:#e8f2ff;color:var(--accent);font-weight:700">Flag By: AI</span>
+  <div class="details-top-bar" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="back-btn-pill" id="back" title="Back to Queue">←</button>
+      <div class="meta-chip-wrap">
+        <span id="incidentTypeTag">INCIDENT</span>
+        <span>·</span>
+        <strong id="incidentIdTag">INC-40912</strong>
+        <span class="badge pending" id="incidentStatusTag">Pending Review</span>
+        <span class="badge" id="incidentFlagByTag" style="background:#e8f2ff;color:var(--accent);font-weight:600">Flag By: AI</span>
+      </div>
+    </div>
+
+    <!-- Details Quick Previous / Next Navigation Controls -->
+    <div class="details-nav-controls" style="display:flex;align-items:center;gap:8px">
+      <span id="detailsItemCount" style="font-size:12.5px;color:var(--muted);margin-right:4px">1 of 12</span>
+      <button class="back-btn-pill" id="btnPrevDetail" title="Previous Item" style="width:34px;height:34px;font-size:14px">←</button>
+      <button class="back-btn-pill" id="btnNextDetail" title="Next Item" style="width:34px;height:34px;font-size:14px">→</button>
     </div>
   </div>
 
@@ -403,45 +594,76 @@ body.dark .note-item{background:#1e293b}
 
 <!-- Incident Management Section (Unified in single HTML) -->
 <section id="incidentQueue" style="display:none">
-  <div class="top"><div><h1 class="title">Incident Management</h1></div></div>
   <div class="card">
+    <div class="card-header-bar">
+      <div>
+        <h1 class="title">Incident Management</h1>
+        <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Track, investigate, assign, and verify reported incidents across all categories and locations.</p>
+      </div>
+    </div>
     <div class="tabs" id="incidentTabs"></div>
     <div class="filters">
       <div style="display:flex;gap:10px;flex:1;align-items:center;flex-wrap:wrap">
-        <input class="search" id="incidentSearch" placeholder="Search by ID, title, author, location..." style="max-width:320px" />
-        <select class="select" id="incidentCategoryFilter" style="padding:9px 12px;font-size:13px">
-          <option value="All">All Categories</option>
-          <option value="Policing">Policing</option>
-          <option value="Profiling">Profiling</option>
-          <option value="Housing">Housing</option>
-          <option value="Workplace">Workplace</option>
-          <option value="Education">Education</option>
-          <option value="Medical">Medical</option>
-          <option value="Digital">Digital</option>
-          <option value="Harassment">Harassment</option>
-        </select>
-        <select class="select" id="incidentDateFilter" style="padding:9px 12px;font-size:13px">
-          <option value="all">All Dates</option>
-          <option value="today">Today</option>
-          <option value="week">Past 7 Days</option>
-          <option value="month">This Month</option>
-        </select>
+        <input class="search" id="incidentSearch" placeholder="Search by ID, title, location..." style="max-width:320px" />
+        <!-- Custom Category Dropdown -->
+        <div class="custom-select-wrap" data-select-for="incidentCategoryFilter">
+          <input type="hidden" id="incidentCategoryFilter" value="All" />
+          <div class="custom-select-trigger" tabindex="0">
+            <span class="custom-select-label">All Categories</span>
+            <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="custom-select-menu">
+            <div class="custom-select-option selected" data-value="All">All Categories</div>
+            <div class="custom-select-option" data-value="Policing">Policing</div>
+            <div class="custom-select-option" data-value="Profiling">Profiling</div>
+            <div class="custom-select-option" data-value="Housing">Housing</div>
+            <div class="custom-select-option" data-value="Workplace">Workplace</div>
+            <div class="custom-select-option" data-value="Education">Education</div>
+            <div class="custom-select-option" data-value="Medical">Medical</div>
+            <div class="custom-select-option" data-value="Digital">Digital</div>
+            <div class="custom-select-option" data-value="Harassment">Harassment</div>
+          </div>
+        </div>
+
+        <!-- Custom Date Filter Dropdown -->
+        <div class="custom-select-wrap" data-select-for="incidentDateFilter">
+          <input type="hidden" id="incidentDateFilter" value="all" />
+          <div class="custom-select-trigger" tabindex="0">
+            <span class="custom-select-label">All Dates</span>
+            <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="custom-select-menu">
+            <div class="custom-select-option selected" data-value="all">All Dates</div>
+            <div class="custom-select-option" data-value="today">Today</div>
+            <div class="custom-select-option" data-value="week">Past 7 Days</div>
+            <div class="custom-select-option" data-value="month">This Month</div>
+          </div>
+        </div>
       </div>
-      <select class="select" id="incidentSort">
-        <option value="newest">Newest First</option>
-        <option value="oldest">Oldest First</option>
-      </select>
+
+      <!-- Custom Sort Dropdown -->
+      <div class="custom-select-wrap" data-select-for="incidentSort">
+        <input type="hidden" id="incidentSort" value="newest" />
+        <div class="custom-select-trigger" tabindex="0">
+          <span class="custom-select-label">Newest First</span>
+          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="custom-select-menu">
+          <div class="custom-select-option selected" data-value="newest">Newest First</div>
+          <div class="custom-select-option" data-value="oldest">Oldest First</div>
+        </div>
+      </div>
     </div>
     <table class="table">
       <thead>
         <tr>
-          <th style="width:28%">Incident & ID</th>
+          <th style="width:28%">Title & ID</th>
           <th style="width:13%">Category</th>
-          <th style="width:12%">Location</th>
+          <th style="width:13%">Location</th>
           <th style="width:12%">Status</th>
           <th style="width:15%">Assigned To</th>
-          <th style="width:12%">Submitted At</th>
-          <th style="width:8%;text-align:right">Action</th>
+          <th style="width:11%">Submitted At</th>
+          <th style="width:8%">Actions</th>
         </tr>
       </thead>
       <tbody id="incidentRows"></tbody>
@@ -949,6 +1171,41 @@ function openDetails(id) {
     $('.action-help-text').textContent = 'Approving publishes the report as verified. Rejecting requires a reason, which is recorded and shown to the author.';
   }
 
+  // Update Previous / Next Navigation Controls
+  const activeList = getFilteredPosts();
+  const currentIndex = activeList.findIndex(p => p.id === current.id);
+  const totalCount = activeList.length;
+
+  const countDisplay = $('#detailsItemCount');
+  const btnPrev = $('#btnPrevDetail');
+  const btnNext = $('#btnNextDetail');
+
+  if (countDisplay) {
+    countDisplay.textContent = currentIndex >= 0 ? `${currentIndex + 1} of ${totalCount}` : `1 of ${totalCount}`;
+  }
+
+  if (btnPrev) {
+    btnPrev.disabled = currentIndex <= 0;
+    btnPrev.style.opacity = currentIndex <= 0 ? '0.4' : '1';
+    btnPrev.style.cursor = currentIndex <= 0 ? 'not-allowed' : 'pointer';
+    btnPrev.onclick = () => {
+      if (currentIndex > 0) {
+        openDetails(activeList[currentIndex - 1].id);
+      }
+    };
+  }
+
+  if (btnNext) {
+    btnNext.disabled = currentIndex >= totalCount - 1;
+    btnNext.style.opacity = currentIndex >= totalCount - 1 ? '0.4' : '1';
+    btnNext.style.cursor = currentIndex >= totalCount - 1 ? 'not-allowed' : 'pointer';
+    btnNext.onclick = () => {
+      if (currentIndex < totalCount - 1) {
+        openDetails(activeList[currentIndex + 1].id);
+      }
+    };
+  }
+
   window.scrollTo(0, 0);
 }
 
@@ -1172,6 +1429,23 @@ renderRows = function() {
   const tbody = document.querySelector('#rows');
   const empty = document.querySelector('#empty');
   const paginationBar = document.querySelector('#paginationBar');
+  const thFlagBy = document.querySelector('#thFlagBy');
+
+  // Condition to hide Flag By column if active tab is AI Flag Reports or User Flag Reports
+  const hideFlagBy = (active === 'AI Flag Reports' || active === 'User Flag Reports');
+  const thTitle = document.querySelector('#queue thead th:nth-child(1)');
+  const thLoc = document.querySelector('#queue thead th:nth-child(5)');
+  
+  if (thFlagBy) {
+    thFlagBy.style.display = hideFlagBy ? 'none' : '';
+  }
+  // Rebalance column widths when Flag By is hidden
+  if (thTitle) {
+    thTitle.style.width = hideFlagBy ? '32%' : '27%';
+  }
+  if (thLoc) {
+    thLoc.style.width = hideFlagBy ? '17%' : '14%';
+  }
 
   if (totalItems === 0) {
     tbody.innerHTML = '';
@@ -1181,28 +1455,43 @@ renderRows = function() {
   }
 
   empty.style.display = 'none';
-  tbody.innerHTML = pageItems.map(p => `
-    <tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span>${p.title}</span>
-          ${p.urgent ? '<span class="urgent" style="font-size:10px;padding:2px 6px">URGENT</span>' : ''}
-        </div>
-        <span class="sub">${p.id}${p.parentIncident ? ' · On ' + p.parentIncident.split(' ')[0] : ''}</span>
-      </td>
-      <td>
-        <span class="badge" style="background:${p.type === 'Comment' ? '#f5f3ff' : '#f0f2f5'};color:${p.type === 'Comment' ? '#6b21a8' : '#334155'};font-weight:600;font-size:11px">
-          ${p.type || 'Incident'}
-        </span>
-      </td>
-      <td>${p.user}</td>
-      <td>${p.category}</td>
-      <td>${p.location}</td>
-      <td class="date-cell">${p.submitted || ''}</td>
-      <td class="flag-cell">${(p.reports && p.reports.length > 0) ? 'User' : 'AI'}</td>
-      <td><button class="review" data-id="${p.id}">Review</button></td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = pageItems.map(p => {
+    // Format Submitted At into 2 lines (Line 1: Date, Line 2: Time)
+    const rawDate = p.submitted || '';
+    const dateParts = rawDate.split(' · ');
+    const formattedDate = dateParts.length === 2 
+      ? `<div>${dateParts[0]}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${dateParts[1]}</div>`
+      : `<div>${rawDate}</div>`;
+
+    const flagByCell = hideFlagBy ? '' : `<td class="flag-cell"><span class="badge" style="background:${p.reports && p.reports.length > 0 ? '#eff6ff' : '#f5f3ff'};color:${p.reports && p.reports.length > 0 ? '#1d4ed8' : '#7c3aed'};font-size:11.5px">${(p.reports && p.reports.length > 0) ? 'User' : 'AI'}</span></td>`;
+
+    return `
+      <tr>
+        <td>
+          <div class="title-row-wrap">
+            <span class="title-truncate" title="${p.title.replace(/"/g, '&quot;')}">${p.title}</span>
+            ${p.urgent ? '<span class="urgent">URGENT</span>' : ''}
+          </div>
+          <span class="sub">${p.id}${p.parentIncident ? ' · On ' + p.parentIncident.split(' ')[0] : ''}</span>
+        </td>
+        <td>
+          <span class="badge" style="background:${p.type === 'Comment' ? '#f5f3ff' : '#f0f2f5'};color:${p.type === 'Comment' ? '#6b21a8' : '#334155'};font-weight:600;font-size:11px">
+            ${p.type || 'Incident'}
+          </span>
+        </td>
+        <td>${p.user}</td>
+        <td>${p.category}</td>
+        <td>${p.location}</td>
+        <td class="date-cell">${formattedDate}</td>
+        ${flagByCell}
+        <td>
+          <button class="action-icon-btn review" data-id="${p.id}" title="Review Content" aria-label="Review Content">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   document.querySelectorAll('.review').forEach(b => {
     b.onclick = () => openDetails(b.dataset.id, active === 'User Flag Reports' ? 'user' : active === 'All' ? 'both' : 'ai');
@@ -1258,10 +1547,140 @@ if (searchInput) {
   });
 }
 
-document.querySelector('#sort')?.addEventListener('change', () => {
-  currentPage = 1;
-  renderRows();
-});
+// Initialize Custom Popover Dropdowns
+function initCustomDropdowns() {
+  document.querySelectorAll('.custom-select-wrap').forEach(wrap => {
+    const trigger = wrap.querySelector('.custom-select-trigger');
+    const menu = wrap.querySelector('.custom-select-menu');
+    const label = wrap.querySelector('.custom-select-label');
+    const hiddenInput = wrap.querySelector('input[type="hidden"]');
+    const options = wrap.querySelectorAll('.custom-select-option');
+
+    if (!trigger || !menu) return;
+
+    // Toggle dropdown on trigger click
+    trigger.onclick = (e) => {
+      e.stopPropagation();
+      const isOpen = wrap.classList.contains('open');
+      // Close all dropdowns first
+      document.querySelectorAll('.custom-select-wrap').forEach(w => w.classList.remove('open'));
+      if (!isOpen) {
+        wrap.classList.add('open');
+      }
+    };
+
+    // Toggle on keyboard (Enter / Space)
+    trigger.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        trigger.click();
+      } else if (e.key === 'Escape') {
+        wrap.classList.remove('open');
+      }
+    };
+
+    // Option selection
+    options.forEach(opt => {
+      opt.onclick = (e) => {
+        e.stopPropagation();
+        options.forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        const val = opt.dataset.value;
+        if (hiddenInput) {
+          hiddenInput.value = val;
+        }
+        if (label) {
+          label.textContent = opt.textContent.replace('✓', '').trim();
+        }
+        wrap.classList.remove('open');
+
+        // Trigger appropriate table filter update
+        if (hiddenInput && hiddenInput.id === 'sort') {
+          currentPage = 1;
+          renderRows();
+        } else if (hiddenInput && (hiddenInput.id === 'incidentCategoryFilter' || hiddenInput.id === 'incidentDateFilter' || hiddenInput.id === 'incidentSort')) {
+          incidentPage = 1;
+          renderIncidentRows();
+        }
+      };
+    });
+  });
+
+  // Global click outside to close dropdowns
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select-wrap')) {
+      document.querySelectorAll('.custom-select-wrap').forEach(w => w.classList.remove('open'));
+    }
+  });
+}
+
+initCustomDropdowns();
+
+// Custom Floating Tooltip Controller (Matches Reference Design)
+const customTooltip = document.createElement('div');
+customTooltip.id = 'customTooltip';
+document.body.appendChild(customTooltip);
+
+function initCustomTooltip() {
+  document.body.addEventListener('mouseover', (e) => {
+    const target = e.target.closest('[data-tooltip], .title-truncate, .action-icon-btn');
+    if (!target) return;
+
+    let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.getAttribute('aria-label');
+    if (!text && target.classList.contains('title-truncate')) {
+      text = target.textContent.trim();
+    }
+    if (!text) return;
+
+    // Temporarily remove native title to prevent default browser tooltip collision
+    if (target.hasAttribute('title')) {
+      target.setAttribute('data-stored-title', target.getAttribute('title'));
+      target.removeAttribute('title');
+    }
+
+    customTooltip.textContent = text;
+    customTooltip.style.display = 'block';
+
+    const rect = target.getBoundingClientRect();
+    const tipRect = customTooltip.getBoundingClientRect();
+
+    // Calculate position (default: above element with arrow at bottom)
+    let top = rect.top - tipRect.height - 8;
+    let left = rect.left;
+    let arrowClass = 'arrow-bottom';
+
+    // If too close to top edge, flip to below element with arrow at top
+    if (top < 10) {
+      top = rect.bottom + 8;
+      arrowClass = 'arrow-top';
+    }
+
+    // Ensure it does not overflow the right edge of viewport
+    if (left + tipRect.width > window.innerWidth - 16) {
+      left = window.innerWidth - tipRect.width - 16;
+    }
+    if (left < 16) left = 16;
+
+    customTooltip.className = arrowClass;
+    customTooltip.style.top = `${top}px`;
+    customTooltip.style.left = `${left}px`;
+  });
+
+  document.body.addEventListener('mouseout', (e) => {
+    const target = e.target.closest('[data-tooltip], .title-truncate, .action-icon-btn');
+    if (!target) return;
+
+    // Restore title attribute if needed
+    if (target.hasAttribute('data-stored-title')) {
+      target.setAttribute('title', target.getAttribute('data-stored-title'));
+      target.removeAttribute('data-stored-title');
+    }
+
+    customTooltip.style.display = 'none';
+  });
+}
+
+initCustomTooltip();
 
 const soon = document.createElement('section');
 soon.id = 'comingSoon';
@@ -1291,29 +1710,31 @@ let keywordToDeleteIndex = null;
 
 function renderKeywordRules() {
   keywordPage.innerHTML = `
-    <div class="page-head">
-      <div>
-        <h1 class="page-title">Keyword Rules</h1>
-        <p class="page-copy">Manage active keyword rules used to identify and flag content for review.</p>
-      </div>
-      <button class="add-keyword-btn" id="addKeywordBtn">+ Add Keyword</button>
-    </div>
     <div class="card">
+      <div class="card-header-bar">
+        <div>
+          <h1 class="title">Keyword Rules</h1>
+          <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Manage active keyword rules used to identify and flag content for review.</p>
+        </div>
+        <button class="add-keyword-btn" id="addKeywordBtn">+ Add Keyword</button>
+      </div>
       <table class="table">
         <thead>
           <tr>
             <th style="width:50%">Keyword</th>
-            <th style="width:25%">Detected Count</th>
-            <th style="width:25%;text-align:right">Action</th>
+            <th style="width:30%">Detected Count</th>
+            <th style="width:20%">Actions</th>
           </tr>
         </thead>
         <tbody>
           ${keywordRulesList.map((r, i) => `
             <tr>
-              <td><strong style="font-size:14px">${r.title}</strong></td>
-              <td style="font-weight:700;color:var(--text)">${r.detected}</td>
-              <td style="text-align:right">
-                <button class="delete-keyword" data-index="${i}">Delete</button>
+              <td><span style="font-size:13.5px;color:var(--text)">${r.title}</span></td>
+              <td style="color:var(--text)">${r.detected}</td>
+              <td>
+                <button class="action-icon-btn delete-icon-btn delete-keyword" data-index="${i}" title="Delete Keyword Rule" aria-label="Delete Keyword Rule">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
               </td>
             </tr>
           `).join('')}
@@ -1812,19 +2233,29 @@ function renderIncidentRows() {
     $('#incidentEmpty').style.display = 'none';
     tbody.innerHTML = pageItems.map(item => {
       const statusKey = item.status.toLowerCase().replace(' ', '_');
+      const rawDate = item.submitted || '';
+      const dateParts = rawDate.split(' · ');
+      const formattedDate = dateParts.length === 2 
+        ? `<div>${dateParts[0]}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${dateParts[1]}</div>`
+        : `<div>${rawDate}</div>`;
+
       return `
         <tr>
           <td>
-            <strong>${item.title}</strong>
-            <span class="sub-id" style="font-size:11.5px;color:var(--muted);margin-top:3px;display:block">${item.id} · by ${item.author}</span>
+            <div class="title-row-wrap">
+              <span class="title-truncate" title="${item.title.replace(/"/g, '&quot;')}">${item.title}</span>
+            </div>
+            <span class="sub" style="font-size:11.5px;color:var(--muted);margin-top:3px;display:block">${item.id}</span>
           </td>
           <td>${item.category}</td>
           <td>${item.location}</td>
           <td><span class="badge ${statusKey}">${item.status}</span></td>
-          <td>${item.assignee === 'Unassigned' ? '<span style="color:var(--muted)">Unassigned</span>' : `${item.assignee}`}</td>
-          <td style="color:var(--muted);font-size:12px">${item.submitted}</td>
-          <td style="text-align:right">
-            <button class="review" data-id="${item.id}" style="padding:7px 14px!important;font-size:12px!important">Manage</button>
+          <td>${item.assignee === 'Unassigned' ? '<span style="color:var(--muted)">Unassigned</span>' : `<span style="color:var(--text)">${item.assignee}</span>`}</td>
+          <td style="font-size:12.5px">${formattedDate}</td>
+          <td>
+            <button class="action-icon-btn review" data-id="${item.id}" title="View & Manage Incident Case" aria-label="View & Manage Incident Case">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </td>
         </tr>
       `;
@@ -2338,6 +2769,19 @@ $('#cancel').onclick = () => {
   $('#confirm').style.background = '';
   closeModal();
 };
+
+// Search input for Incidents
+const incSearchInput = document.querySelector('#incidentSearch');
+if (incSearchInput) {
+  incSearchInput.addEventListener('input', () => {
+    incidentPage = 1;
+    renderIncidentRows();
+  });
+  incSearchInput.addEventListener('keyup', () => {
+    incidentPage = 1;
+    renderIncidentRows();
+  });
+}
 
 // Default to Content Moderation Queue
 showQueuePage();
