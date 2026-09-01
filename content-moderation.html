@@ -600,7 +600,7 @@ const posts=[
   {
     id:'INC-20481',
     type:'Incident',
-    title:'Unsafe incident near station',
+    title:'Stopped and searched outside my own building',
     user:'Jason Dilo',
     category:'Policing',
     status:'Public',
@@ -616,11 +616,11 @@ const posts=[
     id:'CMT-90412',
     type:'Comment',
     title:'Threatening reply in incident discussion thread',
-    parentIncident:'INC-20481 (Unsafe incident near station)',
+    parentIncident:'INC-20481 (Stopped and searched outside my own building)',
     user:'Mark Vance',
     category:'Policing',
     status:'Public',
-    location:'London',
+    location:'Hackney, London',
     urgent:true,
     submitted:'Aug 31, 2026 · 11:15 AM',
     content:'Stop making excuses for these people or we will come down to your station and handle it ourselves.',
@@ -642,21 +642,6 @@ const posts=[
     evidence:['Image evidence'],
     ai:[],
     reports:[['Sarah Miller','Harassment','Aug 31, 2026 · 10:32 AM'],['Alex Wilson','Untrue','Aug 31, 2026 · 10:02 AM']]
-  },
-  {
-    id:'INC-20472',
-    type:'Incident',
-    title:'Threatening message outside clinic',
-    user:'David Brown',
-    category:'Medical',
-    status:'Public',
-    location:'New York',
-    urgent:false,
-    submitted:'Aug 30, 2026 · 07:15 PM',
-    content:'This post contains a direct threat near a healthcare facility that requires moderator review before it remains visible.',
-    evidence:['Video evidence'],
-    ai:[['Threatening Content','threat']],
-    reports:[]
   },
   {
     id:'CMT-90388',
@@ -841,11 +826,11 @@ function openDetails(id) {
 
     // Parent Incident Card Header & Content (Read-only reference context)
     $('#incidentContentCard').querySelector('.card-section-label').textContent = 'Parent Original Incident';
-    $('#fullTitle').textContent = parentPost ? parentPost.title : (current.parentIncident || 'Original Incident Report');
-    $('#fullSummary').textContent = parentPost ? parentPost.content : 'This is the verified original incident report under which the flagged comment was posted.';
+    $('#fullTitle').textContent = parentPost ? parentPost.title : 'Stopped and searched outside my own building';
+    $('#fullSummary').textContent = parentPost ? parentPost.content : 'This is the original incident report under which the flagged comment was posted.';
 
     // Flagged Comment Card
-    $('#commentParentTitle').textContent = current.parentIncident || 'Incident Discussion Thread';
+    $('#commentParentTitle').textContent = `${parentId} · ${parentPost ? parentPost.title : 'Stopped and searched outside my own building'}`;
     $('#commentAuthorName').textContent = current.user || 'Community Member';
     const initials = (current.user || 'User').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     $('#commentAvatar').textContent = initials;
@@ -939,6 +924,17 @@ function openDetails(id) {
     </div>
   `).join('');
 
+  // Dynamic Action Buttons for Comments vs Incidents
+  if (isComment) {
+    $('#approve').textContent = '✓ Keep Comment';
+    $('#reject').textContent = '✕ Remove Comment';
+    $('.action-help-text').textContent = 'Keeping the comment dismisses user reports and retains it live. Removing the comment takes it down and logs the violation reason.';
+  } else {
+    $('#approve').textContent = '✓ Approve & Publish';
+    $('#reject').textContent = '✕ Reject';
+    $('.action-help-text').textContent = 'Approving publishes the report as verified. Rejecting requires a reason, which is recorded and shown to the author.';
+  }
+
   window.scrollTo(0, 0);
 }
 
@@ -952,11 +948,12 @@ let action = null;
 function showModal(type) {
   action = type;
   $('#modal').style.display = 'flex';
+  const isComment = current && current.type === 'Comment';
   if (type === 'reject') {
-    $('#modalTitle').textContent = 'Reject Content';
-    $('#modalText').textContent = 'Select a predefined reason and add any relevant context.';
+    $('#modalTitle').textContent = isComment ? 'Remove Flagged Comment' : 'Reject Content';
+    $('#modalText').textContent = isComment ? 'Select the policy violation reason for removing this comment.' : 'Select a predefined reason and add any relevant context.';
     $('#form').innerHTML = '<label>Predefined Reason</label><select class="select" id="reason" style="width:100%"><option>Harassment</option><option>Threatening Content</option><option>Hate Speech</option><option>Inappropriate Content</option><option>Spam</option><option>Other</option></select><label>Custom Reason</label><textarea id="custom" placeholder="Enter additional reason..."></textarea>';
-    $('#confirm').textContent = 'Reject & Submit';
+    $('#confirm').textContent = isComment ? 'Remove Comment' : 'Reject & Submit';
     $('#confirm').className = 'btn danger';
   } else if (type === 'warn') {
     $('#modalTitle').textContent = 'Warn User?';
@@ -965,10 +962,12 @@ function showModal(type) {
     $('#confirm').textContent = 'Send Warning';
     $('#confirm').className = 'btn primary';
   } else {
-    $('#modalTitle').textContent = type === 'ban' ? 'Ban User?' : 'Post Approved';
-    $('#modalText').textContent = type === 'ban' ? `This will permanently ban ${current?.user || 'the author'}. Enforcement is independent of the content decision.` : 'The post will be marked approved and published as verified.';
+    $('#modalTitle').textContent = type === 'ban' ? 'Ban User?' : (isComment ? 'Dismiss Reports & Keep Comment?' : 'Post Approved');
+    $('#modalText').textContent = type === 'ban' 
+      ? `This will permanently ban ${current?.user || 'the author'}. Enforcement is independent of the content decision.` 
+      : (isComment ? 'The user reports will be dismissed and the comment will remain visible on the incident discussion thread.' : 'The post will be marked approved and published as verified.');
     $('#form').innerHTML = '';
-    $('#confirm').textContent = type === 'ban' ? 'Ban User' : 'Approve & Publish';
+    $('#confirm').textContent = type === 'ban' ? 'Ban User' : (isComment ? 'Dismiss Reports' : 'Approve & Publish');
     $('#confirm').className = type === 'ban' ? 'btn danger' : 'btn primary';
   }
 }
