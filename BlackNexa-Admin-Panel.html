@@ -1826,7 +1826,7 @@
       }
       .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 16px;
         margin-bottom: 24px;
       }
@@ -3879,8 +3879,9 @@
               <div style="display: flex; gap: 10px; align-items: center"></div>
             </div>
 
-            <!-- Top KPI Metric Cards Grid -->
+            <!-- Top KPI Metric Cards Grid (5-Column) -->
             <div class="kpi-grid">
+              <!-- Tile 1: Total Users -->
               <div class="kpi-card">
                 <div class="kpi-top">
                   <span class="kpi-label">Total Users</span>
@@ -3893,16 +3894,17 @@
                     </svg>
                   </div>
                 </div>
-                <div class="kpi-value">50</div>
+                <div class="kpi-value">1,280</div>
                 <div class="kpi-sub">
-                  <span class="kpi-growth-pill positive">↑ +5.8%</span>
+                  <span class="kpi-growth-pill positive">↑ +14.8%</span>
                   <span>vs last month</span>
                 </div>
               </div>
 
+              <!-- Tile 2: Total Incidents & Status Breakdown -->
               <div class="kpi-card">
                 <div class="kpi-top">
-                  <span class="kpi-label">Active Incidents</span>
+                  <span class="kpi-label">Total Incidents</span>
                   <div
                     class="kpi-icon-wrap"
                     style="background: #e0f2fe; color: #0284c7"
@@ -3918,14 +3920,16 @@
                   </div>
                 </div>
                 <div class="kpi-value">84</div>
-                <div class="kpi-sub">
-                  <span style="font-weight: 500; color: var(--text)"
-                    >18 Under Review</span
-                  >
-                  <span>· 62 Verified</span>
+                <div class="kpi-sub" style="font-size: 11px; flex-wrap: wrap; gap: 4px">
+                  <span style="color: #0284c7; font-weight: 600">62 Verified</span>
+                  <span>·</span>
+                  <span style="color: #d97706; font-weight: 600">18 Review</span>
+                  <span>·</span>
+                  <span style="color: #64748b">4 Other</span>
                 </div>
               </div>
 
+              <!-- Tile 3: Pending Moderation -->
               <div class="kpi-card">
                 <div class="kpi-top">
                   <span class="kpi-label">Pending Moderation</span>
@@ -3940,11 +3944,12 @@
                 </div>
                 <div class="kpi-value">12</div>
                 <div class="kpi-sub">
-                  <span class="kpi-growth-pill urgent">3 Urgent</span>
+                  <span class="kpi-growth-pill urgent">4 Urgent</span>
                   <span>need review</span>
                 </div>
               </div>
 
+              <!-- Tile 4: Verified Advocates -->
               <div class="kpi-card">
                 <div class="kpi-top">
                   <span class="kpi-label">Verified Advocates</span>
@@ -3962,6 +3967,26 @@
                 <div class="kpi-sub">
                   <span class="kpi-growth-pill positive">100% Verified</span>
                   <span>active duty</span>
+                </div>
+              </div>
+
+              <!-- Tile 5: Support Staff & Triage Inquiries -->
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <span class="kpi-label">Support Inquiries</span>
+                  <div
+                    class="kpi-icon-wrap"
+                    style="background: #ecfdf5; color: #047857"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="kpi-value">28</div>
+                <div class="kpi-sub">
+                  <span class="kpi-growth-pill positive">4 Staff Active</span>
+                  <span>triage queue</span>
                 </div>
               </div>
             </div>
@@ -13831,7 +13856,7 @@
           buildRoleSimulator();
           buildAccessDenied();
           buildAuditPanel();
-          buildDemoPanel();
+          // buildDemoPanel(); /* Hidden as requested */
           wireAccessibility();
           rebindLogin();
           rebindMfa();
