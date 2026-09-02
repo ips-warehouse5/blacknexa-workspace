@@ -356,7 +356,7 @@
       }
       .card-header-bar {
         padding: 0 0 8px 0;
-        border-bottom: 1px solid var(--line);
+        border-bottom: none;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1665,7 +1665,7 @@
         background-color: #fff;
         transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         border-radius: 50%;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
       }
       .switch-toggle input:checked + .switch-slider {
         background-color: var(--accent);
@@ -2697,6 +2697,244 @@
         margin-top: 8px !important;
         margin-bottom: 8px !important;
       }
+
+      /* Dashboard Date Picker Dropdown & Custom Range Popover */
+      .dash-date-picker-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      .dash-date-trigger {
+        min-width: 140px;
+        padding: 9px 12px;
+        font-size: 13px;
+        font-weight: 400;
+        border-radius: 8px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        line-height: 1.4;
+      }
+      .dash-date-trigger:hover {
+        border-color: var(--accent);
+      }
+      .dash-date-picker-wrap.open .dash-date-trigger {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .dash-date-trigger svg {
+        width: 14px;
+        height: 14px;
+        stroke: #64748b;
+        stroke-width: 2.2;
+        fill: none;
+        transition: transform 0.2s ease;
+      }
+      .dash-date-picker-wrap.open .dash-date-trigger svg {
+        transform: rotate(180deg);
+        stroke: var(--accent);
+      }
+      .dash-date-dropdown-panel {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 99999;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+        min-width: 150px;
+        padding: 6px;
+        box-sizing: border-box;
+        animation: dropFade 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+      }
+      .dash-date-picker-wrap.open .dash-date-dropdown-panel {
+        display: block;
+      }
+      .dash-date-dropdown-panel.show-calendar {
+        display: flex;
+        width: 580px;
+        max-width: 90vw;
+        padding: 0;
+      }
+      .dash-date-presets-col {
+        width: 100%;
+        min-width: 140px;
+        background: var(--surface);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .dash-date-dropdown-panel.show-calendar .dash-date-presets-col {
+        width: 150px;
+        min-width: 150px;
+        border-right: 1px solid var(--line);
+        padding: 6px;
+        border-radius: 10px 0 0 10px;
+      }
+      .dash-date-preset-item {
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--text);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.12s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        user-select: none;
+        white-space: nowrap;
+        line-height: 1.35;
+        box-sizing: border-box;
+      }
+      .dash-date-preset-item:hover {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .dash-date-preset-item.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .dash-date-preset-item.active::after {
+        content: "✓";
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        margin-left: 8px;
+        flex-shrink: 0;
+      }
+      .dash-calendar-container {
+        flex: 1;
+        display: none;
+        flex-direction: column;
+        background: var(--surface);
+        padding: 16px 20px 14px;
+      }
+      .dash-date-dropdown-panel.show-calendar .dash-calendar-container {
+        display: flex;
+      }
+      .dash-cal-header-summary {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 14px;
+      }
+      .dash-cal-months-row {
+        display: flex;
+        gap: 20px;
+      }
+      .dash-cal-month-box {
+        flex: 1;
+      }
+      .dash-cal-month-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 10px;
+        height: 28px;
+      }
+      .dash-cal-nav-btn {
+        width: 26px;
+        height: 26px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--muted);
+        transition: all 0.15s;
+        user-select: none;
+      }
+      .dash-cal-nav-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .dash-cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        row-gap: 3px;
+        text-align: center;
+      }
+      .dash-cal-weekday {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        padding: 4px 0;
+      }
+      .dash-cal-day {
+        font-size: 12px;
+        color: var(--text);
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 0;
+        transition: background 0.1s, color 0.1s;
+        user-select: none;
+      }
+      .dash-cal-day.empty {
+        cursor: default;
+      }
+      .dash-cal-day.dimmed {
+        color: var(--muted);
+        opacity: 0.4;
+      }
+      .dash-cal-day:not(.empty):not(.dimmed):hover {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-radius: 6px;
+      }
+      .dash-cal-day.range-start {
+        background: var(--accent) !important;
+        color: #fff !important;
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+        font-weight: 600;
+      }
+      .dash-cal-day.range-end {
+        background: var(--accent) !important;
+        color: #fff !important;
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+        font-weight: 600;
+      }
+      .dash-cal-day.in-range {
+        background: var(--accent-soft) !important;
+        color: var(--accent) !important;
+        border-radius: 0 !important;
+      }
+      .dash-cal-day.range-start.range-end {
+        border-radius: 14px !important;
+      }
+      .dash-cal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
     </style>
   </head>
   <body>
@@ -2892,7 +3130,7 @@
             </div>
 
             <button type="submit" class="login-submit-btn" id="btnVerifyMfa">
-              Verify & Access Console
+              Verify
             </button>
 
             <div class="mfa-help-text">
@@ -3158,9 +3396,9 @@
                     </svg>
                   </div>
                 </div>
-                <div class="kpi-value">1,280</div>
+                <div class="kpi-value">50</div>
                 <div class="kpi-sub">
-                  <span class="kpi-growth-pill positive">↑ +14.8%</span>
+                  <span class="kpi-growth-pill positive">↑ +5.8%</span>
                   <span>vs last month</span>
                 </div>
               </div>
@@ -3205,7 +3443,7 @@
                 </div>
                 <div class="kpi-value">12</div>
                 <div class="kpi-sub">
-                  <span class="kpi-growth-pill urgent">4 Urgent</span>
+                  <span class="kpi-growth-pill urgent">3 Urgent</span>
                   <span>need review</span>
                 </div>
               </div>
@@ -3237,14 +3475,67 @@
               <div class="dash-card">
                 <div class="dash-card-header">
                   <div>
-                    <div class="dash-card-title">Incident Activity Trend</div>
-                    <div class="dash-card-sub">
+                    <div class="dash-card-title">Incident Activity</div>
+                    <div class="dash-card-sub" id="dashCardSubtitle">
                       Report submissions over the last 7 days
                     </div>
                   </div>
-                  <span class="badge" style="font-size: 11.5px"
-                    >Aug 25 - Aug 31</span
-                  >
+                  <!-- Dashboard Date Filter Dropdown & Custom Range Picker -->
+                  <div class="dash-date-picker-wrap" id="dashDatePickerWrap">
+                    <input type="hidden" id="dashDateFilter" value="week" />
+                    <div class="dash-date-trigger" id="dashDateTrigger" tabindex="0">
+                      <span id="dashDateLabel">Past 7 Days</span>
+                      <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+
+                    <div class="dash-date-dropdown-panel" id="dashDateDropdownPanel">
+                      <!-- Presets List Column -->
+                      <div class="dash-date-presets-col">
+                        <div class="dash-date-preset-item" data-val="today">Today</div>
+                        <div class="dash-date-preset-item" data-val="yesterday">Yesterday</div>
+                        <div class="dash-date-preset-item active" data-val="week">Last 7 days</div>
+                        <div class="dash-date-preset-item" data-val="15days">Last 15 days</div>
+                        <div class="dash-date-preset-item" data-val="month">Last Month</div>
+                        <div class="dash-date-preset-item" data-val="custom">Custom</div>
+                      </div>
+
+                      <!-- 2-Month Dual Calendar Container -->
+                      <div class="dash-calendar-container" id="dashCalendarContainer">
+                        <div class="dash-cal-header-summary" id="dashCalHeaderSummary">
+                          6 May 2017 - 22 May 2017
+                        </div>
+                        <div class="dash-cal-months-row">
+                          <!-- Month 1 -->
+                          <div class="dash-cal-month-box">
+                            <div class="dash-cal-month-head">
+                              <span id="dashCalMonth1Title">May 2026</span>
+                              <button type="button" class="dash-cal-nav-btn" id="dashCalPrevMonth" title="Previous Month">
+                                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2"><path d="m15 18-6-6 6-6"/></svg>
+                              </button>
+                            </div>
+                            <div class="dash-cal-grid" id="dashCalGrid1"></div>
+                          </div>
+
+                          <!-- Month 2 -->
+                          <div class="dash-cal-month-box">
+                            <div class="dash-cal-month-head">
+                              <span id="dashCalMonth2Title">June 2026</span>
+                              <button type="button" class="dash-cal-nav-btn" id="dashCalNextMonth" title="Next Month">
+                                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2"><path d="m9 18 6-6-6-6"/></svg>
+                              </button>
+                            </div>
+                            <div class="dash-cal-grid" id="dashCalGrid2"></div>
+                          </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="dash-cal-actions">
+                          <button type="button" class="btn" id="dashCalCancelBtn" style="padding:5px 12px;font-size:12px;">Cancel</button>
+                          <button type="button" class="btn btn-primary" id="dashCalApplyBtn" style="padding:5px 14px;font-size:12px;">Apply</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="chart-bars-wrap">
                   <div class="chart-bar-group">
@@ -3319,9 +3610,6 @@
                       Distribution across community report domains
                     </div>
                   </div>
-                  <span class="badge active" style="font-size: 11.5px"
-                    >Live Breakdown</span
-                  >
                 </div>
                 <div class="cat-progress-list">
                   <div class="cat-progress-row">
@@ -3482,7 +3770,7 @@
               <div class="dash-card">
                 <div class="dash-card-header">
                   <div>
-                    <div class="dash-card-title">⚠️ Urgent Queue Alerts</div>
+                    <div class="dash-card-title">Urgent Queue Alerts</div>
                     <div class="dash-card-sub">
                       Reports requiring immediate operator attention
                     </div>
@@ -3848,7 +4136,7 @@
                             font-size: 11.5px;
                             margin-left: 6px;
                           "
-                          >· Aug 31, 2026  11:15 AM</span
+                          >· Aug 31, 2026 11:15 AM</span
                         >
                       </div>
                     </div>
@@ -4249,7 +4537,7 @@
                   <div class="info-cell">
                     <div class="info-cell-label">Submitted At</div>
                     <div class="info-cell-value" id="incSubmitted">
-                      Aug 27, 2026  09:41 AM
+                      Aug 27, 2026 09:41 AM
                     </div>
                   </div>
                 </div>
@@ -4503,7 +4791,7 @@
                       style="font-size: 13px; color: var(--text)"
                       id="incAssignedAt"
                     >
-                      27 Aug 2026  10:40
+                      27 Aug 2026 10:40
                     </div>
                   </div>
 
@@ -4773,7 +5061,10 @@
                   style="cursor: pointer; width: 15px; height: 15px; margin: 0"
                   title="Select / Deselect all users"
                 />
-                <span><strong id="bulkSelectedCount">0</strong> users selected</span>
+                <span
+                  ><strong id="bulkSelectedCount">0</strong> users
+                  selected</span
+                >
               </div>
               <div class="bulk-actions">
                 <button
@@ -6713,7 +7004,10 @@
         const q = keywordSearchQuery.trim().toLowerCase();
         const filtered = keywordRulesList.filter((r) => {
           if (!q) return true;
-          return (r.title || "").toLowerCase().includes(q) || (r.pattern || "").toLowerCase().includes(q);
+          return (
+            (r.title || "").toLowerCase().includes(q) ||
+            (r.pattern || "").toLowerCase().includes(q)
+          );
         });
 
         const totalItems = filtered.length;
@@ -6721,7 +7015,10 @@
         if (keywordCurrentPage > totalPages) keywordCurrentPage = totalPages;
 
         const startIndex = (keywordCurrentPage - 1) * keywordPageSize;
-        const paginated = filtered.slice(startIndex, startIndex + keywordPageSize);
+        const paginated = filtered.slice(
+          startIndex,
+          startIndex + keywordPageSize,
+        );
         const showingStart = totalItems === 0 ? 0 : startIndex + 1;
         const showingEnd = Math.min(startIndex + keywordPageSize, totalItems);
 
@@ -6804,13 +7101,18 @@
             const reFocus = keywordPage.querySelector("#keywordSearchInput");
             if (reFocus) {
               reFocus.focus();
-              reFocus.setSelectionRange(reFocus.value.length, reFocus.value.length);
+              reFocus.setSelectionRange(
+                reFocus.value.length,
+                reFocus.value.length,
+              );
             }
           };
         }
 
         // Page Size Select Handler
-        const pageSizeSelect = keywordPage.querySelector("#keywordPageSizeSelect");
+        const pageSizeSelect = keywordPage.querySelector(
+          "#keywordPageSizeSelect",
+        );
         if (pageSizeSelect) {
           pageSizeSelect.onchange = (e) => {
             keywordPageSize = Number(e.target.value);
@@ -8815,7 +9117,8 @@
         const count = selectedUserIds.size;
         const filtered = getFilteredUsers();
         const isAllSelected =
-          filtered.length > 0 && filtered.every((u) => selectedUserIds.has(u.id));
+          filtered.length > 0 &&
+          filtered.every((u) => selectedUserIds.has(u.id));
 
         if (count > 0) {
           bulkBar.style.display = "flex";
@@ -9244,7 +9547,9 @@
       // ═════════════════════════════════════════════════════════════════════════════════
 
       function createCustomSelectHTML(id, options, selectedValue) {
-        const selectedIndex = options.findIndex((o) => o.value === selectedValue);
+        const selectedIndex = options.findIndex(
+          (o) => o.value === selectedValue,
+        );
         const actualIndex = selectedIndex >= 0 ? selectedIndex : 0;
         const selectedOpt = options[actualIndex];
 
@@ -10029,7 +10334,7 @@
           <input type="text" id="newStaffPassword" value="blacknexa" style="width:100%;box-sizing:border-box" />
         `;
 
-        $("#confirm").textContent = "Create Staff Account";
+        $("#confirm").textContent = "Create Account";
         $("#confirm").className = "btn primary";
         $("#confirm").style.background = "";
         openModal();
@@ -10631,6 +10936,326 @@
         const authScreen = document.querySelector("#authScreen");
         if (authScreen) authScreen.style.display = "flex";
       }
+      // =========================================================
+      // DASHBOARD DATE FILTER & DUAL CALENDAR RANGE PICKER LOGIC
+      // =========================================================
+      (function initDashboardDatePicker() {
+        const wrap = document.getElementById("dashDatePickerWrap");
+        const trigger = document.getElementById("dashDateTrigger");
+        const label = document.getElementById("dashDateLabel");
+        const hiddenInput = document.getElementById("dashDateFilter");
+        const panel = document.getElementById("dashDateDropdownPanel");
+        const presetItems = document.querySelectorAll(".dash-date-preset-item");
+        const calendarContainer = document.getElementById("dashCalendarContainer");
+        const headerSummary = document.getElementById("dashCalHeaderSummary");
+        const month1Title = document.getElementById("dashCalMonth1Title");
+        const month2Title = document.getElementById("dashCalMonth2Title");
+        const grid1 = document.getElementById("dashCalGrid1");
+        const grid2 = document.getElementById("dashCalGrid2");
+        const prevBtn = document.getElementById("dashCalPrevMonth");
+        const nextBtn = document.getElementById("dashCalNextMonth");
+        const applyBtn = document.getElementById("dashCalApplyBtn");
+        const cancelBtn = document.getElementById("dashCalCancelBtn");
+        const subtitle = document.getElementById("dashCardSubtitle");
+
+        if (!wrap || !trigger || !panel) return;
+
+        // Initialize date context based on current real date (e.g. September 2026)
+        const todayObj = new Date();
+        const nowYear = todayObj.getFullYear();
+        const nowMonth = todayObj.getMonth(); // Current Month (0-indexed)
+
+        // Left calendar shows Last Month, Right calendar shows Current Month
+        let lastMonthObj = new Date(nowYear, nowMonth - 1, 1);
+        let currentYear = lastMonthObj.getFullYear();
+        let currentMonth = lastMonthObj.getMonth();
+
+        // Format helper to YYYY-MM-DD
+        function toISODateStr(d) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        }
+
+        // Default custom date range: 15th of last month to 2nd of current month
+        let customRangeStart = toISODateStr(new Date(nowYear, nowMonth - 1, 15));
+        let customRangeEnd = toISODateStr(todayObj);
+        let tempRangeStart = customRangeStart;
+        let tempRangeEnd = customRangeEnd;
+
+        const monthNames = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ];
+        const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
+
+        function formatDateReadable(isoStr) {
+          if (!isoStr) return "";
+          const parts = isoStr.split("-");
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return `${d} ${shortMonths[m]} ${y}`;
+        }
+
+        function updateHeaderSummary() {
+          if (tempRangeStart && tempRangeEnd) {
+            headerSummary.textContent = `${formatDateReadable(tempRangeStart)} - ${formatDateReadable(tempRangeEnd)}`;
+          } else if (tempRangeStart) {
+            headerSummary.textContent = `${formatDateReadable(tempRangeStart)} - Select end date`;
+          } else {
+            headerSummary.textContent = "Select date range";
+          }
+        }
+
+        function renderCalendarMonth(year, month, gridEl) {
+          gridEl.innerHTML = "";
+          // Weekday header
+          weekdays.forEach(w => {
+            const el = document.createElement("div");
+            el.className = "dash-cal-weekday";
+            el.textContent = w;
+            gridEl.appendChild(el);
+          });
+
+          const firstDayIndex = new Date(year, month, 1).getDay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          const prevMonthDays = new Date(year, month, 0).getDate();
+
+          // Previous month trailing days (dimmed)
+          for (let i = firstDayIndex - 1; i >= 0; i--) {
+            const dayNum = prevMonthDays - i;
+            const el = document.createElement("div");
+            el.className = "dash-cal-day dimmed";
+            el.textContent = dayNum;
+            gridEl.appendChild(el);
+          }
+
+          // Current month days
+          for (let d = 1; d <= daysInMonth; d++) {
+            const el = document.createElement("div");
+            el.className = "dash-cal-day";
+            el.textContent = d;
+
+            const mStr = String(month + 1).padStart(2, "0");
+            const dStr = String(d).padStart(2, "0");
+            const dateStr = `${year}-${mStr}-${dStr}`;
+            el.dataset.date = dateStr;
+
+            // Highlight range
+            if (tempRangeStart && tempRangeEnd) {
+              if (dateStr === tempRangeStart) {
+                el.classList.add("range-start");
+              }
+              if (dateStr === tempRangeEnd) {
+                el.classList.add("range-end");
+              }
+              if (dateStr > tempRangeStart && dateStr < tempRangeEnd) {
+                el.classList.add("in-range");
+              }
+            } else if (tempRangeStart && dateStr === tempRangeStart) {
+              el.classList.add("range-start", "range-end");
+            }
+
+            el.onclick = (e) => {
+              e.stopPropagation();
+              onDateCellClick(dateStr);
+            };
+
+            gridEl.appendChild(el);
+          }
+
+          // Trailing days to fill 42 cells grid
+          const totalRendered = firstDayIndex + daysInMonth;
+          const remaining = (7 - (totalRendered % 7)) % 7;
+          for (let i = 1; i <= remaining; i++) {
+            const el = document.createElement("div");
+            el.className = "dash-cal-day dimmed";
+            el.textContent = i;
+            gridEl.appendChild(el);
+          }
+        }
+
+        function renderCalendars() {
+          month1Title.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+          
+          let nextMonth = currentMonth + 1;
+          let nextYear = currentYear;
+          if (nextMonth > 11) {
+            nextMonth = 0;
+            nextYear++;
+          }
+          month2Title.textContent = `${monthNames[nextMonth]} ${nextYear}`;
+
+          renderCalendarMonth(currentYear, currentMonth, grid1);
+          renderCalendarMonth(nextYear, nextMonth, grid2);
+          updateHeaderSummary();
+        }
+
+        function onDateCellClick(dateStr) {
+          if (!tempRangeStart || (tempRangeStart && tempRangeEnd)) {
+            tempRangeStart = dateStr;
+            tempRangeEnd = null;
+          } else if (tempRangeStart && !tempRangeEnd) {
+            if (dateStr < tempRangeStart) {
+              tempRangeEnd = tempRangeStart;
+              tempRangeStart = dateStr;
+            } else {
+              tempRangeEnd = dateStr;
+            }
+          }
+          renderCalendars();
+        }
+
+        // Previous month button
+        prevBtn.onclick = (e) => {
+          e.stopPropagation();
+          currentMonth--;
+          if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+          }
+          renderCalendars();
+        };
+
+        // Next month button
+        nextBtn.onclick = (e) => {
+          e.stopPropagation();
+          currentMonth++;
+          if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+          }
+          renderCalendars();
+        };
+
+        // Open/Close trigger
+        trigger.onclick = (e) => {
+          e.stopPropagation();
+          const isOpen = wrap.classList.contains("open");
+          document.querySelectorAll(".custom-select-wrap").forEach(w => w.classList.remove("open"));
+          if (!isOpen) {
+            wrap.classList.add("open");
+          } else {
+            wrap.classList.remove("open");
+          }
+        };
+
+        // Preset items click
+        presetItems.forEach(item => {
+          item.onclick = (e) => {
+            e.stopPropagation();
+            const val = item.dataset.val;
+
+            if (val === "custom") {
+              panel.classList.add("show-calendar");
+              presetItems.forEach(i => i.classList.remove("active"));
+              item.classList.add("active");
+              
+              // Reset calendar view to Last Month & Current Month
+              const baseNow = new Date();
+              const baseLast = new Date(baseNow.getFullYear(), baseNow.getMonth() - 1, 1);
+              currentYear = baseLast.getFullYear();
+              currentMonth = baseLast.getMonth();
+
+              tempRangeStart = customRangeStart;
+              tempRangeEnd = customRangeEnd;
+              renderCalendars();
+            } else {
+              panel.classList.remove("show-calendar");
+              presetItems.forEach(i => i.classList.remove("active"));
+              item.classList.add("active");
+              hiddenInput.value = val;
+              wrap.classList.remove("open");
+
+              let labelText = item.textContent.trim();
+              if (val === "today") {
+                label.textContent = "Today";
+                if (subtitle) subtitle.textContent = "Report submissions for today";
+                updateIncidentChartData([4, 6, 8, 5, 9, 7, 10], ["8 AM", "10 AM", "12 PM", "2 PM", "4 PM", "6 PM", "8 PM"]);
+              } else if (val === "yesterday") {
+                label.textContent = "Yesterday";
+                if (subtitle) subtitle.textContent = "Report submissions for yesterday";
+                updateIncidentChartData([5, 7, 4, 8, 12, 6, 9], ["8 AM", "10 AM", "12 PM", "2 PM", "4 PM", "6 PM", "8 PM"]);
+              } else if (val === "week") {
+                label.textContent = "Past 7 Days";
+                if (subtitle) subtitle.textContent = "Report submissions over the last 7 days";
+                updateIncidentChartData([6, 9, 5, 14, 8, 16, 18], ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+              } else if (val === "15days") {
+                label.textContent = "Last 15 Days";
+                if (subtitle) subtitle.textContent = "Report submissions over the last 15 days";
+                updateIncidentChartData([12, 18, 15, 22, 19, 25, 28], ["Day 1-2", "Day 3-4", "Day 5-6", "Day 7-8", "Day 9-10", "Day 11-12", "Day 13-15"]);
+              } else if (val === "month") {
+                label.textContent = "Last Month";
+                if (subtitle) subtitle.textContent = "Report submissions over the last month";
+                updateIncidentChartData([24, 32, 28, 45, 38, 50, 42], ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6", "Week 7"]);
+              }
+            }
+          };
+        });
+
+        // Calendar Cancel button
+        cancelBtn.onclick = (e) => {
+          e.stopPropagation();
+          panel.classList.remove("show-calendar");
+          wrap.classList.remove("open");
+        };
+
+        // Calendar Apply button
+        applyBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (tempRangeStart && tempRangeEnd) {
+            customRangeStart = tempRangeStart;
+            customRangeEnd = tempRangeEnd;
+          } else if (tempRangeStart) {
+            customRangeStart = tempRangeStart;
+            customRangeEnd = tempRangeStart;
+          }
+          hiddenInput.value = "custom";
+          label.textContent = `${formatDateReadable(customRangeStart)} - ${formatDateReadable(customRangeEnd)}`;
+          if (subtitle) subtitle.textContent = `Report submissions from ${formatDateReadable(customRangeStart)} to ${formatDateReadable(customRangeEnd)}`;
+          updateIncidentChartData([8, 12, 15, 20, 14, 19, 22], ["W1", "W2", "W3", "W4", "W5", "W6", "W7"]);
+          panel.classList.remove("show-calendar");
+          wrap.classList.remove("open");
+        };
+
+        // Helper to update chart bars dynamically
+        function updateIncidentChartData(dataValues, labels) {
+          const barGroups = document.querySelectorAll(".dash-card .chart-bar-group");
+          const maxVal = Math.max(...dataValues, 1);
+          barGroups.forEach((group, idx) => {
+            if (idx < dataValues.length) {
+              group.style.display = "flex";
+              const bar = group.querySelector(".chart-bar");
+              const lbl = group.querySelector(".chart-bar-label");
+              const val = dataValues[idx];
+              const pct = Math.round((val / maxVal) * 100);
+              if (bar) {
+                bar.style.height = `${pct}%`;
+                bar.setAttribute("data-tooltip", `${labels[idx]}: ${val} Reports`);
+              }
+              if (lbl) {
+                lbl.textContent = labels[idx];
+              }
+            } else {
+              group.style.display = "none";
+            }
+          });
+        }
+
+        // Close dashboard dropdown on click outside
+        document.addEventListener("click", (e) => {
+          if (!e.target.closest("#dashDatePickerWrap")) {
+            wrap.classList.remove("open");
+            panel.classList.remove("show-calendar");
+          }
+        });
+
+        // Initialize calendar render
+        renderCalendars();
+      })();
     </script>
   </body>
 </html>
