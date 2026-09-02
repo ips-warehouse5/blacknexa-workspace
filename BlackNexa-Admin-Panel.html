@@ -1165,6 +1165,25 @@
         width: 100%;
         box-sizing: border-box;
       }
+      .modal input.field-invalid {
+        border-color: var(--danger) !important;
+        box-shadow: 0 0 0 3px rgba(198, 61, 73, 0.1) !important;
+      }
+      .modal .password-input-wrap.field-invalid input {
+        border-color: var(--danger) !important;
+        box-shadow: 0 0 0 3px rgba(198, 61, 73, 0.1) !important;
+      }
+      .modal .custom-select-wrap.field-invalid .custom-select-trigger {
+        border-color: var(--danger) !important;
+        box-shadow: 0 0 0 3px rgba(198, 61, 73, 0.1) !important;
+      }
+      .modal .field-error-msg {
+        color: var(--danger);
+        font-size: 11.5px;
+        font-weight: 500;
+        margin-top: 5px;
+        line-height: 1.4;
+      }
       .modal textarea {
         min-height: 85px;
         resize: vertical;
@@ -2975,20 +2994,18 @@
         align-items: center;
         gap: 5px;
       }
-      .role-sim-select {
+      .role-sim-wrap .custom-select-trigger {
         width: 100%;
-        padding: 8px 32px 8px 10px;
-        border-radius: 8px;
-        border: 1px solid var(--line);
-        background: var(--surface);
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 14px;
-        color: var(--text);
         font-size: 12.5px;
-        font-family: inherit;
         font-weight: 600;
-        cursor: pointer;
+        min-width: 0;
+      }
+      .role-sim-wrap .custom-select-menu {
+        top: auto;
+        bottom: calc(100% + 6px);
+        width: 100%;
+        min-width: 100%;
+        max-width: none;
       }
       .role-sim-hint {
         font-size: 10.5px;
@@ -3820,24 +3837,21 @@
           </div>
           <div class="sub-menu" id="incidentSubMenu" style="display: none">
             <div class="sub-nav active" id="subAllIncidents">All Incidents</div>
-            <div class="sub-nav soon-sub-nav" data-target="Verification Queue">
-              Verification Queue
-            </div>
-            <div class="sub-nav soon-sub-nav" data-target="My Assigned Cases">
+            <div class="sub-nav" id="subMyAssignedCases">
               My Assigned Cases
             </div>
           </div>
 
-          <div class="nav active" id="contentModMenu">
+          <div class="nav" id="contentModMenu">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg
             ></span>
             <span class="nav-label">Content Moderation</span>
-            <span class="nav-arrow">▾</span>
+            <span class="nav-arrow">▸</span>
           </div>
-          <div class="sub-menu" id="modSubMenu">
-            <div class="sub-nav active" id="subKeyword">Keyword Rules</div>
+          <div class="sub-menu" id="modSubMenu" style="display: none">
+            <div class="sub-nav" id="subKeyword">Keyword Rules</div>
           </div>
 
           <div class="nav" id="resourcesNavMenu">
@@ -3860,6 +3874,12 @@
                 <path d="M10 6h8v4h-8V6Z" /></svg
             ></span>
             <span class="nav-label">News</span>
+            <span class="nav-arrow" id="newsMgmtArrow">▸</span>
+          </div>
+          <div class="sub-menu" id="newsSubMenu" style="display: none">
+            <div class="sub-nav" id="subNewsCategories">News Categories</div>
+            <div class="sub-nav" id="subNewsTags">Tags Management</div>
+            <div class="sub-nav" id="subDailyBriefing">Daily Briefing</div>
           </div>
           <div class="nav soon-nav" data-target="Notifications & Announcements">
             <span class="nav-icon"
@@ -6545,7 +6565,7 @@
                       All Verification
                     </div>
                     <div class="custom-select-option" data-value="Verified">
-                      Verified Shield ✓
+                      Verified
                     </div>
                     <div class="custom-select-option" data-value="Unverified">
                       Unverified
@@ -10287,6 +10307,90 @@
             </form>
           </div>
         </section>
+
+        <!-- News Categories & Tags Management -->
+        <section id="newsCategoriesView" class="cm-page" style="display: none">
+          <div class="card">
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div><h1 class="title">News Categories</h1><p style="color: var(--muted); font-size: 13px; margin: 4px 0 0">Create and manage the categories available for news stories.</p></div>
+              <button class="btn primary" id="btnAddNewsCategory">+ Add Category</button>
+            </div>
+            <div class="filters">
+              <input class="search" id="newsCategorySearch" placeholder="Search categories..." />
+            </div>
+            <table class="table"><thead><tr><th style="width:45%">Name &amp; ID</th><th style="width:18%">Articles</th><th style="width:18%">Status</th><th style="width:19%">Actions</th></tr></thead><tbody id="newsCategoriesTableBody"></tbody></table>
+            <div class="pagination-bar" id="newsCategoriesPaginationBar"></div>
+          </div>
+        </section>
+
+        <section id="newsTagsView" class="cm-page" style="display: none">
+          <div class="card">
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div><h1 class="title">Tags Management</h1><p style="color: var(--muted); font-size: 13px; margin: 4px 0 0">Create and manage the tags available for news stories.</p></div>
+              <button class="btn primary" id="btnAddNewsTag">+ Add Tag</button>
+            </div>
+            <div class="filters">
+              <input class="search" id="newsTagSearch" placeholder="Search tags..." />
+            </div>
+            <table class="table"><thead><tr><th style="width:45%">Name &amp; ID</th><th style="width:18%">Articles</th><th style="width:18%">Status</th><th style="width:19%">Actions</th></tr></thead><tbody id="newsTagsTableBody"></tbody></table>
+            <div class="pagination-bar" id="newsTagsPaginationBar"></div>
+          </div>
+        </section>
+
+        <section id="dailyBriefingView" class="cm-page" style="display: none">
+          <div class="card">
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div>
+                <h1 class="title">Daily Briefing Management</h1>
+                <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Select and manage news articles included in the Black Nexa Daily Briefing. Reorder featured articles for briefing display.</p>
+              </div>
+              <button class="btn primary" id="btnSaveBriefingOrder" disabled>Save Briefing Order</button>
+            </div>
+
+            <div class="kpi-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px">
+              <div class="kpi-card"><div class="kpi-label">Articles Included</div><div class="kpi-value" id="briefingIncludedCount">0</div></div>
+              <div class="kpi-card"><div class="kpi-label">Published Articles</div><div class="kpi-value" id="briefingPublishedCount">0</div></div>
+              <div class="kpi-card"><div class="kpi-label">Audio Ready</div><div class="kpi-value" id="briefingAudioReadyCount">0</div></div>
+            </div>
+
+            <div class="tabs" id="dailyBriefingTabs">
+              <div class="tab active" data-briefing-tab="included">Included in Briefing (<span id="briefingTabIncludedCount">0</span>)</div>
+              <div class="tab" data-briefing-tab="available">Available Stories (<span id="briefingTabAvailableCount">0</span>)</div>
+            </div>
+
+            <div id="dailyBriefingIncludedPanel">
+              <div class="filters"><input class="search" id="briefingIncludedSearch" placeholder="Search included stories..." /></div>
+              <table class="table">
+                <thead><tr><th style="width:42%">Story &amp; ID</th><th style="width:14%">Status</th><th style="width:14%">Audio</th><th style="width:16%">Published At</th><th style="width:14%; text-align: right; padding-right: 18px">Actions</th></tr></thead>
+                <tbody id="dailyBriefingIncludedBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="dailyBriefingIncludedPagination"></div>
+            </div>
+
+            <div id="dailyBriefingAvailablePanel" style="display:none">
+              <div class="filters">
+                <input class="search" id="briefingAvailableSearch" placeholder="Search available stories..." />
+                <div style="display:flex;gap:10px">
+                  <div class="custom-select-wrap" style="min-width:170px">
+                    <input type="hidden" id="briefingCategoryFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Categories</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu"><div class="custom-select-option selected" data-value="All">All Categories</div><div class="custom-select-option" data-value="Wealth & Business">Wealth &amp; Business</div><div class="custom-select-option" data-value="Civic & Justice">Civic &amp; Justice</div><div class="custom-select-option" data-value="Education & Tech">Education &amp; Tech</div><div class="custom-select-option" data-value="Health & Wellness">Health &amp; Wellness</div><div class="custom-select-option" data-value="Arts & Culture">Arts &amp; Culture</div><div class="custom-select-option" data-value="Community">Community</div></div>
+                  </div>
+                  <div class="custom-select-wrap" style="min-width:150px">
+                    <input type="hidden" id="briefingStatusFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Statuses</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu"><div class="custom-select-option selected" data-value="All">All Statuses</div><div class="custom-select-option" data-value="Published">Published</div><div class="custom-select-option" data-value="Approved">Approved</div></div>
+                  </div>
+                </div>
+              </div>
+              <table class="table">
+                <thead><tr><th style="width:42%">Story &amp; ID</th><th style="width:18%">Category</th><th style="width:14%">Status</th><th style="width:12%">Audio</th><th style="width:14%; text-align: right; padding-right: 18px">Actions</th></tr></thead>
+                <tbody id="dailyBriefingAvailableBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="dailyBriefingAvailablePagination"></div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
     <div class="modal-wrap" id="modal">
@@ -10568,6 +10672,9 @@
         if ($("#newsQueueView")) $("#newsQueueView").style.display = "none";
         if ($("#newsDetailsView")) $("#newsDetailsView").style.display = "none";
         if ($("#newsFormView")) $("#newsFormView").style.display = "none";
+        if ($("#newsCategoriesView")) $("#newsCategoriesView").style.display = "none";
+        if ($("#newsTagsView")) $("#newsTagsView").style.display = "none";
+        if ($("#dailyBriefingView")) $("#dailyBriefingView").style.display = "none";
         if ($("#resourcesQueueView"))
           $("#resourcesQueueView").style.display = "none";
         if ($("#resourceDetailsView"))
@@ -11463,9 +11570,11 @@
               opt.classList.add("selected");
               if (hiddenInput) {
                 hiddenInput.value = val;
+                hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
               }
               if (label) {
                 label.textContent = opt.textContent.replace("✓", "").trim();
+                label.style.color = "";
               }
               wrap.classList.remove("open");
 
@@ -11473,6 +11582,19 @@
               if (hiddenInput && hiddenInput.id === "sort") {
                 currentPage = 1;
                 renderRows();
+              } else if (
+                hiddenInput &&
+                hiddenInput.id === "roleSimSelect" &&
+                typeof window.bnSwitchRolePreview === "function"
+              ) {
+                window.bnSwitchRolePreview(val);
+              } else if (
+                hiddenInput &&
+                (hiddenInput.id === "briefingCategoryFilter" ||
+                  hiddenInput.id === "briefingStatusFilter")
+              ) {
+                if (typeof renderDailyBriefingAvailable === "function")
+                  renderDailyBriefingAvailable();
               } else if (
                 hiddenInput &&
                 (hiddenInput.id === "incidentCategoryFilter" ||
@@ -12019,6 +12141,10 @@
         if (legalSub) legalSub.style.display = "none";
         const legalArrow = document.querySelector("#legalContentArrow");
         if (legalArrow) legalArrow.textContent = "▸";
+        const newsSub = document.querySelector("#newsSubMenu");
+        if (newsSub) newsSub.style.display = "none";
+        const newsArrow = document.querySelector("#newsMgmtArrow");
+        if (newsArrow) newsArrow.textContent = "▸";
       }
 
       if (contentModMenu) {
@@ -12042,17 +12168,40 @@
         };
       }
 
-      function showIncidentQueuePage() {
+      let currentIncidentViewMode = "all"; // 'all' or 'assigned'
+
+      function showIncidentQueuePage(mode = "all") {
+        currentIncidentViewMode = mode;
         clearAllActive();
         const incMenu = document.querySelector("#incidentMgmtMenu");
         if (incMenu) incMenu.classList.add("active");
-        const subAll = document.querySelector("#subAllIncidents");
-        if (subAll) subAll.classList.add("active");
+
+        if (mode === "assigned") {
+          const subAssigned = document.querySelector("#subMyAssignedCases");
+          if (subAssigned) subAssigned.classList.add("active");
+          const incTitle = document.querySelector("#incidentQueue .title");
+          if (incTitle) incTitle.textContent = "My Assigned Cases";
+          const incDesc = document.querySelector("#incidentQueue .card-header-bar p");
+          if (incDesc) incDesc.textContent = "Review and manage cases currently assigned directly to you.";
+        } else {
+          const subAll = document.querySelector("#subAllIncidents");
+          if (subAll) subAll.classList.add("active");
+          const incTitle = document.querySelector("#incidentQueue .title");
+          if (incTitle) incTitle.textContent = "Incident Management";
+          const incDesc = document.querySelector("#incidentQueue .card-header-bar p");
+          if (incDesc) incDesc.textContent = "Track, investigate, assign, and verify reported incidents across all categories and locations.";
+        }
+
         hideAllSections();
         const incQ = document.querySelector("#incidentQueue");
         if (incQ) incQ.style.display = "block";
+        incidentPage = 1;
         renderIncidentTabs();
         renderIncidentRows();
+      }
+
+      function showMyAssignedCasesPage() {
+        showIncidentQueuePage("assigned");
       }
 
       const incMenuBtn = document.querySelector("#incidentMgmtMenu");
@@ -12067,7 +12216,7 @@
             const arrow = incMenuBtn.querySelector(".nav-arrow");
             if (arrow) arrow.textContent = "▾";
           }
-          showIncidentQueuePage();
+          showIncidentQueuePage("all");
         });
       }
 
@@ -12076,32 +12225,18 @@
         subAllBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           e.preventDefault();
-          showIncidentQueuePage();
+          showIncidentQueuePage("all");
         });
       }
 
-      function renderComingSoon(moduleTitle) {
-        soon.innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 20px;text-align:center">
-      <h1 style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:-0.3px">${moduleTitle}</h1>
-      <p style="font-size:14px;color:var(--muted);margin:0;font-weight:500">Coming Soon</p>
-    </div>
-  `;
-        hideAllSections();
-        soon.style.display = "block";
-      }
-
-      document.querySelectorAll(".soon-sub-nav").forEach((sn) => {
-        sn.onclick = (e) => {
+      const subMyAssignedBtn = document.querySelector("#subMyAssignedCases");
+      if (subMyAssignedBtn) {
+        subMyAssignedBtn.addEventListener("click", (e) => {
           e.stopPropagation();
-          clearAllActive();
-          const incMenu = document.querySelector("#incidentMgmtMenu");
-          if (incMenu) incMenu.classList.add("active");
-          sn.classList.add("active");
-          const target = sn.dataset.target || sn.textContent.trim();
-          renderComingSoon(target);
-        };
-      });
+          e.preventDefault();
+          showMyAssignedCasesPage();
+        });
+      }
 
       document.querySelectorAll(".soon-nav").forEach((n) => {
         n.onclick = () => {
@@ -12453,7 +12588,27 @@
         "Deactivated",
       ];
 
+      function getIncidentsDataset() {
+        if (currentIncidentViewMode === "assigned") {
+          const user = window.currentAdminUser;
+          if (!user) return [];
+          const userName = (user.name || "").trim().toLowerCase();
+          const userEmail = (user.email || "").trim().toLowerCase();
+          return allIncidents.filter((item) => {
+            const rawAssignee = (item.assignee || "").toLowerCase();
+            if (!rawAssignee || rawAssignee === "unassigned") return false;
+            // Match against user name (e.g. "M. Kaur" in "Moderator M. Kaur", "R. Idris" in "Advocate R. Idris")
+            if (userName && rawAssignee.includes(userName)) return true;
+            if (item.assigneeId && item.assigneeId === user.id) return true;
+            if (item.assigneeEmail && item.assigneeEmail.toLowerCase() === userEmail) return true;
+            return false;
+          });
+        }
+        return allIncidents;
+      }
+
       function getFilteredIncidentList() {
+        const baseDataset = getIncidentsDataset();
         const q = ($("#incidentSearch") ? $("#incidentSearch").value : "")
           .trim()
           .toLowerCase();
@@ -12468,7 +12623,7 @@
         // Base reference date for demo is Aug 31, 2026
         const now = new Date("2026-08-31T23:59:59");
 
-        let list = allIncidents.filter((item) => {
+        let list = baseDataset.filter((item) => {
           // Status tab filter
           if (incidentTab !== "All") {
             if (
@@ -12526,13 +12681,14 @@
       function renderIncidentTabs() {
         const container = document.querySelector("#incidentTabs");
         if (!container) return;
+        const baseDataset = getIncidentsDataset();
         container.innerHTML = incidentTabsList
           .map((tab) => {
             let count = 0;
-            if (tab === "All") count = allIncidents.length;
+            if (tab === "All") count = baseDataset.length;
             else {
               const tabKey = tab.toLowerCase().replace(" ", "_");
-              count = allIncidents.filter(
+              count = baseDataset.filter(
                 (i) => i.status.toLowerCase().replace(" ", "_") === tabKey,
               ).length;
             }
@@ -14339,31 +14495,33 @@
       // USER ACTION MODALS (Edit Profile, Change Role, Suspend/Ban, Delete, Bulk Actions)
       // ═════════════════════════════════════════════════════════════════════════════════
 
-      function createCustomSelectHTML(id, options, selectedValue) {
+      function createCustomSelectHTML(id, options, selectedValue, placeholder = "Select an option") {
         const selectedIndex = options.findIndex(
           (o) => o.value === selectedValue,
         );
-        const actualIndex = selectedIndex >= 0 ? selectedIndex : 0;
-        const selectedOpt = options[actualIndex];
+        const hasSelection = selectedIndex >= 0;
+        const selectedOpt = hasSelection ? options[selectedIndex] : null;
+        const displayLabel = selectedOpt ? selectedOpt.label : placeholder;
+        const hiddenValue = selectedOpt ? selectedOpt.value : (selectedValue || "");
 
         return `
-    <div class="custom-select-wrap" style="width:100%">
+    <div class="custom-select-wrap" id="${id}Wrap" style="width:100%">
       <div class="custom-select-trigger" tabindex="0" style="width:100%;box-sizing:border-box">
-        <span class="custom-select-label">${selectedOpt.label}</span>
+        <span class="custom-select-label" style="${!hasSelection ? "color:var(--muted)" : ""}">${displayLabel}</span>
         <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
       </div>
       <div class="custom-select-menu" style="width:100%;box-sizing:border-box;z-index:10000">
         ${options
           .map(
-            (opt, idx) => `
-          <div class="custom-select-option ${idx === actualIndex ? "selected" : ""}" data-value="${opt.value}">
+            (opt) => `
+          <div class="custom-select-option ${hasSelection && opt.value === selectedValue ? "selected" : ""}" data-value="${opt.value}">
             ${opt.label}
           </div>
         `,
           )
           .join("")}
       </div>
-      <input type="hidden" id="${id}" value="${selectedOpt.value}" />
+      <input type="hidden" id="${id}" value="${hiddenValue}" />
     </div>
   `;
       }
@@ -15119,16 +15277,19 @@
         $("#form").innerHTML = `
           <label style="margin-top:0">Full Name</label>
           <input type="text" id="newStaffName" placeholder="e.g. Marcus Wright" required style="width:100%;box-sizing:border-box" />
+          <div id="newStaffNameErr" class="field-error-msg" style="display:none" role="status" aria-live="polite"></div>
 
           <label>Email Address</label>
           <input type="email" id="newStaffEmail" placeholder="e.g. m.wright@blacknexa.com" required style="width:100%;box-sizing:border-box" />
+          <div id="newStaffEmailErr" class="field-error-msg" style="display:none" role="status" aria-live="polite"></div>
 
           <label>Assigned Role</label>
           ${createCustomSelectHTML("newStaffRole", roleOptions, "Moderator")}
+          <div id="newStaffRoleErr" class="field-error-msg" style="display:none" role="status" aria-live="polite"></div>
 
           <label>Initial Temporary Password</label>
-          <div class="password-input-wrap">
-            <input type="password" id="newStaffPassword" value="blacknexa" style="width:100%;box-sizing:border-box" autocomplete="new-password" />
+          <div class="password-input-wrap" id="newStaffPasswordWrap">
+            <input type="password" id="newStaffPassword" placeholder="••••••••" style="width:100%;box-sizing:border-box" autocomplete="new-password" />
             <button type="button" class="password-toggle-btn" id="btnToggleNewStaffPassword" aria-label="Toggle password visibility" title="Show/Hide Password">
               <svg id="eyeIconShowNewStaff" viewBox="0 0 24 24">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -15140,12 +15301,75 @@
               </svg>
             </button>
           </div>
+          <div id="newStaffPasswordErr" class="field-error-msg" style="display:none" role="status" aria-live="polite"></div>
         `;
 
         $("#confirm").textContent = "Create Account";
         $("#confirm").className = "btn primary";
         $("#confirm").style.background = "";
         openModal();
+
+        // Wire real-time error removal when user corrects the field
+        const nameInput = document.querySelector("#newStaffName");
+        const emailInput = document.querySelector("#newStaffEmail");
+        const passInput = document.querySelector("#newStaffPassword");
+        const passWrap = document.querySelector("#newStaffPasswordWrap");
+        const roleWrap = document.querySelector("#newStaffRoleWrap");
+        const roleHidden = document.querySelector("#newStaffRole");
+
+        nameInput?.addEventListener("input", () => {
+          nameInput.classList.remove("field-invalid");
+          nameInput.removeAttribute("aria-invalid");
+          const err = document.querySelector("#newStaffNameErr");
+          if (err) {
+            err.textContent = "";
+            err.style.display = "none";
+          }
+        });
+
+        emailInput?.addEventListener("input", () => {
+          emailInput.classList.remove("field-invalid");
+          emailInput.removeAttribute("aria-invalid");
+          const err = document.querySelector("#newStaffEmailErr");
+          if (err) {
+            err.textContent = "";
+            err.style.display = "none";
+          }
+        });
+
+        passInput?.addEventListener("input", () => {
+          passInput.classList.remove("field-invalid");
+          passWrap?.classList.remove("field-invalid");
+          passInput.removeAttribute("aria-invalid");
+          const err = document.querySelector("#newStaffPasswordErr");
+          if (err) {
+            err.textContent = "";
+            err.style.display = "none";
+          }
+        });
+
+        roleHidden?.addEventListener("change", () => {
+          roleWrap?.classList.remove("field-invalid");
+          const err = document.querySelector("#newStaffRoleErr");
+          if (err) {
+            err.textContent = "";
+            err.style.display = "none";
+          }
+        });
+
+        // If custom role select options are clicked, clear role error
+        if (roleWrap) {
+          roleWrap.querySelectorAll(".custom-select-option").forEach((opt) => {
+            opt.addEventListener("click", () => {
+              roleWrap.classList.remove("field-invalid");
+              const err = document.querySelector("#newStaffRoleErr");
+              if (err) {
+                err.textContent = "";
+                err.style.display = "none";
+              }
+            });
+          });
+        }
 
         // Wire up password toggle for new staff
         const btnToggle = document.querySelector("#btnToggleNewStaffPassword");
@@ -15301,13 +15525,124 @@
       const originalConfirmHandler = $("#confirm").onclick;
       $("#confirm").onclick = () => {
         if (action === "add_staff") {
-          const name = $("#newStaffName")?.value.trim();
-          const email = $("#newStaffEmail")?.value.trim();
-          const role = $("#newStaffRole")?.value || "Moderator";
-          const pass = $("#newStaffPassword")?.value.trim() || "blacknexa";
+          const nameInput = $("#newStaffName");
+          const emailInput = $("#newStaffEmail");
+          const roleInput = $("#newStaffRole");
+          const roleWrap = $("#newStaffRoleWrap");
+          const passInput = $("#newStaffPassword");
+          const passWrap = $("#newStaffPasswordWrap");
 
-          if (!name || !email) {
-            alert("Please enter both staff name and email address.");
+          const nameErr = $("#newStaffNameErr");
+          const emailErr = $("#newStaffEmailErr");
+          const roleErr = $("#newStaffRoleErr");
+          const passErr = $("#newStaffPasswordErr");
+
+          const name = (nameInput?.value || "").trim();
+          const email = (emailInput?.value || "").trim();
+          const role = (roleInput?.value || "").trim();
+          const pass = (passInput?.value || "").trim();
+
+          let isValid = true;
+          let firstInvalidEl = null;
+
+          // Full Name validation
+          if (!name) {
+            isValid = false;
+            nameInput?.classList.add("field-invalid");
+            nameInput?.setAttribute("aria-invalid", "true");
+            if (nameErr) {
+              nameErr.textContent = "Full Name is required.";
+              nameErr.style.display = "block";
+            }
+            if (!firstInvalidEl) firstInvalidEl = nameInput;
+          } else {
+            nameInput?.classList.remove("field-invalid");
+            nameInput?.removeAttribute("aria-invalid");
+            if (nameErr) {
+              nameErr.textContent = "";
+              nameErr.style.display = "none";
+            }
+          }
+
+          // Email Address validation
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!email) {
+            isValid = false;
+            emailInput?.classList.add("field-invalid");
+            emailInput?.setAttribute("aria-invalid", "true");
+            if (emailErr) {
+              emailErr.textContent = "Email Address is required.";
+              emailErr.style.display = "block";
+            }
+            if (!firstInvalidEl) firstInvalidEl = emailInput;
+          } else if (!emailRegex.test(email)) {
+            isValid = false;
+            emailInput?.classList.add("field-invalid");
+            emailInput?.setAttribute("aria-invalid", "true");
+            if (emailErr) {
+              emailErr.textContent = "Please enter a valid email address.";
+              emailErr.style.display = "block";
+            }
+            if (!firstInvalidEl) firstInvalidEl = emailInput;
+          } else {
+            emailInput?.classList.remove("field-invalid");
+            emailInput?.removeAttribute("aria-invalid");
+            if (emailErr) {
+              emailErr.textContent = "";
+              emailErr.style.display = "none";
+            }
+          }
+
+          // Assigned Role validation
+          if (!role) {
+            isValid = false;
+            roleWrap?.classList.add("field-invalid");
+            if (roleErr) {
+              roleErr.textContent = "Please select a role.";
+              roleErr.style.display = "block";
+            }
+            if (!firstInvalidEl) firstInvalidEl = roleWrap;
+          } else {
+            roleWrap?.classList.remove("field-invalid");
+            if (roleErr) {
+              roleErr.textContent = "";
+              roleErr.style.display = "none";
+            }
+          }
+
+          // Initial Temporary Password validation
+          if (!pass) {
+            isValid = false;
+            passInput?.classList.add("field-invalid");
+            passWrap?.classList.add("field-invalid");
+            passInput?.setAttribute("aria-invalid", "true");
+            if (passErr) {
+              passErr.textContent = "Initial Temporary Password is required.";
+              passErr.style.display = "block";
+            }
+            if (!firstInvalidEl) firstInvalidEl = passInput;
+          } else if (pass.length < 6) {
+            isValid = false;
+            passInput?.classList.add("field-invalid");
+            passWrap?.classList.add("field-invalid");
+            passInput?.setAttribute("aria-invalid", "true");
+            if (passErr) {
+              passErr.textContent = "Temporary Password must be at least 6 characters.";
+              passErr.style.display = "block";
+            }
+            if (!firstInvalidEl) firstInvalidEl = passInput;
+          } else {
+            passInput?.classList.remove("field-invalid");
+            passWrap?.classList.remove("field-invalid");
+            passInput?.removeAttribute("aria-invalid");
+            if (passErr) {
+              passErr.textContent = "";
+              passErr.style.display = "none";
+            }
+          }
+
+          if (!isValid) {
+            firstInvalidEl?.focus();
             return;
           }
 
@@ -15484,6 +15819,10 @@
         // Hide auth modal overlay
         const authScreen = document.querySelector("#authScreen");
         if (authScreen) authScreen.style.display = "none";
+
+        if (typeof window.bnApplyPermissions === "function") {
+          window.bnApplyPermissions();
+        }
       }
 
       function validateEmailFormat(email) {
@@ -18116,9 +18455,467 @@
       if (newsNavMenuBtn) {
         newsNavMenuBtn.onclick = (e) => {
           e.preventDefault();
+          const sub = document.querySelector("#newsSubMenu");
+          const expanded = sub && sub.style.display !== "none";
           showNewsPage();
+          if (!expanded && sub) {
+            sub.style.display = "flex";
+            const arrow = document.querySelector("#newsMgmtArrow");
+            if (arrow) arrow.textContent = "▾";
+          }
         };
       }
+
+      const newsTaxonomy = {
+        categories: [
+          { id: "NCAT-001", name: "Wealth & Business", status: "active" },
+          { id: "NCAT-002", name: "Civic & Justice", status: "active" },
+          { id: "NCAT-003", name: "Education & Tech", status: "active" },
+          { id: "NCAT-004", name: "Health & Wellness", status: "active" },
+          { id: "NCAT-005", name: "Arts & Culture", status: "active" },
+          { id: "NCAT-006", name: "Community", status: "active" },
+        ],
+        tags: [
+          { id: "NTAG-001", name: "Local", status: "active" },
+          { id: "NTAG-002", name: "National", status: "active" },
+          { id: "NTAG-003", name: "Global", status: "active" },
+          { id: "NTAG-004", name: "Diaspora", status: "active" },
+        ],
+      };
+      let activeNewsTaxonomyType = "categories";
+      let editingNewsTaxonomyId = null;
+      const newsTaxonomyPage = { categories: 1, tags: 1 };
+      const newsTaxonomyPageSize = { categories: 10, tags: 10 };
+
+      function newsTaxonomyUsageCount(type, name) {
+        if (type === "categories") return newsStories.filter((story) => story.category === name).length;
+        return newsStories.filter(
+          (story) => story.scope === name || (story.tags || []).includes(name),
+        ).length;
+      }
+
+      function newsTaxonomyEscape(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function renderNewsTaxonomyTable(type) {
+        const isCategories = type === "categories";
+        const body = document.querySelector(isCategories ? "#newsCategoriesTableBody" : "#newsTagsTableBody");
+        const search = document.querySelector(isCategories ? "#newsCategorySearch" : "#newsTagSearch");
+        const pagination = document.querySelector(isCategories ? "#newsCategoriesPaginationBar" : "#newsTagsPaginationBar");
+        if (!body) return;
+        const q = ((search && search.value) || "").trim().toLowerCase();
+        const filtered = newsTaxonomy[type].filter((item) => item.name.toLowerCase().includes(q));
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        const totalItems = filtered.length;
+        const pageSize = newsTaxonomyPageSize[type];
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        newsTaxonomyPage[type] = Math.min(newsTaxonomyPage[type], totalPages);
+        const startIndex = (newsTaxonomyPage[type] - 1) * pageSize;
+        const rows = filtered.slice(startIndex, startIndex + pageSize);
+        body.innerHTML = rows.length ? rows.map((item) => `
+          <tr><td><strong>${newsTaxonomyEscape(item.name)}</strong><div class="muted" style="font-size:11px;margin-top:3px">${newsTaxonomyEscape(item.id)}</div></td>
+          <td>${newsTaxonomyUsageCount(type, item.name)}</td>
+          <td><span class="badge ${item.status === "active" ? "active" : "suspended"}">${item.status === "active" ? "Active" : "Inactive"}</span></td>
+          <td style="text-align: right; padding-right: 18px">
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="action-icon-btn" onclick="openNewsTaxonomyModal('${type}','${item.id}')" title="Edit ${isCategories ? "Category" : "Tag"}" aria-label="Edit">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="action-icon-btn ${item.status === "active" ? "delete-icon-btn" : ""}" onclick="toggleNewsTaxonomyStatus('${type}','${item.id}')" title="${item.status === "active" ? "Disable / Make Inactive" : "Enable / Make Active"}" aria-label="Toggle availability" ${item.status !== "active" ? 'style="color: #059669"' : ""}>
+                ${item.status === "active"
+                  ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>'
+                  : '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'}
+              </button>
+              <button class="action-icon-btn delete-icon-btn" onclick="deleteNewsTaxonomyPrompt('${type}','${item.id}')" title="Delete ${isCategories ? "Category" : "Tag"}" aria-label="Delete">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </td></tr>`).join("") : `<tr><td colspan="4"><div class="empty" style="display:block">No ${isCategories ? "categories" : "tags"} found.</div></td></tr>`;
+        if (pagination) {
+          const startRecord = totalItems ? startIndex + 1 : 0;
+          const endRecord = Math.min(startIndex + pageSize, totalItems);
+          pagination.innerHTML = `<div class="pagination-left-info">Showing <strong>${startRecord}–${endRecord}</strong> of ${totalItems} records <select class="page-size-select" aria-label="Records per page"><option value="10" ${pageSize === 10 ? "selected" : ""}>10</option><option value="25" ${pageSize === 25 ? "selected" : ""}>25</option><option value="50" ${pageSize === 50 ? "selected" : ""}>50</option></select></div><div class="pagination-controls"><button class="page-btn taxonomy-prev" ${newsTaxonomyPage[type] === 1 ? "disabled" : ""}>Previous</button>${Array.from({ length: totalPages }, (_, index) => `<button class="page-btn taxonomy-page ${newsTaxonomyPage[type] === index + 1 ? "active" : ""}" data-page="${index + 1}">${index + 1}</button>`).join("")}<button class="page-btn taxonomy-next" ${newsTaxonomyPage[type] === totalPages ? "disabled" : ""}>Next</button></div>`;
+          pagination.querySelector(".page-size-select").onchange = (event) => { newsTaxonomyPageSize[type] = Number(event.target.value); newsTaxonomyPage[type] = 1; renderNewsTaxonomyTable(type); };
+          pagination.querySelector(".taxonomy-prev").onclick = () => { if (newsTaxonomyPage[type] > 1) { newsTaxonomyPage[type]--; renderNewsTaxonomyTable(type); } };
+          pagination.querySelector(".taxonomy-next").onclick = () => { if (newsTaxonomyPage[type] < totalPages) { newsTaxonomyPage[type]++; renderNewsTaxonomyTable(type); } };
+          pagination.querySelectorAll(".taxonomy-page").forEach((button) => { button.onclick = () => { newsTaxonomyPage[type] = Number(button.dataset.page); renderNewsTaxonomyTable(type); }; });
+        }
+      }
+
+      function showNewsTaxonomyPage(type) {
+        activeNewsTaxonomyType = type;
+        clearAllActive(); hideAllSections();
+        const nav = document.querySelector("#newsNavMenu");
+        const sub = document.querySelector("#newsSubMenu");
+        if (nav) nav.classList.add("active");
+        if (sub) sub.style.display = "flex";
+        const arrow = document.querySelector("#newsMgmtArrow");
+        if (arrow) arrow.textContent = "▾";
+        document.querySelectorAll("#newsSubMenu .sub-nav").forEach((el) => el.classList.remove("active"));
+        const subNav = document.querySelector(type === "categories" ? "#subNewsCategories" : "#subNewsTags");
+        const view = document.querySelector(type === "categories" ? "#newsCategoriesView" : "#newsTagsView");
+        if (subNav) subNav.classList.add("active");
+        if (view) view.style.display = "block";
+        renderNewsTaxonomyTable(type);
+      }
+      function showNewsCategoriesPage() { showNewsTaxonomyPage("categories"); }
+      function showNewsTagsPage() { showNewsTaxonomyPage("tags"); }
+
+      function openNewsTaxonomyModal(type, id) {
+        activeNewsTaxonomyType = type;
+        editingNewsTaxonomyId = id || null;
+        const item = id
+          ? newsTaxonomy[type].find((entry) => entry.id === id)
+          : null;
+        const singular = type === "categories" ? "Category" : "Tag";
+        const availabilityOptions = [
+          {
+            value: "active",
+            label: "Active (Available for News Stories)",
+          },
+          {
+            value: "inactive",
+            label: "Inactive (Hidden from News Stories)",
+          },
+        ];
+
+        $("#modalTitle").textContent =
+          `${item ? "Edit" : "Create"} News ${singular}`;
+        $("#modalText").textContent = item
+          ? `Update this news ${singular.toLowerCase()} and control whether it is available when creating stories.`
+          : `Create a new news ${singular.toLowerCase()} and set its availability for news stories.`;
+        const safeName = item ? newsTaxonomyEscape(item.name) : "";
+        $("#form").innerHTML = `
+          <label style="margin-top:0">${singular} Name</label>
+          <input
+            type="text"
+            id="newsTaxonomyNameInput"
+            maxlength="60"
+            value="${safeName}"
+            placeholder="e.g. ${type === "categories" ? "Community & Culture" : "National"}"
+            required
+            style="width:100%;box-sizing:border-box"
+          />
+
+          <label>Availability</label>
+          ${createCustomSelectHTML(
+            "newsTaxonomyStatusInput",
+            availabilityOptions,
+            item ? item.status : "active",
+          )}
+
+          <div
+            id="newsTaxonomyFormError"
+            class="form-err-msg"
+            role="status"
+            aria-live="polite"
+            style="display:none;color:var(--danger);font-size:12px;margin-top:10px"
+          ></div>
+        `;
+
+        const confirm = $("#confirm");
+        confirm.textContent = item ? "Save Changes" : `Create ${singular}`;
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.style.opacity = "";
+        confirm.style.cursor = "";
+        confirm.disabled = false;
+        confirm.onclick = saveNewsTaxonomy;
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = closeModal;
+        openModal();
+        const nameInput = $("#newsTaxonomyNameInput");
+        nameInput.addEventListener("input", () => {
+          if (nameInput.classList.contains("field-invalid")) {
+            setNewsTaxonomyFormError("");
+          }
+        });
+        nameInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            saveNewsTaxonomy();
+          }
+        });
+        setTimeout(() => nameInput.focus(), 0);
+      }
+
+      function setNewsTaxonomyFormError(message) {
+        const input = $("#newsTaxonomyNameInput");
+        const error = $("#newsTaxonomyFormError");
+        if (!input || !error) return;
+        const hasError = Boolean(message);
+        input.classList.toggle("field-invalid", hasError);
+        if (hasError) input.setAttribute("aria-invalid", "true");
+        else input.removeAttribute("aria-invalid");
+        error.textContent = message;
+        error.style.display = hasError ? "block" : "none";
+      }
+
+      function saveNewsTaxonomy() {
+        const type = activeNewsTaxonomyType;
+        const name = ($("#newsTaxonomyNameInput")?.value || "").trim();
+        const status = $("#newsTaxonomyStatusInput")?.value || "active";
+        if (!name) {
+          setNewsTaxonomyFormError(`${type === "categories" ? "Category" : "Tag"} name is required.`);
+          $("#newsTaxonomyNameInput").focus();
+          return;
+        }
+        const duplicate = newsTaxonomy[type].some((entry) => entry.name.toLowerCase() === name.toLowerCase() && entry.id !== editingNewsTaxonomyId);
+        if (duplicate) {
+          setNewsTaxonomyFormError(`A ${type === "categories" ? "category" : "tag"} with this name already exists.`);
+          $("#newsTaxonomyNameInput").focus();
+          return;
+        }
+        setNewsTaxonomyFormError("");
+        if (editingNewsTaxonomyId) { const item = newsTaxonomy[type].find((entry) => entry.id === editingNewsTaxonomyId); if (item) { item.name = name; item.status = status; } }
+        else {
+          const prefix = type === "categories" ? "NCAT" : "NTAG";
+          const nextNumber = newsTaxonomy[type].reduce((max, entry) => Math.max(max, Number(entry.id.split("-").pop()) || 0), 0) + 1;
+          newsTaxonomy[type].push({ id: `${prefix}-${String(nextNumber).padStart(3, "0")}`, name, status });
+        }
+        closeModal(); renderNewsTaxonomyTable(type);
+      }
+
+      function toggleNewsTaxonomyStatus(type, id) {
+        const item = newsTaxonomy[type].find((entry) => entry.id === id); if (!item) return;
+        item.status = item.status === "active" ? "inactive" : "active"; renderNewsTaxonomyTable(type);
+      }
+
+      function deleteNewsTaxonomyPrompt(type, id) {
+        const item = newsTaxonomy[type].find((entry) => entry.id === id); if (!item) return;
+        const singular = type === "categories" ? "category" : "tag";
+        $("#modalTitle").textContent = `Delete news ${singular}?`; $("#modalText").textContent = `“${item.name}” will be removed from the prototype. Existing stories will not be changed.`; $("#form").innerHTML = "";
+        const confirm = $("#confirm"); confirm.textContent = "Delete"; confirm.className = "btn danger";
+        confirm.onclick = () => { newsTaxonomy[type] = newsTaxonomy[type].filter((entry) => entry.id !== id); closeModal(); renderNewsTaxonomyTable(type); };
+        openModal();
+      }
+
+      document.querySelector("#subNewsCategories")?.addEventListener("click", showNewsCategoriesPage);
+      document.querySelector("#subNewsTags")?.addEventListener("click", showNewsTagsPage);
+      document.querySelector("#btnAddNewsCategory")?.addEventListener("click", () => openNewsTaxonomyModal("categories"));
+      document.querySelector("#btnAddNewsTag")?.addEventListener("click", () => openNewsTaxonomyModal("tags"));
+      document.querySelector("#newsCategorySearch")?.addEventListener("input", () => { newsTaxonomyPage.categories = 1; renderNewsTaxonomyTable("categories"); });
+      document.querySelector("#newsTagSearch")?.addEventListener("input", () => { newsTaxonomyPage.tags = 1; renderNewsTaxonomyTable("tags"); });
+
+      let activeDailyBriefingTab = "included";
+      let dailyBriefingDirty = false;
+      let briefingIncludedPage = 1;
+      let briefingAvailablePage = 1;
+      const briefingPageSize = 10;
+
+      function normalizeDailyBriefingOrder() {
+        newsStories
+          .filter((story) => story.dailyBriefing)
+          .sort((a, b) => (a.briefingOrder || 999) - (b.briefingOrder || 999))
+          .forEach((story, index) => { story.briefingOrder = index + 1; });
+        newsStories.filter((story) => !story.dailyBriefing).forEach((story) => { story.briefingOrder = null; });
+      }
+      normalizeDailyBriefingOrder();
+
+      function isDailyBriefingEligible(story) {
+        return story.status === "Published" || story.status === "Approved";
+      }
+
+      function setDailyBriefingDirty(isDirty) {
+        dailyBriefingDirty = isDirty;
+        const button = $("#btnSaveBriefingOrder");
+        if (!button) return;
+        button.disabled = !isDirty;
+        button.textContent = isDirty ? "Save Briefing Order •" : "Save Briefing Order";
+      }
+
+      function briefingAudioLabel(story) {
+        return story.audioStatus === "Ready" || story.audioUrl ? "Ready" : "Unavailable";
+      }
+
+      function renderDailyBriefingSummary() {
+        const included = newsStories.filter((story) => story.dailyBriefing);
+        const available = newsStories.filter((story) => !story.dailyBriefing && isDailyBriefingEligible(story));
+        $("#briefingIncludedCount").textContent = included.length;
+        $("#briefingPublishedCount").textContent = included.filter((story) => story.status === "Published").length;
+        $("#briefingAudioReadyCount").textContent = included.filter((story) => briefingAudioLabel(story) === "Ready").length;
+        $("#briefingTabIncludedCount").textContent = included.length;
+        $("#briefingTabAvailableCount").textContent = available.length;
+      }
+
+      function renderBriefingPagination(container, totalItems, currentPage, onPageChange) {
+        if (!container) return;
+        const totalPages = Math.max(1, Math.ceil(totalItems / briefingPageSize));
+        const page = Math.min(currentPage, totalPages);
+        const start = totalItems ? (page - 1) * briefingPageSize + 1 : 0;
+        const end = Math.min(page * briefingPageSize, totalItems);
+        container.innerHTML = `<div class="pagination-left-info">Showing <strong>${start}–${end}</strong> of ${totalItems} records</div><div class="pagination-controls"><button class="page-btn brief-prev" ${page === 1 ? "disabled" : ""}>Previous</button>${Array.from({ length: totalPages }, (_, index) => `<button class="page-btn brief-page ${page === index + 1 ? "active" : ""}" data-page="${index + 1}">${index + 1}</button>`).join("")}<button class="page-btn brief-next" ${page === totalPages ? "disabled" : ""}>Next</button></div>`;
+        container.querySelector(".brief-prev").onclick = () => { if (page > 1) onPageChange(page - 1); };
+        container.querySelector(".brief-next").onclick = () => { if (page < totalPages) onPageChange(page + 1); };
+        container.querySelectorAll(".brief-page").forEach((button) => { button.onclick = () => onPageChange(Number(button.dataset.page)); });
+      }
+
+      function renderDailyBriefingIncluded() {
+        normalizeDailyBriefingOrder();
+        const body = $("#dailyBriefingIncludedBody");
+        if (!body) return;
+        const query = ($("#briefingIncludedSearch")?.value || "").trim().toLowerCase();
+        const included = newsStories
+          .filter((story) => story.dailyBriefing)
+          .filter((story) => !query || story.title.toLowerCase().includes(query) || story.id.toLowerCase().includes(query))
+          .sort((a, b) => a.briefingOrder - b.briefingOrder);
+        const totalPages = Math.max(1, Math.ceil(included.length / briefingPageSize));
+        briefingIncludedPage = Math.min(briefingIncludedPage, totalPages);
+        const start = (briefingIncludedPage - 1) * briefingPageSize;
+        const rows = included.slice(start, start + briefingPageSize);
+        body.innerHTML = rows.length ? rows.map((story) => {
+          const fullIndex = included.findIndex((item) => item.id === story.id);
+          const safeTitle = newsTaxonomyEscape(story.title);
+          const titleAttr = story.title.replace(/"/g, "&quot;");
+          return `<tr draggable="true" data-briefing-id="${story.id}" style="cursor:grab">
+            <td style="min-width: 0; max-width: 320px">
+              <div style="display:flex;align-items:center;gap:8px;min-width:0">
+                <span title="Drag to reorder" style="color:var(--muted);cursor:grab;flex-shrink:0;user-select:none">⋮⋮</span>
+                <div style="min-width:0;flex:1">
+                  <span class="title-truncate" title="${titleAttr}" style="font-weight:600;font-size:13px;color:var(--text);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeTitle}</span>
+                  <span class="sub" style="font-size:11px;color:var(--muted);margin-top:2px;display:block">${story.id} · ${newsTaxonomyEscape(story.category)}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge ${story.status.toLowerCase().replace(/\s+/g, "_")}">${story.status}</span></td>
+            <td><span class="badge ${briefingAudioLabel(story) === "Ready" ? "active" : "draft"}">${briefingAudioLabel(story)}</span></td>
+            <td>${story.publishedDate || "Not published"}</td>
+            <td style="text-align: right; padding-right: 18px">
+              <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
+                <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}')" title="View Story" aria-label="View Story">
+                  <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button class="action-icon-btn" onclick="moveDailyBriefingStory('${story.id}',-1)" ${fullIndex === 0 ? "disabled" : ""} title="Move Up" aria-label="Move Up" ${fullIndex === 0 ? 'style="opacity: 0.4; cursor: default"' : ""}>
+                  <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <button class="action-icon-btn" onclick="moveDailyBriefingStory('${story.id}',1)" ${fullIndex === included.length - 1 ? "disabled" : ""} title="Move Down" aria-label="Move Down" ${fullIndex === included.length - 1 ? 'style="opacity: 0.4; cursor: default"' : ""}>
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <button class="action-icon-btn delete-icon-btn" onclick="removeStoryFromDailyBriefingPrompt('${story.id}')" title="Remove from Briefing" aria-label="Remove from Briefing">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        }).join("") : `<tr><td colspan="5"><div class="empty" style="display:block">No articles are currently included in the Daily Briefing.</div></td></tr>`;
+
+        let draggedId = null;
+        body.querySelectorAll("tr[data-briefing-id]").forEach((row) => {
+          row.ondragstart = () => { draggedId = row.dataset.briefingId; row.style.opacity = "0.55"; };
+          row.ondragend = () => { row.style.opacity = ""; };
+          row.ondragover = (event) => { event.preventDefault(); };
+          row.ondrop = (event) => { event.preventDefault(); if (draggedId && draggedId !== row.dataset.briefingId) reorderDailyBriefingStory(draggedId, row.dataset.briefingId); };
+        });
+        renderBriefingPagination($("#dailyBriefingIncludedPagination"), included.length, briefingIncludedPage, (page) => { briefingIncludedPage = page; renderDailyBriefingIncluded(); });
+        renderDailyBriefingSummary();
+      }
+
+      function renderDailyBriefingAvailable() {
+        const body = $("#dailyBriefingAvailableBody");
+        if (!body) return;
+        const query = ($("#briefingAvailableSearch")?.value || "").trim().toLowerCase();
+        const category = $("#briefingCategoryFilter")?.value || "All";
+        const status = $("#briefingStatusFilter")?.value || "All";
+        const available = newsStories.filter((story) => !story.dailyBriefing && isDailyBriefingEligible(story)).filter((story) => (!query || story.title.toLowerCase().includes(query) || story.id.toLowerCase().includes(query)) && (category === "All" || story.category === category) && (status === "All" || story.status === status));
+        const totalPages = Math.max(1, Math.ceil(available.length / briefingPageSize));
+        briefingAvailablePage = Math.min(briefingAvailablePage, totalPages);
+        const start = (briefingAvailablePage - 1) * briefingPageSize;
+        const rows = available.slice(start, start + briefingPageSize);
+        body.innerHTML = rows.length ? rows.map((story) => {
+          const safeTitle = newsTaxonomyEscape(story.title);
+          const titleAttr = story.title.replace(/"/g, "&quot;");
+          return `<tr>
+            <td style="min-width: 0; max-width: 320px">
+              <span class="title-truncate" title="${titleAttr}" style="font-weight:600;font-size:13px;color:var(--text);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeTitle}</span>
+              <span class="sub" style="font-size:11px;color:var(--muted);margin-top:2px;display:block">${story.id}</span>
+            </td>
+            <td>${newsTaxonomyEscape(story.category)}</td>
+            <td><span class="badge ${story.status.toLowerCase()}">${story.status}</span></td>
+            <td><span class="badge ${briefingAudioLabel(story) === "Ready" ? "active" : "draft"}">${briefingAudioLabel(story)}</span></td>
+            <td style="text-align: right; padding-right: 18px">
+              <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
+                <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}')" title="View Story" aria-label="View Story">
+                  <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button class="action-icon-btn" onclick="addStoryToDailyBriefing('${story.id}')" title="Add to Briefing" aria-label="Add to Briefing" style="color:var(--accent)">
+                  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        }).join("") : `<tr><td colspan="5"><div class="empty" style="display:block">No eligible stories match the current filters.</div></td></tr>`;
+        renderBriefingPagination($("#dailyBriefingAvailablePagination"), available.length, briefingAvailablePage, (page) => { briefingAvailablePage = page; renderDailyBriefingAvailable(); });
+        renderDailyBriefingSummary();
+      }
+
+      function renderDailyBriefingPage() {
+        renderDailyBriefingIncluded();
+        renderDailyBriefingAvailable();
+        setDailyBriefingDirty(dailyBriefingDirty);
+      }
+
+      function showDailyBriefingPage() {
+        clearAllActive(); hideAllSections();
+        $("#newsNavMenu")?.classList.add("active");
+        $("#subDailyBriefing")?.classList.add("active");
+        $("#newsSubMenu").style.display = "flex";
+        $("#newsMgmtArrow").textContent = "▾";
+        $("#dailyBriefingView").style.display = "block";
+        renderDailyBriefingPage();
+        initCustomDropdowns();
+      }
+
+      function addStoryToDailyBriefing(id) {
+        const story = newsStories.find((item) => item.id === id);
+        if (!story || story.dailyBriefing || !isDailyBriefingEligible(story)) return;
+        const maxOrder = newsStories.reduce((max, item) => Math.max(max, item.briefingOrder || 0), 0);
+        story.dailyBriefing = true; story.briefingOrder = maxOrder + 1;
+        setDailyBriefingDirty(true); renderDailyBriefingPage();
+      }
+
+      function removeStoryFromDailyBriefingPrompt(id) {
+        const story = newsStories.find((item) => item.id === id);
+        if (!story) return;
+        $("#modalTitle").textContent = "Remove from Daily Briefing?";
+        $("#modalText").textContent = `“${story.title}” will be removed from the briefing but will remain in News Management.`;
+        $("#form").innerHTML = "";
+        const confirm = $("#confirm"); confirm.textContent = "Remove Article"; confirm.className = "btn danger"; confirm.style.background = ""; confirm.style.opacity = ""; confirm.disabled = false;
+        confirm.onclick = () => { story.dailyBriefing = false; story.briefingOrder = null; normalizeDailyBriefingOrder(); closeModal(); setDailyBriefingDirty(true); renderDailyBriefingPage(); };
+        openModal();
+      }
+
+      function moveDailyBriefingStory(id, direction) {
+        const included = newsStories.filter((story) => story.dailyBriefing).sort((a, b) => a.briefingOrder - b.briefingOrder);
+        const index = included.findIndex((story) => story.id === id);
+        const target = index + direction;
+        if (index < 0 || target < 0 || target >= included.length) return;
+        [included[index].briefingOrder, included[target].briefingOrder] = [included[target].briefingOrder, included[index].briefingOrder];
+        setDailyBriefingDirty(true); renderDailyBriefingIncluded();
+      }
+
+      function reorderDailyBriefingStory(sourceId, targetId) {
+        const included = newsStories.filter((story) => story.dailyBriefing).sort((a, b) => a.briefingOrder - b.briefingOrder);
+        const sourceIndex = included.findIndex((story) => story.id === sourceId);
+        const targetIndex = included.findIndex((story) => story.id === targetId);
+        if (sourceIndex < 0 || targetIndex < 0) return;
+        const [moved] = included.splice(sourceIndex, 1); included.splice(targetIndex, 0, moved);
+        included.forEach((story, index) => { story.briefingOrder = index + 1; });
+        setDailyBriefingDirty(true); renderDailyBriefingIncluded();
+      }
+
+      document.querySelector("#subDailyBriefing")?.addEventListener("click", showDailyBriefingPage);
+      document.querySelectorAll("#dailyBriefingTabs [data-briefing-tab]").forEach((tab) => { tab.onclick = () => { activeDailyBriefingTab = tab.dataset.briefingTab; document.querySelectorAll("#dailyBriefingTabs .tab").forEach((item) => item.classList.toggle("active", item === tab)); $("#dailyBriefingIncludedPanel").style.display = activeDailyBriefingTab === "included" ? "block" : "none"; $("#dailyBriefingAvailablePanel").style.display = activeDailyBriefingTab === "available" ? "block" : "none"; }; });
+      $("#briefingIncludedSearch")?.addEventListener("input", () => { briefingIncludedPage = 1; renderDailyBriefingIncluded(); });
+      $("#briefingAvailableSearch")?.addEventListener("input", () => { briefingAvailablePage = 1; renderDailyBriefingAvailable(); });
+      $("#btnSaveBriefingOrder")?.addEventListener("click", () => { normalizeDailyBriefingOrder(); setDailyBriefingDirty(false); alert("Daily Briefing order saved successfully."); });
 
       function renderNewsTable() {
         const tbody = document.querySelector("#newsTableBody");
@@ -18999,7 +19796,22 @@
         btnToggleBriefing.onclick = () => {
           const story = newsStories.find((s) => s.id === targetNewsIdForAction);
           if (story) {
-            story.dailyBriefing = !story.dailyBriefing;
+            if (!story.dailyBriefing && !isDailyBriefingEligible(story)) {
+              alert("Only Published or Approved stories can be added to the Daily Briefing.");
+              return;
+            }
+            if (story.dailyBriefing) {
+              story.dailyBriefing = false;
+              story.briefingOrder = null;
+              normalizeDailyBriefingOrder();
+            } else {
+              const maxOrder = newsStories.reduce(
+                (max, item) => Math.max(max, item.briefingOrder || 0),
+                0,
+              );
+              story.dailyBriefing = true;
+              story.briefingOrder = maxOrder + 1;
+            }
             loadNewsDetails(story.id);
             alert(
               `Story ${story.dailyBriefing ? "added to" : "removed from"} Black Nexa Daily Briefing.`,
@@ -19328,6 +20140,17 @@
 
           if (hasErr) return;
 
+          if (
+            briefing &&
+            status !== "Published" &&
+            status !== "Approved"
+          ) {
+            alert(
+              "Only Published or Approved stories can be included in the Daily Briefing.",
+            );
+            return;
+          }
+
           const names = Array.from(document.querySelectorAll(".news-src-name"))
             .map((el) => el.value.trim())
             .filter(Boolean);
@@ -19372,6 +20195,15 @@
               story.status = status;
               story.image = image;
               story.dailyBriefing = briefing;
+              if (briefing && !story.briefingOrder) {
+                story.briefingOrder =
+                  newsStories.reduce(
+                    (max, item) => Math.max(max, item.briefingOrder || 0),
+                    0,
+                  ) + 1;
+              }
+              if (!briefing) story.briefingOrder = null;
+              normalizeDailyBriefingOrder();
               story.seoIndexed = seo;
               story.sources = sources;
               story.verified = sources.length >= 2;
@@ -19402,6 +20234,12 @@
               status: status,
               verified: sources.length >= 2,
               dailyBriefing: briefing,
+              briefingOrder: briefing
+                ? newsStories.reduce(
+                    (max, item) => Math.max(max, item.briefingOrder || 0),
+                    0,
+                  ) + 1
+                : null,
               seoIndexed: seo,
               image: image,
               publishedDate: "Just now",
@@ -21364,6 +22202,13 @@
             }
           });
 
+          // Submenu item visibility: My Assigned Cases is for Moderator, Advocate & Staff only (hidden for Super Admin)
+          const subMyAssigned = document.querySelector("#subMyAssignedCases");
+          if (subMyAssigned) {
+            const isSuperAdmin = roleKey === "superadmin";
+            subMyAssigned.style.display = isSuperAdmin ? "none" : "";
+          }
+
           // 2. Action control gating
           GATED_CONTROLS.forEach(function (pair) {
             const el = document.querySelector(pair[0]);
@@ -21403,7 +22248,23 @@
           if (roleEl) roleEl.textContent = p.label;
 
           const sel = document.querySelector("#roleSimSelect");
-          if (sel && sel.value !== roleKey) sel.value = roleKey;
+          if (sel && sel.value !== roleKey) {
+            sel.value = roleKey;
+            const wrap = sel.closest(".custom-select-wrap");
+            const selectedOption = wrap && wrap.querySelector(
+              `.custom-select-option[data-value="${roleKey}"]`,
+            );
+            if (wrap) {
+              wrap.querySelectorAll(".custom-select-option").forEach((option) =>
+                option.classList.toggle("selected", option === selectedOption),
+              );
+              const label = wrap.querySelector(".custom-select-label");
+              if (label && selectedOption)
+                label.textContent = selectedOption.textContent
+                  .replace("✓", "")
+                  .trim();
+            }
+          }
         }
         window.bnApplyPermissions = applyPermissions;
 
@@ -21510,27 +22371,41 @@
           const wrap = document.createElement("div");
           wrap.className = "role-sim-wrap";
           wrap.id = "roleSimWrap";
-          wrap.innerHTML =
-            '<div class="role-sim-label">' +
-            '<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.4">' +
-            '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-            "Preview as role</div>" +
-            '<select class="role-sim-select" id="roleSimSelect" aria-label="Preview console as role">' +
-            '<option value="superadmin">Super Admin</option>' +
-            '<option value="moderator">Moderator</option>' +
-            '<option value="advocate">Advocate</option>' +
-            '<option value="staff">Support Staff</option>' +
-            "</select>" +
-            '<div class="role-sim-hint" id="roleSimHint"></div>';
+          const roleOptions = [
+            { value: "superadmin", label: "Super Admin" },
+            { value: "moderator", label: "Moderator" },
+            { value: "advocate", label: "Advocate" },
+            { value: "staff", label: "Support Staff" },
+          ];
+          wrap.innerHTML = `
+            <div class="role-sim-label">
+              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.4">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              Preview as role
+            </div>
+            ${createCustomSelectHTML(
+              "roleSimSelect",
+              roleOptions,
+              activeRoleKey(),
+            )}
+            <div class="role-sim-hint" id="roleSimHint"></div>
+          `;
           userAccount.parentNode.insertBefore(wrap, userAccount);
 
-          const sel = wrap.querySelector("#roleSimSelect");
-          sel.onchange = function () {
-            const key = sel.value;
+          window.bnSwitchRolePreview = function (key) {
             const p = PERMISSIONS[key];
+            if (!p) return;
+            const matchingStaff = (window.staffAccounts || []).find((s) => s.roleKey === key || (s.role && s.role.toLowerCase() === p.label.toLowerCase()));
             if (!window.currentAdminUser) window.currentAdminUser = {};
             window.currentAdminUser.roleKey = key;
             window.currentAdminUser.role = p.label;
+            if (matchingStaff) {
+              window.currentAdminUser.name = matchingStaff.name;
+              window.currentAdminUser.email = matchingStaff.email;
+              window.currentAdminUser.id = matchingStaff.id;
+              window.currentAdminUser.avatar = matchingStaff.avatar;
+            }
             applyPermissions();
             updateRoleHint();
             addAuditEntry({
@@ -21542,6 +22417,7 @@
             if (typeof go === "function") go();
             toast("Previewing as " + p.label, p.desc, "success");
           };
+          initCustomDropdowns();
           updateRoleHint();
         }
 
