@@ -3846,7 +3846,7 @@
             <div class="sub-nav active" id="subKeyword">Keyword Rules</div>
           </div>
 
-          <div class="nav soon-nav" data-target="Resources">
+          <div class="nav" id="resourcesNavMenu">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
                 <ellipse cx="12" cy="5" rx="9" ry="3" />
@@ -3854,7 +3854,6 @@
                 <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg
             ></span>
             <span class="nav-label">Resources</span>
-            <span class="nav-arrow">▸</span>
           </div>
           <div class="nav" id="newsNavMenu">
             <span class="nav-icon"
@@ -6220,6 +6219,466 @@
             >
               <!-- Dynamically populated -->
             </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             RESOURCE DIRECTORY MANAGEMENT MODULE SECTIONS
+             ========================================================= -->
+
+        <!-- 1. Resources Listing & Queue View -->
+        <section id="resourcesQueueView" class="cm-page" style="display: none">
+          <div class="card">
+            <!-- Header Bar -->
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div>
+                <h1 class="title">Resource Directory</h1>
+                <p style="color: var(--muted); font-size: 13px; margin: 4px 0 0">
+                  Maintain directory of verified legal aid, mental health, housing, hotlines, and regional support organizations.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center">
+                <button class="btn primary" id="btnOpenCreateResource">
+                  <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; margin-right: 4px">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add Organization
+                </button>
+              </div>
+            </div>
+
+            <!-- KPI Metric Summary Tiles -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px; gap: 14px">
+              <div class="kpi-card" style="padding: 16px 18px">
+                <div class="kpi-top">
+                  <span class="kpi-label">Total Organizations</span>
+                  <div class="kpi-icon-wrap" style="background: #e0f2fe; color: #0284c7">
+                    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                </div>
+                <div class="kpi-value" id="resKpiTotal" style="font-size: 24px">28</div>
+                <div class="kpi-sub"><span style="color: var(--muted)">Across 13 categories</span></div>
+              </div>
+
+              <div class="kpi-card" style="padding: 16px 18px">
+                <div class="kpi-top">
+                  <span class="kpi-label">Verified Listings</span>
+                  <div class="kpi-icon-wrap" style="background: #dcfce7; color: #16a34a">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                  </div>
+                </div>
+                <div class="kpi-value" id="resKpiVerified" style="font-size: 24px">24</div>
+                <div class="kpi-sub"><span style="color: #16a34a; font-weight: 600">Shield active in app</span></div>
+              </div>
+
+              <div class="kpi-card" style="padding: 16px 18px">
+                <div class="kpi-top">
+                  <span class="kpi-label">Pending Review</span>
+                  <div class="kpi-icon-wrap" style="background: #fef3c7; color: #d97706">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                </div>
+                <div class="kpi-value" id="resKpiPending" style="font-size: 24px">3</div>
+                <div class="kpi-sub"><span style="color: #d97706; font-weight: 600">Requires approval</span></div>
+              </div>
+
+              <div class="kpi-card" style="padding: 16px 18px">
+                <div class="kpi-top">
+                  <span class="kpi-label">Active Hotlines</span>
+                  <div class="kpi-icon-wrap" style="background: #ede9fe; color: #7c3aed">
+                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                </div>
+                <div class="kpi-value" id="resKpiHotlines" style="font-size: 24px">6</div>
+                <div class="kpi-sub"><span style="color: #7c3aed; font-weight: 600">24/7 direct dial</span></div>
+              </div>
+            </div>
+
+            <!-- Status Tabs -->
+            <div class="tabs" id="resourceStatusTabs" style="margin-bottom: 18px">
+              <div class="tab active" data-status="all">All (<span id="resTabCountAll">28</span>)</div>
+              <div class="tab" data-status="Published">Published (<span id="resTabCountPub">24</span>)</div>
+              <div class="tab" data-status="Pending Review">Pending Review (<span id="resTabCountPending">3</span>)</div>
+              <div class="tab" data-status="Draft">Draft (<span id="resTabCountDraft">1</span>)</div>
+            </div>
+
+            <!-- Standard Filters Bar -->
+            <div class="filters">
+              <input
+                type="text"
+                id="resourceSearchInput"
+                class="search"
+                placeholder="Search by organization name, tags, city, or contact..."
+              />
+
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+                <!-- Category Filter Dropdown -->
+                <div class="custom-select-wrap" id="resCategoryFilterWrap" style="min-width: 170px">
+                  <input type="hidden" id="resCategoryFilter" value="All" />
+                  <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false" style="min-width: 170px">
+                    <span class="custom-select-label">All Categories</span>
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  <div class="custom-select-menu" role="listbox">
+                    <div class="custom-select-option selected" data-value="All">All Categories</div>
+                    <div class="custom-select-option" data-value="legal">⚖️ Legal Aid</div>
+                    <div class="custom-select-option" data-value="mental">❤️ Mental Health</div>
+                    <div class="custom-select-option" data-value="housing">🏠 Housing & Shelter</div>
+                    <div class="custom-select-option" data-value="work">💼 Workplace & Labor</div>
+                    <div class="custom-select-option" data-value="education">🎓 Education & Youth</div>
+                    <div class="custom-select-option" data-value="hotline">📞 Crisis Hotlines</div>
+                    <div class="custom-select-option" data-value="immigration">🌐 Immigration Defense</div>
+                    <div class="custom-select-option" data-value="voting">🗳️ Voting Rights</div>
+                    <div class="custom-select-option" data-value="reentry">📣 Reentry Programs</div>
+                    <div class="custom-select-option" data-value="financial">💲 Financial & Banking</div>
+                    <div class="custom-select-option" data-value="health">🩺 Health Equity</div>
+                    <div class="custom-select-option" data-value="advocacy">📢 Civil Rights Advocacy</div>
+                  </div>
+                </div>
+
+                <!-- Reach Scope Filter Dropdown -->
+                <div class="custom-select-wrap" id="resReachFilterWrap" style="min-width: 140px">
+                  <input type="hidden" id="resReachFilter" value="All" />
+                  <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false" style="min-width: 140px">
+                    <span class="custom-select-label">All Reaches</span>
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  <div class="custom-select-menu" role="listbox">
+                    <div class="custom-select-option selected" data-value="All">All Reaches</div>
+                    <div class="custom-select-option" data-value="National">National</div>
+                    <div class="custom-select-option" data-value="Regional">Regional</div>
+                    <div class="custom-select-option" data-value="Local">Local</div>
+                  </div>
+                </div>
+
+                <!-- Verification Filter Dropdown -->
+                <div class="custom-select-wrap" id="resVerifyFilterWrap" style="min-width: 155px">
+                  <input type="hidden" id="resVerifyFilter" value="All" />
+                  <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false" style="min-width: 155px">
+                    <span class="custom-select-label">All Verification</span>
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  <div class="custom-select-menu" role="listbox">
+                    <div class="custom-select-option selected" data-value="All">All Verification</div>
+                    <div class="custom-select-option" data-value="Verified">Verified Shield ✓</div>
+                    <div class="custom-select-option" data-value="Unverified">Unverified</div>
+                  </div>
+                </div>
+
+                <!-- Sort Dropdown -->
+                <div class="custom-select-wrap" id="resSortFilterWrap" style="min-width: 150px">
+                  <input type="hidden" id="resSortFilter" value="newest" />
+                  <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false" style="min-width: 150px">
+                    <span class="custom-select-label">Newest First</span>
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  <div class="custom-select-menu" role="listbox">
+                    <div class="custom-select-option selected" data-value="newest">Newest First</div>
+                    <div class="custom-select-option" data-value="oldest">Oldest First</div>
+                    <div class="custom-select-option" data-value="name">Organization (A-Z)</div>
+                  </div>
+                </div>
+
+                <button
+                  class="btn btn-reset-filter"
+                  id="btnResetResourceFilters"
+                  style="display: none"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+
+            <!-- Resource Directory Table -->
+            <div style="overflow-x: auto; width: 100%">
+              <table class="table" style="table-layout: fixed; width: 100%; min-width: 900px">
+                <thead>
+                  <tr>
+                    <th style="width: 32%">Organization & ID</th>
+                    <th style="width: 18%">Category</th>
+                    <th style="width: 18%">Reach & Region</th>
+                    <th style="width: 16%">Contact / Intake</th>
+                    <th style="width: 16%">Status</th>
+                    <th style="width: 16%; text-align: right; padding-right: 18px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="resourcesTableBody">
+                  <!-- Dynamically populated rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-bar" id="resourcesPaginationBar">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Resource Organization Details & Approval View -->
+        <section id="resourceDetailsView" class="details-page" style="display: none">
+          <div class="details-top-bar" style="justify-content: space-between">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <button class="back-btn-pill" id="btnBackToResourcesFromDetails" title="Back to Resource Directory">
+                ←
+              </button>
+              <div class="meta-chip-wrap">
+                <span>RESOURCE</span>
+                <span>·</span>
+                <strong id="resDetailsId">RES-101</strong>
+                <span class="badge published" id="resDetailsStatusBadge">Published</span>
+                <span class="badge private" id="resDetailsCategoryBadge">Legal Aid</span>
+                <span class="badge" id="resDetailsShieldBadge" style="background: #dcfce7; color: #15803d; display: inline-flex; align-items: center; gap: 4px">
+                  <svg viewBox="0 0 24 24" style="width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                  Verified Partner
+                </span>
+              </div>
+            </div>
+
+            <!-- Pagination Navigation Controls -->
+            <div class="details-nav-controls" style="display: flex; align-items: center; gap: 8px">
+              <span id="resDetailsItemCount" style="font-size: 12.5px; color: var(--muted); margin-right: 4px">1 of 28</span>
+              <button class="back-btn-pill" id="btnPrevResDetail" title="Previous Organization" style="width: 34px; height: 34px; font-size: 14px">←</button>
+              <button class="back-btn-pill" id="btnNextResDetail" title="Next Organization" style="width: 34px; height: 34px; font-size: 14px">→</button>
+            </div>
+          </div>
+
+          <h1 class="details-main-title" id="resDetailsName" style="margin-bottom: 20px">
+            NAACP Legal Defense and Educational Fund
+          </h1>
+
+          <div class="details-grid">
+            <!-- Left Column: Details Cards -->
+            <div class="details-left">
+              <!-- Organization Overview Card -->
+              <div class="detail-card">
+                <div class="detail-card-head">
+                  <div class="card-section-label">Organization Overview</div>
+                </div>
+                <div class="content-info-grid">
+                  <div class="info-cell">
+                    <div class="info-cell-label">Resource ID</div>
+                    <div class="info-cell-value" id="valResId">RES-101</div>
+                  </div>
+                  <div class="info-cell">
+                    <div class="info-cell-label">Category</div>
+                    <div class="info-cell-value" id="valResCategory">Legal Aid</div>
+                  </div>
+                  <div class="info-cell">
+                    <div class="info-cell-label">Reach Scope</div>
+                    <div class="info-cell-value" id="valResReach">National</div>
+                  </div>
+                  <div class="info-cell">
+                    <div class="info-cell-label">Regions & Jurisdictions Served</div>
+                    <div class="info-cell-value" id="valResRegions">United States (Nationwide)</div>
+                  </div>
+                  <div class="info-cell">
+                    <div class="info-cell-label">Contact / Intake Channel</div>
+                    <div class="info-cell-value" id="valResContact">
+                      <a href="#" id="valResContactLink" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline">naacpldf.org</a>
+                    </div>
+                  </div>
+                  <div class="info-cell">
+                    <div class="info-cell-label">Verification Status</div>
+                    <div class="info-cell-value" id="valResVerified">Accredited Partner (Shield Active)</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mission & Services Description Card -->
+              <div class="detail-card">
+                <div class="detail-card-head">
+                  <div class="card-section-label">Mission & Comprehensive Services</div>
+                </div>
+                <div class="content-body-wrap" style="padding: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px">
+                  <div class="content-body-text" id="resDetailsDescription" style="line-height: 1.7; font-size: 14px; color: var(--text)">
+                    America's premier legal organization fighting for racial justice. Through litigation, advocacy, and public education, LDF seeks structural changes to expand democracy, eliminate disparities, and achieve racial justice in a society that fulfills the promise of equality for all Americans.
+                  </div>
+                  <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap" id="resDetailsTagsWrap">
+                    <!-- Tags rendered here -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resource Lifecycle Card -->
+              <div class="detail-card" id="resLifecycleCard">
+                <div class="detail-card-head" style="display: flex; justify-content: space-between; align-items: center">
+                  <div class="card-section-label">Directory Listing Lifecycle</div>
+                  <span class="badge active" id="resLifecycleStatusBadge" style="font-size: 11px">Live in App</span>
+                </div>
+                <div id="resLifecycleTimeline" style="display: flex; flex-direction: column; gap: 0; margin-top: 14px">
+                  <!-- Dynamically rendered timeline -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Editorial Actions -->
+            <div class="details-right">
+              <div class="action-card">
+                <div class="action-card-title">Directory Actions</div>
+                <div class="action-btn-stack">
+                  <button class="btn primary" id="btnApproveResource" style="width: 100%; justify-content: center; background: #059669; border-color: #059669">
+                    ✓ Approve Listing
+                  </button>
+                  <button class="btn outline" id="btnUnpublishResource" style="width: 100%; justify-content: center; display: none">
+                    ⊘ Unpublish to Draft
+                  </button>
+                  <button class="btn primary" id="btnEditResourceFromDetails" style="width: 100%; justify-content: center">
+                    ✎ Edit Organization
+                  </button>
+                  <button class="btn outline" id="btnToggleResourceVerify" style="width: 100%; justify-content: center">
+                    ⭐ Toggle Verified Shield
+                  </button>
+                  <button class="btn outline" id="btnRejectResource" style="width: 100%; justify-content: center; color: #dc2626; border-color: #fca5a5">
+                    ✕ Reject / Archive
+                  </button>
+                  <button class="btn danger" id="btnDeleteResourceFromDetails" style="width: 100%; justify-content: center">
+                    Delete Organization
+                  </button>
+                </div>
+                <div class="action-help-text">
+                  Published directory listings appear live in the mobile app's Support & Resources tab.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Create / Edit Organization Form View -->
+        <section id="resourceFormView" class="cm-page" style="display: none">
+          <div class="card">
+            <div style="margin-bottom: 24px">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px">
+                <button class="back-btn-pill" id="btnBackToResourcesFromForm" title="Back to Resource Directory">
+                  ←
+                </button>
+                <span style="font-size: 13px; font-weight: 600; color: var(--muted)">Resource Directory</span>
+              </div>
+              <h1 class="title" id="resourceFormTitle" style="margin: 0 0 6px">Add Support Organization</h1>
+              <p style="color: var(--muted); font-size: 13px; margin: 0" id="resourceFormSub">
+                Add an accredited organization, legal clinic, mental health network, or crisis hotline to the BlackNexa directory.
+              </p>
+            </div>
+
+            <form id="resourceForm" onsubmit="return false;" novalidate>
+              <input type="hidden" id="resourceFormId" value="" />
+
+              <!-- Organization Name -->
+              <div style="margin-bottom: 20px">
+                <label style="margin-top: 0; font-weight: 600">Organization Name <span style="color: var(--danger)">*</span></label>
+                <input type="text" id="resInputName" placeholder="e.g. NAACP Legal Defense Fund" style="width: 100%; box-sizing: border-box" required />
+                <div class="field-error-msg" id="resNameErr" style="display: none; color: var(--danger); font-size: 12px; margin-top: 4px">
+                  Organization name is required.
+                </div>
+              </div>
+
+              <!-- Category and Reach -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px">
+                <div>
+                  <label style="font-weight: 600">Category <span style="color: var(--danger)">*</span></label>
+                  <div class="custom-select-wrap" id="resFormCategoryWrap" style="width: 100%">
+                    <input type="hidden" id="resInputCategory" value="legal" />
+                    <button type="button" class="custom-select-trigger" style="width: 100%">
+                      <span class="custom-select-label">⚖️ Legal Aid</span>
+                      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    <div class="custom-select-menu" style="width: 100%">
+                      <div class="custom-select-option selected" data-value="legal">⚖️ Legal Aid</div>
+                      <div class="custom-select-option" data-value="mental">❤️ Mental Health</div>
+                      <div class="custom-select-option" data-value="housing">🏠 Housing & Shelter</div>
+                      <div class="custom-select-option" data-value="work">💼 Workplace & Labor</div>
+                      <div class="custom-select-option" data-value="education">🎓 Education & Youth</div>
+                      <div class="custom-select-option" data-value="hotline">📞 Crisis Hotlines</div>
+                      <div class="custom-select-option" data-value="immigration">🌐 Immigration Defense</div>
+                      <div class="custom-select-option" data-value="voting">🗳️ Voting Rights</div>
+                      <div class="custom-select-option" data-value="reentry">📣 Reentry Programs</div>
+                      <div class="custom-select-option" data-value="financial">💲 Financial & Banking</div>
+                      <div class="custom-select-option" data-value="health">🩺 Health Equity</div>
+                      <div class="custom-select-option" data-value="advocacy">📢 Civil Rights Advocacy</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-weight: 600">Reach Scope <span style="color: var(--danger)">*</span></label>
+                  <div class="custom-select-wrap" id="resFormReachWrap" style="width: 100%">
+                    <input type="hidden" id="resInputReach" value="National" />
+                    <button type="button" class="custom-select-trigger" style="width: 100%">
+                      <span class="custom-select-label">National</span>
+                      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    <div class="custom-select-menu" style="width: 100%">
+                      <div class="custom-select-option selected" data-value="National">National</div>
+                      <div class="custom-select-option" data-value="Regional">Regional</div>
+                      <div class="custom-select-option" data-value="Local">Local</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Regions Served & Contact -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px">
+                <div>
+                  <label style="font-weight: 600">Regions & Jurisdictions Served</label>
+                  <input type="text" id="resInputRegions" placeholder="e.g. United States, Atlanta GA, Nationwide" style="width: 100%; box-sizing: border-box" value="United States" />
+                </div>
+                <div>
+                  <label style="font-weight: 600">Contact Number or URL <span style="color: var(--danger)">*</span></label>
+                  <input type="text" id="resInputContact" placeholder="e.g. 800-656-4673 or naacpldf.org" style="width: 100%; box-sizing: border-box" required />
+                  <div class="field-error-msg" id="resContactErr" style="display: none; color: var(--danger); font-size: 12px; margin-top: 4px">
+                    Contact information is required.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tags / Specialties -->
+              <div style="margin-bottom: 20px">
+                <label style="font-weight: 600">Service Tags & Keywords (Comma-separated)</label>
+                <input type="text" id="resInputTags" placeholder="e.g. civil rights, litigation, 24/7 hotline, pro bono" style="width: 100%; box-sizing: border-box" />
+              </div>
+
+              <!-- Description & Services -->
+              <div style="margin-bottom: 20px">
+                <label style="font-weight: 600">Services & Mission Description <span style="color: var(--danger)">*</span></label>
+                <textarea id="resInputDescription" rows="4" placeholder="Provide a detailed overview of the organization's mission, free/pro-bono offerings, and intake procedures..." style="width: 100%; box-sizing: border-box; font-family: inherit" required></textarea>
+                <div class="field-error-msg" id="resDescErr" style="display: none; color: var(--danger); font-size: 12px; margin-top: 4px">
+                  Description cannot be empty.
+                </div>
+              </div>
+
+              <!-- Verified Shield Checkbox & Publication Status -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px">
+                <div style="display: flex; align-items: center">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; width: 100%; box-sizing: border-box; margin: 0">
+                    <input type="checkbox" id="resInputVerified" checked style="width: 16px; height: 16px" />
+                    <span><strong style="color: var(--text)">Accredited Verified Partner</strong> (Display Shield Badge ✓)</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label style="font-weight: 600">Publication Status <span style="color: var(--danger)">*</span></label>
+                  <div class="custom-select-wrap" id="resFormStatusWrap" style="width: 100%">
+                    <input type="hidden" id="resInputStatus" value="Published" />
+                    <button type="button" class="custom-select-trigger" style="width: 100%">
+                      <span class="custom-select-label">Published</span>
+                      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    <div class="custom-select-menu" style="width: 100%">
+                      <div class="custom-select-option selected" data-value="Published">Published (Live in App)</div>
+                      <div class="custom-select-option" data-value="Pending Review">Pending Review</div>
+                      <div class="custom-select-option" data-value="Draft">Draft</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Form Buttons -->
+              <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid var(--line)">
+                <button type="button" class="btn outline" id="btnCancelResourceForm">Cancel</button>
+                <button type="submit" class="btn primary" id="btnSaveResource">Save Organization</button>
+              </div>
+            </form>
           </div>
         </section>
 
@@ -8953,6 +9412,12 @@
         if ($("#newsQueueView")) $("#newsQueueView").style.display = "none";
         if ($("#newsDetailsView")) $("#newsDetailsView").style.display = "none";
         if ($("#newsFormView")) $("#newsFormView").style.display = "none";
+        if ($("#resourcesQueueView"))
+          $("#resourcesQueueView").style.display = "none";
+        if ($("#resourceDetailsView"))
+          $("#resourceDetailsView").style.display = "none";
+        if ($("#resourceFormView"))
+          $("#resourceFormView").style.display = "none";
         if (typeof keywordPage !== "undefined")
           keywordPage.style.display = "none";
         if (typeof soon !== "undefined") soon.style.display = "none";
@@ -9915,6 +10380,21 @@
                 if (hiddenInput.id === "newsSortFilter") newsSortFilter = val;
                 newsCurrentPage = 1;
                 renderNewsTable();
+              } else if (
+                hiddenInput &&
+                (hiddenInput.id === "resCategoryFilter" ||
+                  hiddenInput.id === "resReachFilter" ||
+                  hiddenInput.id === "resVerifyFilter" ||
+                  hiddenInput.id === "resSortFilter")
+              ) {
+                if (hiddenInput.id === "resCategoryFilter")
+                  resCategoryFilter = val;
+                if (hiddenInput.id === "resReachFilter") resReachFilter = val;
+                if (hiddenInput.id === "resVerifyFilter")
+                  resVerifyFilter = val;
+                if (hiddenInput.id === "resSortFilter") resSortFilter = val;
+                resCurrentPage = 1;
+                renderResourcesTable();
               } else if (hiddenInput && hiddenInput.id === "auditActionFilter") {
                 auditFilterAction = val;
                 if (typeof window.renderAuditLogGlobal === "function") {
@@ -16083,6 +16563,61 @@
           return;
         }
 
+        if (action === "approve_resource" && targetResourceIdForAction) {
+          const res = resourceDirectory.find((r) => r.id === targetResourceIdForAction);
+          if (res) {
+            res.status = "Published";
+            res.verified = true;
+          }
+          closeModal();
+          if ($("#resourceDetailsView") && $("#resourceDetailsView").style.display !== "none") {
+            loadResourceDetails(targetResourceIdForAction);
+          } else {
+            renderResourcesTable();
+          }
+          alert(`Organization ${targetResourceIdForAction} approved and published to mobile directory.`);
+          return;
+        }
+
+        if (action === "unpublish_resource" && targetResourceIdForAction) {
+          const res = resourceDirectory.find((r) => r.id === targetResourceIdForAction);
+          if (res) {
+            res.status = "Draft";
+          }
+          closeModal();
+          if ($("#resourceDetailsView") && $("#resourceDetailsView").style.display !== "none") {
+            loadResourceDetails(targetResourceIdForAction);
+          } else {
+            renderResourcesTable();
+          }
+          alert(`Organization ${targetResourceIdForAction} unpublished to Draft status.`);
+          return;
+        }
+
+        if (action === "reject_resource" && targetResourceIdForAction) {
+          const res = resourceDirectory.find((r) => r.id === targetResourceIdForAction);
+          if (res) {
+            res.status = "Archived";
+          }
+          closeModal();
+          if ($("#resourceDetailsView") && $("#resourceDetailsView").style.display !== "none") {
+            loadResourceDetails(targetResourceIdForAction);
+          } else {
+            renderResourcesTable();
+          }
+          alert(`Organization ${targetResourceIdForAction} archived.`);
+          return;
+        }
+
+        if (action === "delete_resource" && targetResourceIdForAction) {
+          resourceDirectory = resourceDirectory.filter((r) => r.id !== targetResourceIdForAction);
+          window.resourceDirectory = resourceDirectory;
+          closeModal();
+          showResourcesPage();
+          alert("Organization deleted successfully.");
+          return;
+        }
+
         if (typeof prevConfirmHandler === "function") {
           prevConfirmHandler();
         }
@@ -17741,6 +18276,1020 @@
           `DLM Pruning Script Executed:\n- Scanned ${newsStories.length} news stories.\n- Evaluated against ${aiNewsEngineSettings.dlmRetentionDays}-day retention policy.\n- Database storage optimized, JSON-LD sitemaps refreshed.`,
         );
       };
+
+      // ═══════════════════════════════════════════════════════════════
+      // RESOURCE DIRECTORY MANAGEMENT MODULE CONTROLLER
+      // ═══════════════════════════════════════════════════════════════
+      const RESOURCE_CATEGORY_CONFIG = {
+        legal: { label: "Legal Aid", icon: "⚖️", color: "#2563eb" },
+        mental: { label: "Mental Health", icon: "❤️", color: "#dc2626" },
+        housing: { label: "Housing & Shelter", icon: "🏠", color: "#d97706" },
+        work: { label: "Workplace & Labor", icon: "💼", color: "#059669" },
+        education: { label: "Education & Youth", icon: "🎓", color: "#7c3aed" },
+        hotline: { label: "Crisis Hotlines", icon: "📞", color: "#e11d48" },
+        immigration: { label: "Immigration Defense", icon: "🌐", color: "#0891b2" },
+        voting: { label: "Voting Rights", icon: "🗳️", color: "#4f46e5" },
+        youth: { label: "Youth & Family", icon: "👥", color: "#0284c7" },
+        reentry: { label: "Reentry Programs", icon: "📣", color: "#ca8a04" },
+        financial: { label: "Financial & Banking", icon: "💲", color: "#16a34a" },
+        health: { label: "Health Equity", icon: "🩺", color: "#0d9488" },
+        advocacy: { label: "Civil Rights Advocacy", icon: "📢", color: "#9333ea" },
+      };
+
+      let resourceDirectory = [
+        {
+          id: "RES-101",
+          name: "NAACP Legal Defense and Educational Fund",
+          category: "legal",
+          reach: "National",
+          regionsServed: "United States (Nationwide)",
+          contact: "naacpldf.org",
+          verified: true,
+          status: "Published",
+          tags: ["civil rights", "litigation", "supreme court", "voting rights"],
+          description: "America's premier legal organization fighting for racial justice. Through litigation, advocacy, and public education, LDF seeks structural changes to expand democracy, eliminate disparities, and achieve racial justice in a society that fulfills the promise of equality for all Americans.",
+          createdDate: "Aug 15, 2026",
+          author: "Advocate Sarah Miller",
+        },
+        {
+          id: "RES-102",
+          name: "ACLU Racial Justice Program",
+          category: "legal",
+          reach: "National",
+          regionsServed: "United States (Nationwide)",
+          contact: "aclu.org",
+          verified: true,
+          status: "Published",
+          tags: ["criminal justice", "civil liberties", "police reform"],
+          description: "Challenges policies and practices that cause racial inequality in the criminal legal system. Litigates impact cases addressing biased policing, debtor's prisons, and prosecutorial misconduct.",
+          createdDate: "Aug 16, 2026",
+          author: "Staff Admin",
+        },
+        {
+          id: "RES-103",
+          name: "National Suicide & Crisis Lifeline",
+          category: "hotline",
+          reach: "National",
+          regionsServed: "United States (Nationwide)",
+          contact: "988",
+          verified: true,
+          status: "Published",
+          tags: ["24/7 hotline", "mental health", "crisis counseling", "free support"],
+          description: "24/7, free and confidential support for people in distress, prevention and crisis resources for you or your loved ones. Call or text 988 directly.",
+          createdDate: "Aug 17, 2026",
+          author: "Health Operations",
+        },
+        {
+          id: "RES-104",
+          name: "Black Emotional and Mental Health Collective (BEAM)",
+          category: "mental",
+          reach: "National",
+          regionsServed: "United States, Atlanta GA, Chicago IL",
+          contact: "beam.community",
+          verified: true,
+          status: "Published",
+          tags: ["trauma support", "peer networks", "wellness grants", "black healing"],
+          description: "National training, movement building, and grant-making institution dedicated to the healing, wellness, and liberation of Black and marginalized communities.",
+          createdDate: "Aug 18, 2026",
+          author: "Advocate Sarah Miller",
+        },
+        {
+          id: "RES-105",
+          name: "National Domestic Violence Hotline",
+          category: "hotline",
+          reach: "National",
+          regionsServed: "United States, UK, International",
+          contact: "1-800-799-7233",
+          verified: true,
+          status: "Published",
+          tags: ["safety planning", "24/7 hotline", "survivor shelter", "confidential"],
+          description: "24/7 confidential support, safety planning, local shelter referrals, and resources for survivors of domestic and relationship abuse.",
+          createdDate: "Aug 19, 2026",
+          author: "Staff Admin",
+        },
+        {
+          id: "RES-106",
+          name: "National Low Income Housing Coalition",
+          category: "housing",
+          reach: "National",
+          regionsServed: "United States (Nationwide)",
+          contact: "nlihc.org",
+          verified: true,
+          status: "Published",
+          tags: ["tenant rights", "eviction prevention", "rental assistance", "policy"],
+          description: "Dedicated to achieving racially and socially equitable public policy that ensures people with the lowest incomes have quality, accessible, and affordable homes.",
+          createdDate: "Aug 20, 2026",
+          author: "Advocate Sarah Miller",
+        },
+        {
+          id: "RES-107",
+          name: "Equal Employment Opportunity Commission (EEOC)",
+          category: "work",
+          reach: "National",
+          regionsServed: "United States (Federal Jurisdiction)",
+          contact: "eeoc.gov",
+          verified: true,
+          status: "Published",
+          tags: ["workplace bias", "title vii", "wrongful termination", "federal complaint"],
+          description: "Responsible for enforcing federal laws that make it illegal to discriminate against a job applicant or an employee because of the person's race, color, religion, sex, or national origin.",
+          createdDate: "Aug 21, 2026",
+          author: "Lead Legal Admin",
+        },
+        {
+          id: "RES-108",
+          name: "Black Voters Matter Capacity Building Institute",
+          category: "voting",
+          reach: "Regional",
+          regionsServed: "Southern States, Atlanta GA, Charlotte NC, Jackson MS",
+          contact: "blackvotersmatterfund.org",
+          verified: true,
+          status: "Published",
+          tags: ["voter registration", "election protection", "community organizing"],
+          description: "Dedicated to increasing civic engagement and power in marginalized, predominantly Black communities. Supports local grassroots organizations across the rural and urban South.",
+          createdDate: "Aug 22, 2026",
+          author: "Advocate Sarah Miller",
+        },
+        {
+          id: "RES-109",
+          name: "Immigrant Legal Resource Center",
+          category: "immigration",
+          reach: "National",
+          regionsServed: "United States, Texas, California, New York",
+          contact: "ilrc.org",
+          verified: true,
+          status: "Published",
+          tags: ["asylum defense", "daca", "know your rights", "immigrant rights"],
+          description: "Provides comprehensive legal trainings, technical assistance, educational materials, and advocacy to protect the rights of immigrants and refugees.",
+          createdDate: "Aug 23, 2026",
+          author: "Staff Admin",
+        },
+        {
+          id: "RES-110",
+          name: "National Reentry Resource Center",
+          category: "reentry",
+          reach: "National",
+          regionsServed: "United States (Nationwide)",
+          contact: "nationalreentryresourcecenter.org",
+          verified: true,
+          status: "Published",
+          tags: ["reentry housing", "expungement", "job placement", "community care"],
+          description: "Delivers evidence-based training, housing assistance resources, and employment transition support for individuals returning home from incarceration.",
+          createdDate: "Aug 24, 2026",
+          author: "Lead Legal Admin",
+        },
+        {
+          id: "RES-111",
+          name: "Southern Poverty Law Center (SPLC)",
+          category: "legal",
+          reach: "Regional",
+          regionsServed: "Southern United States, Alabama, Georgia, Florida",
+          contact: "splcenter.org",
+          verified: true,
+          status: "Published",
+          tags: ["hate crime monitoring", "civil rights litigation", "voting access"],
+          description: "Catalyst for racial justice in the South and beyond, working in partnership with communities to dismantle white supremacy, strengthen intersectional movements, and advance human rights.",
+          createdDate: "Aug 25, 2026",
+          author: "Advocate Sarah Miller",
+        },
+        {
+          id: "RES-112",
+          name: "Chicago Community Defense Legal Clinic",
+          category: "legal",
+          reach: "Local",
+          regionsServed: "Chicago, IL (Cook County)",
+          contact: "312-555-0199",
+          verified: false,
+          status: "Pending Review",
+          tags: ["local pro bono", "stop-and-search defense", "police accountability"],
+          description: "Grassroots pro-bono defense clinic providing rapid emergency arraignment representation, bail assistance, and rights counseling for South and West Side Chicago residents.",
+          createdDate: "Sep 01, 2026",
+          author: "Community Submitter",
+        },
+        {
+          id: "RES-113",
+          name: "Brixton Community Law & Advice Centre",
+          category: "legal",
+          reach: "Local",
+          regionsServed: "London, United Kingdom (Lambeth / Southwark)",
+          contact: "brixtonadvice.org.uk",
+          verified: false,
+          status: "Pending Review",
+          tags: ["uk legal aid", "stop and search uk", "housing disputes"],
+          description: "UK registered charity providing free, independent legal advice on housing, social welfare, immigration, and stop-and-search police monitoring in South London.",
+          createdDate: "Sep 02, 2026",
+          author: "UK Advocacy Partner",
+        },
+        {
+          id: "RES-114",
+          name: "Atlanta Reproductive & Maternal Health Collective",
+          category: "health",
+          reach: "Local",
+          regionsServed: "Atlanta, GA (Fulton & DeKalb Counties)",
+          contact: "404-555-0144",
+          verified: true,
+          status: "Pending Review",
+          tags: ["maternal health", "black doulas", "wellness clinics", "community care"],
+          description: "Community health coalition addressing Black maternal mortality disparities through free doula care, postpartum mental health therapy, and patient advocacy navigation.",
+          createdDate: "Sep 02, 2026",
+          author: "Health Operations",
+        },
+        {
+          id: "RES-115",
+          name: "Detroit Urban Growers & Food Security Co-op",
+          category: "financial",
+          reach: "Local",
+          regionsServed: "Detroit, MI",
+          contact: "detroitgrowers.org",
+          verified: false,
+          status: "Draft",
+          tags: ["food justice", "mutual aid", "micro-grants", "urban farming"],
+          description: "Community co-op building food sovereignty, micro-grant funding for Black growers, and emergency neighborhood food distribution pantries.",
+          createdDate: "Sep 02, 2026",
+          author: "Draft Editor",
+        },
+      ];
+      window.resourceDirectory = resourceDirectory;
+
+      let currentResourceTab = "all";
+      let resCategoryFilter = "All";
+      let resReachFilter = "All";
+      let resVerifyFilter = "All";
+      let resSortFilter = "newest";
+      let resSearchQuery = "";
+      let resCurrentPage = 1;
+      let resPageSize = 10;
+      let targetResourceIdForAction = null;
+
+      function updateResourceKPICounters() {
+        const total = resourceDirectory.length;
+        const verified = resourceDirectory.filter((r) => r.verified).length;
+        const pending = resourceDirectory.filter((r) => r.status === "Pending Review").length;
+        const hotlines = resourceDirectory.filter((r) => r.category === "hotline").length;
+        const pub = resourceDirectory.filter((r) => r.status === "Published").length;
+        const draft = resourceDirectory.filter((r) => r.status === "Draft").length;
+
+        if ($("#resKpiTotal")) $("#resKpiTotal").textContent = total;
+        if ($("#resKpiVerified")) $("#resKpiVerified").textContent = verified;
+        if ($("#resKpiPending")) $("#resKpiPending").textContent = pending;
+        if ($("#resKpiHotlines")) $("#resKpiHotlines").textContent = hotlines;
+
+        if ($("#resTabCountAll")) $("#resTabCountAll").textContent = total;
+        if ($("#resTabCountPub")) $("#resTabCountPub").textContent = pub;
+        if ($("#resTabCountPending")) $("#resTabCountPending").textContent = pending;
+        if ($("#resTabCountDraft")) $("#resTabCountDraft").textContent = draft;
+      }
+
+      function getFilteredResources() {
+        return resourceDirectory
+          .filter((res) => {
+            if (currentResourceTab !== "all" && res.status !== currentResourceTab) return false;
+            if (resCategoryFilter !== "All" && res.category !== resCategoryFilter) return false;
+            if (resReachFilter !== "All" && res.reach !== resReachFilter) return false;
+            if (resVerifyFilter === "Verified" && !res.verified) return false;
+            if (resVerifyFilter === "Unverified" && res.verified) return false;
+
+            if (resSearchQuery) {
+              const q = resSearchQuery.toLowerCase();
+              const matchName = (res.name || "").toLowerCase().includes(q);
+              const matchId = (res.id || "").toLowerCase().includes(q);
+              const matchContact = (res.contact || "").toLowerCase().includes(q);
+              const matchRegions = (res.regionsServed || "").toLowerCase().includes(q);
+              const matchTags = (res.tags || []).some((t) => t.toLowerCase().includes(q));
+              if (!matchName && !matchId && !matchContact && !matchRegions && !matchTags) return false;
+            }
+            return true;
+          })
+          .sort((a, b) => {
+            if (resSortFilter === "newest") return b.id.localeCompare(a.id);
+            if (resSortFilter === "oldest") return a.id.localeCompare(b.id);
+            if (resSortFilter === "name") return a.name.localeCompare(b.name);
+            return 0;
+          });
+      }
+
+      function renderResourcesTable() {
+        const tbody = document.querySelector("#resourcesTableBody");
+        const paginationBar = document.querySelector("#resourcesPaginationBar");
+        if (!tbody) return;
+
+        updateResourceKPICounters();
+
+        // Reset Filter button visibility
+        const resetBtn = document.querySelector("#btnResetResourceFilters");
+        if (resetBtn) {
+          const isFiltered =
+            Boolean(resSearchQuery) ||
+            resCategoryFilter !== "All" ||
+            resReachFilter !== "All" ||
+            resVerifyFilter !== "All" ||
+            resSortFilter !== "newest" ||
+            currentResourceTab !== "all";
+          resetBtn.style.display = isFiltered ? "inline-block" : "none";
+        }
+
+        const filtered = getFilteredResources();
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / resPageSize) || 1;
+        if (resCurrentPage > totalPages) resCurrentPage = totalPages;
+
+        const startIndex = (resCurrentPage - 1) * resPageSize;
+        const paginated = filtered.slice(startIndex, startIndex + resPageSize);
+
+        if (paginated.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="empty" style="text-align: center; padding: 36px; color: var(--muted)">No resources found matching the selected filters.</td></tr>`;
+        } else {
+          tbody.innerHTML = paginated
+            .map((res) => {
+              const catConfig = RESOURCE_CATEGORY_CONFIG[res.category] || { label: res.category, icon: "📁", color: "#64748b" };
+              const statusBadgeClass =
+                res.status === "Published" ? "published" : res.status === "Pending Review" ? "pending" : "danger";
+
+              const isContactUrl = res.contact.includes(".") && !res.contact.startsWith("1-") && !res.contact.startsWith("988");
+              const contactHref = isContactUrl ? (res.contact.startsWith("http") ? res.contact : `https://${res.contact}`) : `tel:${res.contact.replace(/[^\d]/g, "")}`;
+
+              return `
+              <tr style="cursor: pointer" onclick="loadResourceDetails('${res.id}')">
+                <td>
+                  <div style="min-width: 0">
+                    <div class="title-row-wrap" style="display: flex; align-items: center; gap: 6px">
+                      <span class="title-truncate" title="${res.name.replace(/"/g, "&quot;")}" style="font-weight: 600; font-size: 13.5px; color: var(--text); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">${res.name}</span>
+                      ${res.verified ? `<span class="badge" style="background: #dcfce7; color: #15803d; font-size: 10px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0">✓ Verified</span>` : ""}
+                    </div>
+                    <span class="sub" style="font-size: 11px; color: var(--muted); margin-top: 2px; display: block">${res.id}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="role-badge-pill" style="background: ${catConfig.color}15; color: ${catConfig.color}; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px">
+                    ${catConfig.icon} ${catConfig.label}
+                  </span>
+                </td>
+                <td>
+                  <div style="font-size: 12.5px; color: var(--text); font-weight: 500">${res.reach}</div>
+                  <div style="font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">${res.regionsServed}</div>
+                </td>
+                <td>
+                  <a href="${contactHref}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="font-size: 12.5px; color: #2563eb; text-decoration: underline; font-weight: 500; display: inline-flex; align-items: center; gap: 4px">
+                    ${res.contact}
+                  </a>
+                </td>
+                <td>
+                  <span class="badge ${statusBadgeClass}">${res.status}</span>
+                </td>
+                <td style="text-align: right; padding-right: 18px" onclick="event.stopPropagation()">
+                  <div style="display: inline-flex; gap: 4px; justify-content: flex-end">
+                    <button class="action-icon-btn" onclick="loadResourceDetails('${res.id}')" title="View Organization Details">
+                      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    </button>
+                    ${
+                      res.status !== "Published"
+                        ? `
+                    <button class="action-icon-btn" onclick="quickApproveResource('${res.id}')" title="Quick Approve Listing" style="color: #059669">
+                      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    </button>
+                    `
+                        : ""
+                    }
+                    <button class="action-icon-btn" onclick="editResource('${res.id}')" title="Edit Organization">
+                      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                    </button>
+                    <button class="action-icon-btn delete-icon-btn" onclick="deleteResourcePrompt('${res.id}')" title="Delete Organization">
+                      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+            })
+            .join("");
+        }
+
+        // Pagination Controls
+        if (paginationBar) {
+          if (totalItems > 0) {
+            paginationBar.style.display = "flex";
+            const startRecord = startIndex + 1;
+            const endRecord = Math.min(startIndex + resPageSize, totalItems);
+
+            paginationBar.innerHTML = `
+              <div class="pagination-left-info">
+                <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+                <select class="page-size-select" id="resPageSizeSelect">
+                  <option value="10" ${resPageSize === 10 ? "selected" : ""}>10</option>
+                  <option value="25" ${resPageSize === 25 ? "selected" : ""}>25</option>
+                  <option value="50" ${resPageSize === 50 ? "selected" : ""}>50</option>
+                  <option value="100" ${resPageSize === 100 ? "selected" : ""}>100</option>
+                </select>
+              </div>
+              <div class="pagination-controls">
+                <button class="page-nav-btn" id="resPrevPage" ${resCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
+                <div class="page-numbers">
+                  ${Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .map(
+                      (p) => `
+                    <button class="page-num-btn ${p === resCurrentPage ? "active" : ""}" data-page="${p}">${p}</button>
+                  `,
+                    )
+                    .join("")}
+                </div>
+                <button class="page-nav-btn" id="resNextPage" ${resCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+              </div>
+            `;
+
+            const sizeSelect = document.querySelector("#resPageSizeSelect");
+            if (sizeSelect) {
+              sizeSelect.onchange = (e) => {
+                resPageSize = Number(e.target.value);
+                resCurrentPage = 1;
+                renderResourcesTable();
+              };
+            }
+
+            paginationBar.querySelectorAll(".page-num-btn").forEach((btn) => {
+              btn.onclick = () => {
+                resCurrentPage = Number(btn.dataset.page);
+                renderResourcesTable();
+              };
+            });
+
+            const prevBtn = document.querySelector("#resPrevPage");
+            if (prevBtn)
+              prevBtn.onclick = () => {
+                if (resCurrentPage > 1) {
+                  resCurrentPage--;
+                  renderResourcesTable();
+                }
+              };
+
+            const nextBtn = document.querySelector("#resNextPage");
+            if (nextBtn)
+              nextBtn.onclick = () => {
+                if (resCurrentPage < totalPages) {
+                  resCurrentPage++;
+                  renderResourcesTable();
+                }
+              };
+          } else {
+            paginationBar.style.display = "none";
+          }
+        }
+      }
+
+      function showResourcesPage() {
+        clearAllActive();
+        closeAllSubMenus();
+        const resNav = document.querySelector("#resourcesNavMenu");
+        if (resNav) resNav.classList.add("active");
+        hideAllSections();
+        const view = document.querySelector("#resourcesQueueView");
+        if (view) view.style.display = "block";
+        initCustomDropdowns();
+        renderResourcesTable();
+      }
+
+      const resourcesNavMenu = document.querySelector("#resourcesNavMenu");
+      if (resourcesNavMenu) {
+        resourcesNavMenu.onclick = (e) => {
+          e.preventDefault();
+          showResourcesPage();
+        };
+      }
+
+      // Load Resource Details View
+      window.loadResourceDetails = function (id) {
+        targetResourceIdForAction = id;
+        const res = resourceDirectory.find((r) => r.id === id) || resourceDirectory[0];
+        if (!res) return;
+
+        hideAllSections();
+        const view = document.querySelector("#resourceDetailsView");
+        if (view) view.style.display = "block";
+
+        const catConfig = RESOURCE_CATEGORY_CONFIG[res.category] || { label: res.category, icon: "📁", color: "#64748b" };
+
+        $("#resDetailsId").textContent = res.id;
+        const statusClass = res.status === "Published" ? "published" : res.status === "Pending Review" ? "pending" : "danger";
+        $("#resDetailsStatusBadge").textContent = res.status;
+        $("#resDetailsStatusBadge").className = `badge ${statusClass}`;
+        $("#resDetailsCategoryBadge").textContent = `${catConfig.icon} ${catConfig.label}`;
+
+        if (res.verified) {
+          $("#resDetailsShieldBadge").style.display = "inline-flex";
+        } else {
+          $("#resDetailsShieldBadge").style.display = "none";
+        }
+
+        const activeIndex = resourceDirectory.findIndex((r) => r.id === res.id);
+        $("#resDetailsItemCount").textContent = `${activeIndex + 1} of ${resourceDirectory.length}`;
+
+        const btnPrev = $("#btnPrevResDetail");
+        const btnNext = $("#btnNextResDetail");
+        if (btnPrev) {
+          btnPrev.disabled = activeIndex <= 0;
+          btnPrev.style.opacity = activeIndex <= 0 ? "0.4" : "1";
+          btnPrev.style.cursor = activeIndex <= 0 ? "not-allowed" : "pointer";
+        }
+        if (btnNext) {
+          btnNext.disabled = activeIndex >= resourceDirectory.length - 1;
+          btnNext.style.opacity = activeIndex >= resourceDirectory.length - 1 ? "0.4" : "1";
+          btnNext.style.cursor = activeIndex >= resourceDirectory.length - 1 ? "not-allowed" : "pointer";
+        }
+
+        $("#resDetailsName").textContent = res.name;
+        $("#valResId").textContent = res.id;
+        $("#valResCategory").textContent = `${catConfig.icon} ${catConfig.label}`;
+        $("#valResReach").textContent = res.reach;
+        $("#valResRegions").textContent = res.regionsServed;
+
+        const isContactUrl = res.contact.includes(".") && !res.contact.startsWith("1-") && !res.contact.startsWith("988");
+        const contactHref = isContactUrl ? (res.contact.startsWith("http") ? res.contact : `https://${res.contact}`) : `tel:${res.contact.replace(/[^\d]/g, "")}`;
+
+        const contactLink = $("#valResContactLink");
+        if (contactLink) {
+          contactLink.href = contactHref;
+          contactLink.textContent = isContactUrl ? `${res.contact} ↗` : `📞 ${res.contact}`;
+        }
+
+        $("#valResVerified").textContent = res.verified
+          ? "Accredited Verified Partner (Shield Active in App)"
+          : "Standard Unverified Listing";
+
+        $("#resDetailsDescription").textContent = res.description;
+
+        const tagsWrap = $("#resDetailsTagsWrap");
+        if (tagsWrap) {
+          tagsWrap.innerHTML = (res.tags || [])
+            .map(
+              (t) => `
+            <span style="font-size: 11.5px; font-weight: 500; background: var(--surface); border: 1px solid var(--line); padding: 3px 8px; border-radius: 6px; color: var(--text)">#${t}</span>
+          `,
+            )
+            .join("");
+        }
+
+        renderResourceLifecycle(res);
+
+        // Action button states
+        const approveBtn = document.querySelector("#btnApproveResource");
+        const unpublishBtn = document.querySelector("#btnUnpublishResource");
+        if (approveBtn) {
+          approveBtn.style.display = res.status === "Published" ? "none" : "flex";
+        }
+        if (unpublishBtn) {
+          unpublishBtn.style.display = res.status === "Published" ? "flex" : "none";
+        }
+
+        window.scrollTo(0, 0);
+      };
+
+      function renderResourceLifecycle(res) {
+        const container = document.querySelector("#resLifecycleTimeline");
+        const badge = document.querySelector("#resLifecycleStatusBadge");
+        if (!container) return;
+
+        const status = (res.status || "Draft").toLowerCase();
+        const pubDate = res.createdDate || "Aug 20, 2026";
+        const author = res.author || "Advocate Intake Team";
+
+        if (badge) {
+          badge.textContent = status === "published" ? "Live in App" : status === "pending review" ? "Pending Review" : "Draft / Archived";
+          badge.className = `badge ${status === "published" ? "active" : status === "pending review" ? "pending" : "danger"}`;
+        }
+
+        const steps = [
+          {
+            title: "Organization Ingested / Submitted",
+            by: `${author} (Directory Intake)`,
+            time: `${pubDate}  10:00 AM`,
+            status: "completed",
+            badge: "Ingested",
+            color: "#10b981",
+            desc: `Organization profile submitted with contact channel (${res.contact}) and regions served (${res.regionsServed}).`,
+          },
+          {
+            title: "Accreditation & Contact Verification",
+            by: "Advocate Verification Desk",
+            time: `${pubDate}  11:30 AM`,
+            status: res.verified ? "completed" : "in_progress",
+            badge: res.verified ? "Verified Shield ✓" : "Pending Shield",
+            color: res.verified ? "#10b981" : "#d97706",
+            desc: res.verified
+              ? "Accreditation and legitimacy verified. Safety protocols and 24/7 routing confirmed."
+              : "Awaiting formal verification of non-profit credentials or legal bar standing.",
+          },
+          {
+            title: "Directory Editorial Review",
+            by: status === "published" ? "Lead Admin / Editorial Board" : "Awaiting Review",
+            time: status === "published" ? `${pubDate}  02:00 PM` : "In Queue",
+            status: status === "published" ? "completed" : "in_progress",
+            badge: status === "published" ? "Approved" : "Pending Decision",
+            color: status === "published" ? "#10b981" : "#d97706",
+            desc: status === "published"
+              ? "Passed community safety standards and resource categorization guidelines."
+              : "Under review for public mobile directory inclusion.",
+          },
+          {
+            title: status === "published" ? "Published & Live in Mobile App" : "Distribution Ready",
+            by: "Mobile Support Sync Worker",
+            time: status === "published" ? `${pubDate}  02:15 PM` : "Pending Approval",
+            status: status === "published" ? "completed" : "pending",
+            badge: status === "published" ? "Live Feed" : "Pending",
+            color: status === "published" ? "#10b981" : "#9ca3af",
+            desc: status === "published"
+              ? "Live on iOS & Android Support tab, emergency routing protocols, and Geo-Legal centers."
+              : "Will broadcast to mobile app upon final administrative approval.",
+          },
+        ];
+
+        container.innerHTML = steps
+          .map((s, idx) => {
+            const isLast = idx === steps.length - 1;
+            const isDone = s.status === "completed";
+            const isProg = s.status === "in_progress";
+
+            const dotBg = isDone ? "#10b981" : isProg ? "#d97706" : "#d1d5db";
+            const dotBorder = isProg ? `box-shadow: 0 0 0 4px #fef3c7` : `box-shadow: 0 0 0 3px var(--surface)`;
+            const icon = isDone ? "✓" : isProg ? "⏳" : "○";
+
+            return `
+        <div style="display:flex;gap:12px;position:relative;padding-bottom:${isLast ? "0" : "18px"}">
+          ${!isLast ? `<div style="position:absolute;left:10px;top:20px;bottom:0;width:2px;background:${isDone ? "#86efac" : isProg ? "#fde68a" : "var(--line)"};z-index:1"></div>` : ""}
+          <div style="width:22px;height:22px;border-radius:50%;background:${dotBg};color:#fff;display:grid;place-items:center;font-size:10px;font-weight:800;flex-shrink:0;z-index:2;${dotBorder}">
+            ${icon}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px">
+              <strong style="font-size:12.5px;color:var(--text)">${s.title}</strong>
+              <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${s.color}15;color:${s.color}">${s.badge}</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">
+              ${s.time} · <strong>${s.by}</strong>
+            </div>
+            <div style="font-size:11.5px;color:var(--text);line-height:1.4">
+              ${s.desc}
+            </div>
+          </div>
+        </div>
+      `;
+          })
+          .join("");
+      }
+
+      // Resource Detail Action Handlers
+      window.quickApproveResource = function (id) {
+        targetResourceIdForAction = id;
+        action = "approve_resource";
+        const res = resourceDirectory.find((r) => r.id === id);
+        $("#modalTitle").textContent = "Approve Resource Listing?";
+        $("#modalText").textContent = `Organization "${res.name}" will be immediately published to the mobile app's Support & Resources directory.`;
+        $("#form").innerHTML = "";
+        $("#confirm").textContent = "Approve & Publish";
+        $("#confirm").className = "btn primary";
+        $("#confirm").style.background = "#059669";
+        openModal();
+      };
+
+      const btnApproveResource = document.querySelector("#btnApproveResource");
+      if (btnApproveResource) {
+        btnApproveResource.onclick = () => {
+          if (targetResourceIdForAction) quickApproveResource(targetResourceIdForAction);
+        };
+      }
+
+      const btnUnpublishResource = document.querySelector("#btnUnpublishResource");
+      if (btnUnpublishResource) {
+        btnUnpublishResource.onclick = () => {
+          if (!targetResourceIdForAction) return;
+          action = "unpublish_resource";
+          const res = resourceDirectory.find((r) => r.id === targetResourceIdForAction);
+          $("#modalTitle").textContent = `Unpublish Resource ${res.id}?`;
+          $("#modalText").textContent = `This organization will be hidden from the mobile directory and returned to Draft status.`;
+          $("#form").innerHTML = "";
+          $("#confirm").textContent = "Unpublish to Draft";
+          $("#confirm").className = "btn primary";
+          $("#confirm").style.background = "";
+          openModal();
+        };
+      }
+
+      const btnToggleResourceVerify = document.querySelector("#btnToggleResourceVerify");
+      if (btnToggleResourceVerify) {
+        btnToggleResourceVerify.onclick = () => {
+          const res = resourceDirectory.find((r) => r.id === targetResourceIdForAction);
+          if (res) {
+            res.verified = !res.verified;
+            loadResourceDetails(res.id);
+            alert(`Verified Shield ${res.verified ? "activated" : "deactivated"} for ${res.name}.`);
+          }
+        };
+      }
+
+      const btnRejectResource = document.querySelector("#btnRejectResource");
+      if (btnRejectResource) {
+        btnRejectResource.onclick = () => {
+          if (!targetResourceIdForAction) return;
+          action = "reject_resource";
+          const res = resourceDirectory.find((r) => r.id === targetResourceIdForAction);
+          $("#modalTitle").textContent = `Reject / Archive ${res.id}?`;
+          $("#modalText").textContent = "Archive this listing and remove it from mobile directory queues:";
+          $("#form").innerHTML = `
+            <label style="margin-top:0">Archive Reason</label>
+            <textarea id="resRejectReason" rows="3" placeholder="e.g. Disconnected hotline, inactive non-profit registration..." style="width:100%;box-sizing:border-box;font-family:inherit"></textarea>
+          `;
+          $("#confirm").textContent = "Archive Listing";
+          $("#confirm").className = "btn danger";
+          $("#confirm").style.background = "#dc2626";
+          openModal();
+        };
+      }
+
+      window.deleteResourcePrompt = function (id) {
+        targetResourceIdForAction = id;
+        action = "delete_resource";
+        const res = resourceDirectory.find((r) => r.id === id);
+        $("#modalTitle").textContent = `Delete Resource ${res.id}?`;
+        $("#modalText").textContent = `Are you sure you want to permanently delete "${res.name}"? This action cannot be undone.`;
+        $("#form").innerHTML = "";
+        $("#confirm").textContent = "Delete Organization";
+        $("#confirm").className = "btn danger";
+        $("#confirm").style.background = "#dc2626";
+        openModal();
+      };
+
+      const btnDeleteResourceFromDetails = document.querySelector("#btnDeleteResourceFromDetails");
+      if (btnDeleteResourceFromDetails) {
+        btnDeleteResourceFromDetails.onclick = () => {
+          if (targetResourceIdForAction) deleteResourcePrompt(targetResourceIdForAction);
+        };
+      }
+
+      const btnPrevResDetail = document.querySelector("#btnPrevResDetail");
+      if (btnPrevResDetail) {
+        btnPrevResDetail.onclick = () => {
+          const idx = resourceDirectory.findIndex((r) => r.id === targetResourceIdForAction);
+          if (idx > 0) loadResourceDetails(resourceDirectory[idx - 1].id);
+        };
+      }
+
+      const btnNextResDetail = document.querySelector("#btnNextResDetail");
+      if (btnNextResDetail) {
+        btnNextResDetail.onclick = () => {
+          const idx = resourceDirectory.findIndex((r) => r.id === targetResourceIdForAction);
+          if (idx >= 0 && idx < resourceDirectory.length - 1) loadResourceDetails(resourceDirectory[idx + 1].id);
+        };
+      }
+
+      const btnBackToResourcesFromDetails = document.querySelector("#btnBackToResourcesFromDetails");
+      if (btnBackToResourcesFromDetails) btnBackToResourcesFromDetails.onclick = () => showResourcesPage();
+      const btnBackToResourcesFromForm = document.querySelector("#btnBackToResourcesFromForm");
+      if (btnBackToResourcesFromForm) btnBackToResourcesFromForm.onclick = () => showResourcesPage();
+      const btnCancelResourceForm = document.querySelector("#btnCancelResourceForm");
+      if (btnCancelResourceForm) btnCancelResourceForm.onclick = () => showResourcesPage();
+
+      // Resource Form Handlers
+      function openCreateResourceForm() {
+        hideAllSections();
+        const formView = document.querySelector("#resourceFormView");
+        if (formView) formView.style.display = "block";
+
+        $("#resourceFormTitle").textContent = "Add Support Organization";
+        $("#resourceFormSub").textContent = "Add an accredited organization, legal clinic, mental health network, or crisis hotline to the BlackNexa directory.";
+        $("#resourceFormId").value = "";
+        $("#resInputName").value = "";
+        $("#resInputCategory").value = "legal";
+        $("#resInputReach").value = "National";
+        $("#resInputRegions").value = "United States";
+        $("#resInputContact").value = "";
+        $("#resInputTags").value = "";
+        $("#resInputDescription").value = "";
+        $("#resInputVerified").checked = true;
+        $("#resInputStatus").value = "Published";
+
+        // Reset dropdown UI labels
+        const catWrap = document.querySelector("#resFormCategoryWrap");
+        if (catWrap) {
+          const label = catWrap.querySelector(".custom-select-label");
+          if (label) label.textContent = "⚖️ Legal Aid";
+          catWrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o.dataset.value === "legal"));
+        }
+
+        const reachWrap = document.querySelector("#resFormReachWrap");
+        if (reachWrap) {
+          const label = reachWrap.querySelector(".custom-select-label");
+          if (label) label.textContent = "National";
+          reachWrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o.dataset.value === "National"));
+        }
+
+        const statusWrap = document.querySelector("#resFormStatusWrap");
+        if (statusWrap) {
+          const label = statusWrap.querySelector(".custom-select-label");
+          if (label) label.textContent = "Published (Live in App)";
+          statusWrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o.dataset.value === "Published"));
+        }
+
+        $("#resNameErr").style.display = "none";
+        $("#resContactErr").style.display = "none";
+        $("#resDescErr").style.display = "none";
+        initCustomDropdowns();
+        window.scrollTo(0, 0);
+      }
+
+      window.editResource = function (id) {
+        const res = resourceDirectory.find((r) => r.id === id);
+        if (!res) return;
+
+        hideAllSections();
+        const formView = document.querySelector("#resourceFormView");
+        if (formView) formView.style.display = "block";
+
+        $("#resourceFormTitle").textContent = `Edit Organization: ${res.name}`;
+        $("#resourceFormSub").textContent = `Update directory info, contact channel, reach scope, or verification status for ${res.id}.`;
+        $("#resourceFormId").value = res.id;
+        $("#resInputName").value = res.name;
+        $("#resInputCategory").value = res.category;
+        $("#resInputReach").value = res.reach;
+        $("#resInputRegions").value = res.regionsServed;
+        $("#resInputContact").value = res.contact;
+        $("#resInputTags").value = (res.tags || []).join(", ");
+        $("#resInputDescription").value = res.description;
+        $("#resInputVerified").checked = res.verified;
+        $("#resInputStatus").value = res.status;
+
+        const catConfig = RESOURCE_CATEGORY_CONFIG[res.category] || { label: res.category, icon: "📁" };
+
+        const catWrap = document.querySelector("#resFormCategoryWrap");
+        if (catWrap) {
+          const label = catWrap.querySelector(".custom-select-label");
+          if (label) label.textContent = `${catConfig.icon} ${catConfig.label}`;
+          catWrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o.dataset.value === res.category));
+        }
+
+        const reachWrap = document.querySelector("#resFormReachWrap");
+        if (reachWrap) {
+          const label = reachWrap.querySelector(".custom-select-label");
+          if (label) label.textContent = res.reach;
+          reachWrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o.dataset.value === res.reach));
+        }
+
+        const statusWrap = document.querySelector("#resFormStatusWrap");
+        if (statusWrap) {
+          const label = statusWrap.querySelector(".custom-select-label");
+          if (label) label.textContent = res.status === "Published" ? "Published (Live in App)" : res.status;
+          statusWrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o.dataset.value === res.status));
+        }
+
+        $("#resNameErr").style.display = "none";
+        $("#resContactErr").style.display = "none";
+        $("#resDescErr").style.display = "none";
+        initCustomDropdowns();
+        window.scrollTo(0, 0);
+      };
+
+      const btnEditResourceFromDetails = document.querySelector("#btnEditResourceFromDetails");
+      if (btnEditResourceFromDetails) {
+        btnEditResourceFromDetails.onclick = () => {
+          if (targetResourceIdForAction) editResource(targetResourceIdForAction);
+        };
+      }
+
+      const btnOpenCreateResource = document.querySelector("#btnOpenCreateResource");
+      if (btnOpenCreateResource) btnOpenCreateResource.onclick = () => openCreateResourceForm();
+
+      const btnSaveResource = document.querySelector("#btnSaveResource");
+      if (btnSaveResource) {
+        btnSaveResource.onclick = () => {
+          const id = $("#resourceFormId")?.value;
+          const name = $("#resInputName")?.value.trim();
+          const category = $("#resInputCategory")?.value || "legal";
+          const reach = $("#resInputReach")?.value || "National";
+          const regions = $("#resInputRegions")?.value.trim() || "United States";
+          const contact = $("#resInputContact")?.value.trim();
+          const tagsStr = $("#resInputTags")?.value.trim() || "";
+          const desc = $("#resInputDescription")?.value.trim();
+          const verified = $("#resInputVerified")?.checked ?? true;
+          const status = $("#resInputStatus")?.value || "Published";
+
+          let valid = true;
+          if (!name) {
+            $("#resNameErr").style.display = "block";
+            valid = false;
+          } else {
+            $("#resNameErr").style.display = "none";
+          }
+          if (!contact) {
+            $("#resContactErr").style.display = "block";
+            valid = false;
+          } else {
+            $("#resContactErr").style.display = "none";
+          }
+          if (!desc) {
+            $("#resDescErr").style.display = "block";
+            valid = false;
+          } else {
+            $("#resDescErr").style.display = "none";
+          }
+
+          if (!valid) return;
+
+          const tags = tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [];
+
+          if (id) {
+            const res = resourceDirectory.find((r) => r.id === id);
+            if (res) {
+              res.name = name;
+              res.category = category;
+              res.reach = reach;
+              res.regionsServed = regions;
+              res.contact = contact;
+              res.tags = tags;
+              res.description = desc;
+              res.verified = verified;
+              res.status = status;
+            }
+          } else {
+            const newId = `RES-${resourceDirectory.length + 101}`;
+            resourceDirectory.unshift({
+              id: newId,
+              name,
+              category,
+              reach,
+              regionsServed: regions,
+              contact,
+              tags,
+              description: desc,
+              verified,
+              status,
+              createdDate: "Just now",
+              author: "Lead Admin",
+            });
+          }
+
+          showResourcesPage();
+          alert(`Organization "${name}" successfully saved!`);
+        };
+      }
+
+      // Status Tabs for Resources
+      document.querySelectorAll("#resourceStatusTabs .tab").forEach((tab) => {
+        tab.onclick = () => {
+          document.querySelectorAll("#resourceStatusTabs .tab").forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentResourceTab = tab.dataset.status;
+          resCurrentPage = 1;
+          renderResourcesTable();
+        };
+      });
+
+      // Search and Filter Reset Handlers
+      const resourceSearchInput = document.querySelector("#resourceSearchInput");
+      if (resourceSearchInput) {
+        resourceSearchInput.oninput = () => {
+          resSearchQuery = resourceSearchInput.value.trim();
+          resCurrentPage = 1;
+          renderResourcesTable();
+        };
+      }
+
+      const btnResetResourceFilters = document.querySelector("#btnResetResourceFilters");
+      if (btnResetResourceFilters) {
+        btnResetResourceFilters.onclick = () => {
+          resSearchQuery = "";
+          currentResourceTab = "all";
+          resCategoryFilter = "All";
+          resReachFilter = "All";
+          resVerifyFilter = "All";
+          resSortFilter = "newest";
+          if (resourceSearchInput) resourceSearchInput.value = "";
+
+          document.querySelectorAll("#resourceStatusTabs .tab").forEach((t) => t.classList.remove("active"));
+          const allTab = document.querySelector("#resourceStatusTabs .tab[data-status='all']");
+          if (allTab) allTab.classList.add("active");
+
+          const catLabel = document.querySelector("#resCategoryFilterWrap .custom-select-label");
+          if (catLabel) catLabel.textContent = "All Categories";
+          if ($("#resCategoryFilter")) $("#resCategoryFilter").value = "All";
+
+          const reachLabel = document.querySelector("#resReachFilterWrap .custom-select-label");
+          if (reachLabel) reachLabel.textContent = "All Reaches";
+          if ($("#resReachFilter")) $("#resReachFilter").value = "All";
+
+          const verifyLabel = document.querySelector("#resVerifyFilterWrap .custom-select-label");
+          if (verifyLabel) verifyLabel.textContent = "All Verification";
+          if ($("#resVerifyFilter")) $("#resVerifyFilter").value = "All";
+
+          const sortLabel = document.querySelector("#resSortFilterWrap .custom-select-label");
+          if (sortLabel) sortLabel.textContent = "Newest First";
+          if ($("#resSortFilter")) $("#resSortFilter").value = "newest";
+
+          document.querySelectorAll("#resCategoryFilterWrap, #resReachFilterWrap, #resVerifyFilterWrap, #resSortFilterWrap").forEach((wrap) => {
+            wrap.querySelectorAll(".custom-select-option").forEach((o) => o.classList.remove("selected"));
+            const firstOpt = wrap.querySelector(".custom-select-option");
+            if (firstOpt) firstOpt.classList.add("selected");
+          });
+
+          resCurrentPage = 1;
+          renderResourcesTable();
+        };
+      }
     </script>
 
     <!-- Module 1 runs in its own script tag: an error in the main script
@@ -17976,11 +19525,15 @@
               key: "settings",
             },
             {
-              el: document.querySelector('.nav[data-target="Resources"]'),
+              el:
+                document.querySelector("#resourcesNavMenu") ||
+                document.querySelector('.nav[data-target="Resources"]'),
               key: "resources",
             },
             {
-              el: document.querySelector('.nav[data-target="News"]'),
+              el:
+                document.querySelector("#newsNavMenu") ||
+                document.querySelector('.nav[data-target="News"]'),
               key: "news",
             },
             {
