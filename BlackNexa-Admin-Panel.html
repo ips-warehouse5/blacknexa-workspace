@@ -2697,6 +2697,503 @@
         margin-top: 8px !important;
         margin-bottom: 8px !important;
       }
+      /* ═══════════════════════════════════════════════════════════════
+         MODULE 1 — ADMIN LOGIN & ROLES : ENHANCEMENT STYLES
+         ═══════════════════════════════════════════════════════════════ */
+
+      /* ── Toast notifications ─────────────────────────────────────── */
+      #toastStack {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 20000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 340px;
+      }
+      .bn-toast {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 10px;
+        padding: 12px 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        font-size: 13px;
+        color: var(--text);
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        animation: bnToastIn 0.22s ease;
+      }
+      .bn-toast.success {
+        border-left-color: var(--success);
+      }
+      .bn-toast.danger {
+        border-left-color: var(--danger);
+      }
+      .bn-toast.warning {
+        border-left-color: var(--warning);
+      }
+      .bn-toast-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .bn-toast-body {
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.45;
+      }
+      @keyframes bnToastIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── Auth: shared helpers ───────────────────────────────────── */
+      .auth-link-btn {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+        font-family: inherit;
+      }
+      .auth-link-btn:hover {
+        text-decoration: underline;
+      }
+      .login-row-between {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: -4px 0 18px;
+      }
+      .remember-wrap {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        color: #64748b;
+        cursor: pointer;
+        user-select: none;
+      }
+      .remember-wrap input {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+      .login-submit-btn[disabled] {
+        opacity: 0.62;
+        cursor: not-allowed;
+      }
+      .btn-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        border-top-color: #fff;
+        border-radius: 50%;
+        display: inline-block;
+        vertical-align: -2px;
+        margin-right: 8px;
+        animation: bnSpin 0.7s linear infinite;
+      }
+      @keyframes bnSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .login-info-alert {
+        display: none;
+        background: var(--accent-soft);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 11px 13px;
+        font-size: 12.5px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+      .login-warn-alert {
+        display: none;
+        background: #fff7e6;
+        border: 1px solid #f5d9a0;
+        color: #7a4b00;
+        border-radius: 9px;
+        padding: 11px 13px;
+        font-size: 12.5px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+      body.dark .login-warn-alert {
+        background: #2a2113;
+        border-color: #5c4520;
+        color: #f0c674;
+      }
+      .auth-success-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: #e6f6ed;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 18px;
+      }
+      body.dark .auth-success-icon {
+        background: #16301f;
+      }
+      .auth-success-icon svg {
+        width: 26px;
+        height: 26px;
+        stroke: var(--success);
+        fill: none;
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .auth-center {
+        text-align: center;
+      }
+
+      /* ── Password strength meter ────────────────────────────────── */
+      .pw-strength-wrap {
+        margin: 10px 0 4px;
+      }
+      .pw-strength-bar {
+        height: 5px;
+        border-radius: 4px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .pw-strength-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 4px;
+        background: var(--danger);
+        transition:
+          width 0.25s ease,
+          background 0.25s ease;
+      }
+      .pw-strength-label {
+        font-size: 11.5px;
+        font-weight: 600;
+        margin-top: 6px;
+        color: var(--muted);
+      }
+      .pw-rules {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 4px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+      }
+      .pw-rules li {
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pw-rules li .tick {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 1.5px solid var(--line);
+        display: inline-grid;
+        place-items: center;
+        font-size: 9px;
+        color: transparent;
+        flex-shrink: 0;
+      }
+      .pw-rules li.ok {
+        color: var(--success);
+      }
+      .pw-rules li.ok .tick {
+        background: var(--success);
+        border-color: var(--success);
+        color: #fff;
+      }
+
+      /* ── MFA lock / expiry ──────────────────────────────────────── */
+      .mfa-digit-input.locked,
+      .mfa-digit-input:disabled {
+        background: var(--line);
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      /* ── "View as role" demo switcher ───────────────────────────── */
+      .role-sim-wrap {
+        margin: 0 0 12px;
+        padding: 11px 12px;
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        background: var(--accent-soft);
+      }
+      .role-sim-label {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 7px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .role-sim-select {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12.5px;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .role-sim-hint {
+        font-size: 10.5px;
+        color: var(--muted);
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+
+      /* ── Permission-locked controls ─────────────────────────────── */
+      .perm-locked {
+        opacity: 0.42 !important;
+        cursor: not-allowed !important;
+        pointer-events: none;
+      }
+      .perm-lock-holder {
+        position: relative;
+        display: inline-block;
+        cursor: not-allowed;
+      }
+
+      /* ── Access denied view ─────────────────────────────────────── */
+      #accessDeniedView .denied-card {
+        max-width: 460px;
+        margin: 90px auto;
+        text-align: center;
+        padding: 40px 34px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+      .denied-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: #fdecee;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 18px;
+      }
+      body.dark .denied-icon {
+        background: #2a1a1e;
+      }
+      .denied-icon svg {
+        width: 26px;
+        height: 26px;
+        stroke: var(--danger);
+        fill: none;
+        stroke-width: 2.2;
+      }
+      .denied-title {
+        font-size: 19px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+      .denied-text {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      .denied-role-chip {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+
+      /* ── Security audit log ─────────────────────────────────────── */
+      .audit-result {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .audit-result.success {
+        background: #e6f6ed;
+        color: var(--success);
+      }
+      .audit-result.failed {
+        background: #fdecee;
+        color: var(--danger);
+      }
+      .audit-result.blocked {
+        background: #fff3dc;
+        color: var(--warning);
+      }
+      body.dark .audit-result.success {
+        background: #16301f;
+      }
+      body.dark .audit-result.failed {
+        background: #2a1a1e;
+      }
+      body.dark .audit-result.blocked {
+        background: #2a2113;
+      }
+      .audit-mono {
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .section-tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 20px;
+      }
+      .section-tab {
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        transition: 0.15s;
+      }
+      .section-tab:hover {
+        color: var(--text);
+      }
+      .section-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+
+      /* ── Truncation for long names/emails ───────────────────────── */
+      .cell-truncate {
+        max-width: 210px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
+      }
+
+      /* ── Demo states panel ──────────────────────────────────────── */
+      #demoStatePanel {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 19000;
+        width: 232px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+        font-size: 12px;
+        overflow: hidden;
+        display: none;
+      }
+      #demoStatePanel .dsp-head {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        font-weight: 700;
+        font-size: 10.5px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #demoStatePanel .dsp-body {
+        max-height: 320px;
+        overflow-y: auto;
+        padding: 6px;
+      }
+      #demoStatePanel button.dsp-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 7px 9px;
+        border: none;
+        background: none;
+        color: var(--text);
+        font-size: 12px;
+        font-family: inherit;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      #demoStatePanel button.dsp-item:hover {
+        background: var(--accent-soft);
+      }
+      #demoStateToggle {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 18999;
+        padding: 7px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+      }
+      #demoStateToggle:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      /* ── Session timeout modal emphasis ─────────────────────────── */
+      .session-countdown {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--danger);
+        text-align: center;
+        margin: 6px 0 2px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ── Responsive ─────────────────────────────────────────────── */
+      @media (max-width: 768px) {
+        .login-container {
+          padding: 26px 20px !important;
+          margin: 0 14px;
+        }
+        .pw-rules {
+          grid-template-columns: 1fr;
+        }
+        #demoStatePanel {
+          width: calc(100vw - 32px);
+        }
+        .section-tabs {
+          overflow-x: auto;
+        }
+      }
 
       /* Dashboard Date Picker Dropdown & Custom Range Popover */
       .dash-date-picker-wrap {
@@ -9976,7 +10473,7 @@
       // MODULE 1: ADMIN & STAFF ROLES DIRECTORY (RBAC) CONTROLLER
       // ═════════════════════════════════════════════════════════════════════════════════
 
-      let staffAccounts = [
+      var staffAccounts = [
         {
           id: "STF-101",
           name: "Devon Vance",
@@ -10331,13 +10828,46 @@
           ${createCustomSelectHTML("newStaffRole", roleOptions, "Moderator")}
 
           <label>Initial Temporary Password</label>
-          <input type="text" id="newStaffPassword" value="blacknexa" style="width:100%;box-sizing:border-box" />
+          <div class="password-input-wrap">
+            <input type="password" id="newStaffPassword" value="blacknexa" style="width:100%;box-sizing:border-box" autocomplete="new-password" />
+            <button type="button" class="password-toggle-btn" id="btnToggleNewStaffPassword" aria-label="Toggle password visibility" title="Show/Hide Password">
+              <svg id="eyeIconShowNewStaff" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg id="eyeIconHideNewStaff" viewBox="0 0 24 24" style="display: none">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
         `;
 
         $("#confirm").textContent = "Create Account";
         $("#confirm").className = "btn primary";
         $("#confirm").style.background = "";
         openModal();
+
+        // Wire up password toggle for new staff
+        const btnToggle = document.querySelector("#btnToggleNewStaffPassword");
+        if (btnToggle) {
+          btnToggle.onclick = () => {
+            const passInput = document.querySelector("#newStaffPassword");
+            const eyeShow = document.querySelector("#eyeIconShowNewStaff");
+            const eyeHide = document.querySelector("#eyeIconHideNewStaff");
+            if (!passInput) return;
+
+            if (passInput.type === "password") {
+              passInput.type = "text";
+              if (eyeShow) eyeShow.style.display = "none";
+              if (eyeHide) eyeHide.style.display = "block";
+            } else {
+              passInput.type = "password";
+              if (eyeShow) eyeShow.style.display = "block";
+              if (eyeHide) eyeHide.style.display = "none";
+            }
+          };
+        }
       }
 
       const btnOpenAddStaffModal = $("#btnOpenAddStaffModal");
@@ -10401,13 +10931,46 @@
 
         $("#form").innerHTML = `
           <label style="margin-top:0">New Temporary Password</label>
-          <input type="text" id="resetStaffNewPassword" value="blacknexa2026" required style="width:100%;box-sizing:border-box" />
+          <div class="password-input-wrap">
+            <input type="password" id="resetStaffNewPassword" value="blacknexa2026" required style="width:100%;box-sizing:border-box" autocomplete="new-password" />
+            <button type="button" class="password-toggle-btn" id="btnToggleResetStaffPassword" aria-label="Toggle password visibility" title="Show/Hide Password">
+              <svg id="eyeIconShowResetStaff" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg id="eyeIconHideResetStaff" viewBox="0 0 24 24" style="display: none">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
         `;
 
         $("#confirm").textContent = "Update Password";
         $("#confirm").className = "btn primary";
         $("#confirm").style.background = "";
         openModal();
+
+        // Wire up password toggle for reset staff password
+        const btnToggle = document.querySelector("#btnToggleResetStaffPassword");
+        if (btnToggle) {
+          btnToggle.onclick = () => {
+            const passInput = document.querySelector("#resetStaffNewPassword");
+            const eyeShow = document.querySelector("#eyeIconShowResetStaff");
+            const eyeHide = document.querySelector("#eyeIconHideResetStaff");
+            if (!passInput) return;
+
+            if (passInput.type === "password") {
+              passInput.type = "text";
+              if (eyeShow) eyeShow.style.display = "none";
+              if (eyeHide) eyeHide.style.display = "block";
+            } else {
+              passInput.type = "password";
+              if (eyeShow) eyeShow.style.display = "block";
+              if (eyeHide) eyeHide.style.display = "none";
+            }
+          };
+        }
       }
 
       function openToggleStaffStatusModal(id) {
@@ -10564,8 +11127,8 @@
       // ADMIN AUTHENTICATION, MFA & SESSION MANAGEMENT
       // ═════════════════════════════════════════════════════════════════════════════════
       const AUTH_STORAGE_KEY = "blacknexa_active_admin_session";
-      let currentAdminUser = null;
-      let pendingMfaUser = null;
+      var currentAdminUser = null;
+      var pendingMfaUser = null;
       let mfaTimerInterval = null;
 
       function getSavedAdminSession() {
@@ -11255,6 +11818,2045 @@
 
         // Initialize calendar render
         renderCalendars();
+      })();
+    </script>
+
+    <!-- Module 1 runs in its own script tag: an error in the main script
+         must never leave the sign-in form unbound. -->
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════
+         MODULE 1 — ADMIN LOGIN & ROLES
+         Enhancement bundle: RBAC, recovery flow, security states,
+         audit log, session handling, demo controls.
+
+         PROTOTYPE NOTE: everything below is presentation-layer only.
+         Credential checks, MFA issuance/verification, rate limiting,
+         session tokens and permission enforcement MUST be re-implemented
+         server-side in the build phase. See "SERVER-SIDE" comments.
+         ═══════════════════════════════════════════════════════════════════ */
+      (function () {
+        "use strict";
+
+        // ── Utilities ──────────────────────────────────────────────────
+        function esc(str) {
+          return String(str == null ? "" : str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+        window.escapeHtml = esc;
+
+        function ensureToastStack() {
+          let st = document.querySelector("#toastStack");
+          if (!st) {
+            st = document.createElement("div");
+            st.id = "toastStack";
+            document.body.appendChild(st);
+          }
+          return st;
+        }
+
+        function toast(title, body, kind) {
+          const st = ensureToastStack();
+          const el = document.createElement("div");
+          el.className = "bn-toast " + (kind || "success");
+          el.setAttribute("role", "status");
+          el.innerHTML =
+            '<div><div class="bn-toast-title">' +
+            esc(title) +
+            "</div>" +
+            (body ? '<div class="bn-toast-body">' + esc(body) + "</div>" : "") +
+            "</div>";
+          st.appendChild(el);
+          setTimeout(function () {
+            el.style.opacity = "0";
+            el.style.transform = "translateY(6px)";
+            el.style.transition = "0.25s";
+            setTimeout(function () {
+              el.remove();
+            }, 260);
+          }, 4200);
+        }
+        window.bnToast = toast;
+
+        function pad(n) {
+          return n < 10 ? "0" + n : "" + n;
+        }
+        function nowStamp() {
+          const d = new Date();
+          const months = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+          let h = d.getHours();
+          const ap = h >= 12 ? "PM" : "AM";
+          h = h % 12 || 12;
+          return (
+            months[d.getMonth()] +
+            " " +
+            pad(d.getDate()) +
+            ", " +
+            d.getFullYear() +
+            "  " +
+            pad(h) +
+            ":" +
+            pad(d.getMinutes()) +
+            " " +
+            ap
+          );
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 1. PERMISSION MODEL — single source of truth
+        // SERVER-SIDE: this matrix must also be enforced by the API.
+        // Hiding a button is UX, never security.
+        // ═══════════════════════════════════════════════════════════════
+        const ROLE_KEYS = {
+          "Super Admin": "superadmin",
+          Moderator: "moderator",
+          Advocate: "advocate",
+          "Support Staff": "staff",
+        };
+
+        const PERMISSIONS = {
+          superadmin: {
+            label: "Super Admin",
+            desc: "Full console access, including staff and settings.",
+            nav: [
+              "dashboard",
+              "incidents",
+              "moderation",
+              "users",
+              "adminRoles",
+              "settings",
+              "resources",
+              "news",
+              "notifications",
+              "content",
+            ],
+            can: {
+              "users.view": 1,
+              "users.edit": 1,
+              "users.role": 1,
+              "users.suspend": 1,
+              "users.delete": 1,
+              "users.bulk": 1,
+              "incidents.view": 1,
+              "incidents.verify": 1,
+              "incidents.dismiss": 1,
+              "incidents.notes": 1,
+              "incidents.assign": 1,
+              "incidents.deactivate": 1,
+              "moderation.view": 1,
+              "moderation.decide": 1,
+              "moderation.ban": 1,
+              "moderation.keywords": 1,
+              "staff.view": 1,
+              "staff.create": 1,
+              "staff.edit": 1,
+              "staff.role": 1,
+              "staff.reset": 1,
+              "staff.toggle": 1,
+              "staff.delete": 1,
+              "audit.view": 1,
+            },
+          },
+          moderator: {
+            label: "Moderator",
+            desc: "Content moderation and incident triage. No staff or settings access.",
+            nav: ["dashboard", "incidents", "moderation", "users"],
+            can: {
+              "users.view": 1,
+              "users.suspend": 1,
+              "incidents.view": 1,
+              "incidents.verify": 1,
+              "incidents.dismiss": 1,
+              "incidents.notes": 1,
+              "moderation.view": 1,
+              "moderation.decide": 1,
+              "moderation.ban": 1,
+              "moderation.keywords": 1,
+            },
+          },
+          advocate: {
+            label: "Advocate",
+            desc: "Assigned cases only. Read-only user profiles. No moderation queue.",
+            nav: ["dashboard", "incidents", "users"],
+            can: {
+              "users.view": 1,
+              "incidents.view": 1,
+              "incidents.notes": 1,
+            },
+          },
+          staff: {
+            label: "Support Staff",
+            desc: "Read-only across the console. Can add internal notes only.",
+            nav: ["dashboard", "incidents", "users"],
+            can: {
+              "users.view": 1,
+              "incidents.view": 1,
+              "incidents.notes": 1,
+            },
+          },
+        };
+        window.BN_PERMISSIONS = PERMISSIONS;
+
+        function activeRoleKey() {
+          const u = window.currentAdminUser;
+          if (!u) return "superadmin";
+          return u.roleKey || ROLE_KEYS[u.role] || "staff";
+        }
+        function can(perm) {
+          const p = PERMISSIONS[activeRoleKey()];
+          return !!(p && p.can[perm]);
+        }
+        function canNav(section) {
+          const p = PERMISSIONS[activeRoleKey()];
+          return !!(p && p.nav.indexOf(section) > -1);
+        }
+        window.bnCan = can;
+        window.bnCanNav = canNav;
+
+        // Map sidebar nav elements → permission section
+        function navTargets() {
+          return [
+            { el: document.querySelector("#dashboardNavMenu"), key: "dashboard" },
+            { el: document.querySelector("#incidentMgmtMenu"), key: "incidents" },
+            { el: document.querySelector("#contentModMenu"), key: "moderation" },
+            { el: document.querySelector("#userMgmtMenu"), key: "users" },
+            {
+              el: document.querySelector("#adminRolesNavMenu"),
+              key: "adminRoles",
+            },
+            {
+              el: document.querySelector('.nav[data-target="Settings"]'),
+              key: "settings",
+            },
+            {
+              el: document.querySelector('.nav[data-target="Resource Management"]'),
+              key: "resources",
+            },
+            {
+              el: document.querySelector('.nav[data-target="News Management"]'),
+              key: "news",
+            },
+            {
+              el: document.querySelector(
+                '.nav[data-target="Notifications & Announcements"]',
+              ),
+              key: "notifications",
+            },
+            {
+              el: document.querySelector('.nav[data-target="Content Management"]'),
+              key: "content",
+            },
+          ];
+        }
+
+        // Action buttons gated by permission
+        const GATED_CONTROLS = [
+          ["#btnDeleteUserAccount", "users.delete"],
+          ["#btnChangeUserRole", "users.role"],
+          ["#btnSuspendUser", "users.suspend"],
+          ["#btnUnsuspendUser", "users.suspend"],
+          ["#btnRestoreUserAccount", "users.delete"],
+          ["#btnEditUserProfile", "users.edit"],
+          ["#btnBulkRole", "users.bulk"],
+          ["#btnBulkSuspend", "users.bulk"],
+          ["#btnBulkDelete", "users.bulk"],
+          ["#btnVerifyIncident", "incidents.verify"],
+          ["#btnDismissIncident", "incidents.dismiss"],
+          ["#btnDeactivateIncident", "incidents.deactivate"],
+          ["#btnDeactivateVerifiedIncident", "incidents.deactivate"],
+          ["#btnShowReassign", "incidents.assign"],
+          ["#btnSaveIncAssignee", "incidents.assign"],
+          ["#approve", "moderation.decide"],
+          ["#reject", "moderation.decide"],
+          ["#ban", "moderation.ban"],
+          ["#warnUser", "moderation.ban"],
+          ["#addKeywordBtn", "moderation.keywords"],
+          ["#btnOpenAddStaffModal", "staff.create"],
+        ];
+
+        function applyPermissions() {
+          const roleKey = activeRoleKey();
+          const p = PERMISSIONS[roleKey] || PERMISSIONS.staff;
+
+          // 1. Navigation visibility
+          navTargets().forEach(function (t) {
+            if (!t.el) return;
+            const allowed = p.nav.indexOf(t.key) > -1;
+            t.el.style.display = allowed ? "" : "none";
+            // hide any attached sub-menu too
+            const sub = t.el.nextElementSibling;
+            if (sub && sub.classList && sub.classList.contains("sub-menu")) {
+              if (!allowed) sub.style.display = "none";
+            }
+          });
+
+          // 2. Action control gating
+          GATED_CONTROLS.forEach(function (pair) {
+            const el = document.querySelector(pair[0]);
+            if (!el) return;
+            if (can(pair[1])) {
+              el.classList.remove("perm-locked");
+              el.removeAttribute("title");
+              el.disabled = false;
+            } else {
+              el.classList.add("perm-locked");
+              el.disabled = true;
+              el.setAttribute(
+                "title",
+                "Not available for " + p.label + " — requires elevated permission",
+              );
+            }
+          });
+
+          // 3. Staff row action icons (rendered dynamically)
+          document
+            .querySelectorAll(
+              ".edit-staff-btn, .role-staff-btn, .reset-staff-btn, .toggle-staff-btn, .delete-staff-btn",
+            )
+            .forEach(function (b) {
+              if (!can("staff.edit")) {
+                b.classList.add("perm-locked");
+                b.setAttribute("title", "Requires Super Admin");
+              } else {
+                b.classList.remove("perm-locked");
+              }
+            });
+
+          // Update the sidebar role label
+          const roleEl = document.querySelector("#currentAdminRole");
+          if (roleEl) roleEl.textContent = p.label;
+
+          const sel = document.querySelector("#roleSimSelect");
+          if (sel && sel.value !== roleKey) sel.value = roleKey;
+        }
+        window.bnApplyPermissions = applyPermissions;
+
+        // ═══════════════════════════════════════════════════════════════
+        // 2. ACCESS DENIED VIEW
+        // ═══════════════════════════════════════════════════════════════
+        function buildAccessDenied() {
+          if (document.querySelector("#accessDeniedView")) return;
+          const main = document.querySelector(".main");
+          if (!main) return;
+          const sec = document.createElement("section");
+          sec.id = "accessDeniedView";
+          sec.style.display = "none";
+          sec.innerHTML =
+            '<div class="denied-card">' +
+            '<div class="denied-icon"><svg viewBox="0 0 24 24">' +
+            '<rect x="3" y="11" width="18" height="11" rx="2"/>' +
+            '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>' +
+            '<div class="denied-title">Access Restricted</div>' +
+            '<div class="denied-text">You do not have permission to open this section. ' +
+            'Your current role is <span class="denied-role-chip" id="deniedRoleChip">Support Staff</span>.<br>' +
+            "Contact a Super Admin if you need access.</div>" +
+            '<button class="btn primary" id="btnDeniedBack">Back to Dashboard</button>' +
+            "</div>";
+          main.appendChild(sec);
+          const back = sec.querySelector("#btnDeniedBack");
+          if (back)
+            back.onclick = function () {
+              if (typeof window.showDashboardPage === "function")
+                window.showDashboardPage();
+            };
+        }
+
+        function showAccessDenied() {
+          buildAccessDenied();
+          if (typeof window.hideAllSections === "function")
+            window.hideAllSections();
+          const v = document.querySelector("#accessDeniedView");
+          const chip = document.querySelector("#deniedRoleChip");
+          const p = PERMISSIONS[activeRoleKey()];
+          if (chip && p) chip.textContent = p.label;
+          if (v) v.style.display = "block";
+        }
+
+        // Wrap hideAllSections so the denied view is included
+        if (typeof window.hideAllSections === "function") {
+          const origHide = window.hideAllSections;
+          window.hideAllSections = function () {
+            origHide.apply(this, arguments);
+            const v = document.querySelector("#accessDeniedView");
+            if (v) v.style.display = "none";
+          };
+        }
+
+        // Guard every page entry point — direct calls are blocked too
+        function guardPage(fnName, section) {
+          const orig = window[fnName];
+          if (typeof orig !== "function") return;
+          window[fnName] = function () {
+            if (!canNav(section)) {
+              showAccessDenied();
+              return;
+            }
+            return orig.apply(this, arguments);
+          };
+        }
+        guardPage("showDashboardPage", "dashboard");
+        guardPage("showQueuePage", "moderation");
+        guardPage("showKeywordPage", "moderation");
+        guardPage("showIncidentQueuePage", "incidents");
+        guardPage("showUserQueuePage", "users");
+        guardPage("showAdminRolesPage", "adminRoles");
+
+        function landingPageForRole() {
+          if (canNav("dashboard") && typeof window.showDashboardPage === "function")
+            return window.showDashboardPage;
+          if (canNav("incidents") && typeof window.showIncidentQueuePage === "function")
+            return window.showIncidentQueuePage;
+          if (canNav("moderation") && typeof window.showQueuePage === "function")
+            return window.showQueuePage;
+          if (canNav("users") && typeof window.showUserQueuePage === "function")
+            return window.showUserQueuePage;
+          return showAccessDenied;
+        }
+        window.bnLandingPage = landingPageForRole;
+
+        // ═══════════════════════════════════════════════════════════════
+        // 3. "VIEW AS ROLE" DEMO SWITCHER (client walkthrough aid)
+        // Remove before production — demo affordance only.
+        // ═══════════════════════════════════════════════════════════════
+        function buildRoleSimulator() {
+          if (document.querySelector("#roleSimWrap")) return;
+          const userAccount = document.querySelector(".user-account");
+          if (!userAccount || !userAccount.parentNode) return;
+          const wrap = document.createElement("div");
+          wrap.className = "role-sim-wrap";
+          wrap.id = "roleSimWrap";
+          wrap.innerHTML =
+            '<div class="role-sim-label">' +
+            '<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.4">' +
+            '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+            "Preview as role</div>" +
+            '<select class="role-sim-select" id="roleSimSelect" aria-label="Preview console as role">' +
+            '<option value="superadmin">Super Admin</option>' +
+            '<option value="moderator">Moderator</option>' +
+            '<option value="advocate">Advocate</option>' +
+            '<option value="staff">Support Staff</option>' +
+            "</select>" +
+            '<div class="role-sim-hint" id="roleSimHint"></div>';
+          userAccount.parentNode.insertBefore(wrap, userAccount);
+
+          const sel = wrap.querySelector("#roleSimSelect");
+          sel.onchange = function () {
+            const key = sel.value;
+            const p = PERMISSIONS[key];
+            if (!window.currentAdminUser) window.currentAdminUser = {};
+            window.currentAdminUser.roleKey = key;
+            window.currentAdminUser.role = p.label;
+            applyPermissions();
+            updateRoleHint();
+            addAuditEntry({
+              action: "Role preview switched",
+              target: p.label,
+              result: "success",
+            });
+            const go = landingPageForRole();
+            if (typeof go === "function") go();
+            toast("Previewing as " + p.label, p.desc, "success");
+          };
+          updateRoleHint();
+        }
+
+        function updateRoleHint() {
+          const hint = document.querySelector("#roleSimHint");
+          const p = PERMISSIONS[activeRoleKey()];
+          if (hint && p) hint.textContent = p.desc;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 4. SECURITY AUDIT LOG
+        // SERVER-SIDE: must be an append-only, immutable server log.
+        // ═══════════════════════════════════════════════════════════════
+        window.auditLog = [
+          {
+            ts: "Sep 02, 2026  12:15 AM",
+            actor: "Devon Vance",
+            action: "Sign-in successful",
+            target: "superadmin@blacknexa.com",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+          {
+            ts: "Sep 02, 2026  12:14 AM",
+            actor: "Devon Vance",
+            action: "MFA verification passed",
+            target: "superadmin@blacknexa.com",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+          {
+            ts: "Sep 01, 2026  11:31 PM",
+            actor: "M. Kaur",
+            action: "Sign-in successful",
+            target: "moderator@blacknexa.com",
+            ip: "91.220.14.88",
+            result: "success",
+          },
+          {
+            ts: "Sep 01, 2026  11:02 PM",
+            actor: "Unknown",
+            action: "Sign-in failed — invalid credentials",
+            target: "admin@blacknexa.com",
+            ip: "203.0.113.42",
+            result: "failed",
+          },
+          {
+            ts: "Sep 01, 2026  11:01 PM",
+            actor: "Unknown",
+            action: "Sign-in failed — invalid credentials",
+            target: "admin@blacknexa.com",
+            ip: "203.0.113.42",
+            result: "failed",
+          },
+          {
+            ts: "Sep 01, 2026  10:58 PM",
+            actor: "System",
+            action: "Account locked — 5 failed attempts",
+            target: "admin@blacknexa.com",
+            ip: "203.0.113.42",
+            result: "blocked",
+          },
+          {
+            ts: "Sep 01, 2026  09:41 PM",
+            actor: "R. Idris",
+            action: "Sign-in successful",
+            target: "advocate@blacknexa.com",
+            ip: "77.99.180.5",
+            result: "success",
+          },
+          {
+            ts: "Sep 01, 2026  06:22 PM",
+            actor: "Devon Vance",
+            action: "Staff role changed",
+            target: "Elena Ramos → Support Staff",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+          {
+            ts: "Sep 01, 2026  06:20 PM",
+            actor: "Devon Vance",
+            action: "Staff account created",
+            target: "Elena Ramos",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+          {
+            ts: "Aug 31, 2026  05:04 PM",
+            actor: "Devon Vance",
+            action: "Password reset issued",
+            target: "M. Kaur",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+          {
+            ts: "Aug 31, 2026  04:21 PM",
+            actor: "Elena Ramos",
+            action: "Sign-in successful",
+            target: "staff@blacknexa.com",
+            ip: "185.44.9.230",
+            result: "success",
+          },
+          {
+            ts: "Aug 31, 2026  03:15 PM",
+            actor: "M. Kaur",
+            action: "Permission denied — Admin & Roles",
+            target: "Attempted direct access",
+            ip: "91.220.14.88",
+            result: "blocked",
+          },
+          {
+            ts: "Aug 30, 2026  08:47 PM",
+            actor: "Devon Vance",
+            action: "Staff account disabled",
+            target: "T. Okafor",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+          {
+            ts: "Aug 30, 2026  08:30 PM",
+            actor: "System",
+            action: "Session expired — idle timeout",
+            target: "R. Idris",
+            ip: "77.99.180.5",
+            result: "success",
+          },
+          {
+            ts: "Aug 29, 2026  02:11 PM",
+            actor: "Devon Vance",
+            action: "Sign-out",
+            target: "superadmin@blacknexa.com",
+            ip: "82.14.203.11",
+            result: "success",
+          },
+        ];
+
+        function addAuditEntry(entry) {
+          window.auditLog.unshift({
+            ts: nowStamp(),
+            actor:
+              (window.currentAdminUser && window.currentAdminUser.name) ||
+              entry.actor ||
+              "System",
+            action: entry.action,
+            target: entry.target || "—",
+            ip: entry.ip || "82.14.203.11",
+            result: entry.result || "success",
+          });
+          renderAuditLog();
+        }
+        window.bnAudit = addAuditEntry;
+
+        let auditFilterAction = "All Actions";
+        let auditSearch = "";
+
+        function buildAuditPanel() {
+          const rolesView = document.querySelector("#adminRolesView");
+          if (!rolesView || document.querySelector("#auditLogPanel")) return;
+
+          // Tabs above the existing staff content
+          const tabs = document.createElement("div");
+          tabs.className = "section-tabs";
+          tabs.id = "adminRolesTabs";
+          tabs.innerHTML =
+            '<div class="section-tab active" data-tab="staff">Staff Directory</div>' +
+            '<div class="section-tab" data-tab="audit">Security Audit Log</div>';
+
+          const firstChild = rolesView.firstElementChild;
+          // Insert tabs after the page heading if there is one, else at top
+          rolesView.insertBefore(tabs, firstChild);
+
+          const panel = document.createElement("div");
+          panel.id = "auditLogPanel";
+          panel.style.display = "none";
+          panel.innerHTML =
+            '<div class="card">' +
+            '<div class="card-header-bar">' +
+            "<div>" +
+            '<h1 class="title">Security Audit Log</h1>' +
+            '<p style="color:var(--muted);font-size:13px;margin:4px 0 0">' +
+            "Read-only record of authentication and administrative activity." +
+            "</p>" +
+            "</div>" +
+            "</div>" +
+            '<div class="filters" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' +
+            '<input class="search" id="auditSearchInput" placeholder="Search admin, action or target..." style="flex:1;min-width:220px" />' +
+            '<select id="auditActionFilter" class="role-sim-select" style="width:auto;min-width:180px">' +
+            "<option>All Actions</option>" +
+            "<option>Sign-in</option>" +
+            "<option>MFA</option>" +
+            "<option>Role change</option>" +
+            "<option>Password reset</option>" +
+            "<option>Account status</option>" +
+            "<option>Permission denied</option>" +
+            "</select>" +
+            "</div>" +
+            '<table class="table"><thead><tr>' +
+            '<th style="width:20%">Timestamp</th>' +
+            '<th style="width:18%">Administrator</th>' +
+            '<th style="width:26%">Action</th>' +
+            '<th style="width:22%">Target</th>' +
+            '<th style="width:14%">Result</th>' +
+            '</tr></thead><tbody id="auditLogBody"></tbody></table>' +
+            '<div id="auditEmptyState" style="display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">' +
+            "No audit entries match your filters." +
+            "</div>" +
+            "</div>";
+          rolesView.appendChild(panel);
+
+          tabs.querySelectorAll(".section-tab").forEach(function (t) {
+            t.onclick = function () {
+              tabs
+                .querySelectorAll(".section-tab")
+                .forEach(function (x) {
+                  x.classList.remove("active");
+                });
+              t.classList.add("active");
+              const isAudit = t.dataset.tab === "audit";
+              panel.style.display = isAudit ? "block" : "none";
+              Array.prototype.forEach.call(
+                rolesView.children,
+                function (child) {
+                  if (child === tabs || child === panel) return;
+                  child.style.display = isAudit ? "none" : "";
+                },
+              );
+              if (isAudit) renderAuditLog();
+            };
+          });
+
+          const si = panel.querySelector("#auditSearchInput");
+          if (si)
+            si.oninput = function () {
+              auditSearch = si.value.trim().toLowerCase();
+              renderAuditLog();
+            };
+          const af = panel.querySelector("#auditActionFilter");
+          if (af)
+            af.onchange = function () {
+              auditFilterAction = af.value;
+              renderAuditLog();
+            };
+        }
+
+        function renderAuditLog() {
+          const body = document.querySelector("#auditLogBody");
+          if (!body) return;
+          const empty = document.querySelector("#auditEmptyState");
+
+          const rows = window.auditLog.filter(function (e) {
+            const hay = (
+              e.actor +
+              " " +
+              e.action +
+              " " +
+              e.target
+            ).toLowerCase();
+            if (auditSearch && hay.indexOf(auditSearch) === -1) return false;
+            if (auditFilterAction === "All Actions") return true;
+            const a = e.action.toLowerCase();
+            const f = auditFilterAction.toLowerCase();
+            if (f === "account status")
+              return a.indexOf("disabled") > -1 || a.indexOf("enabled") > -1;
+            return a.indexOf(f) > -1;
+          });
+
+          if (!rows.length) {
+            body.innerHTML = "";
+            if (empty) empty.style.display = "block";
+            return;
+          }
+          if (empty) empty.style.display = "none";
+
+          body.innerHTML = rows
+            .map(function (e) {
+              return (
+                "<tr>" +
+                '<td><span class="audit-mono">' +
+                esc(e.ts) +
+                "</span></td>" +
+                '<td><span class="cell-truncate" title="' +
+                esc(e.actor) +
+                '">' +
+                esc(e.actor) +
+                "</span></td>" +
+                "<td>" +
+                esc(e.action) +
+                "</td>" +
+                '<td><span class="cell-truncate" title="' +
+                esc(e.target) +
+                '">' +
+                esc(e.target) +
+                "</span><br><span class=\"audit-mono\">IP " +
+                esc(e.ip) +
+                "</span></td>" +
+                '<td><span class="audit-result ' +
+                esc(e.result) +
+                '">' +
+                (e.result === "success"
+                  ? "Success"
+                  : e.result === "failed"
+                    ? "Failed"
+                    : "Blocked") +
+                "</span></td>" +
+                "</tr>"
+              );
+            })
+            .join("");
+        }
+        window.bnRenderAuditLog = renderAuditLog;
+
+        // ═══════════════════════════════════════════════════════════════
+        // 5. AUTH SCREEN — extra steps (forgot / reset / success)
+        // ═══════════════════════════════════════════════════════════════
+        const COMMON_PASSWORDS = [
+          "password",
+          "password1",
+          "password123",
+          "123456",
+          "12345678",
+          "123456789",
+          "qwerty",
+          "qwerty123",
+          "letmein",
+          "welcome",
+          "welcome1",
+          "admin",
+          "admin123",
+          "iloveyou",
+          "monkey",
+          "abc123",
+          "111111",
+          "dragon",
+          "sunshine",
+          "princess",
+        ];
+
+        function authStep(id) {
+          [
+            "loginStepCredentials",
+            "loginStepMfa",
+            "loginStepForgot",
+            "loginStepCheckEmail",
+            "loginStepReset",
+            "loginStepResetDone",
+          ].forEach(function (s) {
+            const el = document.querySelector("#" + s);
+            if (el) el.style.display = s === id ? "block" : "none";
+          });
+        }
+        window.bnAuthStep = authStep;
+
+        function buildRecoveryScreens() {
+          const container = document.querySelector(
+            "#authScreen .login-container",
+          );
+          if (!container || document.querySelector("#loginStepForgot")) return;
+
+          const brand =
+            '<div class="login-brand">' +
+            '<div class="login-brand-icon">B</div>' +
+            "<div>" +
+            '<div class="login-brand-title">BlackNexa<span style="font-size:10px;vertical-align:super">TM</span></div>' +
+            '<div style="font-size:10.5px;font-weight:600;letter-spacing:1px;color:#64748b">ACCOUNT RECOVERY</div>' +
+            "</div></div>";
+
+          const html =
+            // ── Forgot password ──
+            '<div id="loginStepForgot" style="display:none">' +
+            brand +
+            '<h2 class="login-title">Reset your password</h2>' +
+            '<p class="login-subtitle">Enter the email tied to your administrator account and we will send you a reset link.</p>' +
+            '<div class="login-error-alert" id="forgotErrorAlert"></div>' +
+            '<form id="forgotForm" onsubmit="return false;" novalidate>' +
+            '<div class="login-field">' +
+            '<label for="forgotEmailInput">Admin Email Address</label>' +
+            '<input type="email" id="forgotEmailInput" placeholder="name@blacknexa.com" autocomplete="username" />' +
+            '<div class="field-error-msg" id="forgotEmailError">Please enter a valid email address.</div>' +
+            "</div>" +
+            '<button type="submit" class="login-submit-btn" id="btnSendResetLink">Send Reset Link</button>' +
+            '<div style="text-align:center;margin-top:16px">' +
+            '<button type="button" class="auth-link-btn" data-goto="loginStepCredentials">← Back to Sign In</button>' +
+            "</div></form></div>" +
+            // ── Check email ──
+            '<div id="loginStepCheckEmail" style="display:none">' +
+            '<div class="auth-center">' +
+            '<div class="auth-success-icon"><svg viewBox="0 0 24 24">' +
+            '<path d="M4 4h16v16H4z" style="stroke-width:2"/><path d="M4 6l8 6 8-6"/></svg></div>' +
+            '<h2 class="login-title" style="text-align:center">Check your email</h2>' +
+            '<p class="login-subtitle" style="text-align:center">If an administrator account exists for ' +
+            '<strong id="checkEmailTarget" style="color:var(--text)">that address</strong>, ' +
+            "a password reset link has been sent. The link expires in 30 minutes.</p>" +
+            '<div class="login-info-alert" style="display:block;text-align:left">' +
+            "<strong>Prototype:</strong> no email is actually sent. Continue to see the reset screen." +
+            "</div>" +
+            '<button class="login-submit-btn" id="btnSimulateResetLink">Continue to Reset Screen</button>' +
+            '<div style="margin-top:16px">' +
+            '<button type="button" class="auth-link-btn" data-goto="loginStepCredentials">← Back to Sign In</button>' +
+            "</div></div></div>" +
+            // ── Set new password ──
+            '<div id="loginStepReset" style="display:none">' +
+            brand +
+            '<h2 class="login-title">Set a new password</h2>' +
+            '<p class="login-subtitle">Choose a strong password you have not used on this console before.</p>' +
+            '<div class="login-error-alert" id="resetErrorAlert"></div>' +
+            '<form id="resetPwForm" onsubmit="return false;" novalidate>' +
+            '<div class="login-field">' +
+            '<label for="newPwInput">New Password</label>' +
+            '<div class="password-input-wrap">' +
+            '<input type="password" id="newPwInput" placeholder="••••••••••••" autocomplete="new-password" />' +
+            '<button type="button" class="password-toggle-btn" id="btnToggleNewPw" aria-label="Toggle password visibility">' +
+            '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+            "</button></div>" +
+            '<div class="pw-strength-wrap">' +
+            '<div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>' +
+            '<div class="pw-strength-label" id="pwStrengthLabel">Password strength</div>' +
+            "</div>" +
+            '<ul class="pw-rules" id="pwRules">' +
+            '<li data-rule="len"><span class="tick">✓</span>12+ characters</li>' +
+            '<li data-rule="upper"><span class="tick">✓</span>Uppercase letter</li>' +
+            '<li data-rule="lower"><span class="tick">✓</span>Lowercase letter</li>' +
+            '<li data-rule="num"><span class="tick">✓</span>Number</li>' +
+            '<li data-rule="sym"><span class="tick">✓</span>Symbol</li>' +
+            '<li data-rule="common"><span class="tick">✓</span>Not a common password</li>' +
+            "</ul>" +
+            '<div class="field-error-msg" id="newPwError"></div>' +
+            "</div>" +
+            '<div class="login-field">' +
+            '<label for="confirmPwInput">Confirm New Password</label>' +
+            '<input type="password" id="confirmPwInput" placeholder="••••••••••••" autocomplete="new-password" />' +
+            '<div class="field-error-msg" id="confirmPwError">Passwords do not match.</div>' +
+            "</div>" +
+            '<button type="submit" class="login-submit-btn" id="btnSaveNewPw">Update Password</button>' +
+            '<div style="text-align:center;margin-top:16px">' +
+            '<button type="button" class="auth-link-btn" data-goto="loginStepCredentials">← Back to Sign In</button>' +
+            "</div></form></div>" +
+            // ── Reset done ──
+            '<div id="loginStepResetDone" style="display:none">' +
+            '<div class="auth-center">' +
+            '<div class="auth-success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+            '<h2 class="login-title" style="text-align:center">Password updated</h2>' +
+            '<p class="login-subtitle" style="text-align:center">Your password has been changed. All other active sessions have been signed out.</p>' +
+            '<button class="login-submit-btn" data-goto="loginStepCredentials">Return to Sign In</button>' +
+            "</div></div>";
+
+          container.insertAdjacentHTML("beforeend", html);
+
+          // Generic "goto step" links
+          container.querySelectorAll("[data-goto]").forEach(function (b) {
+            b.onclick = function () {
+              authStep(b.dataset.goto);
+              if (b.dataset.goto === "loginStepCredentials") resetLoginForm();
+            };
+          });
+
+          wireRecoveryHandlers();
+        }
+
+        function wireRecoveryHandlers() {
+          // Forgot password submit — always a generic response (no enumeration)
+          const forgotForm = document.querySelector("#forgotForm");
+          if (forgotForm) {
+            forgotForm.onsubmit = function (e) {
+              e.preventDefault();
+              const input = document.querySelector("#forgotEmailInput");
+              const err = document.querySelector("#forgotEmailError");
+              const val = (input.value || "").trim();
+              input.classList.remove("field-invalid");
+              if (err) err.style.display = "none";
+
+              if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+                input.classList.add("field-invalid");
+                input.setAttribute("aria-invalid", "true");
+                if (err) {
+                  err.textContent = !val
+                    ? "Please enter your email address."
+                    : "Please enter a valid email address.";
+                  err.style.display = "block";
+                }
+                input.focus();
+                return;
+              }
+              withLoading("#btnSendResetLink", "Sending…", function () {
+                const t = document.querySelector("#checkEmailTarget");
+                if (t) t.textContent = val;
+                authStep("loginStepCheckEmail");
+                addAuditEntry({
+                  actor: "System",
+                  action: "Password reset requested",
+                  target: val,
+                  result: "success",
+                });
+              });
+            };
+          }
+
+          const simBtn = document.querySelector("#btnSimulateResetLink");
+          if (simBtn)
+            simBtn.onclick = function () {
+              authStep("loginStepReset");
+            };
+
+          // Password strength
+          const newPw = document.querySelector("#newPwInput");
+          if (newPw) newPw.oninput = function () {
+            scorePassword(newPw.value);
+          };
+
+          const togNew = document.querySelector("#btnToggleNewPw");
+          if (togNew)
+            togNew.onclick = function () {
+              newPw.type = newPw.type === "password" ? "text" : "password";
+            };
+
+          const resetForm = document.querySelector("#resetPwForm");
+          if (resetForm) {
+            resetForm.onsubmit = function (e) {
+              e.preventDefault();
+              const pw = document.querySelector("#newPwInput");
+              const cf = document.querySelector("#confirmPwInput");
+              const pwErr = document.querySelector("#newPwError");
+              const cfErr = document.querySelector("#confirmPwError");
+              [pw, cf].forEach(function (i) {
+                i.classList.remove("field-invalid");
+              });
+              if (pwErr) pwErr.style.display = "none";
+              if (cfErr) cfErr.style.display = "none";
+
+              const s = scorePassword(pw.value);
+              if (!s.allOk) {
+                pw.classList.add("field-invalid");
+                if (pwErr) {
+                  pwErr.textContent =
+                    "Password does not meet all requirements above.";
+                  pwErr.style.display = "block";
+                }
+                pw.focus();
+                return;
+              }
+              if (pw.value !== cf.value) {
+                cf.classList.add("field-invalid");
+                if (cfErr) cfErr.style.display = "block";
+                cf.focus();
+                return;
+              }
+              withLoading("#btnSaveNewPw", "Updating…", function () {
+                authStep("loginStepResetDone");
+                addAuditEntry({
+                  actor: "System",
+                  action: "Password reset completed",
+                  target: "Administrator account",
+                  result: "success",
+                });
+              });
+            };
+          }
+        }
+
+        function scorePassword(pw) {
+          pw = pw || "";
+          const rules = {
+            len: pw.length >= 12,
+            upper: /[A-Z]/.test(pw),
+            lower: /[a-z]/.test(pw),
+            num: /[0-9]/.test(pw),
+            sym: /[^A-Za-z0-9]/.test(pw),
+            common:
+              pw.length > 0 &&
+              COMMON_PASSWORDS.indexOf(pw.toLowerCase()) === -1,
+          };
+          const list = document.querySelector("#pwRules");
+          if (list) {
+            list.querySelectorAll("li").forEach(function (li) {
+              li.classList.toggle("ok", !!rules[li.dataset.rule]);
+            });
+          }
+          const passed = Object.keys(rules).filter(function (k) {
+            return rules[k];
+          }).length;
+          const fill = document.querySelector("#pwStrengthFill");
+          const label = document.querySelector("#pwStrengthLabel");
+          const pct = Math.round((passed / 6) * 100);
+          let color = "var(--danger)";
+          let text = "Weak";
+          if (passed >= 6) {
+            color = "var(--success)";
+            text = "Strong";
+          } else if (passed >= 4) {
+            color = "var(--warning)";
+            text = "Fair";
+          }
+          if (fill) {
+            fill.style.width = (pw ? pct : 0) + "%";
+            fill.style.background = color;
+          }
+          if (label)
+            label.textContent = pw ? "Strength: " + text : "Password strength";
+          return { rules: rules, allOk: passed === 6 };
+        }
+
+        function withLoading(sel, text, done) {
+          const btn = document.querySelector(sel);
+          if (!btn) {
+            done();
+            return;
+          }
+          if (btn.dataset.busy === "1") return; // blocks double-submit
+          const original = btn.innerHTML;
+          btn.dataset.busy = "1";
+          btn.disabled = true;
+          btn.innerHTML = '<span class="btn-spinner"></span>' + text;
+          setTimeout(function () {
+            btn.disabled = false;
+            btn.dataset.busy = "0";
+            btn.innerHTML = original;
+            done();
+          }, 850);
+        }
+        window.bnWithLoading = withLoading;
+
+        // ═══════════════════════════════════════════════════════════════
+        // 6. LOGIN SCREEN — remember device, forgot link, lockout
+        // ═══════════════════════════════════════════════════════════════
+        function buildLoginExtras() {
+          const form = document.querySelector("#adminLoginForm");
+          const submit = document.querySelector("#btnAdminLogin");
+          if (!form || !submit || document.querySelector("#rememberDevice"))
+            return;
+
+          const row = document.createElement("div");
+          row.className = "login-row-between";
+          row.innerHTML =
+            '<label class="remember-wrap" for="rememberDevice">' +
+            '<input type="checkbox" id="rememberDevice" /> Remember this device' +
+            "</label>" +
+            '<button type="button" class="auth-link-btn" id="btnForgotPassword">Forgot password?</button>';
+          form.insertBefore(row, submit);
+
+          // Lockout banner
+          const lock = document.createElement("div");
+          lock.className = "login-warn-alert";
+          lock.id = "loginLockAlert";
+          form.parentNode.insertBefore(lock, form);
+
+          document.querySelector("#btnForgotPassword").onclick = function () {
+            const cur = (
+              document.querySelector("#adminEmailInput").value || ""
+            ).trim();
+            const fi = document.querySelector("#forgotEmailInput");
+            if (fi && cur) fi.value = cur;
+            authStep("loginStepForgot");
+          };
+        }
+
+        let failedAttempts = 0;
+        let lockUntil = 0;
+        let lockInterval = null;
+        const MAX_ATTEMPTS = 5;
+        const LOCK_SECONDS = 15 * 60;
+
+        function isLocked() {
+          return Date.now() < lockUntil;
+        }
+
+        function startLockCountdown() {
+          const el = document.querySelector("#loginLockAlert");
+          const btn = document.querySelector("#btnAdminLogin");
+          if (lockInterval) clearInterval(lockInterval);
+
+          function tick() {
+            const left = Math.max(0, Math.ceil((lockUntil - Date.now()) / 1000));
+            if (left <= 0) {
+              clearInterval(lockInterval);
+              lockInterval = null;
+              failedAttempts = 0;
+              if (el) el.style.display = "none";
+              if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Sign In";
+              }
+              return;
+            }
+            if (el) {
+              el.style.display = "block";
+              el.innerHTML =
+                "<strong>Too many failed attempts.</strong> This account is temporarily locked. Try again in " +
+                pad(Math.floor(left / 60)) +
+                ":" +
+                pad(left % 60) +
+                ".";
+            }
+            if (btn) {
+              btn.disabled = true;
+              btn.textContent = "Locked";
+            }
+          }
+          tick();
+          lockInterval = setInterval(tick, 1000);
+        }
+
+        function lockAccount() {
+          lockUntil = Date.now() + LOCK_SECONDS * 1000;
+          startLockCountdown();
+          addAuditEntry({
+            actor: "System",
+            action: "Account locked — 5 failed attempts",
+            target:
+              (document.querySelector("#adminEmailInput") || {}).value ||
+              "unknown",
+            result: "blocked",
+          });
+        }
+
+        function resetLoginForm() {
+          const e = document.querySelector("#adminEmailInput");
+          const p = document.querySelector("#adminPasswordInput");
+          const err = document.querySelector("#loginErrorAlert");
+          if (e) {
+            e.classList.remove("field-invalid");
+          }
+          if (p) {
+            p.value = "";
+            p.classList.remove("field-invalid");
+          }
+          if (err) err.style.display = "none";
+          ["#emailErrorMsg", "#passwordErrorMsg"].forEach(function (s) {
+            const el = document.querySelector(s);
+            if (el) el.style.display = "none";
+          });
+        }
+
+        // Rebind the login form: validation + lockout + loading state
+        function rebindLogin() {
+          const form = document.querySelector("#adminLoginForm");
+          if (!form) return;
+          // The markup carries onsubmit="return false;" — remove it so the
+          // attribute handler can never shadow or race the one we assign.
+          form.removeAttribute("onsubmit");
+
+          const submitBtn = document.querySelector("#btnAdminLogin");
+          if (submitBtn) {
+            // Belt and braces: some embedded/preview browsers do not perform
+            // implicit form submission on button click.
+            submitBtn.addEventListener("click", function (e) {
+              e.preventDefault();
+              if (typeof form.onsubmit === "function")
+                form.onsubmit({ preventDefault: function () {} });
+            });
+          }
+
+          form.onsubmit = function (e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (isLocked()) return;
+
+            const emailInput = document.querySelector("#adminEmailInput");
+            const passInput = document.querySelector("#adminPasswordInput");
+            const emailErr = document.querySelector("#emailErrorMsg");
+            const passErr = document.querySelector("#passwordErrorMsg");
+            const alertEl = document.querySelector("#loginErrorAlert");
+
+            [emailInput, passInput].forEach(function (i) {
+              if (i) {
+                i.classList.remove("field-invalid");
+                i.removeAttribute("aria-invalid");
+              }
+            });
+            [emailErr, passErr].forEach(function (i) {
+              if (i) i.style.display = "none";
+            });
+            if (alertEl) alertEl.style.display = "none";
+
+            const email = (emailInput.value || "").trim().toLowerCase();
+            const pw = passInput.value || "";
+            let bad = false;
+
+            if (!email) {
+              emailInput.classList.add("field-invalid");
+              emailInput.setAttribute("aria-invalid", "true");
+              emailErr.textContent = "Please enter your email address.";
+              emailErr.style.display = "block";
+              bad = true;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              emailInput.classList.add("field-invalid");
+              emailInput.setAttribute("aria-invalid", "true");
+              emailErr.textContent =
+                "Enter a valid email format (e.g. name@blacknexa.com).";
+              emailErr.style.display = "block";
+              bad = true;
+            }
+            if (!pw) {
+              passInput.classList.add("field-invalid");
+              passInput.setAttribute("aria-invalid", "true");
+              passErr.textContent = "Please enter your password.";
+              passErr.style.display = "block";
+              bad = true;
+            }
+            if (bad) {
+              (emailInput.classList.contains("field-invalid")
+                ? emailInput
+                : passInput
+              ).focus();
+              return;
+            }
+
+            withLoading("#btnAdminLogin", "Signing in…", function () {
+              // SERVER-SIDE: credential verification belongs on the API.
+              const list = window.staffAccounts || [];
+              const match = list.find(function (u) {
+                return u.email.toLowerCase() === email && u.password === pw;
+              });
+
+              if (match && match.status === "disabled") {
+                if (alertEl) {
+                  alertEl.style.display = "block";
+                  alertEl.innerHTML =
+                    "<strong>Account disabled.</strong> This administrator account has been disabled. Please contact a Super Admin.";
+                }
+                addAuditEntry({
+                  actor: "System",
+                  action: "Sign-in blocked — account disabled",
+                  target: email,
+                  result: "blocked",
+                });
+                return;
+              }
+
+              if (!match) {
+                failedAttempts++;
+                addAuditEntry({
+                  actor: "Unknown",
+                  action: "Sign-in failed — invalid credentials",
+                  target: email,
+                  result: "failed",
+                });
+                if (failedAttempts >= MAX_ATTEMPTS) {
+                  lockAccount();
+                  return;
+                }
+                if (alertEl) {
+                  alertEl.style.display = "block";
+                  // Generic message — never reveals which field was wrong.
+                  alertEl.innerHTML =
+                    "<strong>Sign-in failed.</strong> Invalid email or password. " +
+                    (MAX_ATTEMPTS - failedAttempts) +
+                    " attempt" +
+                    (MAX_ATTEMPTS - failedAttempts === 1 ? "" : "s") +
+                    " remaining before this account is locked.";
+                }
+                emailInput.classList.add("field-invalid");
+                passInput.classList.add("field-invalid");
+                return;
+              }
+
+              failedAttempts = 0;
+              if (typeof window.showMfaStep === "function")
+                window.showMfaStep(match);
+              startMfaSession();
+            });
+          };
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 7. MFA — attempts, expiry, resend limit
+        // ═══════════════════════════════════════════════════════════════
+        let mfaAttempts = 0;
+        let mfaResends = 0;
+        let mfaExpiresAt = 0;
+        let mfaExpiryTimer = null;
+        const MFA_MAX_ATTEMPTS = 5;
+        const MFA_MAX_RESENDS = 3;
+        const MFA_TTL_MS = 5 * 60 * 1000;
+
+        function startMfaSession(isResend) {
+          if (!isResend) {
+            mfaAttempts = 0;
+            mfaResends = 0;
+          }
+          mfaExpiresAt = Date.now() + MFA_TTL_MS;
+          setMfaInputsEnabled(true);
+          if (mfaExpiryTimer) clearTimeout(mfaExpiryTimer);
+          mfaExpiryTimer = setTimeout(function () {
+            showMfaError(
+              "Security code expired. Request a new code to continue.",
+            );
+            setMfaInputsEnabled(false);
+            const rb = document.querySelector("#btnResendMfa");
+            if (rb) {
+              rb.disabled = false;
+              rb.innerHTML = "Send a new code";
+            }
+          }, MFA_TTL_MS);
+        }
+
+        function setMfaInputsEnabled(on) {
+          document.querySelectorAll(".mfa-digit-input").forEach(function (i) {
+            i.disabled = !on;
+            i.classList.toggle("locked", !on);
+            if (!on) i.value = "";
+          });
+          const vb = document.querySelector("#btnVerifyMfa");
+          if (vb) vb.disabled = !on;
+        }
+
+        function showMfaError(msg) {
+          const el = document.querySelector("#mfaErrorAlert");
+          if (el) {
+            el.textContent = msg;
+            el.style.display = "block";
+            el.setAttribute("role", "alert");
+          }
+        }
+
+        function rebindMfa() {
+          const form = document.querySelector("#mfaForm");
+          const inputs = document.querySelectorAll(".mfa-digit-input");
+
+          function readCode() {
+            return Array.prototype.map
+              .call(inputs, function (i) {
+                return (i.value || "").trim();
+              })
+              .join("");
+          }
+
+          function submitCode() {
+            const el = document.querySelector("#mfaErrorAlert");
+            if (el) el.style.display = "none";
+
+            if (Date.now() > mfaExpiresAt) {
+              showMfaError(
+                "Security code expired. Request a new code to continue.",
+              );
+              return;
+            }
+            const code = readCode();
+            if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+              showMfaError("Enter the full 6-digit security code.");
+              const firstEmpty = Array.prototype.find.call(inputs, function (i) {
+                return !i.value;
+              });
+              if (firstEmpty) firstEmpty.focus();
+              return;
+            }
+
+            withLoading("#btnVerifyMfa", "Verifying…", function () {
+              // SERVER-SIDE: real MFA verification. Prototype accepts any
+              // 6-digit code, except the reserved demo failure code 000000.
+              if (code === "000000") {
+                mfaAttempts++;
+                if (mfaAttempts >= MFA_MAX_ATTEMPTS) {
+                  addAuditEntry({
+                    actor: "System",
+                    action: "MFA failed — session invalidated",
+                    target:
+                      (window.pendingMfaUser && window.pendingMfaUser.email) ||
+                      "unknown",
+                    result: "blocked",
+                  });
+                  toast(
+                    "Verification session ended",
+                    "Too many incorrect codes. Please sign in again.",
+                    "danger",
+                  );
+                  if (typeof window.showCredentialsStep === "function")
+                    window.showCredentialsStep();
+                  return;
+                }
+                showMfaError(
+                  "Incorrect security code. " +
+                    (MFA_MAX_ATTEMPTS - mfaAttempts) +
+                    " attempt" +
+                    (MFA_MAX_ATTEMPTS - mfaAttempts === 1 ? "" : "s") +
+                    " remaining.",
+                );
+                inputs.forEach(function (i) {
+                  i.value = "";
+                });
+                if (inputs[0]) inputs[0].focus();
+                return;
+              }
+
+              const user = window.pendingMfaUser;
+              if (!user) {
+                showMfaError("Session expired. Please sign in again.");
+                return;
+              }
+              if (typeof window.saveAdminSession === "function")
+                window.saveAdminSession(user);
+              if (typeof window.applyAdminRoleUI === "function")
+                window.applyAdminRoleUI(user);
+              window.currentAdminUser = user;
+              if (!user.roleKey) user.roleKey = ROLE_KEYS[user.role] || "staff";
+
+              applyPermissions();
+              updateRoleHint();
+              addAuditEntry({
+                actor: user.name,
+                action: "Sign-in successful",
+                target: user.email,
+                result: "success",
+              });
+              window.pendingMfaUser = null;
+              const go = landingPageForRole();
+              if (typeof go === "function") go();
+              startIdleTimer();
+              toast(
+                "Signed in",
+                "Welcome back, " + user.name + " (" + user.role + ").",
+                "success",
+              );
+            });
+          }
+
+          if (form)
+            form.onsubmit = function (e) {
+              e.preventDefault();
+              submitCode();
+            };
+
+          inputs.forEach(function (inp, idx) {
+            inp.setAttribute("autocomplete", idx === 0 ? "one-time-code" : "off");
+            inp.oninput = function () {
+              const v = (inp.value || "").replace(/\D/g, "");
+              inp.value = v ? v[0] : "";
+              if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+              if (idx === inputs.length - 1 && inp.value) submitCode();
+            };
+            inp.onkeydown = function (e) {
+              if (e.key === "Backspace" && !inp.value && idx > 0)
+                inputs[idx - 1].focus();
+              if (e.key === "ArrowLeft" && idx > 0) inputs[idx - 1].focus();
+              if (e.key === "ArrowRight" && idx < inputs.length - 1)
+                inputs[idx + 1].focus();
+            };
+            inp.onpaste = function (e) {
+              e.preventDefault();
+              const txt = (e.clipboardData || window.clipboardData)
+                .getData("text")
+                .replace(/\D/g, "")
+                .slice(0, 6);
+              txt.split("").forEach(function (c, i) {
+                if (inputs[i]) inputs[i].value = c;
+              });
+              if (txt.length === 6) submitCode();
+              else if (inputs[txt.length]) inputs[txt.length].focus();
+            };
+          });
+
+          // Resend with rate limit — replaces the old alert()
+          const rb = document.querySelector("#btnResendMfa");
+          if (rb) {
+            rb.onclick = function () {
+              if (mfaResends >= MFA_MAX_RESENDS) {
+                showMfaError(
+                  "Resend limit reached. Please go back and sign in again.",
+                );
+                rb.disabled = true;
+                rb.innerHTML = "Resend limit reached";
+                return;
+              }
+              mfaResends++;
+              startMfaSession(true);
+              if (typeof window.startMfaTimer === "function")
+                window.startMfaTimer();
+              const el = document.querySelector("#mfaErrorAlert");
+              if (el) el.style.display = "none";
+              toast(
+                "New code sent",
+                "A new 6-digit code was sent to " +
+                  ((window.pendingMfaUser && window.pendingMfaUser.email) ||
+                    "your email") +
+                  ". (" +
+                  (MFA_MAX_RESENDS - mfaResends) +
+                  " resends left)",
+                "success",
+              );
+            };
+          }
+
+          const back = document.querySelector("#btnBackToCredentials");
+          if (back)
+            back.onclick = function () {
+              window.pendingMfaUser = null;
+              if (mfaExpiryTimer) clearTimeout(mfaExpiryTimer);
+              if (typeof window.showCredentialsStep === "function")
+                window.showCredentialsStep();
+              resetLoginForm();
+            };
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 8. LOGOUT CONFIRMATION + IDLE SESSION TIMEOUT
+        // ═══════════════════════════════════════════════════════════════
+        const IDLE_LIMIT_MS = 15 * 60 * 1000;
+        const IDLE_WARN_MS = 60 * 1000;
+        let idleTimer = null;
+        let warnTimer = null;
+        let countdownTimer = null;
+
+        function clearIdleTimers() {
+          [idleTimer, warnTimer, countdownTimer].forEach(function (t) {
+            if (t) clearTimeout(t) || clearInterval(t);
+          });
+          if (countdownTimer) clearInterval(countdownTimer);
+          idleTimer = warnTimer = countdownTimer = null;
+        }
+
+        function startIdleTimer() {
+          clearIdleTimers();
+          if (!window.currentAdminUser) return;
+          warnTimer = setTimeout(showSessionWarning, IDLE_LIMIT_MS - IDLE_WARN_MS);
+        }
+        window.bnStartIdleTimer = startIdleTimer;
+
+        function showSessionWarning() {
+          const modal = document.querySelector("#modal");
+          if (!modal) return;
+          document.querySelector("#modalTitle").textContent =
+            "Still there? You're about to be signed out";
+          document.querySelector("#modalText").textContent =
+            "For security, this session ends automatically after 15 minutes of inactivity.";
+          document.querySelector("#form").innerHTML =
+            '<div class="session-countdown" id="sessionCountdown">60</div>' +
+            '<div style="text-align:center;font-size:12px;color:var(--muted)">seconds remaining</div>';
+          const confirmBtn = document.querySelector("#confirm");
+          const cancelBtn = document.querySelector("#cancel");
+          confirmBtn.textContent = "Stay signed in";
+          confirmBtn.className = "btn primary";
+          cancelBtn.textContent = "Sign out now";
+
+          let left = 60;
+          const cd = document.querySelector("#sessionCountdown");
+          countdownTimer = setInterval(function () {
+            left--;
+            if (cd) cd.textContent = left;
+            if (left <= 0) {
+              clearInterval(countdownTimer);
+              closeAnyModal();
+              doLogout(true);
+            }
+          }, 1000);
+
+          confirmBtn.onclick = function () {
+            clearInterval(countdownTimer);
+            closeAnyModal();
+            restoreModalButtons();
+            startIdleTimer();
+            toast("Session extended", "You have another 15 minutes.", "success");
+          };
+          cancelBtn.onclick = function () {
+            clearInterval(countdownTimer);
+            closeAnyModal();
+            restoreModalButtons();
+            doLogout(false);
+          };
+
+          if (typeof window.openModal === "function") window.openModal();
+          else modal.style.display = "flex";
+        }
+
+        function closeAnyModal() {
+          if (typeof window.closeModal === "function") window.closeModal();
+          else {
+            const m = document.querySelector("#modal");
+            if (m) m.style.display = "none";
+          }
+        }
+
+        function restoreModalButtons() {
+          const cancelBtn = document.querySelector("#cancel");
+          if (cancelBtn) {
+            cancelBtn.textContent = "Cancel";
+            cancelBtn.onclick = closeAnyModal;
+          }
+        }
+
+        function doLogout(timedOut) {
+          clearIdleTimers();
+          addAuditEntry({
+            actor:
+              (window.currentAdminUser && window.currentAdminUser.name) ||
+              "System",
+            action: timedOut ? "Session expired — idle timeout" : "Sign-out",
+            target:
+              (window.currentAdminUser && window.currentAdminUser.email) || "—",
+            result: "success",
+          });
+          if (typeof window.logoutAdmin === "function") window.logoutAdmin();
+          window.currentAdminUser = null;
+          failedAttempts = 0;
+          lockUntil = 0;
+          if (lockInterval) clearInterval(lockInterval);
+          const lockEl = document.querySelector("#loginLockAlert");
+          if (lockEl) lockEl.style.display = "none";
+          const btn = document.querySelector("#btnAdminLogin");
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Sign In";
+          }
+          authStep("loginStepCredentials");
+          resetLoginForm();
+          if (timedOut) {
+            const alertEl = document.querySelector("#loginErrorAlert");
+            if (alertEl) {
+              alertEl.style.display = "block";
+              alertEl.innerHTML =
+                "<strong>Session expired.</strong> You were signed out after 15 minutes of inactivity. Please sign in again.";
+            }
+          }
+        }
+        window.bnDoLogout = doLogout;
+
+        function rebindLogout() {
+          const btn = document.querySelector("#btnAdminLogout");
+          if (!btn) return;
+          btn.onclick = function () {
+            document.querySelector("#modalTitle").textContent = "Sign out?";
+            document.querySelector("#modalText").textContent =
+              "You will be returned to the sign-in screen and this session will be closed.";
+            document.querySelector("#form").innerHTML = "";
+            const c = document.querySelector("#confirm");
+            const x = document.querySelector("#cancel");
+            c.textContent = "Sign Out";
+            c.className = "btn danger";
+            c.onclick = function () {
+              closeAnyModal();
+              restoreModalButtons();
+              doLogout(false);
+            };
+            x.onclick = function () {
+              closeAnyModal();
+              restoreModalButtons();
+            };
+            if (typeof window.openModal === "function") window.openModal();
+          };
+        }
+
+        // Reset idle timer on genuine activity only
+        ["click", "keydown", "mousedown", "touchstart"].forEach(function (ev) {
+          document.addEventListener(
+            ev,
+            function () {
+              if (!window.currentAdminUser) return;
+              const cd = document.querySelector("#sessionCountdown");
+              if (cd) return; // warning modal is open — ignore
+              startIdleTimer();
+            },
+            true,
+          );
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // 9. BUSINESS-RULE GUARDS on staff actions
+        // ═══════════════════════════════════════════════════════════════
+        function activeSuperAdmins() {
+          return (window.staffAccounts || []).filter(function (s) {
+            return s.role === "Super Admin" && s.status === "active";
+          });
+        }
+
+        function guardStaffAction(fnName, ruleFn) {
+          const orig = window[fnName];
+          if (typeof orig !== "function") return;
+          window[fnName] = function (id) {
+            const staff = (window.staffAccounts || []).find(function (s) {
+              return s.id === id;
+            });
+            const block = ruleFn(staff);
+            if (block) {
+              toast("Action blocked", block, "warning");
+              addAuditEntry({
+                action: "Blocked: " + fnName,
+                target: (staff && staff.name) || String(id),
+                result: "blocked",
+              });
+              return;
+            }
+            return orig.apply(this, arguments);
+          };
+        }
+
+        function isSelf(staff) {
+          return (
+            staff &&
+            window.currentAdminUser &&
+            staff.email &&
+            window.currentAdminUser.email &&
+            staff.email.toLowerCase() ===
+              window.currentAdminUser.email.toLowerCase()
+          );
+        }
+
+        guardStaffAction("openToggleStaffStatusModal", function (staff) {
+          if (!staff) return null;
+          if (isSelf(staff))
+            return "You cannot disable your own administrator account.";
+          if (
+            staff.role === "Super Admin" &&
+            staff.status === "active" &&
+            activeSuperAdmins().length <= 1
+          )
+            return "This is the last active Super Admin. Promote another administrator first.";
+          return null;
+        });
+
+        guardStaffAction("openDeleteStaffModal", function (staff) {
+          if (!staff) return null;
+          if (isSelf(staff))
+            return "You cannot remove your own administrator account.";
+          if (staff.role === "Super Admin" && activeSuperAdmins().length <= 1)
+            return "This is the last active Super Admin and cannot be removed.";
+          return null;
+        });
+
+        guardStaffAction("openChangeStaffRoleModal", function (staff) {
+          if (!staff) return null;
+          if (isSelf(staff))
+            return "You cannot change your own role. Ask another Super Admin.";
+          if (staff.role === "Super Admin" && activeSuperAdmins().length <= 1)
+            return "Demoting the last active Super Admin is not permitted.";
+          return null;
+        });
+
+        guardStaffAction("openResetStaffPasswordModal", function (staff) {
+          if (!staff) return null;
+          if (isSelf(staff))
+            return "Use the account recovery flow to change your own password.";
+          return null;
+        });
+
+        // Re-apply permission locks whenever the staff table re-renders
+        if (typeof window.renderStaffTable === "function") {
+          const origRender = window.renderStaffTable;
+          window.renderStaffTable = function () {
+            const r = origRender.apply(this, arguments);
+            applyPermissions();
+            return r;
+          };
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 10. DEMO STATE PANEL (client walkthrough — remove for production)
+        // ═══════════════════════════════════════════════════════════════
+        function buildDemoPanel() {
+          if (document.querySelector("#demoStatePanel")) return;
+
+          const toggle = document.createElement("button");
+          toggle.id = "demoStateToggle";
+          toggle.textContent = "⚙ Demo states";
+          document.body.appendChild(toggle);
+
+          const panel = document.createElement("div");
+          panel.id = "demoStatePanel";
+          panel.innerHTML =
+            '<div class="dsp-head"><span>Demo States</span><button class="auth-link-btn" id="dspClose">Close</button></div>' +
+            '<div class="dsp-body">' +
+            '<button class="dsp-item" data-s="invalid">Invalid credentials</button>' +
+            '<button class="dsp-item" data-s="disabled">Account disabled</button>' +
+            '<button class="dsp-item" data-s="locked">Account locked (countdown)</button>' +
+            '<button class="dsp-item" data-s="mfa">MFA screen</button>' +
+            '<button class="dsp-item" data-s="mfabad">MFA code incorrect</button>' +
+            '<button class="dsp-item" data-s="mfaexp">MFA code expired</button>' +
+            '<button class="dsp-item" data-s="resend">Resend limit reached</button>' +
+            '<button class="dsp-item" data-s="network">Network error</button>' +
+            '<button class="dsp-item" data-s="session">Session timeout warning</button>' +
+            '<button class="dsp-item" data-s="expired">Session expired screen</button>' +
+            '<button class="dsp-item" data-s="forgot">Forgot password flow</button>' +
+            '<button class="dsp-item" data-s="denied">Access denied screen</button>' +
+            '<button class="dsp-item" data-s="toast">Success toast</button>' +
+            "</div>";
+          document.body.appendChild(panel);
+
+          toggle.onclick = function () {
+            panel.style.display = "block";
+            toggle.style.display = "none";
+          };
+          panel.querySelector("#dspClose").onclick = function () {
+            panel.style.display = "none";
+            toggle.style.display = "block";
+          };
+
+          panel.querySelectorAll(".dsp-item").forEach(function (b) {
+            b.onclick = function () {
+              runDemoState(b.dataset.s);
+            };
+          });
+
+          // Keyboard shortcut
+          document.addEventListener("keydown", function (e) {
+            if (e.shiftKey && (e.key === "D" || e.key === "d") && e.ctrlKey) {
+              e.preventDefault();
+              const open = panel.style.display === "block";
+              panel.style.display = open ? "none" : "block";
+              toggle.style.display = open ? "block" : "none";
+            }
+          });
+        }
+
+        function showAuthOverlay() {
+          const s = document.querySelector("#authScreen");
+          if (s) s.style.display = "flex";
+        }
+
+        function runDemoState(s) {
+          const alertEl = document.querySelector("#loginErrorAlert");
+          switch (s) {
+            case "invalid":
+              showAuthOverlay();
+              authStep("loginStepCredentials");
+              if (alertEl) {
+                alertEl.style.display = "block";
+                alertEl.innerHTML =
+                  "<strong>Sign-in failed.</strong> Invalid email or password. 4 attempts remaining before this account is locked.";
+              }
+              break;
+            case "disabled":
+              showAuthOverlay();
+              authStep("loginStepCredentials");
+              if (alertEl) {
+                alertEl.style.display = "block";
+                alertEl.innerHTML =
+                  "<strong>Account disabled.</strong> This administrator account has been disabled. Please contact a Super Admin.";
+              }
+              break;
+            case "locked":
+              showAuthOverlay();
+              authStep("loginStepCredentials");
+              if (alertEl) alertEl.style.display = "none";
+              lockUntil = Date.now() + LOCK_SECONDS * 1000;
+              startLockCountdown();
+              break;
+            case "mfa":
+              showAuthOverlay();
+              window.pendingMfaUser = (window.staffAccounts || [])[0];
+              if (typeof window.showMfaStep === "function" && window.pendingMfaUser)
+                window.showMfaStep(window.pendingMfaUser);
+              startMfaSession();
+              break;
+            case "mfabad":
+              runDemoState("mfa");
+              setTimeout(function () {
+                showMfaError("Incorrect security code. 4 attempts remaining.");
+              }, 60);
+              break;
+            case "mfaexp":
+              runDemoState("mfa");
+              setTimeout(function () {
+                mfaExpiresAt = 0;
+                showMfaError(
+                  "Security code expired. Request a new code to continue.",
+                );
+                setMfaInputsEnabled(false);
+              }, 60);
+              break;
+            case "resend":
+              runDemoState("mfa");
+              setTimeout(function () {
+                mfaResends = MFA_MAX_RESENDS;
+                showMfaError(
+                  "Resend limit reached. Please go back and sign in again.",
+                );
+                const rb = document.querySelector("#btnResendMfa");
+                if (rb) {
+                  rb.disabled = true;
+                  rb.innerHTML = "Resend limit reached";
+                }
+              }, 60);
+              break;
+            case "network":
+              showAuthOverlay();
+              authStep("loginStepCredentials");
+              if (alertEl) {
+                alertEl.style.display = "block";
+                alertEl.innerHTML =
+                  "<strong>Connection problem.</strong> We could not reach the authentication service. " +
+                  '<button class="auth-link-btn" style="color:inherit;text-decoration:underline" onclick="document.querySelector(\'#loginErrorAlert\').style.display=\'none\'">Retry</button>';
+              }
+              break;
+            case "session":
+              if (!window.currentAdminUser)
+                window.currentAdminUser = (window.staffAccounts || [])[0];
+              showSessionWarning();
+              break;
+            case "expired":
+              doLogout(true);
+              showAuthOverlay();
+              break;
+            case "forgot":
+              showAuthOverlay();
+              authStep("loginStepForgot");
+              break;
+            case "denied":
+              showAccessDenied();
+              break;
+            case "toast":
+              toast(
+                "Staff account updated",
+                "Changes saved and written to the security audit log.",
+                "success",
+              );
+              break;
+          }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 11. ACCESSIBILITY & MISC FIXES
+        // ═══════════════════════════════════════════════════════════════
+        function wireAccessibility() {
+          // Esc closes the generic modal
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+              const m = document.querySelector("#modal");
+              if (m && m.style.display === "flex") {
+                if (document.querySelector("#sessionCountdown")) return;
+                closeAnyModal();
+                restoreModalButtons();
+              }
+              const p = document.querySelector("#demoStatePanel");
+              if (p && p.style.display === "block") {
+                p.style.display = "none";
+                const t = document.querySelector("#demoStateToggle");
+                if (t) t.style.display = "block";
+              }
+            }
+          });
+
+          // aria-live region for auth alerts
+          ["#loginErrorAlert", "#mfaErrorAlert", "#loginLockAlert"].forEach(
+            function (s) {
+              const el = document.querySelector(s);
+              if (el) {
+                el.setAttribute("aria-live", "polite");
+                el.setAttribute("role", "status");
+              }
+            },
+          );
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 12. BOOT
+        // ═══════════════════════════════════════════════════════════════
+        function init() {
+          try {
+            initInner();
+          } catch (err) {
+            // Surface wiring failures instead of leaving a dead form.
+            console.error("[BlackNexa] Module 1 init failed:", err);
+            const b = document.querySelector("#btnAdminLogin");
+            if (b) b.title = "Initialisation error — see browser console";
+          }
+        }
+
+        function initInner() {
+          buildRecoveryScreens();
+          buildLoginExtras();
+          buildRoleSimulator();
+          buildAccessDenied();
+          buildAuditPanel();
+          buildDemoPanel();
+          wireAccessibility();
+          rebindLogin();
+          rebindMfa();
+          rebindLogout();
+          renderAuditLog();
+
+          // Ensure roleKey is present on every seeded staff record
+          (window.staffAccounts || []).forEach(function (s) {
+            if (!s.roleKey) s.roleKey = ROLE_KEYS[s.role] || "staff";
+          });
+
+          if (window.currentAdminUser) {
+            applyPermissions();
+            updateRoleHint();
+            startIdleTimer();
+          } else {
+            authStep("loginStepCredentials");
+          }
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
       })();
     </script>
   </body>
