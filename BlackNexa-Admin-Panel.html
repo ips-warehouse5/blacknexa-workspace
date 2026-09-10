@@ -690,6 +690,13 @@
         text-align: right !important;
         padding-right: 4px !important;
       }
+      /* Permission matrix: the last column is a role toggle, not an actions
+         cell, so keep all role columns centred and evenly padded. */
+      #settingsRolesPanel .table th:last-child,
+      #settingsRolesPanel .table td:last-child {
+        text-align: center !important;
+        padding-right: 18px !important;
+      }
       .sub {
         display: block;
         font-size: 12px;
@@ -750,6 +757,14 @@
       .badge.draft {
         background: #f1f5f9;
         color: #475569;
+      }
+      .badge.approved {
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+      .badge.rejected {
+        background: #fee2e2;
+        color: #b91c1c;
       }
 
       .review {
@@ -1116,6 +1131,14 @@
         border-color: var(--line) !important;
         color: #94a3b8 !important;
       }
+      /* Unavailable actions stay in place so every row keeps the same
+         number of action slots and the column never shifts. */
+      .action-icon-btn:disabled,
+      .action-icon-btn[disabled] {
+        opacity: 0.35 !important;
+        cursor: default !important;
+        color: #94a3b8 !important;
+      }
       body.dark .action-icon-btn:hover {
         border-color: var(--accent) !important;
         color: var(--accent) !important;
@@ -1205,6 +1228,15 @@
         font-weight: 600;
         color: var(--text);
         margin: 14px 0 6px;
+      }
+      /* Page-level forms had no label rule, so field labels sat flush against
+         their input. Match the breathing room modals already use. Component
+         labels that wrap their own control are excluded. */
+      .cm-page label:not(.switch-toggle):not(.remember-wrap):not(
+          .delete-confirm-box
+        ) {
+        display: block;
+        margin-bottom: 7px;
       }
       .modal input,
       .modal select,
@@ -2192,8 +2224,16 @@
 
       .content-info-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 16px 20px;
+        /* Three columns keeps each value readable; extra fields wrap to the
+           next row rather than being squeezed into narrow columns. */
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px 32px;
+      }
+      @media (max-width: 1180px) {
+        .content-info-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 18px 24px;
+        }
       }
       .info-cell {
         display: flex;
@@ -2211,6 +2251,7 @@
         font-size: 13px;
         font-weight: 400;
         color: var(--text);
+        line-height: 1.45;
       }
 
       .content-block {
@@ -3866,7 +3907,7 @@
                 <rect x="14" y="14" width="7" height="7" />
                 <rect x="3" y="14" width="7" height="7" /></svg
             ></span>
-            <span class="nav-label">Dashboard Overview</span>
+            <span class="nav-label">Dashboard</span>
           </div>
           <div class="nav" id="incidentMgmtMenu">
             <span class="nav-icon"
@@ -3973,7 +4014,7 @@
             <span class="nav-label">Admin & Roles</span>
           </div>
 
-          <div class="nav soon-nav" data-target="Settings">
+          <div class="nav" id="settingsNavMenu" data-target="Settings">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3" />
@@ -5862,7 +5903,7 @@
                   <th style="width: 13%">Status</th>
                   <th style="width: 11%">Incidents</th>
                   <th style="width: 10%">Joined Date</th>
-                  <th style="width: 8%; text-align: right">Actions</th>
+                  <th style="width: 132px; text-align: right; padding-right: 18px">Actions</th>
                 </tr>
               </thead>
               <tbody id="userRows"></tbody>
@@ -6349,121 +6390,6 @@
               </div>
             </div>
 
-            <!-- KPI Metric Summary Tiles -->
-            <div
-              class="kpi-grid"
-              style="
-                grid-template-columns: repeat(4, 1fr);
-                margin-bottom: 24px;
-                gap: 14px;
-              "
-            >
-              <div class="kpi-card" style="padding: 16px 18px">
-                <div class="kpi-top">
-                  <span class="kpi-label">Total Organizations</span>
-                  <div
-                    class="kpi-icon-wrap"
-                    style="background: #e0f2fe; color: #0284c7"
-                  >
-                    <svg viewBox="0 0 24 24">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  </div>
-                </div>
-                <div class="kpi-value" id="resKpiTotal" style="font-size: 24px">
-                  28
-                </div>
-                <div class="kpi-sub">
-                  <span style="color: var(--muted)">Across 13 categories</span>
-                </div>
-              </div>
-
-              <div class="kpi-card" style="padding: 16px 18px">
-                <div class="kpi-top">
-                  <span class="kpi-label">Verified Listings</span>
-                  <div
-                    class="kpi-icon-wrap"
-                    style="background: #dcfce7; color: #16a34a"
-                  >
-                    <svg viewBox="0 0 24 24">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      <polyline points="9 12 11 14 15 10" />
-                    </svg>
-                  </div>
-                </div>
-                <div
-                  class="kpi-value"
-                  id="resKpiVerified"
-                  style="font-size: 24px"
-                >
-                  24
-                </div>
-                <div class="kpi-sub">
-                  <span style="color: #16a34a; font-weight: 600"
-                    >Shield active in app</span
-                  >
-                </div>
-              </div>
-
-              <div class="kpi-card" style="padding: 16px 18px">
-                <div class="kpi-top">
-                  <span class="kpi-label">Pending Review</span>
-                  <div
-                    class="kpi-icon-wrap"
-                    style="background: #fef3c7; color: #d97706"
-                  >
-                    <svg viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  </div>
-                </div>
-                <div
-                  class="kpi-value"
-                  id="resKpiPending"
-                  style="font-size: 24px"
-                >
-                  3
-                </div>
-                <div class="kpi-sub">
-                  <span style="color: #d97706; font-weight: 600"
-                    >Requires approval</span
-                  >
-                </div>
-              </div>
-
-              <div class="kpi-card" style="padding: 16px 18px">
-                <div class="kpi-top">
-                  <span class="kpi-label">Active Hotlines</span>
-                  <div
-                    class="kpi-icon-wrap"
-                    style="background: #ede9fe; color: #7c3aed"
-                  >
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div
-                  class="kpi-value"
-                  id="resKpiHotlines"
-                  style="font-size: 24px"
-                >
-                  6
-                </div>
-                <div class="kpi-sub">
-                  <span style="color: #7c3aed; font-weight: 600"
-                    >24/7 direct dial</span
-                  >
-                </div>
-              </div>
-            </div>
-
             <!-- Status Tabs -->
             <div
               class="tabs"
@@ -6525,40 +6451,40 @@
                       All Categories
                     </div>
                     <div class="custom-select-option" data-value="legal">
-                      ⚖️ Legal Aid
+                      Legal Aid
                     </div>
                     <div class="custom-select-option" data-value="mental">
-                      ❤️ Mental Health
+                      Mental Health
                     </div>
                     <div class="custom-select-option" data-value="housing">
-                      🏠 Housing & Shelter
+                      Housing & Shelter
                     </div>
                     <div class="custom-select-option" data-value="work">
-                      💼 Workplace & Labor
+                      Workplace & Labor
                     </div>
                     <div class="custom-select-option" data-value="education">
-                      🎓 Education & Youth
+                      Education & Youth
                     </div>
                     <div class="custom-select-option" data-value="hotline">
-                      📞 Crisis Hotlines
+                      Crisis Hotlines
                     </div>
                     <div class="custom-select-option" data-value="immigration">
-                      🌐 Immigration Defense
+                      Immigration Defense
                     </div>
                     <div class="custom-select-option" data-value="voting">
-                      🗳️ Voting Rights
+                      Voting Rights
                     </div>
                     <div class="custom-select-option" data-value="reentry">
-                      📣 Reentry Programs
+                      Reentry Programs
                     </div>
                     <div class="custom-select-option" data-value="financial">
-                      💲 Financial & Banking
+                      Financial & Banking
                     </div>
                     <div class="custom-select-option" data-value="health">
-                      🩺 Health Equity
+                      Health Equity
                     </div>
                     <div class="custom-select-option" data-value="advocacy">
-                      📢 Civil Rights Advocacy
+                      Civil Rights Advocacy
                     </div>
                   </div>
                 </div>
@@ -6689,7 +6615,7 @@
                     <th style="width: 16%">Contact / Intake</th>
                     <th style="width: 16%">Status</th>
                     <th
-                      style="width: 16%; text-align: right; padding-right: 18px"
+                      style="width: 172px; text-align: right; padding-right: 18px"
                     >
                       Actions
                     </th>
@@ -6971,7 +6897,7 @@
                     id="btnToggleResourceVerify"
                     style="width: 100%; justify-content: center"
                   >
-                    ⭐ Toggle Verified Shield
+                    Toggle Verified Shield
                   </button>
                   <button
                     class="btn outline"
@@ -7092,7 +7018,7 @@
                       class="custom-select-trigger"
                       style="width: 100%"
                     >
-                      <span class="custom-select-label">⚖️ Legal Aid</span>
+                      <span class="custom-select-label">Legal Aid</span>
                       <svg viewBox="0 0 24 24">
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
@@ -7102,43 +7028,43 @@
                         class="custom-select-option selected"
                         data-value="legal"
                       >
-                        ⚖️ Legal Aid
+                        Legal Aid
                       </div>
                       <div class="custom-select-option" data-value="mental">
-                        ❤️ Mental Health
+                        Mental Health
                       </div>
                       <div class="custom-select-option" data-value="housing">
-                        🏠 Housing & Shelter
+                        Housing & Shelter
                       </div>
                       <div class="custom-select-option" data-value="work">
-                        💼 Workplace & Labor
+                        Workplace & Labor
                       </div>
                       <div class="custom-select-option" data-value="education">
-                        🎓 Education & Youth
+                        Education & Youth
                       </div>
                       <div class="custom-select-option" data-value="hotline">
-                        📞 Crisis Hotlines
+                        Crisis Hotlines
                       </div>
                       <div
                         class="custom-select-option"
                         data-value="immigration"
                       >
-                        🌐 Immigration Defense
+                        Immigration Defense
                       </div>
                       <div class="custom-select-option" data-value="voting">
-                        🗳️ Voting Rights
+                        Voting Rights
                       </div>
                       <div class="custom-select-option" data-value="reentry">
-                        📣 Reentry Programs
+                        Reentry Programs
                       </div>
                       <div class="custom-select-option" data-value="financial">
-                        💲 Financial & Banking
+                        Financial & Banking
                       </div>
                       <div class="custom-select-option" data-value="health">
-                        🩺 Health Equity
+                        Health Equity
                       </div>
                       <div class="custom-select-option" data-value="advocacy">
-                        📢 Civil Rights Advocacy
+                        Civil Rights Advocacy
                       </div>
                     </div>
                   </div>
@@ -8554,8 +8480,7 @@
                 <p
                   style="color: var(--muted); font-size: 13px; margin: 4px 0 0"
                 >
-                  Review, edit, and approve AI-generated news stories covering
-                  domestic and global diaspora communities.
+                  Review and approve AI news stories.
                 </p>
               </div>
               <div style="display: flex; gap: 10px; align-items: center">
@@ -8965,7 +8890,7 @@
               >
                 <thead>
                   <tr>
-                    <th style="width: 28%">Title & ID</th>
+                    <th style="width: 25%">Title & ID</th>
                     <th style="width: 14%">Category</th>
                     <th style="width: 11%">Tag</th>
                     <th style="width: 13%">Location</th>
@@ -8973,10 +8898,9 @@
                     <th style="width: 10%">Status</th>
                     <th
                       style="
-                        width: 10%;
+                        width: 172px;
                         text-align: right;
-                        padding-right: 16px;
-                        min-width: 130px;
+                        padding-right: 18px;
                       "
                     >
                       Actions
@@ -9021,7 +8945,7 @@
                   class="badge"
                   id="newsDetailsBriefingBadge"
                   style="background: #fef3c7; color: #92400e; display: none"
-                  >⭐ Daily Briefing</span
+                  >Daily Briefing</span
                 >
               </div>
             </div>
@@ -9130,7 +9054,7 @@
                   <div class="info-cell">
                     <div class="info-cell-label">Daily Briefing</div>
                     <div class="info-cell-value" id="valNewsBriefing">
-                      Included (⭐ High Priority)
+                      Included (High Priority)
                     </div>
                   </div>
                   <div class="info-cell">
@@ -9677,7 +9601,7 @@
                     id="btnToggleBriefing"
                     style="width: 100%; justify-content: center"
                   >
-                    ⭐ Toggle Daily Briefing
+                    Add to Daily Briefing
                   </button>
                   <button
                     class="btn outline"
@@ -10404,12 +10328,6 @@
               <button class="btn primary" id="btnSaveBriefingOrder" disabled>Save Briefing Order</button>
             </div>
 
-            <div class="kpi-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px">
-              <div class="kpi-card"><div class="kpi-label">Articles Included</div><div class="kpi-value" id="briefingIncludedCount">0</div></div>
-              <div class="kpi-card"><div class="kpi-label">Published Articles</div><div class="kpi-value" id="briefingPublishedCount">0</div></div>
-              <div class="kpi-card"><div class="kpi-label">Audio Ready</div><div class="kpi-value" id="briefingAudioReadyCount">0</div></div>
-            </div>
-
             <div class="tabs" id="dailyBriefingTabs">
               <div class="tab active" data-briefing-tab="included">Included in Briefing (<span id="briefingTabIncludedCount">0</span>)</div>
               <div class="tab" data-briefing-tab="available">Available Stories (<span id="briefingTabAvailableCount">0</span>)</div>
@@ -10418,7 +10336,7 @@
             <div id="dailyBriefingIncludedPanel">
               <div class="filters"><input class="search" id="briefingIncludedSearch" placeholder="Search included stories..." /></div>
               <table class="table">
-                <thead><tr><th style="width:42%">Story &amp; ID</th><th style="width:14%">Status</th><th style="width:14%">Audio</th><th style="width:16%">Published At</th><th style="width:14%; text-align: right; padding-right: 18px">Actions</th></tr></thead>
+                <thead><tr><th style="width:42%">Story &amp; ID</th><th style="width:14%">Status</th><th style="width:14%">Audio</th><th style="width:16%">Published At</th><th style="width:172px; text-align: right; padding-right: 18px">Actions</th></tr></thead>
                 <tbody id="dailyBriefingIncludedBody"></tbody>
               </table>
               <div class="pagination-bar" id="dailyBriefingIncludedPagination"></div>
@@ -10458,42 +10376,14 @@
               <div>
                 <h1 class="title">Notifications &amp; Announcements</h1>
                 <p style="color:var(--muted);font-size:13px;margin:4px 0 0">
-                  Compose and dispatch system-wide announcements, target community segments by region, role, and subscription tier, and broadcast news push notifications.
+                  Compose and dispatch system-wide announcements, target community segments by region and role, and broadcast news push notifications.
                 </p>
               </div>
               <div style="display:flex;gap:10px;align-items:center">
-                <button class="btn outline" id="btnExportNotificationLogs" title="Export delivery audit log">
-                  <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:6px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Export Log
-                </button>
                 <button class="btn primary" id="btnOpenCreateAnnouncementModal">
                   <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:6px" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Create Announcement
                 </button>
-              </div>
-            </div>
-
-            <!-- Notification KPIs -->
-            <div class="kpi-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px">
-              <div class="kpi-card">
-                <div class="kpi-label">Total Broadcasts</div>
-                <div class="kpi-value" id="kpiTotalBroadcasts">0</div>
-                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">All channels</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-label">Active / Scheduled</div>
-                <div class="kpi-value" id="kpiActiveBroadcasts" style="color:var(--accent)">0</div>
-                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">In delivery queue</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-label">Avg. Open / Read Rate</div>
-                <div class="kpi-value" id="kpiAvgOpenRate">0%</div>
-                <div style="font-size:11.5px;color:#059669;margin-top:4px">↑ 14.2% this month</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-label">Total Audience Reach</div>
-                <div class="kpi-value" id="kpiTotalAudienceReach">0</div>
-                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Verified recipients</div>
               </div>
             </div>
 
@@ -10504,9 +10394,6 @@
               </div>
               <div class="tab" data-notif-tab="news">
                 News Notifications (<span id="notifTabNewsCount">0</span>)
-              </div>
-              <div class="tab" data-notif-tab="segments">
-                Audience Segmentation Overview
               </div>
             </div>
 
@@ -10558,11 +10445,10 @@
               <table class="table" id="announcementsTable">
                 <thead>
                   <tr>
-                    <th style="width:34%">Announcement &amp; ID</th>
-                    <th style="width:16%">Target Audience</th>
-                    <th style="width:13%">Category</th>
-                    <th style="width:11%">Status</th>
-                    <th style="width:12%">Delivery Stats</th>
+                    <th style="width:38%">Announcement &amp; ID</th>
+                    <th style="width:18%">Target Audience</th>
+                    <th style="width:18%">Category</th>
+                    <th style="width:12%">Status</th>
                     <th style="width:14%; text-align: right; padding-right: 18px">Actions</th>
                   </tr>
                 </thead>
@@ -10574,22 +10460,47 @@
             <!-- TAB 2: News Push Notifications Panel -->
             <div id="notifNewsPanel" style="display:none">
               <div class="filters">
-                <input class="search" id="notifNewsSearchInput" placeholder="Search news notifications..." />
-                <button class="btn primary" id="btnComposeNewsPush">
+                <input class="search" id="notifNewsSearchInput" placeholder="Search news notifications by headline or story ID..." />
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                  <div class="custom-select-wrap" style="min-width:170px">
+                    <input type="hidden" id="notifNewsRegionFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Regions</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu">
+                      <div class="custom-select-option selected" data-value="All">All Regions (Global)</div>
+                      <div class="custom-select-option" data-value="united_states">🇺🇸 United States</div>
+                      <div class="custom-select-option" data-value="united_kingdom">🇬🇧 United Kingdom</div>
+                      <div class="custom-select-option" data-value="france">🇫🇷 France</div>
+                      <div class="custom-select-option" data-value="africa_hub">🌍 Africa Continental</div>
+                      <div class="custom-select-option" data-value="india">🇮🇳 India</div>
+                      <div class="custom-select-option" data-value="brazil">🇧🇷 Brazil</div>
+                      <div class="custom-select-option" data-value="south_africa">🇿🇦 South Africa</div>
+                      <div class="custom-select-option" data-value="canada">🇨🇦 Canada</div>
+                    </div>
+                  </div>
+                  <div class="custom-select-wrap" style="min-width:140px">
+                    <input type="hidden" id="notifNewsStatusFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Statuses</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu">
+                      <div class="custom-select-option selected" data-value="All">All Statuses</div>
+                      <div class="custom-select-option" data-value="Sent">Sent</div>
+                      <div class="custom-select-option" data-value="Scheduled">Scheduled</div>
+                    </div>
+                  </div>
+                  <button class="btn primary" id="btnComposeNewsPush">
                   <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:6px" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
                   Push From News Story
-                </button>
+                  </button>
+                </div>
               </div>
 
               <table class="table" id="newsNotifTable">
                 <thead>
                   <tr>
-                    <th style="width:36%">News Story &amp; Headline</th>
-                    <th style="width:16%">Target Audience</th>
-                    <th style="width:14%">Sent Time</th>
+                    <th style="width:38%">News Story &amp; Headline</th>
+                    <th style="width:18%">Target Audience</th>
+                    <th style="width:18%">Sent / Scheduled</th>
                     <th style="width:12%">Status</th>
-                    <th style="width:10%">Direct Opens</th>
-                    <th style="width:12%; text-align: right; padding-right: 18px">Actions</th>
+                    <th style="width:14%; text-align: right; padding-right: 18px">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="newsNotifTableBody"></tbody>
@@ -10597,36 +10508,222 @@
               <div class="pagination-bar" id="newsNotifPagination"></div>
             </div>
 
-            <!-- TAB 3: Audience Segmentation Overview -->
-            <div id="notifSegmentsPanel" style="display:none">
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px;margin-top:6px">
-                <!-- Region Breakdown Card -->
+          </div>
+        </section>
+
+        <!-- =========================================================
+             MODULE: SETTINGS
+             ========================================================= -->
+        <section id="settingsView" class="cm-page" style="display: none">
+          <div class="card">
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div>
+                <h1 class="title">Settings</h1>
+                <p style="color:var(--muted);font-size:13px;margin:4px 0 0">
+                  Configure system-wide settings, roles, and security policy.
+                </p>
+              </div>
+            </div>
+
+            <div class="tabs" id="settingsTabs">
+              <div class="tab active" data-settings-tab="incidents">Incident Configuration</div>
+              <div class="tab" data-settings-tab="roles">Roles &amp; Permissions</div>
+              <div class="tab" data-settings-tab="security">Security</div>
+              <div class="tab" data-settings-tab="audit">Audit Log</div>
+            </div>
+
+            <!-- TAB 1: Incident categories and custom fields -->
+            <div id="settingsIncidentsPanel">
+              <div class="card-header-bar" style="margin:6px 0 14px">
+                <div>
+                  <h2 class="title" style="font-size:17px">Incident Categories</h2>
+                  <p style="color:var(--muted);font-size:12.5px;margin:4px 0 0">
+                    Categories available on the incident report form.
+                  </p>
+                </div>
+                <button class="btn primary" id="btnAddIncidentCategory">+ Add Category</button>
+              </div>
+              <div class="filters">
+                <input class="search" id="setCategorySearch" placeholder="Search incident categories..." />
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width:45%">Category &amp; ID</th>
+                    <th style="width:18%">Incidents</th>
+                    <th style="width:18%">Status</th>
+                    <th style="width:19%; text-align: right; padding-right: 18px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="setCategoriesBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="setCategoriesPagination"></div>
+
+              <div class="card-header-bar" style="margin:28px 0 14px">
+                <div>
+                  <h2 class="title" style="font-size:17px">Custom Incident Fields</h2>
+                  <p style="color:var(--muted);font-size:12.5px;margin:4px 0 0">
+                    Extra fields shown on the incident report form.
+                  </p>
+                </div>
+                <button class="btn primary" id="btnAddCustomField">+ Add Field</button>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width:34%">Field Label &amp; ID</th>
+                    <th style="width:16%">Type</th>
+                    <th style="width:19%">Applies To</th>
+                    <th style="width:12%">Required</th>
+                    <th style="width:19%; text-align: right; padding-right: 18px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="setFieldsBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="setFieldsPagination"></div>
+            </div>
+
+            <!-- TAB 2: User roles and permissions -->
+            <div id="settingsRolesPanel" style="display:none">
+              <div class="filters">
+                <input class="search" id="setRoleSearch" placeholder="Search roles or permissions..." />
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width:40%">Permission</th>
+                    <th style="width:20%; text-align:center">Moderator</th>
+                    <th style="width:20%; text-align:center">Advocate</th>
+                    <th style="width:20%; text-align:center">Support Staff</th>
+                  </tr>
+                </thead>
+                <tbody id="setRolesMatrixBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="setRolesPagination"></div>
+              <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:10px">
+                <button class="btn outline" id="btnResetRoleMatrix">Reset Changes</button>
+                <button class="btn primary" id="btnSaveRoleMatrix" disabled>Save Permissions</button>
+              </div>
+            </div>
+
+            <!-- TAB 3: Security - password policies and session timeouts -->
+            <div id="settingsSecurityPanel" style="display:none">
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:6px">
                 <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                    <h3 style="margin:0;font-size:15px;color:var(--text);font-weight:600">Audience by Region</h3>
-                    <span style="font-size:12px;color:var(--muted)">8 Active Regions</span>
+                  <h3 style="margin:0 0 14px;font-size:15px;color:var(--text);font-weight:600">Password Policy</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <div>
+                      <label style="margin-top:0">Minimum Password Length</label>
+                      <input type="number" id="setPwdMinLength" min="6" max="64" value="12" style="width:100%;box-sizing:border-box" />
+                      <div id="setPwdMinLengthError" class="field-error-msg" style="display:none">Enter a length between 6 and 64.</div>
+                    </div>
+                    <div>
+                      <label style="margin-top:0">Password Expires After (days)</label>
+                      <input type="number" id="setPwdExpiryDays" min="0" max="365" value="90" style="width:100%;box-sizing:border-box" />
+                      <div id="setPwdExpiryError" class="field-error-msg" style="display:none">Enter 0 (never) to 365 days.</div>
+                    </div>
+                    <div>
+                      <label style="margin-top:0">Lock Account After (failed attempts)</label>
+                      <input type="number" id="setPwdMaxAttempts" min="1" max="20" value="5" style="width:100%;box-sizing:border-box" />
+                      <div id="setPwdAttemptsError" class="field-error-msg" style="display:none">Enter between 1 and 20 attempts.</div>
+                    </div>
+                    <div class="switch-toggle-row">
+                      <div>
+                        <div class="switch-toggle-label">Require Uppercase Letter</div>
+                        <div class="switch-toggle-sub">At least one A–Z character</div>
+                      </div>
+                      <label class="switch-toggle"><input type="checkbox" id="setPwdUpper" checked /><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="switch-toggle-row">
+                      <div>
+                        <div class="switch-toggle-label">Require Number</div>
+                        <div class="switch-toggle-sub">At least one 0–9 digit</div>
+                      </div>
+                      <label class="switch-toggle"><input type="checkbox" id="setPwdNumber" checked /><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="switch-toggle-row">
+                      <div>
+                        <div class="switch-toggle-label">Require Symbol</div>
+                        <div class="switch-toggle-sub">At least one special character</div>
+                      </div>
+                      <label class="switch-toggle"><input type="checkbox" id="setPwdSymbol" checked /><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="switch-toggle-row">
+                      <div>
+                        <div class="switch-toggle-label">Block Password Reuse</div>
+                        <div class="switch-toggle-sub">Prevent reusing the last 5 passwords</div>
+                      </div>
+                      <label class="switch-toggle"><input type="checkbox" id="setPwdReuse" checked /><span class="switch-slider"></span></label>
+                    </div>
                   </div>
-                  <div id="segmentRegionStatsList" style="display:flex;flex-direction:column;gap:10px"></div>
                 </div>
 
-                <!-- Role Breakdown Card -->
                 <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                    <h3 style="margin:0;font-size:15px;color:var(--text);font-weight:600">Audience by Role</h3>
-                    <span style="font-size:12px;color:var(--muted)">Permissions &amp; Casework</span>
+                  <h3 style="margin:0 0 14px;font-size:15px;color:var(--text);font-weight:600">Session Timeouts</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <div>
+                      <label style="margin-top:0">Idle Timeout (minutes)</label>
+                      <input type="number" id="setSessionIdle" min="1" max="480" value="30" style="width:100%;box-sizing:border-box" />
+                      <div id="setSessionIdleError" class="field-error-msg" style="display:none">Enter between 1 and 480 minutes.</div>
+                    </div>
+                    <div>
+                      <label style="margin-top:0">Maximum Session Length (hours)</label>
+                      <input type="number" id="setSessionMax" min="1" max="72" value="12" style="width:100%;box-sizing:border-box" />
+                      <div id="setSessionMaxError" class="field-error-msg" style="display:none">Enter between 1 and 72 hours.</div>
+                    </div>
+                    <div class="switch-toggle-row">
+                      <div>
+                        <div class="switch-toggle-label">Force Re-login After Timeout</div>
+                        <div class="switch-toggle-sub">End the session instead of silently refreshing it</div>
+                      </div>
+                      <label class="switch-toggle"><input type="checkbox" id="setSessionForce" checked /><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="switch-toggle-row">
+                      <div>
+                        <div class="switch-toggle-label">Single Active Session Per Admin</div>
+                        <div class="switch-toggle-sub">Signing in elsewhere ends the earlier session</div>
+                      </div>
+                      <label class="switch-toggle"><input type="checkbox" id="setSessionSingle" /><span class="switch-slider"></span></label>
+                    </div>
                   </div>
-                  <div id="segmentRoleStatsList" style="display:flex;flex-direction:column;gap:10px"></div>
-                </div>
-
-                <!-- Tier Breakdown Card -->
-                <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                    <h3 style="margin:0;font-size:15px;color:var(--text);font-weight:600">Audience by Subscription Tier</h3>
-                    <span style="font-size:12px;color:var(--muted)">Paid vs Free</span>
-                  </div>
-                  <div id="segmentTierStatsList" style="display:flex;flex-direction:column;gap:10px"></div>
                 </div>
               </div>
+              <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px">
+                <button class="btn outline" id="btnResetSecurity">Reset Changes</button>
+                <button class="btn primary" id="btnSaveSecurity">Save Security Settings</button>
+              </div>
+            </div>
+
+            <!-- TAB 4: Audit log of admin actions -->
+            <div id="settingsAuditPanel" style="display:none">
+              <div class="filters">
+                <input class="search" id="setAuditSearch" placeholder="Search admin, action or target..." />
+                <div class="custom-select-wrap" style="min-width:180px">
+                  <input type="hidden" id="setAuditActionFilter" value="All" />
+                  <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Actions</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                  <div class="custom-select-menu">
+                    <div class="custom-select-option selected" data-value="All">All Actions</div>
+                    <div class="custom-select-option" data-value="Sign-in">Sign-in</div>
+                    <div class="custom-select-option" data-value="MFA">MFA</div>
+                    <div class="custom-select-option" data-value="Role change">Role change</div>
+                    <div class="custom-select-option" data-value="Password reset">Password reset</div>
+                    <div class="custom-select-option" data-value="Account">Account status</div>
+                  </div>
+                </div>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width:20%">Timestamp</th>
+                    <th style="width:18%">Administrator</th>
+                    <th style="width:26%">Action</th>
+                    <th style="width:22%">Target</th>
+                    <th style="width:14%">Result</th>
+                  </tr>
+                </thead>
+                <tbody id="setAuditBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="setAuditPagination"></div>
             </div>
           </div>
         </section>
@@ -10915,6 +11012,7 @@
         if ($("#newsTagsView")) $("#newsTagsView").style.display = "none";
         if ($("#dailyBriefingView")) $("#dailyBriefingView").style.display = "none";
         if ($("#notificationsView")) $("#notificationsView").style.display = "none";
+        if ($("#settingsView")) $("#settingsView").style.display = "none";
         if ($("#resourcesQueueView"))
           $("#resourcesQueueView").style.display = "none";
         if ($("#resourceDetailsView"))
@@ -11516,7 +11614,7 @@
       }
 
       let currentPage = 1;
-      const pageSize = 7;
+      let pageSize = 10;
 
       function getFilteredPosts() {
         const searchInput = document.querySelector("#search");
@@ -12245,8 +12343,8 @@
       </table>
 
       <!-- Unified Bottom Pagination -->
-      <div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 10px">
-        <div class="pagination-left-info" style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted)">
+      <div class="pagination-bar">
+        <div class="pagination-left-info">
           <span>Showing <strong>${showingStart}–${showingEnd}</strong> of <strong>${totalItems}</strong> records</span>
           <select class="page-size-select" id="keywordPageSizeSelect">
             ${[10, 25, 50, 75, 100, 500]
@@ -12257,7 +12355,7 @@
               .join("")}
           </select>
         </div>
-        <div class="pages" style="display: flex; gap: 6px">
+        <div class="pagination-controls">
           <button class="page-btn prev-btn" id="kwPrevBtn" ${keywordCurrentPage === 1 ? "disabled" : ""}>Previous</button>
           ${Array.from({ length: totalPages }, (_, idx) => idx + 1)
             .map(
@@ -12859,7 +12957,7 @@
       let currentIncident = allIncidents[0];
       let incidentTab = "All";
       let incidentPage = 1;
-      const incPageSize = 7;
+      let incPageSize = 10;
       const incidentTabsList = [
         "All",
         "Submitted",
@@ -13309,7 +13407,7 @@
             const icon = isDone
               ? "✓"
               : isProg
-                ? "⏳"
+                ? "•"
                 : isRej
                   ? "✕"
                   : isDeact
@@ -14280,7 +14378,7 @@
 
       let userActiveTab = "All Users";
       let userCurrentPage = 1;
-      const userPageSize = 8;
+      let userPageSize = 10;
       let currentUser = null;
       let selectedUserIds = new Set();
       let targetUserForAction = null;
@@ -14463,24 +14561,20 @@
         </td>
         <td style="font-size:12.5px">${formattedDate}</td>
         <td>
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+          <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
             <button class="action-icon-btn user-view-trigger" data-id="${u.id}" title="View User Profile" aria-label="View Profile & Incidents">
               <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
             ${
               u.status !== "deleted"
-                ? `
-            <button class="action-icon-btn delete-icon-btn user-suspend-trigger" data-id="${u.id}" title="${u.status === "suspended" ? "Reactivate / Unsuspend User" : "Suspend / Ban User"}" aria-label="Suspend or Ban User">
+                ? `<button class="action-icon-btn delete-icon-btn user-suspend-trigger" data-id="${u.id}" title="${u.status === "suspended" ? "Reactivate / Unsuspend User" : "Suspend / Ban User"}" aria-label="Suspend or Ban User">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            </button>
-            <button class="action-icon-btn delete-icon-btn user-delete-trigger" data-id="${u.id}" title="Delete Account" aria-label="Delete User Account">
-              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>`
-                : `
-            <button class="action-icon-btn delete-icon-btn user-delete-trigger" data-id="${u.id}" title="Delete Account" aria-label="Delete User Account">
-              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>`
+                : ""
             }
+            <button class="action-icon-btn delete-icon-btn user-delete-trigger" data-id="${u.id}" title="Delete Account" aria-label="Delete User Account">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
           </div>
         </td>
       </tr>
@@ -14637,7 +14731,7 @@
         if ($("#userProfRegionTier")) {
           const regionObj = GLOBAL_NOTIFICATION_REGIONS.find((r) => r.id === currentUser.region);
           const regText = regionObj ? `${regionObj.flag} ${regionObj.label}` : "🌐 Global";
-          const tierBadge = currentUser.tier === "paid" ? '<span class="badge" style="background:#fef3c7;color:#b45309;font-size:11px">⭐ Paid</span>' : '<span class="badge draft" style="font-size:11px">Free</span>';
+          const tierBadge = currentUser.tier === "paid" ? '<span class="badge" style="background:#fef3c7;color:#b45309;font-size:11px">Paid</span>' : '<span class="badge draft" style="font-size:11px">Free</span>';
           $("#userProfRegionTier").innerHTML = `<span>${regText}</span> · ${tierBadge}`;
         }
 
@@ -14697,7 +14791,7 @@
           if (currentUser.status === "deleted") {
             actionsBox.innerHTML = `
         <div style="font-size:12px;color:var(--muted);background:var(--accent-soft);padding:10px 12px;border-radius:8px;line-height:1.4">
-          ⚠️ <strong>Account Deleted / Archived</strong><br>
+          <strong>Account Deleted / Archived</strong><br>
           This account is inactive. Session tokens are revoked and personal profile editing is disabled.
         </div>
         <button class="btn primary" id="btnRestoreUserAccount" style="width:100%;justify-content:center">Restore & Reactivate Account</button>
@@ -15064,7 +15158,7 @@
           "This action will immediately terminate all active JWT refresh tokens and sign this account out from all mobile apps and web browsers.";
         $("#form").innerHTML = `
     <div style="font-size:12.5px;color:var(--text);background:var(--accent-soft);border:1px solid var(--accent);padding:12px;border-radius:8px;line-height:1.4">
-      🔒 <strong>Security Enforcement:</strong> The user will be required to re-authenticate with their password or MFA code on next access.
+      <strong>Security Enforcement:</strong> The user will be required to re-authenticate with their password or MFA code on next access.
     </div>
   `;
         $("#confirm").textContent = "Revoke All Sessions";
@@ -15413,7 +15507,7 @@
                       ? `<span style="font-size: 11.5px; color: var(--muted); font-weight: 500; display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end"><svg viewBox="0 0 24 24" style="width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Protected</span>`
                       : canManage
                         ? `
-                    <div style="display: inline-flex; gap: 4px; justify-content: flex-end">
+                    <div style="display: inline-flex; gap: 6px; justify-content: flex-end">
                       <button class="action-icon-btn edit-staff-btn" data-id="${stf.id}" title="Edit Role & Permissions">
                         <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </button>
@@ -17389,7 +17483,7 @@
       let articleCategoryFilter = "All";
       let articleStatusFilter = "All";
       let articlePage = 1;
-      const articlesPerPage = 10;
+      let articlePageSize = 10;
       let targetArticleIdForAction = null;
 
       function renderArticlesList() {
@@ -17458,7 +17552,12 @@
           return;
         }
 
-        tbody.innerHTML = filtered
+        const artTotalPages = Math.max(1, Math.ceil(filtered.length / articlePageSize));
+        if (articlePage > artTotalPages) articlePage = artTotalPages;
+        const artStart = (articlePage - 1) * articlePageSize;
+        const pagedArticles = filtered.slice(artStart, artStart + articlePageSize);
+
+        tbody.innerHTML = pagedArticles
           .map((a) => {
             const isPub = a.status === "Published";
             const statusBadge = isPub
@@ -17493,12 +17592,15 @@
           })
           .join("");
 
-        // Pagination
-        if ($("#articlesPaginationBar")) {
-          $("#articlesPaginationBar").innerHTML = `
-            <div style="font-size: 12px; color: var(--muted)">Showing ${filtered.length} of ${allCount} articles</div>
-          `;
-        }
+        renderStandardPagination(
+          $("#articlesPaginationBar"),
+          filtered.length,
+          articlePage,
+          articlePageSize,
+          "articles",
+          (page) => { articlePage = page; renderArticlesList(); },
+          (size) => { articlePageSize = size; articlePage = 1; renderArticlesList(); },
+        );
       }
 
       window.viewArticleDetails = function (id) {
@@ -17855,6 +17957,9 @@
       let faqStatusFilter = "All";
       let targetFaqIdForAction = null;
 
+      let faqPage = 1;
+      let faqPageSize = 10;
+
       function renderFaqsList() {
         const tbody = document.querySelector("#faqsTableBody");
         if (!tbody) return;
@@ -17900,7 +18005,12 @@
           return;
         }
 
-        tbody.innerHTML = filtered
+        const faqTotalPages = Math.max(1, Math.ceil(filtered.length / faqPageSize));
+        if (faqPage > faqTotalPages) faqPage = faqTotalPages;
+        const faqStart = (faqPage - 1) * faqPageSize;
+        const pagedFaqs = filtered.slice(faqStart, faqStart + faqPageSize);
+
+        tbody.innerHTML = pagedFaqs
           .map((f) => {
             const isPub = f.status === "Published";
             const statusBadge = isPub
@@ -17935,11 +18045,15 @@
           })
           .join("");
 
-        if ($("#faqsPaginationBar")) {
-          $("#faqsPaginationBar").innerHTML = `
-            <div style="font-size: 12px; color: var(--muted)">Showing ${filtered.length} of ${faqItems.length} FAQs</div>
-          `;
-        }
+        renderStandardPagination(
+          $("#faqsPaginationBar"),
+          filtered.length,
+          faqPage,
+          faqPageSize,
+          "faqs",
+          (page) => { faqPage = page; renderFaqsList(); },
+          (size) => { faqPageSize = size; faqPage = 1; renderFaqsList(); },
+        );
       }
 
       window.viewFaqDetails = function (id) {
@@ -18797,7 +18911,7 @@
       let activeNewsTaxonomyType = "categories";
       let editingNewsTaxonomyId = null;
       const newsTaxonomyPage = { categories: 1, tags: 1 };
-      const newsTaxonomyPageSize = { categories: 10, tags: 10 };
+      let newsTaxonomyPageSize = { categories: 10, tags: 10 };
 
       function newsTaxonomyUsageCount(type, name) {
         if (type === "categories") return newsStories.filter((story) => story.category === name).length;
@@ -18852,11 +18966,15 @@
         if (pagination) {
           const startRecord = totalItems ? startIndex + 1 : 0;
           const endRecord = Math.min(startIndex + pageSize, totalItems);
-          pagination.innerHTML = `<div class="pagination-left-info">Showing <strong>${startRecord}–${endRecord}</strong> of ${totalItems} records <select class="page-size-select" aria-label="Records per page"><option value="10" ${pageSize === 10 ? "selected" : ""}>10</option><option value="25" ${pageSize === 25 ? "selected" : ""}>25</option><option value="50" ${pageSize === 50 ? "selected" : ""}>50</option></select></div><div class="pagination-controls"><button class="page-btn taxonomy-prev" ${newsTaxonomyPage[type] === 1 ? "disabled" : ""}>Previous</button>${Array.from({ length: totalPages }, (_, index) => `<button class="page-btn taxonomy-page ${newsTaxonomyPage[type] === index + 1 ? "active" : ""}" data-page="${index + 1}">${index + 1}</button>`).join("")}<button class="page-btn taxonomy-next" ${newsTaxonomyPage[type] === totalPages ? "disabled" : ""}>Next</button></div>`;
-          pagination.querySelector(".page-size-select").onchange = (event) => { newsTaxonomyPageSize[type] = Number(event.target.value); newsTaxonomyPage[type] = 1; renderNewsTaxonomyTable(type); };
-          pagination.querySelector(".taxonomy-prev").onclick = () => { if (newsTaxonomyPage[type] > 1) { newsTaxonomyPage[type]--; renderNewsTaxonomyTable(type); } };
-          pagination.querySelector(".taxonomy-next").onclick = () => { if (newsTaxonomyPage[type] < totalPages) { newsTaxonomyPage[type]++; renderNewsTaxonomyTable(type); } };
-          pagination.querySelectorAll(".taxonomy-page").forEach((button) => { button.onclick = () => { newsTaxonomyPage[type] = Number(button.dataset.page); renderNewsTaxonomyTable(type); }; });
+          renderStandardPagination(
+            pagination,
+            totalItems,
+            newsTaxonomyPage[type],
+            pageSize,
+            type === "categories" ? "newsCats" : "newsTags",
+            (page) => { newsTaxonomyPage[type] = page; renderNewsTaxonomyTable(type); },
+            (size) => { newsTaxonomyPageSize[type] = size; newsTaxonomyPage[type] = 1; renderNewsTaxonomyTable(type); },
+          );
         }
       }
 
@@ -19021,7 +19139,7 @@
       let dailyBriefingDirty = false;
       let briefingIncludedPage = 1;
       let briefingAvailablePage = 1;
-      const briefingPageSize = 10;
+      let briefingPageSize = 10;
 
       function normalizeDailyBriefingOrder() {
         newsStories
@@ -19051,23 +19169,20 @@
       function renderDailyBriefingSummary() {
         const included = newsStories.filter((story) => story.dailyBriefing);
         const available = newsStories.filter((story) => !story.dailyBriefing && isDailyBriefingEligible(story));
-        $("#briefingIncludedCount").textContent = included.length;
-        $("#briefingPublishedCount").textContent = included.filter((story) => story.status === "Published").length;
-        $("#briefingAudioReadyCount").textContent = included.filter((story) => briefingAudioLabel(story) === "Ready").length;
         $("#briefingTabIncludedCount").textContent = included.length;
         $("#briefingTabAvailableCount").textContent = available.length;
       }
 
-      function renderBriefingPagination(container, totalItems, currentPage, onPageChange) {
-        if (!container) return;
-        const totalPages = Math.max(1, Math.ceil(totalItems / briefingPageSize));
-        const page = Math.min(currentPage, totalPages);
-        const start = totalItems ? (page - 1) * briefingPageSize + 1 : 0;
-        const end = Math.min(page * briefingPageSize, totalItems);
-        container.innerHTML = `<div class="pagination-left-info">Showing <strong>${start}–${end}</strong> of ${totalItems} records</div><div class="pagination-controls"><button class="page-btn brief-prev" ${page === 1 ? "disabled" : ""}>Previous</button>${Array.from({ length: totalPages }, (_, index) => `<button class="page-btn brief-page ${page === index + 1 ? "active" : ""}" data-page="${index + 1}">${index + 1}</button>`).join("")}<button class="page-btn brief-next" ${page === totalPages ? "disabled" : ""}>Next</button></div>`;
-        container.querySelector(".brief-prev").onclick = () => { if (page > 1) onPageChange(page - 1); };
-        container.querySelector(".brief-next").onclick = () => { if (page < totalPages) onPageChange(page + 1); };
-        container.querySelectorAll(".brief-page").forEach((button) => { button.onclick = () => onPageChange(Number(button.dataset.page)); });
+      function renderBriefingPagination(container, totalItems, currentPage, idPrefix, onPageChange) {
+        renderStandardPagination(
+          container,
+          totalItems,
+          currentPage,
+          briefingPageSize,
+          idPrefix,
+          onPageChange,
+          (size) => { briefingPageSize = size; briefingIncludedPage = 1; briefingAvailablePage = 1; renderDailyBriefingPage(); },
+        );
       }
 
       function renderDailyBriefingIncluded() {
@@ -19126,7 +19241,7 @@
           row.ondragover = (event) => { event.preventDefault(); };
           row.ondrop = (event) => { event.preventDefault(); if (draggedId && draggedId !== row.dataset.briefingId) reorderDailyBriefingStory(draggedId, row.dataset.briefingId); };
         });
-        renderBriefingPagination($("#dailyBriefingIncludedPagination"), included.length, briefingIncludedPage, (page) => { briefingIncludedPage = page; renderDailyBriefingIncluded(); });
+        renderBriefingPagination($("#dailyBriefingIncludedPagination"), included.length, briefingIncludedPage, "briefIncluded", (page) => { briefingIncludedPage = page; renderDailyBriefingIncluded(); });
         renderDailyBriefingSummary();
       }
 
@@ -19164,7 +19279,7 @@
             </td>
           </tr>`;
         }).join("") : `<tr><td colspan="5"><div class="empty" style="display:block">No eligible stories match the current filters.</div></td></tr>`;
-        renderBriefingPagination($("#dailyBriefingAvailablePagination"), available.length, briefingAvailablePage, (page) => { briefingAvailablePage = page; renderDailyBriefingAvailable(); });
+        renderBriefingPagination($("#dailyBriefingAvailablePagination"), available.length, briefingAvailablePage, "briefAvailable", (page) => { briefingAvailablePage = page; renderDailyBriefingAvailable(); });
         renderDailyBriefingSummary();
       }
 
@@ -19359,7 +19474,7 @@
                   : story.status === "Approved"
                     ? "verified"
                     : story.status === "Rejected"
-                      ? "danger"
+                      ? "rejected"
                       : "pending";
               const charStatusColor =
                 story.chars >= 400 && story.chars <= 800
@@ -19393,7 +19508,7 @@
                     <div style="min-width: 0; flex: 1">
                       <div class="title-row-wrap" style="display: flex; align-items: center; gap: 6px">
                         <span class="title-truncate" title="${story.title.replace(/"/g, "&quot;")}" style="font-weight: 600; font-size: 13.5px; color: var(--text); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">${story.title}</span>
-                        ${story.dailyBriefing ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 10px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0">⭐ Daily Briefing</span>` : ""}
+                        ${story.dailyBriefing ? `<span class="badge" style="background: #fef3c7; color: #92400e; font-size: 10px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0">Daily Briefing</span>` : ""}
                       </div>
                       <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
                         <span class="sub" style="font-size: 11px; color: var(--muted)">${story.id}</span>
@@ -19417,7 +19532,7 @@
                 <td>
                   <span class="badge ${statusClass}">${story.status}</span>
                 </td>
-                <td style="text-align: right; padding-right: 16px" onclick="event.stopPropagation()">
+                <td style="text-align: right; padding-right: 18px" onclick="event.stopPropagation()">
                   <div style="display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center">
                     <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}')" title="View Story" aria-label="View Story">
                       <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -19427,11 +19542,7 @@
                     </button>
                     ${
                       story.status === "Published"
-                        ? `
-                      <button class="action-icon-btn" title="Published & Approved" aria-label="Published" style="cursor: default; opacity: 0.85; pointer-events: none">
-                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                      </button>
-                    `
+                        ? ""
                         : `
                       <button class="action-icon-btn" onclick="quickApproveNews('${story.id}')" title="Approve & Publish" aria-label="Approve Story" style="color: #059669">
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -19457,11 +19568,14 @@
           const endRecord = Math.min(startIdx + newsPageSize, totalItems);
           pagBar.innerHTML = `
             <div class="pagination-left-info">
-              <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> stories</span>
+              <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
               <select class="page-size-select" id="newsPageSizeSelect">
                 <option value="10" ${newsPageSize === 10 ? "selected" : ""}>10</option>
                 <option value="25" ${newsPageSize === 25 ? "selected" : ""}>25</option>
                 <option value="50" ${newsPageSize === 50 ? "selected" : ""}>50</option>
+                <option value="75" ${newsPageSize === 75 ? "selected" : ""}>75</option>
+                <option value="100" ${newsPageSize === 100 ? "selected" : ""}>100</option>
+                <option value="500" ${newsPageSize === 500 ? "selected" : ""}>500</option>
               </select>
             </div>
             <div class="pagination-controls">
@@ -19548,7 +19662,7 @@
             : story.status === "Approved"
               ? "verified"
               : story.status === "Rejected"
-                ? "danger"
+                ? "rejected"
                 : "pending";
         $("#newsDetailsStatusBadge").textContent = story.status;
         $("#newsDetailsStatusBadge").className = `badge ${statusClass}`;
@@ -19559,14 +19673,22 @@
         if (langBadge) {
           langBadge.textContent =
             story.language === "en-US"
-              ? "🌐 🇺🇸 English (US)"
-              : `🌐 ${story.languageLabel || story.language || "🇺🇸 English (US)"}`;
+              ? "🇺🇸 English (US)"
+              : `${story.languageLabel || story.language || "🇺🇸 English (US)"}`;
         }
 
         if (story.dailyBriefing) {
           $("#newsDetailsBriefingBadge").style.display = "inline-flex";
         } else {
           $("#newsDetailsBriefingBadge").style.display = "none";
+        }
+
+        // Briefing action label reflects the story's current state
+        const briefingBtn = $("#btnToggleBriefing");
+        if (briefingBtn) {
+          briefingBtn.textContent = story.dailyBriefing
+            ? "Remove from Daily Briefing"
+            : "Add to Daily Briefing";
         }
 
         const activeIndex = newsStories.findIndex((s) => s.id === story.id);
@@ -19675,7 +19797,7 @@
           `${story.chars} characters (${story.chars >= 400 && story.chars <= 800 ? "Optimal 400–800" : "Custom"})`;
         $("#valNewsStatus").textContent = story.status;
         $("#valNewsBriefing").textContent = story.dailyBriefing
-          ? "Included (⭐ High Priority Audio/Text)"
+          ? "Included (High Priority Audio/Text)"
           : "Excluded from Briefing";
         $("#valNewsSeo").textContent = story.seoIndexed
           ? "Synchronized & Indexed Globally"
@@ -19758,7 +19880,7 @@
               : status === "approved"
                 ? "verified"
                 : status === "rejected"
-                  ? "danger"
+                  ? "rejected"
                   : "pending"
           }`;
         }
@@ -20859,7 +20981,7 @@
           renderNewsTable();
 
           alert(
-            `✨ AI News Engine successfully generated ${countToGenerate} verified stories (400–800 chars, 3–5 sources each).\nMode: ${aiNewsEngineSettings.autoPublish ? "Automatically Published (24/7 Mode)" : "Routed to Pending Review"}.`,
+            `AI News Engine successfully generated ${countToGenerate} verified stories (400–800 chars, 3–5 sources each).\nMode: ${aiNewsEngineSettings.autoPublish ? "Automatically Published (24/7 Mode)" : "Routed to Pending Review"}.`,
           );
         };
       }
@@ -21059,6 +21181,24 @@
           articleId: null,
           author: "Tanya Morales (Community)",
         },
+        {
+          id: "ANN-306",
+          title: "Know Your Rights Week: Free Legal Workshops Across France",
+          body: "Draft copy pending legal review. Free multilingual rights workshops will run across Paris, Marseille, and Lyon with certified advocates and interpreters.",
+          category: "Community Notice",
+          channel: "in_app",
+          targetRegion: "france",
+          targetRole: "all",
+          targetTier: "free",
+          status: "Draft",
+          sentAt: "Not dispatched",
+          reachEstimate: 2100,
+          deliveredCount: 0,
+          openedCount: 0,
+          openRate: "0%",
+          articleId: null,
+          author: "Super Admin (Console)",
+        },
       ];
 
       let newsNotificationsList = [
@@ -21114,6 +21254,52 @@
       let notifAnnouncePageSize = 10;
       let notifNewsPage = 1;
       let notifNewsPageSize = 10;
+
+      // ── Shared pagination bar used by every module table ───────────
+      // Renders the standard control: record range + page-size select on the
+      // left, Previous / numbered pages / Next on the right.
+      function renderStandardPagination(container, totalItems, currentPage, pageSize, idPrefix, onPageChange, onPageSizeChange) {
+        if (!container) return;
+        if (totalItems <= 0) {
+          container.style.display = "none";
+          container.innerHTML = "";
+          return;
+        }
+        container.style.display = "flex";
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const page = Math.min(currentPage, totalPages);
+        const startRecord = (page - 1) * pageSize + 1;
+        const endRecord = Math.min(page * pageSize, totalItems);
+
+        container.innerHTML = `
+          <div class="pagination-left-info">
+            <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+            <select class="page-size-select" id="${idPrefix}PageSizeSelect" aria-label="Records per page">
+              ${[10, 25, 50, 75, 100, 500]
+                .map((sz) => `<option value="${sz}" ${pageSize === sz ? "selected" : ""}>${sz}</option>`)
+                .join("")}
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button class="page-btn pg-prev" ${page === 1 ? "disabled" : ""}>Previous</button>
+            ${Array.from(
+              { length: totalPages },
+              (_, i) => `<button class="page-btn pg-page ${page === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>`,
+            ).join("")}
+            <button class="page-btn pg-next" ${page === totalPages ? "disabled" : ""}>Next</button>
+          </div>
+        `;
+
+        const sizeSelect = container.querySelector(`#${idPrefix}PageSizeSelect`);
+        if (sizeSelect) sizeSelect.onchange = (e) => onPageSizeChange(Number(e.target.value));
+        const prevBtn = container.querySelector(".pg-prev");
+        if (prevBtn) prevBtn.onclick = () => { if (page > 1) onPageChange(page - 1); };
+        const nextBtn = container.querySelector(".pg-next");
+        if (nextBtn) nextBtn.onclick = () => { if (page < totalPages) onPageChange(page + 1); };
+        container.querySelectorAll(".pagination-controls [data-page]").forEach((btn) => {
+          btn.onclick = () => onPageChange(Number(btn.dataset.page));
+        });
+      }
 
       function renderNotificationPagination(container, totalItems, currentPage, pageSize, idPrefix, onPageChange, onPageSizeChange) {
         if (!container) return;
@@ -21219,30 +21405,18 @@
         return r ? `${r.flag} ${r.label}` : regionId;
       }
 
+      function getNotifStatusClass(status) {
+        return status === "Sent" ? "active" : status === "Scheduled" ? "pending" : "draft";
+      }
+
+      function nextAnnouncementId() {
+        const nums = announcementsList
+          .map((a) => parseInt(String(a.id).replace("ANN-", ""), 10))
+          .filter((n) => !isNaN(n));
+        return `ANN-${(nums.length ? Math.max(...nums) : 300) + 1}`;
+      }
+
       function renderNotificationKPIs() {
-        const total = announcementsList.length + newsNotificationsList.length;
-        const active = announcementsList.filter((a) => a.status === "Scheduled").length;
-        
-        let totalSent = 0;
-        let totalOpened = 0;
-        announcementsList.forEach((a) => {
-          if (a.status === "Sent") {
-            totalSent += a.deliveredCount || a.reachEstimate || 0;
-            totalOpened += a.openedCount || 0;
-          }
-        });
-        newsNotificationsList.forEach((n) => {
-          totalSent += n.sentCount || 0;
-          totalOpened += n.openCount || 0;
-        });
-
-        const avgOpen = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 71;
-
-        if ($("#kpiTotalBroadcasts")) $("#kpiTotalBroadcasts").textContent = total;
-        if ($("#kpiActiveBroadcasts")) $("#kpiActiveBroadcasts").textContent = active;
-        if ($("#kpiAvgOpenRate")) $("#kpiAvgOpenRate").textContent = `${avgOpen}%`;
-        if ($("#kpiTotalAudienceReach")) $("#kpiTotalAudienceReach").textContent = totalSent.toLocaleString();
-        
         if ($("#notifTabAnnouncementsCount")) $("#notifTabAnnouncementsCount").textContent = announcementsList.length;
         if ($("#notifTabNewsCount")) $("#notifTabNewsCount").textContent = newsNotificationsList.length;
       }
@@ -21276,7 +21450,7 @@
         const paged = filtered.slice(startIndex, startIndex + notifAnnouncePageSize);
 
         if (paged.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6"><div class="empty" style="display:block">No announcements match the selected criteria.</div></td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5"><div class="empty" style="display:block">No announcements match the selected criteria.</div></td></tr>';
           renderNotificationPagination($("#announcementsPagination"), 0, 1, notifAnnouncePageSize, "notifAnnounce", () => {}, () => {});
           return;
         }
@@ -21284,8 +21458,8 @@
         tbody.innerHTML = paged.map((a) => {
           const regionBadge = a.targetRegion === "all" ? "🌐 Global" : getRegionDisplayName(a.targetRegion);
           const roleBadge = a.targetRole === "all" ? "All Roles" : a.targetRole.toUpperCase();
-          const tierBadge = a.targetTier === "all" ? "All Tiers" : a.targetTier === "paid" ? "⭐ Paid" : "Free";
-          const statusClass = a.status === "Sent" ? "active" : a.status === "Scheduled" ? "draft" : "pending";
+          const statusClass = getNotifStatusClass(a.status);
+          const isDispatched = a.status === "Sent";
 
           return `
             <tr>
@@ -21303,7 +21477,7 @@
               <td>
                 <div style="display:flex;flex-direction:column;gap:3px">
                   <span style="font-size:12px;color:var(--text)">${regionBadge}</span>
-                  <div style="font-size:11px;color:var(--muted)">${roleBadge} · ${tierBadge}</div>
+                  <div style="font-size:11px;color:var(--muted)">${roleBadge}</div>
                 </div>
               </td>
               <td>
@@ -21312,18 +21486,20 @@
               <td>
                 <span class="badge ${statusClass}">${a.status}</span>
               </td>
-              <td>
-                <div style="font-size:12.5px;color:var(--text);font-weight:500">${(a.deliveredCount || a.reachEstimate || 0).toLocaleString()} reach</div>
-                <div style="font-size:11px;color:#059669">${a.openRate} open rate</div>
-              </td>
               <td style="text-align:right;padding-right:18px">
                 <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
                   <button class="action-icon-btn" onclick="openViewAnnouncementModal('${a.id}')" title="View Details" aria-label="View Details">
                     <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
-                  <button class="action-icon-btn" onclick="openResendAnnouncementPrompt('${a.id}')" title="Resend Announcement" aria-label="Resend Announcement" style="color:var(--accent)">
+                  ${
+                    isDispatched
+                      ? `<button class="action-icon-btn" onclick="openResendAnnouncementPrompt('${a.id}')" title="Resend Announcement" aria-label="Resend Announcement" style="color:var(--accent)">
                     <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                  </button>
+                  </button>`
+                      : `<button class="action-icon-btn" onclick="openEditAnnouncementModal('${a.id}')" title="Edit &amp; Dispatch" aria-label="Edit and Dispatch" style="color:var(--accent)">
+                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                  </button>`
+                  }
                   <button class="action-icon-btn delete-icon-btn" onclick="deleteAnnouncementPrompt('${a.id}')" title="Delete Announcement" aria-label="Delete Announcement">
                     <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
@@ -21356,7 +21532,11 @@
         if (!tbody) return;
 
         const searchVal = ($("#notifNewsSearchInput")?.value || "").toLowerCase().trim();
+        const newsRegionVal = $("#notifNewsRegionFilter")?.value || "All";
+        const newsStatusVal = $("#notifNewsStatusFilter")?.value || "All";
         let filtered = newsNotificationsList.filter((n) => {
+          if (newsRegionVal !== "All" && n.targetRegion !== newsRegionVal) return false;
+          if (newsStatusVal !== "All" && n.status !== newsStatusVal) return false;
           if (searchVal) {
             const matchH = (n.headline || "").toLowerCase().includes(searchVal);
             const matchId = (n.articleId || "").toLowerCase().includes(searchVal);
@@ -21372,7 +21552,7 @@
         const paged = filtered.slice(startIndex, startIndex + notifNewsPageSize);
 
         if (paged.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6"><div class="empty" style="display:block">No news notifications dispatched yet.</div></td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5"><div class="empty" style="display:block">No news notifications match the selected criteria.</div></td></tr>';
           renderNotificationPagination($("#newsNotifPagination"), 0, 1, notifNewsPageSize, "notifNews", () => {}, () => {});
           return;
         }
@@ -21380,6 +21560,7 @@
         tbody.innerHTML = paged.map((n) => {
           const regionBadge = n.targetRegion === "all" ? "🌐 Global" : getRegionDisplayName(n.targetRegion);
           const roleBadge = n.targetRole === "all" ? "All Roles" : n.targetRole.toUpperCase();
+          const isDispatched = n.status === "Sent";
 
           return `
             <tr>
@@ -21398,17 +21579,13 @@
                 <div style="font-size:11px;color:var(--muted)">${roleBadge}</div>
               </td>
               <td style="font-size:12px;color:var(--muted)">${n.sentAt}</td>
-              <td><span class="badge active">${n.status}</span></td>
-              <td>
-                <div style="font-size:12.5px;color:var(--text);font-weight:500">${n.openCount.toLocaleString()}</div>
-                <div style="font-size:11px;color:#059669">${n.openRate}</div>
-              </td>
+              <td><span class="badge ${getNotifStatusClass(n.status)}">${n.status}</span></td>
               <td style="text-align:right;padding-right:18px">
                 <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
                   <button class="action-icon-btn" onclick="loadNewsDetails('${n.articleId}', 'notifications')" title="View News Story" aria-label="View News Story">
                     <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
-                  <button class="action-icon-btn" onclick="openResendNewsPushPrompt('${n.id}')" title="Push Update" aria-label="Push Update" style="color:var(--accent)">
+                  <button class="action-icon-btn" onclick="openResendNewsPushPrompt('${n.id}')" title="${isDispatched ? "Re-push Notification" : "Send Now"}" aria-label="${isDispatched ? "Re-push Notification" : "Send Now"}" style="color:var(--accent)">
                     <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
                 </div>
@@ -21435,90 +21612,6 @@
         );
       }
 
-      function renderSegmentationBreakdown() {
-        // 1. Region Breakdown
-        const regionContainer = $("#segmentRegionStatsList");
-        if (regionContainer) {
-          const regionCounts = {};
-          GLOBAL_NOTIFICATION_REGIONS.forEach((r) => { if (r.id !== "all") regionCounts[r.id] = 0; });
-          allUsers.forEach((u) => {
-            if (u.status !== "deleted" && u.region && regionCounts[u.region] !== undefined) {
-              regionCounts[u.region]++;
-            }
-          });
-
-          const totalUsers = allUsers.filter((u) => u.status !== "deleted").length || 1;
-          regionContainer.innerHTML = Object.keys(regionCounts).map((regId) => {
-            const count = regionCounts[regId];
-            const pct = Math.round((count / totalUsers) * 100);
-            const estReach = (count * 1200).toLocaleString();
-            return `
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <div style="display:flex;justify-content:space-between;font-size:12.5px">
-                  <span style="font-weight:500;color:var(--text)">${getRegionDisplayName(regId)}</span>
-                  <span style="color:var(--muted)">~${estReach} users (${pct}%)</span>
-                </div>
-                <div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden">
-                  <div style="height:100%;width:${Math.max(pct, 5)}%;background:var(--accent);border-radius:4px"></div>
-                </div>
-              </div>
-            `;
-          }).join("");
-        }
-
-        // 2. Role Breakdown
-        const roleContainer = $("#segmentRoleStatsList");
-        if (roleContainer) {
-          const roleCounts = { member: 0, advocate: 0, moderator: 0 };
-          allUsers.forEach((u) => {
-            if (u.status !== "deleted" && roleCounts[u.role] !== undefined) roleCounts[u.role]++;
-          });
-          const totalUsers = allUsers.filter((u) => u.status !== "deleted").length || 1;
-          roleContainer.innerHTML = Object.keys(roleCounts).map((roleKey) => {
-            const count = roleCounts[roleKey];
-            const pct = Math.round((count / totalUsers) * 100);
-            const label = roleKey === "member" ? "Standard Members" : roleKey === "advocate" ? "Verified Advocates" : "Community Moderators";
-            return `
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <div style="display:flex;justify-content:space-between;font-size:12.5px">
-                  <span style="font-weight:500;color:var(--text)">${label}</span>
-                  <span style="color:var(--muted)">~${(count * 1200).toLocaleString()} users (${pct}%)</span>
-                </div>
-                <div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden">
-                  <div style="height:100%;width:${Math.max(pct, 5)}%;background:#10b981;border-radius:4px"></div>
-                </div>
-              </div>
-            `;
-          }).join("");
-        }
-
-        // 3. Tier Breakdown
-        const tierContainer = $("#segmentTierStatsList");
-        if (tierContainer) {
-          const tierCounts = { paid: 0, free: 0 };
-          allUsers.forEach((u) => {
-            if (u.status !== "deleted" && tierCounts[u.tier] !== undefined) tierCounts[u.tier]++;
-          });
-          const totalUsers = allUsers.filter((u) => u.status !== "deleted").length || 1;
-          tierContainer.innerHTML = Object.keys(tierCounts).map((tierKey) => {
-            const count = tierCounts[tierKey];
-            const pct = Math.round((count / totalUsers) * 100);
-            const label = tierKey === "paid" ? "⭐ Paid Subscribers (Supporters)" : "Free Community Tier";
-            return `
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <div style="display:flex;justify-content:space-between;font-size:12.5px">
-                  <span style="font-weight:500;color:var(--text)">${label}</span>
-                  <span style="color:var(--muted)">~${(count * 1200).toLocaleString()} users (${pct}%)</span>
-                </div>
-                <div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden">
-                  <div style="height:100%;width:${Math.max(pct, 5)}%;background:#f59e0b;border-radius:4px"></div>
-                </div>
-              </div>
-            `;
-          }).join("");
-        }
-      }
-
       function showNotificationsPage() {
         clearAllActive();
         closeAllSubMenus();
@@ -21531,7 +21624,6 @@
         renderNotificationKPIs();
         renderAnnouncementsTable();
         renderNewsNotificationsTable();
-        renderSegmentationBreakdown();
       }
 
       // Wire sidebar menu navigation
@@ -21547,8 +21639,6 @@
           document.querySelectorAll("#notificationTabs .tab").forEach((t) => t.classList.toggle("active", t === tab));
           $("#notifAnnouncementsPanel").style.display = activeNotifTab === "announcements" ? "block" : "none";
           $("#notifNewsPanel").style.display = activeNotifTab === "news" ? "block" : "none";
-          $("#notifSegmentsPanel").style.display = activeNotifTab === "segments" ? "block" : "none";
-          if (activeNotifTab === "segments") renderSegmentationBreakdown();
         };
       });
 
@@ -21557,12 +21647,22 @@
       $("#notifNewsSearchInput")?.addEventListener("input", () => { notifNewsPage = 1; renderNewsNotificationsTable(); });
 
       // Create Announcement Composer Modal
-      function openCreateAnnouncementModal(prefillStory = null, isNewsPushMode = false) {
+      let announcementEditingId = null;
+
+      function notifToast(title, body, kind) {
+        if (typeof window.bnToast === "function") window.bnToast(title, body, kind || "success");
+      }
+
+      function openCreateAnnouncementModal(prefillStory = null, isNewsPushMode = false, editRecord = null) {
         action = "create_announcement";
+        announcementEditingId = editRecord ? editRecord.id : null;
         const modalBox = $("#modal .modal");
         if (modalBox) modalBox.classList.add("modal-wide");
 
-        if (isNewsPushMode) {
+        if (editRecord) {
+          $("#modalTitle").textContent = `Edit Broadcast ${editRecord.id}`;
+          $("#modalText").textContent = `Update content, targeting, and delivery schedule for this ${editRecord.status.toLowerCase()} broadcast.`;
+        } else if (isNewsPushMode) {
           $("#modalTitle").textContent = "Broadcast News Notification";
           $("#modalText").textContent = "Compose a push broadcast directly from an approved news story or breaking event.";
         } else if (prefillStory) {
@@ -21593,19 +21693,6 @@
           { value: "moderator", label: "Queue Moderators Only" },
         ];
 
-        const tierOptions = [
-          { value: "all", label: "All Subscription Tiers" },
-          { value: "paid", label: "⭐ Paid Subscribers Only" },
-          { value: "free", label: "Free Tier Only" },
-        ];
-
-        const channelOptions = [
-          { value: "push_and_in_app", label: "Push Notification + In-App Notice" },
-          { value: "push_only", label: "Mobile Push Notification Only" },
-          { value: "in_app", label: "In-App Notice Drawer Only" },
-          { value: "banner_and_push", label: "Critical Priority Banner + Push" },
-        ];
-
         const storyOptions = [
           { value: "", label: isNewsPushMode ? "Select a news story to push..." : "None (General Announcement)" },
           ...newsStories.filter((s) => s.status === "Published" || s.status === "Approved").map((s) => ({
@@ -21614,10 +21701,18 @@
           })),
         ];
 
-        const defaultTitle = prefillStory ? `Breaking: ${prefillStory.title}` : "";
-        const defaultBody = prefillStory ? prefillStory.summary : "";
-        const defaultType = isNewsPushMode || prefillStory ? "News Alert" : "System Announcement";
-        const selectedStoryId = prefillStory ? prefillStory.id : "";
+        const defaultTitle = editRecord ? editRecord.title : prefillStory ? `Breaking: ${prefillStory.title}` : "";
+        const defaultBody = editRecord ? editRecord.body : prefillStory ? prefillStory.summary : "";
+        const defaultType = editRecord
+          ? editRecord.category
+          : isNewsPushMode || prefillStory
+            ? "News Alert"
+            : "System Announcement";
+        const selectedStoryId = editRecord ? editRecord.articleId || "" : prefillStory ? prefillStory.id : "";
+        const defaultRegion = editRecord ? editRecord.targetRegion : "all";
+        const defaultRole = editRecord ? editRecord.targetRole : "all";
+        const scheduleLater = editRecord ? editRecord.status === "Scheduled" : false;
+        const defaultScheduleAt = editRecord && editRecord.scheduleAt ? editRecord.scheduleAt : "";
         const titlePlaceholder = isNewsPushMode ? "Select a linked story above or enter a breaking headline..." : "e.g. Important Security Update or Community Alert";
         const bodyPlaceholder = isNewsPushMode ? "Select a linked story above or provide a concise push message..." : "Provide a concise, direct message for mobile push and in-app display...";
 
@@ -21661,17 +21756,11 @@
               <div style="display:flex;flex-direction:column;gap:10px">
                 <div>
                   <label style="margin-top:0;font-size:11.5px">Target Region</label>
-                  ${createCustomSelectHTML("announceInputRegion", regionOptions, "all")}
+                  ${createCustomSelectHTML("announceInputRegion", regionOptions, defaultRegion)}
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                  <div>
-                    <label style="margin-top:0;font-size:11.5px">User Role</label>
-                    ${createCustomSelectHTML("announceInputRole", roleOptions, "all")}
-                  </div>
-                  <div>
-                    <label style="margin-top:0;font-size:11.5px">Subscription Tier</label>
-                    ${createCustomSelectHTML("announceInputTier", tierOptions, "all")}
-                  </div>
+                <div>
+                  <label style="margin-top:0;font-size:11.5px">User Role</label>
+                  ${createCustomSelectHTML("announceInputRole", roleOptions, defaultRole)}
                 </div>
               </div>
 
@@ -21688,23 +21777,42 @@
               </div>
             </div>
 
-            <!-- Delivery Channels & Schedule -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
-              <div>
-                <label style="margin-top:0">Delivery Channel</label>
-                ${createCustomSelectHTML("announceInputChannel", channelOptions, "push_and_in_app")}
-              </div>
+            <!-- Dispatch Schedule -->
+            <div>
               <div>
                 <label style="margin-top:0">Dispatch Schedule</label>
                 <div style="display:flex;gap:12px;margin-top:8px">
-                  <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
-                    <input type="radio" name="announceScheduleType" value="now" checked style="cursor:pointer" />
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;white-space:nowrap">
+                    <input type="radio" name="announceScheduleType" value="now" ${scheduleLater ? "" : "checked"} style="cursor:pointer" />
                     <span>Send Immediately</span>
                   </label>
-                  <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
-                    <input type="radio" name="announceScheduleType" value="later" style="cursor:pointer" />
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;white-space:nowrap">
+                    <input type="radio" name="announceScheduleType" value="later" ${scheduleLater ? "checked" : ""} style="cursor:pointer" />
                     <span>Schedule</span>
                   </label>
+                </div>
+                <div id="announceScheduleAtWrap" style="margin-top:8px;${scheduleLater ? "" : "display:none"}">
+                  <input type="datetime-local" id="announceInputScheduleAt" value="${escapeHtml(defaultScheduleAt)}" style="width:100%;box-sizing:border-box" />
+                  <div id="announceScheduleError" class="field-error-msg" style="display:none">Select a future dispatch date and time.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Push Preview -->
+            <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+                <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="10.5" y1="18.5" x2="13.5" y2="18.5"/></svg>
+                Mobile Push Preview
+              </div>
+              <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+                <div style="width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">BN</div>
+                <div style="min-width:0;flex:1">
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+                    <span style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.3px">BLACK NEXA</span>
+                    <span id="announcePreviewTime" style="font-size:10.5px;color:var(--muted)">now</span>
+                  </div>
+                  <div id="announcePreviewTitle" style="font-size:13px;font-weight:600;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Announcement title preview</div>
+                  <div id="announcePreviewBody" style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Your message content will appear here as members will see it on their device.</div>
                 </div>
               </div>
             </div>
@@ -21712,7 +21820,7 @@
         `;
 
         const confirm = $("#confirm");
-        confirm.textContent = "Send Broadcast";
+        confirm.textContent = scheduleLater ? "Schedule Broadcast" : "Send Broadcast";
         confirm.className = "btn primary";
         confirm.style.background = "";
         confirm.style.opacity = "";
@@ -21723,7 +21831,10 @@
         const cancel = $("#cancel");
         cancel.textContent = "Cancel";
         cancel.className = "btn outline";
-        cancel.onclick = closeModal;
+        cancel.onclick = () => {
+          announcementEditingId = null;
+          closeModal();
+        };
 
         openModal();
         initCustomDropdowns();
@@ -21800,15 +21911,58 @@
         // Connect audience estimator listeners
         const regInput = $("#announceInputRegion");
         const roleInput = $("#announceInputRole");
-        const tierInput = $("#announceInputTier");
+
+        // Live mobile push preview mirrors exactly what members receive
+        const updatePreview = () => {
+          const pTitle = $("#announcePreviewTitle");
+          const pBody = $("#announcePreviewBody");
+          const pTime = $("#announcePreviewTime");
+          if (!pTitle) return;
+          const tVal = (titleInput?.value || "").trim();
+          const bVal = (bodyInput?.value || "").trim();
+          pTitle.textContent = tVal || "Announcement title preview";
+          pTitle.style.color = tVal ? "var(--text)" : "var(--muted)";
+          pBody.textContent = bVal || "Your message content will appear here as members will see it on their device.";
+          if (pTime) {
+            const later = document.querySelector('input[name="announceScheduleType"]:checked')?.value === "later";
+            const at = $("#announceInputScheduleAt")?.value;
+            pTime.textContent = later ? (at ? formatScheduleStamp(at) : "scheduled") : "now";
+          }
+        };
 
         const updateEstimator = () => {
-          updateAudienceEstimatorDisplay(regInput?.value || "all", roleInput?.value || "all", tierInput?.value || "all");
+          updateAudienceEstimatorDisplay(regInput?.value || "all", roleInput?.value || "all", "all");
+          updatePreview();
         };
 
         if (regInput) regInput.addEventListener("change", updateEstimator);
         if (roleInput) roleInput.addEventListener("change", updateEstimator);
-        if (tierInput) tierInput.addEventListener("change", updateEstimator);
+        if (titleInput) titleInput.addEventListener("input", updatePreview);
+        if (bodyInput) bodyInput.addEventListener("input", updatePreview);
+        if (storyHiddenInput) storyHiddenInput.addEventListener("change", () => setTimeout(updatePreview, 60));
+
+        // Schedule toggle reveals the dispatch date/time picker
+        const scheduleWrap = $("#announceScheduleAtWrap");
+        const scheduleAtInput = $("#announceInputScheduleAt");
+        document.querySelectorAll('input[name="announceScheduleType"]').forEach((radio) => {
+          radio.addEventListener("change", () => {
+            const later = radio.value === "later" && radio.checked;
+            if (scheduleWrap) scheduleWrap.style.display = later ? "block" : "none";
+            if ($("#confirm")) $("#confirm").textContent = later ? "Schedule Broadcast" : "Send Broadcast";
+            if (!later && $("#announceScheduleError")) {
+              $("#announceScheduleError").style.display = "none";
+              scheduleAtInput?.classList.remove("field-invalid");
+            }
+            updatePreview();
+          });
+        });
+        if (scheduleAtInput) {
+          scheduleAtInput.addEventListener("change", () => {
+            if ($("#announceScheduleError")) $("#announceScheduleError").style.display = "none";
+            scheduleAtInput.classList.remove("field-invalid");
+            updatePreview();
+          });
+        }
 
         // Also trigger on custom select option click
         document.querySelectorAll("#modal .custom-select-option").forEach((opt) => {
@@ -21818,6 +21972,23 @@
         updateEstimator();
       }
 
+      function formatScheduleStamp(value) {
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return value;
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        let hours = d.getHours();
+        const suffix = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12;
+        const mins = String(d.getMinutes()).padStart(2, "0");
+        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, "0")}, ${d.getFullYear()} ${String(hours).padStart(2, "0")}:${mins} ${suffix}`;
+      }
+
+      function openEditAnnouncementModal(id) {
+        const item = announcementsList.find((a) => a.id === id);
+        if (!item) return;
+        openCreateAnnouncementModal(null, false, item);
+      }
+
       function executeSendAnnouncement() {
         const titleInput = $("#announceInputTitle");
         const bodyInput = $("#announceInputBody");
@@ -21825,8 +21996,6 @@
         const storyInput = $("#announceInputStory");
         const regInput = $("#announceInputRegion");
         const roleInput = $("#announceInputRole");
-        const tierInput = $("#announceInputTier");
-        const channelInput = $("#announceInputChannel");
         const scheduleRadio = document.querySelector('input[name="announceScheduleType"]:checked');
 
         let hasError = false;
@@ -21841,42 +22010,57 @@
           hasError = true;
         }
 
+        const isLater = scheduleRadio && scheduleRadio.value === "later";
+        const scheduleAtInput = $("#announceInputScheduleAt");
+        const scheduleAtValue = scheduleAtInput?.value || "";
+        if (isLater) {
+          const when = new Date(scheduleAtValue);
+          if (!scheduleAtValue || isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+            if ($("#announceScheduleError")) $("#announceScheduleError").style.display = "block";
+            if (scheduleAtInput) scheduleAtInput.classList.add("field-invalid");
+            hasError = true;
+          }
+        }
+
         if (hasError) return;
 
-        const isLater = scheduleRadio && scheduleRadio.value === "later";
         const targetRegion = regInput?.value || "all";
         const targetRole = roleInput?.value || "all";
-        const targetTier = tierInput?.value || "all";
+        const targetTier = "all";
         const category = typeInput?.value || "System Announcement";
         const articleId = storyInput?.value || null;
-        const channel = channelInput?.value || "push_and_in_app";
         const estReach = calculateEstimatedAudience(targetRegion, targetRole, targetTier).count;
 
-        const newId = `ANN-${announcementsList.length + 301}`;
+        const editing = announcementEditingId ? announcementsList.find((a) => a.id === announcementEditingId) : null;
+        const newId = editing ? editing.id : nextAnnouncementId();
         const newRecord = {
           id: newId,
           title: titleInput.value.trim(),
           body: bodyInput.value.trim(),
           category: category,
-          channel: channel,
           targetRegion: targetRegion,
           targetRole: targetRole,
           targetTier: targetTier,
           status: isLater ? "Scheduled" : "Sent",
-          sentAt: isLater ? "Scheduled for Tomorrow 08:00 AM" : "Just now",
+          sentAt: isLater ? `Scheduled for ${formatScheduleStamp(scheduleAtValue)}` : "Just now",
+          scheduleAt: isLater ? scheduleAtValue : "",
           reachEstimate: estReach,
           deliveredCount: isLater ? 0 : Math.round(estReach * 0.98),
-          openedCount: isLater ? 0 : 0,
-          openRate: isLater ? "0%" : "0%",
+          openedCount: 0,
+          openRate: "0%",
           articleId: articleId,
           author: "Admin Console (Current User)",
         };
 
-        announcementsList.unshift(newRecord);
+        if (editing) {
+          announcementsList[announcementsList.indexOf(editing)] = newRecord;
+        } else {
+          announcementsList.unshift(newRecord);
+        }
+        announcementEditingId = null;
 
         // If it's a news notification, also log in news notifications table
-        if (articleId || category === "News Alert") {
-          const linkedStory = newsStories.find((s) => s.id === articleId);
+        if (!editing && (articleId || category === "News Alert")) {
           newsNotificationsList.unshift({
             id: `NOTIF-${newId}`,
             articleId: articleId || "NWS-CUSTOM",
@@ -21886,7 +22070,7 @@
             targetRole: targetRole,
             targetTier: targetTier,
             status: isLater ? "Scheduled" : "Sent",
-            sentAt: "Just now",
+            sentAt: isLater ? formatScheduleStamp(scheduleAtValue) : "Just now",
             sentCount: isLater ? 0 : estReach,
             openCount: 0,
             openRate: "0%",
@@ -21898,12 +22082,23 @@
         renderNotificationKPIs();
         renderAnnouncementsTable();
         renderNewsNotificationsTable();
-        renderSegmentationBreakdown();
 
-        alert(`Broadcast ${newId} ${isLater ? "scheduled" : "dispatched"} successfully to ~${estReach.toLocaleString()} recipients.`);
+        notifToast(
+          editing
+            ? `Broadcast ${newId} updated`
+            : isLater
+              ? `Broadcast ${newId} scheduled`
+              : `Broadcast ${newId} dispatched`,
+          isLater
+            ? `Queued for ${formatScheduleStamp(scheduleAtValue)} · ~${estReach.toLocaleString()} recipients.`
+            : `Delivered to ~${estReach.toLocaleString()} recipients.`,
+          "success"
+        );
       }
 
       function openViewAnnouncementModal(id) {
+        action = "";
+        announcementEditingId = null;
         const item = announcementsList.find((a) => a.id === id);
         if (!item) return;
 
@@ -21925,23 +22120,23 @@
                 <div style="font-weight:500;color:var(--text)">${item.targetRole === "all" ? "All Account Roles" : item.targetRole.toUpperCase()}</div>
               </div>
               <div>
-                <span style="color:var(--muted);font-size:11.5px">Subscription Tier</span>
-                <div style="font-weight:500;color:var(--text)">${item.targetTier === "all" ? "All Tiers (Free & Paid)" : item.targetTier.toUpperCase()}</div>
+                <span style="color:var(--muted);font-size:11.5px">${item.status === "Sent" ? "Dispatched Time" : "Dispatch Schedule"}</span>
+                <div style="font-weight:500;color:var(--text)">${escapeHtml(item.sentAt)}</div>
               </div>
               <div>
-                <span style="color:var(--muted);font-size:11.5px">Dispatched Time</span>
-                <div style="font-weight:500;color:var(--text)">${item.sentAt}</div>
+                <span style="color:var(--muted);font-size:11.5px">Status</span>
+                <div style="margin-top:2px"><span class="badge ${getNotifStatusClass(item.status)}">${item.status}</span></div>
               </div>
             </div>
 
             <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center">
               <div>
-                <div style="font-size:11.5px;color:var(--muted)">Verified Delivery Reach</div>
-                <div style="font-size:16px;font-weight:700;color:var(--text)">${(item.deliveredCount || item.reachEstimate || 0).toLocaleString()} Users</div>
+                <div style="font-size:11.5px;color:var(--muted)">${item.status === "Sent" ? "Verified Delivery Reach" : "Estimated Audience Reach"}</div>
+                <div style="font-size:16px;font-weight:700;color:var(--text)">${item.status === "Sent" ? (item.deliveredCount || item.reachEstimate || 0).toLocaleString() : "~" + (item.reachEstimate || 0).toLocaleString()} Users</div>
               </div>
               <div style="text-align:right">
                 <div style="font-size:11.5px;color:var(--muted)">Direct Open Rate</div>
-                <div style="font-size:16px;font-weight:700;color:#059669">${item.openRate} (${(item.openedCount || 0).toLocaleString()})</div>
+                <div style="font-size:16px;font-weight:700;color:${item.status === "Sent" ? "#059669" : "var(--muted)"}">${item.status === "Sent" ? `${item.openRate} (${(item.openedCount || 0).toLocaleString()})` : "Not yet delivered"}</div>
               </div>
             </div>
           </div>
@@ -21953,13 +22148,19 @@
         confirm.style.background = "";
         confirm.onclick = closeModal;
         const cancel = $("#cancel");
-        cancel.textContent = "Resend";
+        cancel.textContent = item.status === "Sent" ? "Resend" : "Edit";
         cancel.className = "btn outline";
-        cancel.onclick = () => { closeModal(); openResendAnnouncementPrompt(item.id); };
+        cancel.onclick = () => {
+          closeModal();
+          if (item.status === "Sent") openResendAnnouncementPrompt(item.id);
+          else openEditAnnouncementModal(item.id);
+        };
         openModal();
       }
 
       function openResendAnnouncementPrompt(id) {
+        action = "";
+        announcementEditingId = null;
         const item = announcementsList.find((a) => a.id === id);
         if (!item) return;
 
@@ -21977,7 +22178,7 @@
           closeModal();
           renderAnnouncementsTable();
           renderNotificationKPIs();
-          alert(`Broadcast ${item.id} re-sent successfully.`);
+          notifToast(`Broadcast ${item.id} re-sent`, `Re-dispatched to ${getRegionDisplayName(item.targetRegion)}.`, "success");
         };
         const cancel = $("#cancel");
         cancel.textContent = "Cancel";
@@ -21987,6 +22188,8 @@
       }
 
       function deleteAnnouncementPrompt(id) {
+        action = "";
+        announcementEditingId = null;
         const item = announcementsList.find((a) => a.id === id);
         if (!item) return;
 
@@ -22005,6 +22208,7 @@
           closeModal();
           renderAnnouncementsTable();
           renderNotificationKPIs();
+          notifToast(`Announcement ${id} deleted`, "Removed from console dispatch logs.", "success");
         };
         const cancel = $("#cancel");
         cancel.textContent = "Cancel";
@@ -22018,6 +22222,8 @@
       }
 
       function openResendNewsPushPrompt(id) {
+        action = "";
+        announcementEditingId = null;
         const notif = newsNotificationsList.find((n) => n.id === id);
         if (!notif) return;
 
@@ -22030,10 +22236,12 @@
         confirm.className = "btn primary";
         confirm.style.background = "";
         confirm.onclick = () => {
-          notif.sentAt = "Just now (Re-pushed)";
+          notif.sentAt = notif.status === "Sent" ? "Just now (Re-pushed)" : "Just now";
+          notif.status = "Sent";
           closeModal();
           renderNewsNotificationsTable();
-          alert(`Push notification for story ${notif.articleId} dispatched to verified subscribers.`);
+          renderNotificationKPIs();
+          notifToast(`Push sent for ${notif.articleId}`, "Dispatched to targeted subscribers with deep link.", "success");
         };
         const cancel = $("#cancel");
         cancel.textContent = "Cancel";
@@ -22046,7 +22254,7 @@
       function openComposeNewsPushModal() {
         const eligibleStories = newsStories.filter((s) => s.status === "Published" || s.status === "Approved");
         if (eligibleStories.length === 0) {
-          alert("No published or approved news stories available to push.");
+          notifToast("No eligible stories", "Publish or approve a news story before broadcasting a push.", "warning");
           return;
         }
         openCreateAnnouncementModal(null, true);
@@ -22055,16 +22263,6 @@
       // Attach button events
       $("#btnOpenCreateAnnouncementModal")?.addEventListener("click", () => openCreateAnnouncementModal());
       $("#btnComposeNewsPush")?.addEventListener("click", openComposeNewsPushModal);
-      $("#btnExportNotificationLogs")?.addEventListener("click", () => {
-        const logData = JSON.stringify({ announcements: announcementsList, newsNotifications: newsNotificationsList }, null, 2);
-        const blob = new Blob([logData], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `blacknexa-broadcast-audit-log-${new Date().toISOString().split("T")[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      });
 
       // Filter select change listeners
       ["#notifTypeFilter", "#notifRegionFilter", "#notifStatusFilter"].forEach((sel) => {
@@ -22077,33 +22275,671 @@
         }
       });
 
+      ["#notifNewsRegionFilter", "#notifNewsStatusFilter"].forEach((sel) => {
+        const input = document.querySelector(sel);
+        if (input) {
+          input.addEventListener("change", () => {
+            notifNewsPage = 1;
+            renderNewsNotificationsTable();
+          });
+        }
+      });
+
+
+      // ═══════════════════════════════════════════════════════════════
+      // SETTINGS CONTROLLER
+      // Scope: incident categories & custom fields, roles & permissions,
+      // security policy (passwords / sessions), and the admin audit log.
+      // ═══════════════════════════════════════════════════════════════
+
+      let incidentCategories = [
+        { id: "ICT-001", name: "Policing", status: "active" },
+        { id: "ICT-002", name: "Profiling", status: "active" },
+        { id: "ICT-003", name: "Housing", status: "active" },
+        { id: "ICT-004", name: "Workplace", status: "active" },
+        { id: "ICT-005", name: "Education", status: "active" },
+        { id: "ICT-006", name: "Medical", status: "active" },
+        { id: "ICT-007", name: "Digital", status: "active" },
+        { id: "ICT-008", name: "Harassment", status: "active" },
+        { id: "ICT-009", name: "Abuse", status: "inactive" },
+      ];
+
+      let incidentCustomFields = [
+        { id: "FLD-001", label: "Officer Badge Number", type: "text", appliesTo: "Policing", required: false },
+        { id: "FLD-002", label: "Force / Department Name", type: "text", appliesTo: "Policing", required: true },
+        { id: "FLD-003", label: "Landlord or Agency", type: "text", appliesTo: "Housing", required: false },
+        { id: "FLD-004", label: "Employer Name", type: "text", appliesTo: "Workplace", required: true },
+        { id: "FLD-005", label: "Witnesses Present", type: "checkbox", appliesTo: "All Categories", required: false },
+        { id: "FLD-006", label: "Date of Occurrence", type: "date", appliesTo: "All Categories", required: true },
+      ];
+
+      const SETTINGS_FIELD_TYPES = [
+        { value: "text", label: "Single-line Text" },
+        { value: "textarea", label: "Paragraph Text" },
+        { value: "number", label: "Number" },
+        { value: "date", label: "Date" },
+        { value: "dropdown", label: "Dropdown" },
+        { value: "checkbox", label: "Checkbox" },
+      ];
+
+      let setCategoryPage = 1;
+      let setCategoryPageSize = 10;
+      let setFieldPage = 1;
+      let setFieldPageSize = 10;
+      let setRolePage = 1;
+      let setRolePageSize = 10;
+      let setAuditPage = 1;
+      let setAuditPageSize = 10;
+      let activeSettingsTab = "incidents";
+
+      // Admin actions taken in Settings are written to the compliance audit log.
+      function logSettingsAction(actionText, target) {
+        if (typeof window.bnAudit === "function") {
+          window.bnAudit({ action: actionText, target: target || "System settings" });
+        }
+        renderSettingsAudit();
+      }
+
+      function settingsFieldTypeLabel(type) {
+        const t = SETTINGS_FIELD_TYPES.find((o) => o.value === type);
+        return t ? t.label : type;
+      }
+
+      function incidentCountForCategory(name) {
+        if (typeof allIncidents === "undefined" || !Array.isArray(allIncidents)) return 0;
+        return allIncidents.filter((i) => i.category === name).length;
+      }
+
+      // ── Tab 1a: incident categories ────────────────────────────────
+      function renderSettingsCategories() {
+        const tbody = $("#setCategoriesBody");
+        if (!tbody) return;
+        const q = ($("#setCategorySearch")?.value || "").trim().toLowerCase();
+        const filtered = incidentCategories.filter((c) => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
+
+        const totalPages = Math.max(1, Math.ceil(filtered.length / setCategoryPageSize));
+        if (setCategoryPage > totalPages) setCategoryPage = totalPages;
+        const start = (setCategoryPage - 1) * setCategoryPageSize;
+        const rows = filtered.slice(start, start + setCategoryPageSize);
+
+        tbody.innerHTML = rows.length
+          ? rows
+              .map(
+                (c) => `
+          <tr>
+            <td><strong>${escapeHtml(c.name)}</strong><div class="muted" style="font-size:11px;margin-top:3px">${c.id}</div></td>
+            <td>${incidentCountForCategory(c.name)}</td>
+            <td><span class="badge ${c.status === "active" ? "active" : "draft"}">${c.status === "active" ? "Active" : "Inactive"}</span></td>
+            <td style="text-align:right;padding-right:18px">
+              <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
+                <button class="action-icon-btn" onclick="openIncidentCategoryModal('${c.id}')" title="Edit Category" aria-label="Edit Category">
+                  <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="action-icon-btn ${c.status === "active" ? "delete-icon-btn" : ""}" onclick="toggleIncidentCategory('${c.id}')" title="${c.status === "active" ? "Disable / Make Inactive" : "Enable / Make Active"}" aria-label="Toggle availability" ${c.status !== "active" ? 'style="color: #059669"' : ""}>
+                  ${c.status === "active"
+                    ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>'
+                    : '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'}
+                </button>
+                <button class="action-icon-btn delete-icon-btn" onclick="deleteIncidentCategoryPrompt('${c.id}')" title="Delete Category" aria-label="Delete Category">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="4"><div class="empty" style="display:block">No incident categories found.</div></td></tr>';
+
+        renderStandardPagination(
+          $("#setCategoriesPagination"),
+          filtered.length,
+          setCategoryPage,
+          setCategoryPageSize,
+          "setCategories",
+          (page) => { setCategoryPage = page; renderSettingsCategories(); },
+          (size) => { setCategoryPageSize = size; setCategoryPage = 1; renderSettingsCategories(); },
+        );
+      }
+
+      function openIncidentCategoryModal(id) {
+        const item = id ? incidentCategories.find((c) => c.id === id) : null;
+        action = "";
+        $("#modalTitle").textContent = item ? `Edit Category ${item.id}` : "Add Incident Category";
+        $("#modalText").textContent = "Categories appear in the incident report form and console filters.";
+        $("#form").innerHTML = `
+          <div>
+            <label style="margin-top:0">Category Name <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="setCatNameInput" value="${item ? escapeHtml(item.name) : ""}" placeholder="e.g. Policing" style="width:100%;box-sizing:border-box" />
+            <div id="setCatNameError" class="field-error-msg" style="display:none">Enter a unique category name.</div>
+          </div>
+          <div style="margin-top:12px">
+            <label style="margin-top:0">Status</label>
+            ${createCustomSelectHTML("setCatStatusInput", [
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ], item ? item.status : "active")}
+          </div>`;
+        const confirm = $("#confirm");
+        confirm.textContent = item ? "Save Category" : "Add Category";
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          const input = $("#setCatNameInput");
+          const name = (input?.value || "").trim();
+          const dupe = incidentCategories.some((c) => c.name.toLowerCase() === name.toLowerCase() && (!item || c.id !== item.id));
+          if (!name || dupe) {
+            if ($("#setCatNameError")) {
+              $("#setCatNameError").textContent = !name ? "Enter a unique category name." : "That category already exists.";
+              $("#setCatNameError").style.display = "block";
+            }
+            input?.classList.add("field-invalid");
+            return;
+          }
+          const status = $("#setCatStatusInput")?.value || "active";
+          if (item) {
+            item.name = name;
+            item.status = status;
+          } else {
+            const nums = incidentCategories.map((c) => parseInt(c.id.replace("ICT-", ""), 10)).filter((n) => !isNaN(n));
+            incidentCategories.push({ id: `ICT-${String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, "0")}`, name, status });
+          }
+          closeModal();
+          renderSettingsCategories();
+          logSettingsAction(item ? "Incident category updated" : "Incident category created", name);
+          notifToast(item ? "Category updated" : "Category added", `${name} saved to incident configuration.`, "success");
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = closeModal;
+        openModal();
+        initCustomDropdowns();
+        $("#setCatNameInput")?.addEventListener("input", () => {
+          $("#setCatNameError").style.display = "none";
+          $("#setCatNameInput").classList.remove("field-invalid");
+        });
+      }
+
+      function toggleIncidentCategory(id) {
+        const item = incidentCategories.find((c) => c.id === id);
+        if (!item) return;
+        item.status = item.status === "active" ? "inactive" : "active";
+        renderSettingsCategories();
+        logSettingsAction(`Incident category ${item.status === "active" ? "enabled" : "disabled"}`, item.name);
+        notifToast(`Category ${item.status === "active" ? "enabled" : "disabled"}`, `${item.name} is now ${item.status}.`, "success");
+      }
+
+      function deleteIncidentCategoryPrompt(id) {
+        const item = incidentCategories.find((c) => c.id === id);
+        if (!item) return;
+        action = "";
+        const used = incidentCountForCategory(item.name);
+        $("#modalTitle").textContent = `Delete Category ${item.id}?`;
+        $("#modalText").textContent = used
+          ? `${item.name} is used by ${used} incident${used === 1 ? "" : "s"}. Those reports keep their existing category label.`
+          : `${item.name} will no longer be available on the incident report form.`;
+        $("#form").innerHTML = "";
+        const confirm = $("#confirm");
+        confirm.textContent = "Delete Category";
+        confirm.className = "btn danger";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          incidentCategories = incidentCategories.filter((c) => c.id !== id);
+          confirm.className = "btn primary";
+          closeModal();
+          renderSettingsCategories();
+          logSettingsAction("Incident category deleted", item.name);
+          notifToast("Category deleted", `${item.name} removed from incident configuration.`, "success");
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = () => { confirm.className = "btn primary"; closeModal(); };
+        openModal();
+      }
+
+      // ── Tab 1b: custom incident fields ─────────────────────────────
+      function renderSettingsFields() {
+        const tbody = $("#setFieldsBody");
+        if (!tbody) return;
+        const totalPages = Math.max(1, Math.ceil(incidentCustomFields.length / setFieldPageSize));
+        if (setFieldPage > totalPages) setFieldPage = totalPages;
+        const start = (setFieldPage - 1) * setFieldPageSize;
+        const rows = incidentCustomFields.slice(start, start + setFieldPageSize);
+
+        tbody.innerHTML = rows.length
+          ? rows
+              .map(
+                (f) => `
+          <tr>
+            <td><strong>${escapeHtml(f.label)}</strong><div class="muted" style="font-size:11px;margin-top:3px">${f.id}</div></td>
+            <td>${escapeHtml(settingsFieldTypeLabel(f.type))}</td>
+            <td>${escapeHtml(f.appliesTo)}</td>
+            <td><span class="badge ${f.required ? "active" : "draft"}">${f.required ? "Required" : "Optional"}</span></td>
+            <td style="text-align:right;padding-right:18px">
+              <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
+                <button class="action-icon-btn" onclick="openCustomFieldModal('${f.id}')" title="Edit Field" aria-label="Edit Field">
+                  <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="action-icon-btn delete-icon-btn" onclick="deleteCustomFieldPrompt('${f.id}')" title="Delete Field" aria-label="Delete Field">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="5"><div class="empty" style="display:block">No custom fields configured.</div></td></tr>';
+
+        renderStandardPagination(
+          $("#setFieldsPagination"),
+          incidentCustomFields.length,
+          setFieldPage,
+          setFieldPageSize,
+          "setFields",
+          (page) => { setFieldPage = page; renderSettingsFields(); },
+          (size) => { setFieldPageSize = size; setFieldPage = 1; renderSettingsFields(); },
+        );
+      }
+
+      function openCustomFieldModal(id) {
+        const item = id ? incidentCustomFields.find((f) => f.id === id) : null;
+        action = "";
+        $("#modalTitle").textContent = item ? `Edit Field ${item.id}` : "Add Custom Field";
+        $("#modalText").textContent = "Custom fields are shown on the incident report form for the selected category.";
+        const catOptions = [{ value: "All Categories", label: "All Categories" }].concat(
+          incidentCategories.filter((c) => c.status === "active").map((c) => ({ value: c.name, label: c.name })),
+        );
+        $("#form").innerHTML = `
+          <div>
+            <label style="margin-top:0">Field Label <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="setFieldLabelInput" value="${item ? escapeHtml(item.label) : ""}" placeholder="e.g. Officer Badge Number" style="width:100%;box-sizing:border-box" />
+            <div id="setFieldLabelError" class="field-error-msg" style="display:none">Field label is required.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+            <div>
+              <label style="margin-top:0">Field Type</label>
+              ${createCustomSelectHTML("setFieldTypeInput", SETTINGS_FIELD_TYPES, item ? item.type : "text")}
+            </div>
+            <div>
+              <label style="margin-top:0">Applies To</label>
+              ${createCustomSelectHTML("setFieldCategoryInput", catOptions, item ? item.appliesTo : "All Categories")}
+            </div>
+          </div>
+          <div class="switch-toggle-row" style="margin-top:14px">
+            <div>
+              <div class="switch-toggle-label">Required Field</div>
+              <div class="switch-toggle-sub">Reporters must complete this before submitting</div>
+            </div>
+            <label class="switch-toggle"><input type="checkbox" id="setFieldRequiredInput" ${item && item.required ? "checked" : ""} /><span class="switch-slider"></span></label>
+          </div>`;
+        const confirm = $("#confirm");
+        confirm.textContent = item ? "Save Field" : "Add Field";
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          const input = $("#setFieldLabelInput");
+          const label = (input?.value || "").trim();
+          if (!label) {
+            $("#setFieldLabelError").style.display = "block";
+            input?.classList.add("field-invalid");
+            return;
+          }
+          const type = $("#setFieldTypeInput")?.value || "text";
+          const appliesTo = $("#setFieldCategoryInput")?.value || "All Categories";
+          const required = !!$("#setFieldRequiredInput")?.checked;
+          if (item) {
+            Object.assign(item, { label, type, appliesTo, required });
+          } else {
+            const nums = incidentCustomFields.map((f) => parseInt(f.id.replace("FLD-", ""), 10)).filter((n) => !isNaN(n));
+            incidentCustomFields.push({ id: `FLD-${String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, "0")}`, label, type, appliesTo, required });
+          }
+          closeModal();
+          renderSettingsFields();
+          logSettingsAction(item ? "Custom incident field updated" : "Custom incident field created", label);
+          notifToast(item ? "Field updated" : "Field added", `${label} saved to the incident form.`, "success");
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = closeModal;
+        openModal();
+        initCustomDropdowns();
+        $("#setFieldLabelInput")?.addEventListener("input", () => {
+          $("#setFieldLabelError").style.display = "none";
+          $("#setFieldLabelInput").classList.remove("field-invalid");
+        });
+      }
+
+      function deleteCustomFieldPrompt(id) {
+        const item = incidentCustomFields.find((f) => f.id === id);
+        if (!item) return;
+        action = "";
+        $("#modalTitle").textContent = `Delete Field ${item.id}?`;
+        $("#modalText").textContent = `${item.label} will be removed from the incident report form.`;
+        $("#form").innerHTML = "";
+        const confirm = $("#confirm");
+        confirm.textContent = "Delete Field";
+        confirm.className = "btn danger";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          incidentCustomFields = incidentCustomFields.filter((f) => f.id !== id);
+          confirm.className = "btn primary";
+          closeModal();
+          renderSettingsFields();
+          logSettingsAction("Custom incident field deleted", item.label);
+          notifToast("Field deleted", `${item.label} removed from the incident form.`, "success");
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = () => { confirm.className = "btn primary"; closeModal(); };
+        openModal();
+      }
+
+      // ── Tab 2: roles & permissions ─────────────────────────────────
+      // Super Admin always retains full access, so it is not shown as an editable column.
+      const SETTINGS_ROLE_KEYS = ["moderator", "advocate", "staff"];
+      const SETTINGS_PERMISSION_LABELS = {
+        "users.view": "Users — View directory",
+        "users.edit": "Users — Edit profile",
+        "users.role": "Users — Change role",
+        "users.suspend": "Users — Suspend / reactivate",
+        "users.delete": "Users — Delete account",
+        "users.bulk": "Users — Bulk actions",
+        "incidents.view": "Incidents — View cases",
+        "incidents.verify": "Incidents — Verify",
+        "incidents.dismiss": "Incidents — Dismiss",
+        "incidents.notes": "Incidents — Add notes",
+        "incidents.assign": "Incidents — Assign",
+        "incidents.deactivate": "Incidents — Deactivate",
+        "moderation.view": "Moderation — View queue",
+        "moderation.decide": "Moderation — Approve / reject",
+        "moderation.ban": "Moderation — Ban / warn",
+        "moderation.keywords": "Moderation — Keyword rules",
+        "staff.view": "Staff — View directory",
+        "staff.create": "Staff — Create account",
+        "staff.edit": "Staff — Edit account",
+        "staff.role": "Staff — Change role",
+        "staff.reset": "Staff — Reset password",
+        "staff.toggle": "Staff — Enable / disable",
+        "staff.delete": "Staff — Delete account",
+        "audit.view": "Compliance — View audit log",
+      };
+
+      let roleMatrixDraft = null;
+
+      function buildRoleMatrixDraft() {
+        const draft = {};
+        SETTINGS_ROLE_KEYS.forEach((r) => {
+          draft[r] = {};
+          const can = (window.PERMISSIONS && window.PERMISSIONS[r] && window.PERMISSIONS[r].can) || {};
+          Object.keys(SETTINGS_PERMISSION_LABELS).forEach((k) => {
+            draft[r][k] = !!can[k];
+          });
+        });
+        return draft;
+      }
+
+      function setRoleMatrixDirty(dirty) {
+        const btn = $("#btnSaveRoleMatrix");
+        if (btn) btn.disabled = !dirty;
+      }
+
+      function renderSettingsRoles() {
+        const tbody = $("#setRolesMatrixBody");
+        if (!tbody) return;
+        if (!roleMatrixDraft) roleMatrixDraft = buildRoleMatrixDraft();
+
+        const q = ($("#setRoleSearch")?.value || "").trim().toLowerCase();
+        const keys = Object.keys(SETTINGS_PERMISSION_LABELS).filter(
+          (k) => !q || SETTINGS_PERMISSION_LABELS[k].toLowerCase().includes(q) || k.toLowerCase().includes(q),
+        );
+
+        const totalPages = Math.max(1, Math.ceil(keys.length / setRolePageSize));
+        if (setRolePage > totalPages) setRolePage = totalPages;
+        const start = (setRolePage - 1) * setRolePageSize;
+        const rows = keys.slice(start, start + setRolePageSize);
+
+        tbody.innerHTML = rows.length
+          ? rows
+              .map(
+                (k) => `
+          <tr>
+            <td><strong style="font-size:13px">${escapeHtml(SETTINGS_PERMISSION_LABELS[k])}</strong><div class="muted" style="font-size:11px;margin-top:3px">${k}</div></td>
+            ${SETTINGS_ROLE_KEYS.map(
+              (r) => `<td style="text-align:center">
+              <label class="switch-toggle">
+                <input type="checkbox" data-role="${r}" data-perm="${k}" ${roleMatrixDraft[r][k] ? "checked" : ""} />
+                <span class="switch-slider"></span>
+              </label>
+            </td>`,
+            ).join("")}
+          </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="4"><div class="empty" style="display:block">No permissions match your search.</div></td></tr>';
+
+        tbody.querySelectorAll("input[data-perm]").forEach((cb) => {
+          cb.onchange = () => {
+            roleMatrixDraft[cb.dataset.role][cb.dataset.perm] = cb.checked;
+            setRoleMatrixDirty(true);
+          };
+        });
+
+        renderStandardPagination(
+          $("#setRolesPagination"),
+          keys.length,
+          setRolePage,
+          setRolePageSize,
+          "setRoles",
+          (page) => { setRolePage = page; renderSettingsRoles(); },
+          (size) => { setRolePageSize = size; setRolePage = 1; renderSettingsRoles(); },
+        );
+      }
+
+      // ── Tab 3: security policy ─────────────────────────────────────
+      let securityPolicy = {
+        pwdMinLength: 12,
+        pwdExpiryDays: 90,
+        pwdMaxAttempts: 5,
+        pwdUpper: true,
+        pwdNumber: true,
+        pwdSymbol: true,
+        pwdReuse: true,
+        sessionIdle: 30,
+        sessionMax: 12,
+        sessionForce: true,
+        sessionSingle: false,
+      };
+
+      const SECURITY_FIELDS = [
+        ["setPwdMinLength", "pwdMinLength", 6, 64, "setPwdMinLengthError"],
+        ["setPwdExpiryDays", "pwdExpiryDays", 0, 365, "setPwdExpiryError"],
+        ["setPwdMaxAttempts", "pwdMaxAttempts", 1, 20, "setPwdAttemptsError"],
+        ["setSessionIdle", "sessionIdle", 1, 480, "setSessionIdleError"],
+        ["setSessionMax", "sessionMax", 1, 72, "setSessionMaxError"],
+      ];
+      const SECURITY_TOGGLES = [
+        ["setPwdUpper", "pwdUpper"],
+        ["setPwdNumber", "pwdNumber"],
+        ["setPwdSymbol", "pwdSymbol"],
+        ["setPwdReuse", "pwdReuse"],
+        ["setSessionForce", "sessionForce"],
+        ["setSessionSingle", "sessionSingle"],
+      ];
+
+      function renderSettingsSecurity() {
+        SECURITY_FIELDS.forEach(([elId, key, , , errId]) => {
+          const el = $("#" + elId);
+          if (el) el.value = securityPolicy[key];
+          if ($("#" + errId)) $("#" + errId).style.display = "none";
+          el?.classList.remove("field-invalid");
+        });
+        SECURITY_TOGGLES.forEach(([elId, key]) => {
+          const el = $("#" + elId);
+          if (el) el.checked = !!securityPolicy[key];
+        });
+      }
+
+      function saveSecuritySettings() {
+        let ok = true;
+        const pending = {};
+        SECURITY_FIELDS.forEach(([elId, key, min, max, errId]) => {
+          const el = $("#" + elId);
+          const val = Number(el?.value);
+          const invalid = el?.value === "" || isNaN(val) || val < min || val > max;
+          if ($("#" + errId)) $("#" + errId).style.display = invalid ? "block" : "none";
+          if (el) el.classList.toggle("field-invalid", invalid);
+          if (invalid) ok = false;
+          else pending[key] = val;
+        });
+        if (!ok) return;
+        Object.assign(securityPolicy, pending);
+        SECURITY_TOGGLES.forEach(([elId, key]) => {
+          securityPolicy[key] = !!$("#" + elId)?.checked;
+        });
+        logSettingsAction("Security policy updated", "Password policy & session timeouts");
+        notifToast("Security settings saved", "Password policy and session timeouts updated.", "success");
+      }
+
+      // ── Tab 4: admin audit log ─────────────────────────────────────
+      function renderSettingsAudit() {
+        const tbody = $("#setAuditBody");
+        if (!tbody) return;
+        const entries = Array.isArray(window.auditLog) ? window.auditLog : [];
+        const q = ($("#setAuditSearch")?.value || "").trim().toLowerCase();
+        const actionFilter = $("#setAuditActionFilter")?.value || "All";
+
+        const filtered = entries.filter((e) => {
+          const hay = `${e.actor} ${e.action} ${e.target}`.toLowerCase();
+          if (q && hay.indexOf(q) === -1) return false;
+          if (actionFilter !== "All" && e.action.toLowerCase().indexOf(actionFilter.toLowerCase()) === -1) return false;
+          return true;
+        });
+
+        const totalPages = Math.max(1, Math.ceil(filtered.length / setAuditPageSize));
+        if (setAuditPage > totalPages) setAuditPage = totalPages;
+        const start = (setAuditPage - 1) * setAuditPageSize;
+        const rows = filtered.slice(start, start + setAuditPageSize);
+
+        tbody.innerHTML = rows.length
+          ? rows
+              .map(
+                (e) => `
+          <tr>
+            <td><span class="audit-mono">${escapeHtml(e.ts)}</span></td>
+            <td><span class="cell-truncate" title="${escapeHtml(e.actor)}">${escapeHtml(e.actor)}</span></td>
+            <td>${escapeHtml(e.action)}</td>
+            <td><span class="cell-truncate" title="${escapeHtml(e.target)}">${escapeHtml(e.target)}</span><br><span class="audit-mono">IP ${escapeHtml(e.ip)}</span></td>
+            <td><span class="audit-result ${escapeHtml(e.result)}">${e.result === "success" ? "Success" : e.result === "failed" ? "Failed" : "Blocked"}</span></td>
+          </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="5"><div class="empty" style="display:block">No audit entries match your filters.</div></td></tr>';
+
+        renderStandardPagination(
+          $("#setAuditPagination"),
+          filtered.length,
+          setAuditPage,
+          setAuditPageSize,
+          "setAudit",
+          (page) => { setAuditPage = page; renderSettingsAudit(); },
+          (size) => { setAuditPageSize = size; setAuditPage = 1; renderSettingsAudit(); },
+        );
+      }
+
+      // ── Page wiring ────────────────────────────────────────────────
+      function showSettingsPage() {
+        clearAllActive();
+        closeAllSubMenus();
+        const menu = $("#settingsNavMenu");
+        if (menu) menu.classList.add("active");
+        hideAllSections();
+        const view = $("#settingsView");
+        if (view) view.style.display = "block";
+        initCustomDropdowns();
+        renderSettingsCategories();
+        renderSettingsFields();
+        renderSettingsRoles();
+        renderSettingsSecurity();
+        renderSettingsAudit();
+      }
+
+      $("#settingsNavMenu")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        showSettingsPage();
+      });
+
+      document.querySelectorAll("#settingsTabs [data-settings-tab]").forEach((tab) => {
+        tab.onclick = () => {
+          activeSettingsTab = tab.dataset.settingsTab;
+          document.querySelectorAll("#settingsTabs .tab").forEach((t) => t.classList.toggle("active", t === tab));
+          $("#settingsIncidentsPanel").style.display = activeSettingsTab === "incidents" ? "block" : "none";
+          $("#settingsRolesPanel").style.display = activeSettingsTab === "roles" ? "block" : "none";
+          $("#settingsSecurityPanel").style.display = activeSettingsTab === "security" ? "block" : "none";
+          $("#settingsAuditPanel").style.display = activeSettingsTab === "audit" ? "block" : "none";
+          if (activeSettingsTab === "roles") renderSettingsRoles();
+          if (activeSettingsTab === "audit") renderSettingsAudit();
+        };
+      });
+
+      $("#setCategorySearch")?.addEventListener("input", () => { setCategoryPage = 1; renderSettingsCategories(); });
+      $("#setRoleSearch")?.addEventListener("input", () => { setRolePage = 1; renderSettingsRoles(); });
+      $("#setAuditSearch")?.addEventListener("input", () => { setAuditPage = 1; renderSettingsAudit(); });
+      $("#setAuditActionFilter")?.addEventListener("change", () => { setAuditPage = 1; renderSettingsAudit(); });
+      $("#btnAddIncidentCategory")?.addEventListener("click", () => openIncidentCategoryModal(null));
+      $("#btnAddCustomField")?.addEventListener("click", () => openCustomFieldModal(null));
+      $("#btnSaveRoleMatrix")?.addEventListener("click", () => {
+        SETTINGS_ROLE_KEYS.forEach((r) => {
+          if (window.PERMISSIONS && window.PERMISSIONS[r]) {
+            const can = {};
+            Object.keys(roleMatrixDraft[r]).forEach((k) => {
+              if (roleMatrixDraft[r][k]) can[k] = 1;
+            });
+            window.PERMISSIONS[r].can = can;
+          }
+        });
+        setRoleMatrixDirty(false);
+        if (typeof window.bnApplyPermissions === "function") window.bnApplyPermissions();
+        logSettingsAction("Role permissions updated", "Moderator, Advocate, Support Staff");
+        notifToast("Permissions saved", "Role permissions updated for this console.", "success");
+      });
+      $("#btnResetRoleMatrix")?.addEventListener("click", () => {
+        roleMatrixDraft = buildRoleMatrixDraft();
+        setRoleMatrixDirty(false);
+        renderSettingsRoles();
+      });
+      $("#btnSaveSecurity")?.addEventListener("click", saveSecuritySettings);
+      $("#btnResetSecurity")?.addEventListener("click", () => {
+        renderSettingsSecurity();
+        notifToast("Changes reset", "Security settings restored to the last saved values.", "success");
+      });
+
       // ═══════════════════════════════════════════════════════════════
       // RESOURCE DIRECTORY MANAGEMENT MODULE CONTROLLER
       // ═══════════════════════════════════════════════════════════════
       const RESOURCE_CATEGORY_CONFIG = {
-        legal: { label: "Legal Aid", icon: "⚖️", color: "#2563eb" },
-        mental: { label: "Mental Health", icon: "❤️", color: "#dc2626" },
-        housing: { label: "Housing & Shelter", icon: "🏠", color: "#d97706" },
-        work: { label: "Workplace & Labor", icon: "💼", color: "#059669" },
-        education: { label: "Education & Youth", icon: "🎓", color: "#7c3aed" },
-        hotline: { label: "Crisis Hotlines", icon: "📞", color: "#e11d48" },
+        legal: { label: "Legal Aid", color: "#2563eb" },
+        mental: { label: "Mental Health", color: "#dc2626" },
+        housing: { label: "Housing & Shelter", color: "#d97706" },
+        work: { label: "Workplace & Labor", color: "#059669" },
+        education: { label: "Education & Youth", color: "#7c3aed" },
+        hotline: { label: "Crisis Hotlines", color: "#e11d48" },
         immigration: {
           label: "Immigration Defense",
-          icon: "🌐",
           color: "#0891b2",
         },
-        voting: { label: "Voting Rights", icon: "🗳️", color: "#4f46e5" },
-        youth: { label: "Youth & Family", icon: "👥", color: "#0284c7" },
-        reentry: { label: "Reentry Programs", icon: "📣", color: "#ca8a04" },
+        voting: { label: "Voting Rights", color: "#4f46e5" },
+        youth: { label: "Youth & Family", color: "#0284c7" },
+        reentry: { label: "Reentry Programs", color: "#ca8a04" },
         financial: {
           label: "Financial & Banking",
-          icon: "💲",
           color: "#16a34a",
         },
-        health: { label: "Health Equity", icon: "🩺", color: "#0d9488" },
+        health: { label: "Health Equity", color: "#0d9488" },
         advocacy: {
           label: "Civil Rights Advocacy",
-          icon: "📢",
           color: "#9333ea",
         },
       };
@@ -22407,12 +23243,8 @@
 
       function updateResourceKPICounters() {
         const total = resourceDirectory.length;
-        const verified = resourceDirectory.filter((r) => r.verified).length;
         const pending = resourceDirectory.filter(
           (r) => r.status === "Pending Review",
-        ).length;
-        const hotlines = resourceDirectory.filter(
-          (r) => r.category === "hotline",
         ).length;
         const pub = resourceDirectory.filter(
           (r) => r.status === "Published",
@@ -22420,11 +23252,6 @@
         const draft = resourceDirectory.filter(
           (r) => r.status === "Draft",
         ).length;
-
-        if ($("#resKpiTotal")) $("#resKpiTotal").textContent = total;
-        if ($("#resKpiVerified")) $("#resKpiVerified").textContent = verified;
-        if ($("#resKpiPending")) $("#resKpiPending").textContent = pending;
-        if ($("#resKpiHotlines")) $("#resKpiHotlines").textContent = hotlines;
 
         if ($("#resTabCountAll")) $("#resTabCountAll").textContent = total;
         if ($("#resTabCountPub")) $("#resTabCountPub").textContent = pub;
@@ -22518,7 +23345,6 @@
             .map((res) => {
               const catConfig = RESOURCE_CATEGORY_CONFIG[res.category] || {
                 label: res.category,
-                icon: "📁",
                 color: "#64748b",
               };
               const statusBadgeClass =
@@ -22526,7 +23352,9 @@
                   ? "published"
                   : res.status === "Pending Review"
                     ? "pending"
-                    : "danger";
+                    : res.status === "Draft"
+                      ? "draft"
+                      : "rejected";
 
               const isContactUrl =
                 res.contact.includes(".") &&
@@ -22551,7 +23379,7 @@
                 </td>
                 <td>
                   <span class="role-badge-pill" style="background: ${catConfig.color}15; color: ${catConfig.color}; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px">
-                    ${catConfig.icon} ${catConfig.label}
+                    ${catConfig.label}
                   </span>
                 </td>
                 <td>
@@ -22567,18 +23395,16 @@
                   <span class="badge ${statusBadgeClass}">${res.status}</span>
                 </td>
                 <td style="text-align: right; padding-right: 18px" onclick="event.stopPropagation()">
-                  <div style="display: inline-flex; gap: 4px; justify-content: flex-end">
+                  <div style="display: inline-flex; gap: 6px; justify-content: flex-end">
                     <button class="action-icon-btn" onclick="loadResourceDetails('${res.id}')" title="View Organization Details">
                       <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                     </button>
                     ${
-                      res.status !== "Published"
-                        ? `
-                    <button class="action-icon-btn" onclick="quickApproveResource('${res.id}')" title="Quick Approve Listing" style="color: #059669">
+                      res.status === "Published"
+                        ? ""
+                        : `<button class="action-icon-btn" onclick="quickApproveResource('${res.id}')" style="color: #059669" title="Quick Approve Listing">
                       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
-                    </button>
-                    `
-                        : ""
+                    </button>`
                     }
                     <button class="action-icon-btn" onclick="editResource('${res.id}')" title="Edit Organization">
                       <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
@@ -22595,74 +23421,15 @@
         }
 
         // Pagination Controls
-        if (paginationBar) {
-          if (totalItems > 0) {
-            paginationBar.style.display = "flex";
-            const startRecord = startIndex + 1;
-            const endRecord = Math.min(startIndex + resPageSize, totalItems);
-
-            paginationBar.innerHTML = `
-              <div class="pagination-left-info">
-                <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
-                <select class="page-size-select" id="resPageSizeSelect">
-                  <option value="10" ${resPageSize === 10 ? "selected" : ""}>10</option>
-                  <option value="25" ${resPageSize === 25 ? "selected" : ""}>25</option>
-                  <option value="50" ${resPageSize === 50 ? "selected" : ""}>50</option>
-                  <option value="100" ${resPageSize === 100 ? "selected" : ""}>100</option>
-                </select>
-              </div>
-              <div class="pagination-controls">
-                <button class="page-nav-btn" id="resPrevPage" ${resCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
-                <div class="page-numbers">
-                  ${Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .map(
-                      (p) => `
-                    <button class="page-num-btn ${p === resCurrentPage ? "active" : ""}" data-page="${p}">${p}</button>
-                  `,
-                    )
-                    .join("")}
-                </div>
-                <button class="page-nav-btn" id="resNextPage" ${resCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
-              </div>
-            `;
-
-            const sizeSelect = document.querySelector("#resPageSizeSelect");
-            if (sizeSelect) {
-              sizeSelect.onchange = (e) => {
-                resPageSize = Number(e.target.value);
-                resCurrentPage = 1;
-                renderResourcesTable();
-              };
-            }
-
-            paginationBar.querySelectorAll(".page-num-btn").forEach((btn) => {
-              btn.onclick = () => {
-                resCurrentPage = Number(btn.dataset.page);
-                renderResourcesTable();
-              };
-            });
-
-            const prevBtn = document.querySelector("#resPrevPage");
-            if (prevBtn)
-              prevBtn.onclick = () => {
-                if (resCurrentPage > 1) {
-                  resCurrentPage--;
-                  renderResourcesTable();
-                }
-              };
-
-            const nextBtn = document.querySelector("#resNextPage");
-            if (nextBtn)
-              nextBtn.onclick = () => {
-                if (resCurrentPage < totalPages) {
-                  resCurrentPage++;
-                  renderResourcesTable();
-                }
-              };
-          } else {
-            paginationBar.style.display = "none";
-          }
-        }
+        renderStandardPagination(
+          paginationBar,
+          totalItems,
+          resCurrentPage,
+          resPageSize,
+          "res",
+          (page) => { resCurrentPage = page; renderResourcesTable(); },
+          (size) => { resPageSize = size; resCurrentPage = 1; renderResourcesTable(); },
+        );
       }
 
       function showResourcesPage() {
@@ -22698,7 +23465,6 @@
 
         const catConfig = RESOURCE_CATEGORY_CONFIG[res.category] || {
           label: res.category,
-          icon: "📁",
           color: "#64748b",
         };
 
@@ -22708,11 +23474,13 @@
             ? "published"
             : res.status === "Pending Review"
               ? "pending"
-              : "danger";
+              : res.status === "Draft"
+                ? "draft"
+                : "rejected";
         $("#resDetailsStatusBadge").textContent = res.status;
         $("#resDetailsStatusBadge").className = `badge ${statusClass}`;
         $("#resDetailsCategoryBadge").textContent =
-          `${catConfig.icon} ${catConfig.label}`;
+          `${catConfig.label}`;
 
         if (res.verified) {
           $("#resDetailsShieldBadge").style.display = "inline-flex";
@@ -22744,7 +23512,7 @@
         $("#resDetailsName").textContent = res.name;
         $("#valResId").textContent = res.id;
         $("#valResCategory").textContent =
-          `${catConfig.icon} ${catConfig.label}`;
+          `${catConfig.label}`;
         $("#valResReach").textContent = res.reach;
         $("#valResRegions").textContent = res.regionsServed;
 
@@ -22763,7 +23531,7 @@
           contactLink.href = contactHref;
           contactLink.textContent = isContactUrl
             ? `${res.contact} ↗`
-            : `📞 ${res.contact}`;
+            : `${res.contact}`;
         }
 
         $("#valResVerified").textContent = res.verified
@@ -22816,7 +23584,7 @@
               : status === "pending review"
                 ? "Pending Review"
                 : "Draft / Archived";
-          badge.className = `badge ${status === "published" ? "active" : status === "pending review" ? "pending" : "danger"}`;
+          badge.className = `badge ${status === "published" ? "active" : status === "pending review" ? "pending" : "draft"}`;
         }
 
         const steps = [
@@ -22885,7 +23653,7 @@
             const dotBorder = isProg
               ? `box-shadow: 0 0 0 4px #fef3c7`
               : `box-shadow: 0 0 0 3px var(--surface)`;
-            const icon = isDone ? "✓" : isProg ? "⏳" : "○";
+            const icon = isDone ? "✓" : isProg ? "•" : "○";
 
             return `
         <div style="display:flex;gap:12px;position:relative;padding-bottom:${isLast ? "0" : "18px"}">
@@ -23080,7 +23848,7 @@
         const catWrap = document.querySelector("#resFormCategoryWrap");
         if (catWrap) {
           const label = catWrap.querySelector(".custom-select-label");
-          if (label) label.textContent = "⚖️ Legal Aid";
+          if (label) label.textContent = "Legal Aid";
           catWrap
             .querySelectorAll(".custom-select-option")
             .forEach((o) =>
@@ -23141,13 +23909,12 @@
 
         const catConfig = RESOURCE_CATEGORY_CONFIG[res.category] || {
           label: res.category,
-          icon: "📁",
         };
 
         const catWrap = document.querySelector("#resFormCategoryWrap");
         if (catWrap) {
           const label = catWrap.querySelector(".custom-select-label");
-          if (label) label.textContent = `${catConfig.icon} ${catConfig.label}`;
+          if (label) label.textContent = `${catConfig.label}`;
           catWrap
             .querySelectorAll(".custom-select-option")
             .forEach((o) =>
@@ -23481,7 +24248,7 @@
           "Support Staff": "staff",
         };
 
-        const PERMISSIONS = {
+        const PERMISSIONS = (window.PERMISSIONS = {
           superadmin: {
             label: "Super Admin",
             desc: "Full console access, including staff and settings.",
@@ -23561,7 +24328,7 @@
               "incidents.notes": 1,
             },
           },
-        };
+        });
         window.BN_PERMISSIONS = PERMISSIONS;
 
         function activeRoleKey() {
@@ -24039,6 +24806,8 @@
 
         let auditFilterAction = "All Actions";
         let auditSearch = "";
+        let auditPage = 1;
+        let auditPageSize = 10;
 
         function buildAuditPanel() {
           const rolesView = document.querySelector("#adminRolesView");
@@ -24097,6 +24866,7 @@
             '<div id="auditEmptyState" style="display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">' +
             "No audit entries match your filters." +
             "</div>" +
+            '<div class="pagination-bar" id="auditPaginationBar"></div>' +
             "</div>";
           rolesView.appendChild(panel);
 
@@ -24126,9 +24896,14 @@
           if (si)
             si.oninput = function () {
               auditSearch = si.value.trim().toLowerCase();
+              auditPage = 1;
               renderAuditLog();
             };
-          window.renderAuditLogGlobal = renderAuditLog;
+          // Called when the action filter changes — always restart at page 1.
+          window.renderAuditLogGlobal = function () {
+            auditPage = 1;
+            renderAuditLog();
+          };
         }
 
         function renderAuditLog() {
@@ -24156,11 +24931,25 @@
           if (!rows.length) {
             body.innerHTML = "";
             if (empty) empty.style.display = "block";
+            renderStandardPagination(
+              document.querySelector("#auditPaginationBar"),
+              0,
+              1,
+              auditPageSize,
+              "audit",
+              function () {},
+              function () {},
+            );
             return;
           }
           if (empty) empty.style.display = "none";
 
-          body.innerHTML = rows
+          const auditTotalPages = Math.max(1, Math.ceil(rows.length / auditPageSize));
+          if (auditPage > auditTotalPages) auditPage = auditTotalPages;
+          const auditStart = (auditPage - 1) * auditPageSize;
+          const pagedAudit = rows.slice(auditStart, auditStart + auditPageSize);
+
+          body.innerHTML = pagedAudit
             .map(function (e) {
               return (
                 "<tr>" +
@@ -24195,6 +24984,23 @@
               );
             })
             .join("");
+
+          renderStandardPagination(
+            document.querySelector("#auditPaginationBar"),
+            rows.length,
+            auditPage,
+            auditPageSize,
+            "audit",
+            function (page) {
+              auditPage = page;
+              renderAuditLog();
+            },
+            function (size) {
+              auditPageSize = size;
+              auditPage = 1;
+              renderAuditLog();
+            },
+          );
         }
         window.bnRenderAuditLog = renderAuditLog;
 
@@ -24698,9 +25504,28 @@
             withLoading("#btnAdminLogin", "Signing in…", function () {
               // SERVER-SIDE: credential verification belongs on the API.
               const list = window.staffAccounts || [];
-              const match = list.find(function (u) {
+              let match = list.find(function (u) {
                 return u.email.toLowerCase() === email && u.password === pw;
               });
+
+              // PROTOTYPE ONLY: any email + password is accepted so the client
+              // can explore the console without seeded credentials. An unknown
+              // address signs in as a Super Admin. Replace with real API
+              // verification before this ever goes live.
+              if (!match) {
+                const namePart = email.split("@")[0].replace(/[._-]+/g, " ").trim();
+                match = {
+                  id: "STF-DEMO",
+                  name: namePart
+                    ? namePart.replace(/\b\w/g, function (c) { return c.toUpperCase(); })
+                    : "Admin User",
+                  email: email,
+                  role: "Super Admin",
+                  roleKey: "superadmin",
+                  avatar: (namePart || "AU").slice(0, 2).toUpperCase(),
+                  status: "active",
+                };
+              }
 
               if (match && match.status === "disabled") {
                 if (alertEl) {
@@ -24714,33 +25539,6 @@
                   target: email,
                   result: "blocked",
                 });
-                return;
-              }
-
-              if (!match) {
-                failedAttempts++;
-                addAuditEntry({
-                  actor: "Unknown",
-                  action: "Sign-in failed — invalid credentials",
-                  target: email,
-                  result: "failed",
-                });
-                if (failedAttempts >= MAX_ATTEMPTS) {
-                  lockAccount();
-                  return;
-                }
-                if (alertEl) {
-                  alertEl.style.display = "block";
-                  // Generic message — never reveals which field was wrong.
-                  alertEl.innerHTML =
-                    "<strong>Sign-in failed.</strong> Invalid email or password. " +
-                    (MAX_ATTEMPTS - failedAttempts) +
-                    " attempt" +
-                    (MAX_ATTEMPTS - failedAttempts === 1 ? "" : "s") +
-                    " remaining before this account is locked.";
-                }
-                emailInput.classList.add("field-invalid");
-                passInput.classList.add("field-invalid");
                 return;
               }
 
@@ -25252,7 +26050,7 @@
 
           const toggle = document.createElement("button");
           toggle.id = "demoStateToggle";
-          toggle.textContent = "⚙ Demo states";
+          toggle.textContent = "Demo states";
           document.body.appendChild(toggle);
 
           const panel = document.createElement("div");
