@@ -233,6 +233,18 @@ export default function IncidentDetailScreen(): React.ReactElement {
     setPendingChannel(null);
   }, [incident, pendingChannel, acknowledgments, settings, id]);
 
+  const advocacyRoutes = useMemo(
+    () =>
+      incident
+        ? resolveAdvocacyRoutes({
+            category: incident.category,
+            urgent: incident.urgent,
+            hasEvidence: incident.hasEvidence,
+          })
+        : [],
+    [incident]
+  );
+
   if (!incident) {
     return (
       <View style={styles.center}>
@@ -243,15 +255,6 @@ export default function IncidentDetailScreen(): React.ReactElement {
   }
 
   const supported = isSupported(incident.id);
-  const advocacyRoutes = useMemo(
-    () =>
-      resolveAdvocacyRoutes({
-        category: incident.category,
-        urgent: incident.urgent,
-        hasEvidence: incident.hasEvidence,
-      }),
-    [incident]
-  );
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: Colors.bg }}>

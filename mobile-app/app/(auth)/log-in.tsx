@@ -12,10 +12,10 @@
  * who cannot get in needs a way out, not just a diagnosis.
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import type { TextInput } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { alpha, colors, controlHeight, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
@@ -29,6 +29,32 @@ export default function LogInScreen(): React.ReactElement {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const passwordRef = useRef<TextInput>(null);
+
+  // Clear any existing auth error when navigating to or focusing the login screen
+  useFocusEffect(
+    useCallback(() => {
+      clearError();
+      return () => {
+        clearError();
+      };
+    }, [clearError]),
+  );
+
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      if (error) clearError();
+      setEmail(text);
+    },
+    [clearError, error],
+  );
+
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      if (error) clearError();
+      setPassword(text);
+    },
+    [clearError, error],
+  );
 
   const submit = useCallback(async () => {
     clearError();
@@ -115,29 +141,28 @@ export default function LogInScreen(): React.ReactElement {
 
       <TextField
         value={email}
-        onChangeText={setEmail}
+        onChangeText={handleEmailChange}
         placeholder="you@example.com"
-        keyboardType="email-address"
+        label="EMAIL"
         autoCapitalize="none"
+        keyboardType="email-address"
         autoCorrect={false}
         autoComplete="email"
-        textContentType="username"
         returnKeyType="next"
         onSubmitEditing={() => passwordRef.current?.focus()}
-        blurOnSubmit={false}
         containerStyle={{ marginTop: error ? 14 : 26 }}
-        testID="login-email"
+        testID="log-in-email"
       />
 
       <PasswordField
         ref={passwordRef}
         value={password}
-        onChangeText={setPassword}
-        placeholder="Your password"
-        returnKeyType="go"
+        onChangeText={handlePasswordChange}
+        label="PASSWORD"
+        returnKeyType="done"
         onSubmitEditing={submit}
         containerStyle={{ marginTop: 10 }}
-        testID="login-password"
+        testID="log-in-password"
       />
 
       <Button

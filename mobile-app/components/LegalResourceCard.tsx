@@ -309,7 +309,6 @@ const styles = StyleSheet.create({
     color: Colors.gold,
     fontWeight: "600",
     marginBottom: 6,
-    fontFamily: undefined,
   },
   tierLabel: {
     fontSize: 10,

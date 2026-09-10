@@ -2,12 +2,14 @@ import { Mic, Loader2, X } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Audio } from "expo-av";
-import Colors from "@/constants/colors";
 import {
-  startVoiceRecording,
-  stopVoiceRecordingAndTranscribe,
-} from "@/utils/audio";
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioRecorder,
+} from "expo-audio";
+import Colors from "@/constants/colors";
+import { transcribeRecordingUri } from "@/utils/audio";
 
 export type VoiceInputButtonProps = {
   onTranscript: (text: string) => void;
@@ -23,7 +25,13 @@ export default function VoiceInputButton({
 }: VoiceInputButtonProps): React.ReactElement {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  /**
+   * The native recorder used to be created inside `startVoiceRecording()` in
+   * `utils/audio.ts` and held in a ref. `expo-audio` only exposes a recorder
+   * through this hook, so the component owns it now; `utils/audio.ts` keeps the
+   * transcription half.
+   */
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const webRecognitionRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
 
   const start = useCallback(async () => {
@@ -94,8 +102,11 @@ export default function VoiceInputButton({
 
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      const recording = await startVoiceRecording();
-      recordingRef.current = recording;
+      const permission = await requestRecordingPermissionsAsync();
+      if (!permission.granted) throw new Error("Microphone permission was denied");
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setIsRecording(true);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Voice input failed";
@@ -112,9 +123,8 @@ export default function VoiceInputButton({
         Alert.alert("Microphone", message);
       }
       setIsRecording(false);
-      recordingRef.current = null;
     }
-  }, []);
+  }, [recorder]);
 
   const stop = useCallback(async () => {
     // Web: stop the browser SpeechRecognition session.
@@ -132,15 +142,17 @@ export default function VoiceInputButton({
       return;
     }
 
-    const recording = recordingRef.current;
-    if (!recording) return;
+    if (!isRecording) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setIsRecording(false);
     setIsTranscribing(true);
 
     try {
-      const result = await stopVoiceRecordingAndTranscribe(recording);
+      await recorder.stop();
+      const uri = recorder.uri;
+      if (!uri) throw new Error("Recording produced no audio");
+      const result = await transcribeRecordingUri(uri);
       if (result.text) {
         onTranscript(result.text);
       } else {
@@ -151,9 +163,9 @@ export default function VoiceInputButton({
       Alert.alert("Voice input", message);
     } finally {
       setIsTranscribing(false);
-      recordingRef.current = null;
+      await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
     }
-  }, [onTranscript]);
+  }, [isRecording, onTranscript, recorder]);
 
   const cancel = useCallback(async () => {
     if (Platform.OS === "web") {
@@ -171,13 +183,14 @@ export default function VoiceInputButton({
       return;
     }
     try {
-      await recordingRef.current?.stopAndUnloadAsync();
+      // Guarded: stopping a recorder that never started throws on Android.
+      if (isRecording) await recorder.stop();
     } catch {
       /* ignore */
     }
-    recordingRef.current = null;
     setIsRecording(false);
-  }, []);
+    await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
+  }, [isRecording, recorder]);
 
   if (isTranscribing) {
     return (

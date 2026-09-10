@@ -1,12 +1,12 @@
-import { Audio } from "expo-av";
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Speech from "expo-speech";
 import { Platform } from "react-native";
 import { type LanguageCode } from "@/constants/i18n";
 
-const TOOLKIT_URL = process.env.EXPO_PUBLIC_TOOLKIT_URL ?? "";
-const TOOLKIT_SECRET = process.env.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY ?? "";
+const TOOLKIT_URL = process.env.GEMINI_BASE_URL ?? "";
+const TOOLKIT_SECRET = process.env.GEMINI_API_KEY ?? "";
 
 const SPEECH_CACHE_PREFIX = "blacknexa_tts_";
 
@@ -23,11 +23,11 @@ export type TranscriptionResult = {
  * Generate natural text-to-speech audio for a short text via the Vercel AI
  * Gateway (Rork Toolkit proxy). Returns a playable data URI.
  *
- * NOTE: Some versions of Expo Go on iOS cannot play data URIs directly through
- * expo-av. The article-detail player prefers the device's native TTS engine on
- * mobile because it is fast, offline-capable, and supports every language the
- * app translates into. This AI endpoint is kept for web and for future
- * high-fidelity voice playback if expo-av support improves.
+ * NOTE: Some versions of Expo Go on iOS cannot play data URIs directly. The
+ * article-detail player prefers the device's native TTS engine on mobile because
+ * it is fast, offline-capable, and supports every language the app translates
+ * into. This AI endpoint is kept for web and for future high-fidelity voice
+ * playback if data-URI support improves.
  */
 export async function synthesizeSpeech(text: string): Promise<TTSResult> {
   if (!text.trim()) throw new Error("No text to speak");
@@ -71,82 +71,27 @@ export async function synthesizeSpeech(text: string): Promise<TTSResult> {
 }
 
 /**
- * Start a microphone recording suitable for sending to speech-to-text.
+ * Transcribe a finished recording, given the file it wrote.
+ *
+ * This used to be `startVoiceRecording()` / `stopVoiceRecordingAndTranscribe()`,
+ * which owned an `expo-av` `Audio.Recording` from here. `expo-audio` has no
+ * public imperative recorder — `AudioRecorder` is exported as a *type* only, and
+ * the supported entry point is the `useAudioRecorder` hook, which cannot be
+ * called outside a component. So the recorder now lives in the component that
+ * owns the button, and this module keeps only the part that was ever really its
+ * job: turning a captured file into text.
  */
-export async function startVoiceRecording(): Promise<Audio.Recording> {
-  try {
-    const { status } = await Audio.requestPermissionsAsync();
-    if (status !== "granted") {
-      throw new Error("Microphone permission was denied");
-    }
-
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    });
-
-    const recording = new Audio.Recording();
-    await recording.prepareToRecordAsync({
-      android: {
-        extension: ".m4a",
-        outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-        audioEncoder: Audio.AndroidAudioEncoder.AAC,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-      },
-      ios: {
-        extension: ".m4a",
-        outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-        audioQuality: Audio.IOSAudioQuality.MEDIUM,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-        linearPCMBitDepth: 16,
-        linearPCMIsBigEndian: false,
-        linearPCMIsFloat: false,
-      },
-      web: {
-        mimeType: "audio/webm",
-        bitsPerSecond: 128000,
-      },
-    });
-    await recording.startAsync();
-    return recording;
-  } catch (err) {
-    // Comprehensive catch: rethrow permission errors as-is so the UI can
-    // show the right alert; wrap everything else in a clean message.
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.toLowerCase().includes("denied") || message.toLowerCase().includes("permission")) {
-      throw new Error("Microphone permission was denied");
-    }
-    throw new Error(`Recording could not start: ${message}`);
-  }
-}
-
-/**
- * Stop a recording and transcribe the captured audio using the Vercel AI
- * Gateway (Rork Toolkit proxy).
- */
-export async function stopVoiceRecordingAndTranscribe(
-  recording: Audio.Recording
+export async function transcribeRecordingUri(
+  uri: string,
 ): Promise<TranscriptionResult> {
-  try {
-    await recording.stopAndUnloadAsync();
-  } catch (err) {
-    throw new Error(`Failed to stop recording: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  const uri = recording.getURI();
   if (!uri) throw new Error("Recording produced no audio");
-
   try {
     const base64 = await uriToBase64(uri);
-    return transcribeAudio(base64, "audio/mp4");
+    return await transcribeAudio(base64, "audio/mp4");
   } catch (err) {
-    throw new Error(`Transcription failed: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Transcription failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -155,7 +100,7 @@ export async function stopVoiceRecordingAndTranscribe(
  */
 export async function transcribeAudio(
   base64Audio: string,
-  mediaType: string
+  mediaType: string,
 ): Promise<TranscriptionResult> {
   if (!TOOLKIT_URL || !TOOLKIT_SECRET) {
     throw new Error("Missing Toolkit configuration for transcription");
@@ -172,7 +117,7 @@ export async function transcribeAudio(
         "ai-gateway-protocol-version": "0.0.1",
       },
       body: JSON.stringify({ audio: base64Audio, mediaType }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -204,7 +149,7 @@ export function isNativeTtsAvailable(): boolean {
  */
 export function speakWithNativeTTS(
   script: string,
-  language: LanguageCode = "en"
+  language: LanguageCode = "en",
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
@@ -220,7 +165,10 @@ export function speakWithNativeTTS(
       // Estimate speech duration: ~150 words per minute = 2.5 words/sec.
       // Add a 5-second buffer. Used as a safety timeout for Android.
       const wordCount = script.split(/\s+/).length;
-      const estimatedMs = Math.max(8000, Math.ceil((wordCount / 2.5) * 1000) + 5000);
+      const estimatedMs = Math.max(
+        8000,
+        Math.ceil((wordCount / 2.5) * 1000) + 5000,
+      );
 
       let resolved = false;
       let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
@@ -281,7 +229,10 @@ export function speakWithNativeTTS(
           if (resolved) return;
           resolved = true;
           cleanup();
-          console.warn("[TTS] Speech.speak threw:", speakErr instanceof Error ? speakErr.message : String(speakErr));
+          console.warn(
+            "[TTS] Speech.speak threw:",
+            speakErr instanceof Error ? speakErr.message : String(speakErr),
+          );
           resolve();
         }
       };
@@ -294,7 +245,10 @@ export function speakWithNativeTTS(
       }
     } catch (outerErr) {
       // Comprehensive catch-all so the caller never gets an unhandled exception.
-      console.warn("[TTS] outer error:", outerErr instanceof Error ? outerErr.message : String(outerErr));
+      console.warn(
+        "[TTS] outer error:",
+        outerErr instanceof Error ? outerErr.message : String(outerErr),
+      );
       resolve();
     }
   });
@@ -308,22 +262,29 @@ export function stopNativeTTS(): void {
 }
 
 /**
- * Play a generated audio URI using expo-av. Returns the sound object so the
- * caller can stop or pause it. The caller is responsible for catching errors
- * and falling back to native TTS when the URI is unsupported.
+ * Play a generated audio URI. Returns the player so the caller can pause it and,
+ * importantly, `remove()` it — an `AudioPlayer` holds a native object that is not
+ * released by going out of scope, so every caller owns a teardown. The caller is
+ * responsible for catching errors and falling back to native TTS when the URI is
+ * unsupported.
  */
-export async function playAudioUri(uri: string): Promise<Audio.Sound> {
+export async function playAudioUri(uri: string): Promise<AudioPlayer> {
   try {
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
+    await setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
     });
 
-    const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-    return sound;
+    // Synchronous in expo-audio: it returns immediately and loads in the
+    // background, so a bad URI surfaces on the status listener rather than here.
+    const player = createAudioPlayer({ uri });
+    player.play();
+    return player;
   } catch (err) {
-    throw new Error(`Audio playback failed: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(
+      `Audio playback failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -360,7 +321,7 @@ function hashText(text: string): string {
 export function buildArticleSpokenScript(
   headline: string,
   summary: string,
-  content?: string
+  content?: string,
 ): string {
   const lead = `${headline}. ${summary}`;
   if (content && content.trim()) {

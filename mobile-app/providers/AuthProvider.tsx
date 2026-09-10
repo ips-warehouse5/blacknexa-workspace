@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as LocalAuthentication from "expo-local-authentication";
+import * as SecureStore from "expo-secure-store";
 import api, { ApiError } from "@/lib/api/client";
 import authApi, {
   type AuthResult,
@@ -32,6 +33,7 @@ import authApi, {
   type UserProfile,
   type Visibility,
 } from "@/lib/api/auth";
+import { jwtDecode, JwtDecodeOptions } from "jwt-decode";
 
 /** How the gate should route. Kept explicit so no screen infers it from nulls. */
 export type AuthStatus =
@@ -67,7 +69,10 @@ interface AuthState {
   markVerified: () => void;
   clearSignUpDraft: () => void;
 
-  register: (email: string, password: string) => Promise<{ resendAfterSeconds: number } | null>;
+  register: (
+    email: string,
+    password: string,
+  ) => Promise<{ resendAfterSeconds: number } | null>;
   verifyEmail: (code: string) => Promise<boolean>;
   resendVerification: () => Promise<number | null>;
   login: (email: string, password: string) => Promise<boolean>;
@@ -81,8 +86,14 @@ interface AuthState {
    * happen here and on the server.
    */
   signInWithGoogleToken: (identityToken: string) => Promise<boolean>;
-  forgotPassword: (email: string) => Promise<{ resendAfterSeconds: number } | null>;
-  resetPassword: (email: string, code: string, password: string) => Promise<boolean>;
+  forgotPassword: (
+    email: string,
+  ) => Promise<{ resendAfterSeconds: number } | null>;
+  resetPassword: (
+    email: string,
+    code: string,
+    password: string,
+  ) => Promise<boolean>;
   signOut: () => Promise<void>;
   signOutEverywhere: () => Promise<void>;
   /** Clear the local session only — used after the account itself is deleted. */
@@ -104,6 +115,76 @@ interface AuthState {
   biometricsAvailable: boolean;
   unlockWithBiometrics: () => Promise<boolean>;
   clearError: () => void;
+}
+
+/**
+ * Where a name captured from Apple waits until the server confirms it has it.
+ *
+ * ── Why this exists ────────────────────────────────────────────────────────
+ * Apple returns `fullName` on the **first authorisation only**, and it is not a
+ * claim in the identity token — unlike `email`, which the token carries every
+ * time and which the server reads from the verified JWT. So the name exists in
+ * exactly one place, for one moment, in memory.
+ *
+ * The previous code forwarded it in the same call that signed in. If that call
+ * failed — offline, a 500, the backend not running — the name was gone for good:
+ * Apple will not send it again until the person removes BlackNexa under Settings
+ * → Apple ID → Sign in with Apple. Someone whose first sign-in failed once would
+ * have had a permanently nameless account with no way to explain why.
+ *
+ * So it is written to disk the moment it arrives, before the network is touched,
+ * and only cleared once a sign-in has actually succeeded with it attached.
+ *
+ * SecureStore rather than AsyncStorage because a real name is exactly the kind of
+ * thing this app promises to look after, and AsyncStorage is unencrypted. Native
+ * only, which is safe here: A5 offers the Apple route on iOS alone.
+ */
+const APPLE_NAME_KEY = "bn.apple_pending_name";
+
+interface PendingAppleName {
+  /** Apple's stable user id, so a name is never applied to a different account. */
+  user: string;
+  fullName: string;
+  email: string;
+}
+
+interface DecodedJwt {
+  email: string;
+  aud: string;
+  auth_time: number;
+  c_hash: string;
+  email_verified: boolean;
+  exp: number;
+  iat: number;
+  iss: string;
+  nonce_supported: boolean;
+  sub: string;
+}
+
+async function readPendingAppleName(): Promise<PendingAppleName | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(APPLE_NAME_KEY);
+    return raw ? (JSON.parse(raw) as PendingAppleName) : null;
+  } catch {
+    // A name we cannot read is not worth failing a sign-in over.
+    return null;
+  }
+}
+
+async function writePendingAppleName(value: PendingAppleName): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(APPLE_NAME_KEY, JSON.stringify(value));
+  } catch {
+    /* best effort — the sign-in still proceeds */
+  }
+}
+
+async function clearPendingAppleName(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(APPLE_NAME_KEY);
+  } catch {
+    /* nothing to clear */
+  }
 }
 
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
@@ -194,7 +275,11 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   // ── Sign-up draft (A6 → A9) ───────────────────────────────────────────────
 
   const beginSignUp = useCallback((email: string, password: string) => {
-    setSignUpDraft({ email: email.trim().toLowerCase(), password, verified: false });
+    setSignUpDraft({
+      email: email.trim().toLowerCase(),
+      password,
+      verified: false,
+    });
   }, []);
 
   const markVerified = useCallback(() => {
@@ -281,8 +366,15 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   /**
    * A5's "Continue with Apple".
    *
-   * Apple returns the name only on the *first* authorisation for an app, so it is
-   * forwarded here and persisted server-side — asking again later is impossible.
+   * Apple returns the name only on the *first* authorisation for an app, and it is
+   * not a claim in the identity token — so it is captured here, held on the device
+   * until a sign-in actually succeeds with it, and stored server-side. Asking again
+   * later is impossible; see `APPLE_NAME_KEY` for what that costs if it is lost.
+   *
+   * The identity token itself is passed through **raw and undecoded**. Reading it
+   * here would be theatre: an unverified JWT is attacker-controlled data, and the
+   * server has to verify the signature against Apple's JWKS and read the claims
+   * itself regardless. Email comes from that verified token, never from the client.
    */
   const signInWithApple = useCallback(async () => {
     setBusy(true);
@@ -298,16 +390,62 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         setError("That sign-in did not complete. Please try again.");
         return false;
       }
-      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+      const decoded = jwtDecode(credential.identityToken);
+      // Apple gives the name on the first authorisation only. Persist it before
+      // the network call, so a failure here does not lose it permanently.
+      const captured = [
+        credential.fullName?.givenName,
+        credential.fullName?.familyName,
+      ]
         .filter(Boolean)
-        .join(" ");
+        .join(" ")
+        .trim();
+      if (captured) {
+        await writePendingAppleName({
+          user: credential.user,
+          fullName: captured,
+          email: credential.email || (decoded as DecodedJwt)?.email,
+        });
+      }
+
+      // On a later attempt Apple sends no name, so fall back to whatever an
+      // earlier authorisation captured — but only if it belongs to this same
+      // Apple user, never a previous person on a shared device.
+      let fullName = captured;
+      if (!fullName) {
+        const pending = await readPendingAppleName();
+        if (pending?.user === credential.user) fullName = pending.fullName;
+      }
+
       adopt(
-        await authApi.socialLogin("apple", credential.identityToken, fullName || undefined),
+        await authApi.socialLogin(
+          "apple",
+          credential.identityToken,
+          fullName || undefined,
+          (decoded as DecodedJwt)?.email,
+        ),
       );
+      // Safe to drop only now: the server has it, and re-sending is idempotent
+      // there — it fills `display_name` only when that field is still empty.
+      if (fullName) await clearPendingAppleName();
       return true;
     } catch (err) {
       // A cancelled sheet is not an error worth showing.
-      if (err instanceof Error && err.message.includes("ERR_REQUEST_CANCELED")) {
+      //
+      // The cancel signal is on `code`, not `message`. `expo-modules-core` derives
+      // `code` from the exception's class name — `RequestCanceledException` becomes
+      // `ERR_REQUEST_CANCELED` — while `message` carries the human `reason`, which
+      // for this one is "The user canceled the authorization attempt". Matching on
+      // `message` therefore never fired, and simply tapping Cancel on the Apple
+      // sheet raised "Something went wrong. Please try again."
+      //
+      // `message` is still checked as a fallback so the guard survives a future
+      // change in how the module surfaces this.
+      const code = (err as { code?: unknown })?.code;
+      const cancelled =
+        code === "ERR_REQUEST_CANCELED" ||
+        (err instanceof Error && err.message.includes("ERR_REQUEST_CANCELED"));
+      if (cancelled) {
         return false;
       }
       capture(err);

@@ -7,6 +7,16 @@ coverage/
 .env.*
 !.env.example
 
+# Signing keys. The Apple "Sign in with Apple" key (AuthKey_XXXXXXXXXX.p8) signs the
+# client secret used to revoke a user's Apple token on account deletion. Apple issues
+# the file once and it cannot be re-downloaded — but committing it is worse than
+# losing it, because the only remedy is revoking the key and re-issuing.
+*.p8
+*.pem
+*.key
+*.p12
+credentials/
+
 # Logs
 logs/
 *.log

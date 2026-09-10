@@ -17,29 +17,66 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import Svg, { Path } from "react-native-svg";
+import { Mail } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, controlHeight, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/providers/AuthProvider";
 
+// Required so the browser tab used for Google's OAuth prompt closes itself and
+// hands the result back to the app; without this the flow can hang after login.
+WebBrowser.maybeCompleteAuthSession();
+
+/**
+ * Google's OAuth client ids.
+ *
+ * Not secrets — an OAuth client id is public by design, and on native it is
+ * useless without the signing fingerprint or bundle id it is bound to. The
+ * literals are the fallback for a checkout without `.env`, which matters here
+ * because `.env`, `firebase/*.json` and `firebase/*.plist` are all gitignored:
+ * a fresh clone has no other source for these values.
+ */
+const GOOGLE_IOS_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+  "47943475561-ddp7kapksdsdov6c81bqttohhupgm3qm.apps.googleusercontent.com";
+const GOOGLE_ANDROID_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
+  "47943475561-gliss3g4ak20npfl72s3kieid2gph481.apps.googleusercontent.com";
+const GOOGLE_WEB_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+  "47943475561-flfnufkktbim5kdiqe06f53ts0gkbo4f.apps.googleusercontent.com";
+
 export default function WelcomeScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
-
+  const [googleError, setGoogleError] = useState<string | null>(null);
   /**
-   * Google's request has to be a hook, so it lives here rather than in the
-   * provider. `useIdTokenAuthRequest` yields the `id_token` the backend verifies
-   * against Google's JWKS — an access token would prove nothing about identity.
-   *
-   * With no client ids configured the request is null and the button says so,
-   * rather than opening a browser that immediately fails.
+   * Covers the window the provider's own `busy` cannot: the browser prompt and
+   * the code-for-token exchange, both of which happen before `signInWithGoogleToken`
+   * is ever called. Without it the button looks inert for several seconds.
    */
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  // `useIdTokenAuthRequest`, not `useAuthRequest`: on web it asks Google for the
+  // id token directly, and on native it falls through to the PKCE code flow and
+  // exchanges the code itself, surfacing the id token on `params.id_token`. Plain
+  // `useAuthRequest` would hand back only an access token on web, which the
+  // backend cannot verify — it checks an RS256 identity token's signature and
+  // audience.
+  //
+  // `redirectUri` is deliberately not set: the library default,
+  // `<applicationId>:/oauthredirect`, is accepted by both the iOS and the Android
+  // OAuth client. That was checked against Google's authorize endpoint rather
+  // than assumed — a deliberately bogus scheme returns `redirect_uri_mismatch`
+  // there, and `com.blacknexa.app:/oauthredirect` does not.
   const [googleRequest, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
   });
 
   useEffect(() => {
@@ -50,27 +87,57 @@ export default function WelcomeScreen(): React.ReactElement {
   }, []);
 
   useEffect(() => {
-    if (googleResponse?.type !== "success") return;
+    if (!googleResponse) return;
+    // A cancelled prompt is not an error worth showing, matching Apple's flow.
+    if (googleResponse.type === "dismiss" || googleResponse.type === "cancel") {
+      setGoogleBusy(false);
+      return;
+    }
+    if (googleResponse.type === "error") {
+      // Google's own `error_description` names the actual cause — a redirect
+      // mismatch, a disabled client — where the generic sentence hides it.
+      setGoogleError(
+        googleResponse.params?.error_description ??
+          googleResponse.error?.message ??
+          "That sign-in did not complete. Please try again.",
+      );
+      setGoogleBusy(false);
+      return;
+    }
+    if (googleResponse.type !== "success") {
+      setGoogleBusy(false);
+      return;
+    }
     const idToken = googleResponse.params?.id_token;
-    if (idToken) void signInWithGoogleToken(idToken);
+    if (!idToken) {
+      // On native the token exchange runs asynchronously after the browser
+      // closes, so the first success carries only `code`. Stay busy and wait for
+      // the provider to re-emit with the exchanged token rather than declaring
+      // failure on a result that is merely not ready yet.
+      if (googleResponse.params?.code) return;
+      setGoogleError("That sign-in did not complete. Please try again.");
+      setGoogleBusy(false);
+      return;
+    }
+    void signInWithGoogleToken(idToken).finally(() => setGoogleBusy(false));
   }, [googleResponse, signInWithGoogleToken]);
 
   const onGoogle = useCallback(async () => {
     clearError();
-    if (!googleRequest) {
-      // Honest rather than silent: a button that appears to work and does nothing
-      // is worse than one that explains why it cannot.
-      await promptGoogle().catch(() => {});
-      return;
+    setGoogleError(null);
+    setGoogleBusy(true);
+    try {
+      await promptGoogle();
+    } catch {
+      setGoogleError("That sign-in did not complete. Please try again.");
+      setGoogleBusy(false);
     }
-    await promptGoogle();
-  }, [clearError, googleRequest, promptGoogle]);
+  }, [clearError, promptGoogle]);
 
   const onApple = useCallback(async () => {
     clearError();
+    setGoogleError(null);
     await signInWithApple();
-    // Routing is the gate's job: a successful sign-in flips auth status and the
-    // stack swaps underneath us.
   }, [clearError, signInWithApple]);
 
   return (
@@ -97,13 +164,13 @@ export default function WelcomeScreen(): React.ReactElement {
           </Text>
         </View>
 
-        {error ? (
+        {error || googleError ? (
           <Text
             variant="bodySm"
             color={colors.bad2}
             style={{ marginTop: 16, paddingHorizontal: screenPadding.hero }}
           >
-            {error}
+            {error || googleError}
           </Text>
         ) : null}
 
@@ -114,8 +181,6 @@ export default function WelcomeScreen(): React.ReactElement {
               onPress={onApple}
               loading={busy}
               variant="primary"
-              // Apple's own required treatment: black fill, white mark. Not the
-              // app's accent, so the no-recommendation rule holds.
               style={{ backgroundColor: colors.t0 }}
               icon={<AppleMark />}
               testID="welcome-apple"
@@ -129,6 +194,10 @@ export default function WelcomeScreen(): React.ReactElement {
             style={{ borderRadius: radius.lg }}
             icon={<GoogleMark />}
             onPress={onGoogle}
+            loading={googleBusy}
+            // The request loads asynchronously (it generates the PKCE verifier);
+            // prompting before it exists silently does nothing.
+            disabled={!googleRequest}
             testID="welcome-google"
           />
 
@@ -173,91 +242,43 @@ export default function WelcomeScreen(): React.ReactElement {
 
 function AppleMark(): React.ReactElement {
   return (
-    <View style={{ width: 17, height: 20, alignItems: "center", justifyContent: "center" }}>
-      <View
-        style={{
-          width: 12,
-          height: 13,
-          borderRadius: 6,
-          backgroundColor: colors.bg,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 4,
-          width: 4,
-          height: 5,
-          borderRadius: 2,
-          backgroundColor: colors.bg,
-          transform: [{ rotate: "20deg" }],
-        }}
-      />
-    </View>
+    <Svg width={17} height={20} viewBox="0 0 384 512" fill={colors.bg}>
+      <Path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+    </Svg>
   );
 }
 
-/** Google's four-colour mark, quartered — a monochrome fallback is off-brand. */
+/** Google's official 4-color "G" mark via SVG. */
 function GoogleMark(): React.ReactElement {
   return (
-    <View style={styles.googleMark}>
-      <View style={[styles.googleQuad, { backgroundColor: "#4285F4", top: 0, right: 0 }]} />
-      <View style={[styles.googleQuad, { backgroundColor: "#34A853", bottom: 0, right: 0 }]} />
-      <View style={[styles.googleQuad, { backgroundColor: "#FBBC05", bottom: 0, left: 0 }]} />
-      <View style={[styles.googleQuad, { backgroundColor: "#EA4335", top: 0, left: 0 }]} />
-      <View style={styles.googleHole} />
-    </View>
+    <Svg width={18} height={18} viewBox="0 0 48 48">
+      <Path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <Path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <Path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <Path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+      <Path fill="none" d="M0 0h48v48H0z" />
+    </Svg>
   );
 }
 
 function MailMark(): React.ReactElement {
-  return (
-    <View
-      style={{
-        width: 18,
-        height: 13,
-        borderRadius: 3,
-        borderWidth: 1.6,
-        borderColor: colors.t0,
-        overflow: "hidden",
-      }}
-    >
-      <View
-        style={{
-          position: "absolute",
-          top: -4,
-          left: 1,
-          width: 12,
-          height: 12,
-          borderRightWidth: 1.6,
-          borderBottomWidth: 1.6,
-          borderColor: colors.t0,
-          transform: [{ rotate: "45deg" }],
-        }}
-      />
-    </View>
-  );
+  return <Mail size={18} color={colors.t0} strokeWidth={2} />;
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   band: { position: "absolute", top: 0, left: 0, right: 0 },
   routes: { paddingHorizontal: screenPadding.hero, paddingTop: 34, gap: 10 },
-
-  googleMark: {
-    width: 17,
-    height: 17,
-    borderRadius: 8.5,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleQuad: { position: "absolute", width: 8.5, height: 8.5 },
-  googleHole: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.s6,
-  },
 });

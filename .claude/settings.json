@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(bun add *)",
+      "Bash(python3 /private/tmp/claude-501/-Users-meetdesai-IT-Path-blacknexa-workspace/e0cb3126-6ac0-43cd-9571-73442674d921/scratchpad/font_codemod.py)",
+      "Bash(python3 /private/tmp/claude-501/-Users-meetdesai-IT-Path-blacknexa-workspace/e0cb3126-6ac0-43cd-9571-73442674d921/scratchpad/fix_import_corruption.py)",
+      "Bash(python3 /private/tmp/claude-501/-Users-meetdesai-IT-Path-blacknexa-workspace/e0cb3126-6ac0-43cd-9571-73442674d921/scratchpad/font_codemod_pass2.py)",
+      "Bash(grep -rn \"fontFamily: fontFamily\\\\.\\\\w*,$\" app components)",
+      "Bash(awk -F: '{print $1\":\"$2}')",
+      "Bash(python3 -)",
+      "Bash(python3 /private/tmp/claude-501/-Users-meetdesai-IT-Path-blacknexa-workspace/e0cb3126-6ac0-43cd-9571-73442674d921/scratchpad/dedup_fontfamily.py)"
+    ]
+  }
+}

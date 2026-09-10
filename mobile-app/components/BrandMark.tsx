@@ -1,7 +1,8 @@
 import { Shield } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, View, type ViewStyle } from "react-native";
-import Colors from "@/constants/colors";
+import { StyleSheet, View, type ViewStyle } from "react-native";
+import { alpha, colors, radius } from "@/constants/theme";
+import Text from "@/components/ui/Text";
 
 type Variant = "chip" | "header" | "watermark" | "inline";
 
@@ -23,11 +24,11 @@ export default function BrandMark({
   if (variant === "watermark") {
     return (
       <View style={[styles.watermark, style]} testID={testID}>
-        <Text style={styles.watermarkText}>
-          BlackNexa<Text style={styles.watermarkTm}>™</Text>
+        <Text variant="bodyXs" color={colors.t3} center style={styles.watermarkText}>
+          BlackNexa<Text variant="eyebrowSm" color={colors.acc}>™</Text>
           {"  "}· By the people, for the people
         </Text>
-        <Text style={styles.watermarkLegal}>
+        <Text variant="eyebrowSm" color={colors.t4} center style={styles.watermarkLegal}>
           Trademark pending · USPTO
         </Text>
       </View>
@@ -39,15 +40,15 @@ export default function BrandMark({
       <View style={[styles.headerRow, style]} testID={testID}>
         {showIcon && (
           <View style={styles.headerIcon}>
-            <Shield size={14} color={Colors.bg} fill={Colors.gold} />
+            <Shield size={14} color={colors.bg} fill={colors.acc} />
           </View>
         )}
         <View>
           <View style={styles.brandLine}>
-            <Text style={styles.brand}>BlackNexa</Text>
-            <Text style={styles.tm}>TM</Text>
+            <Text variant="sectionTitle" color={colors.t0}>BlackNexa</Text>
+            <Text variant="eyebrowSm" color={colors.acc} style={styles.tm}>TM</Text>
           </View>
-          {tagline ? <Text style={styles.tagline}>{tagline}</Text> : null}
+          {tagline ? <Text variant="metaSm" color={colors.t3}>{tagline}</Text> : null}
         </View>
       </View>
     );
@@ -56,8 +57,8 @@ export default function BrandMark({
   if (variant === "inline") {
     return (
       <View style={[styles.inline, style]} testID={testID}>
-        <Text style={styles.inlineText}>
-          BlackNexa<Text style={styles.inlineTm}>™</Text>
+        <Text variant="labelSm" color={colors.acc}>
+          BlackNexa<Text variant="eyebrowSm" color={colors.acc}>™</Text>
         </Text>
       </View>
     );
@@ -65,9 +66,9 @@ export default function BrandMark({
 
   return (
     <View style={[styles.chip, style]} testID={testID}>
-      {showIcon && <Shield size={11} color={Colors.gold} />}
-      <Text style={styles.chipText}>
-        BlackNexa<Text style={styles.chipTm}>™</Text>
+      {showIcon && <Shield size={11} color={colors.acc} />}
+      <Text variant="labelSm" color={colors.t0}>
+        BlackNexa<Text variant="eyebrowSm" color={colors.acc}>™</Text>
       </Text>
     </View>
   );
@@ -78,24 +79,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: Colors.surface2,
+    backgroundColor: colors.s5,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.gold + "44",
+    borderColor: alpha(colors.acc, 0.3),
     paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.xl,
     alignSelf: "flex-start",
-  },
-  chipText: {
-    fontSize: 10.5,
-    fontWeight: "800",
-    color: Colors.text,
-    letterSpacing: 0.4,
-  },
-  chipTm: {
-    fontSize: 8,
-    color: Colors.gold,
-    fontWeight: "800",
   },
   headerRow: {
     flexDirection: "row",
@@ -106,41 +96,17 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 9,
-    backgroundColor: Colors.surface3,
+    backgroundColor: colors.s5,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: Colors.gold + "44",
+    borderColor: alpha(colors.acc, 0.3),
   },
   brandLine: { flexDirection: "row", alignItems: "flex-start", gap: 2 },
-  brand: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text,
-    letterSpacing: -0.2,
-  },
   tm: {
-    fontSize: 8,
-    fontWeight: "800",
-    color: Colors.gold,
-    letterSpacing: 0.5,
     marginTop: 2,
   },
-  tagline: {
-    fontSize: 10,
-    color: Colors.textDim,
-    fontWeight: "600",
-    letterSpacing: 0.4,
-    marginTop: 1,
-  },
   inline: { flexDirection: "row", alignItems: "center" },
-  inlineText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: Colors.gold,
-    letterSpacing: 0.5,
-  },
-  inlineTm: { fontSize: 8, color: Colors.gold },
   watermark: {
     alignItems: "center",
     paddingVertical: 14,
@@ -148,22 +114,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   watermarkText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textDim,
     letterSpacing: 0.4,
-    textAlign: "center",
-  },
-  watermarkTm: {
-    fontSize: 8.5,
-    color: Colors.gold,
-    fontWeight: "800",
   },
   watermarkLegal: {
-    fontSize: 9.5,
-    color: Colors.textMute,
-    fontWeight: "600",
     letterSpacing: 0.6,
-    textTransform: "uppercase",
   },
 });

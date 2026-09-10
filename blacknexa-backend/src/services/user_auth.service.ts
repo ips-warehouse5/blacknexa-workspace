@@ -464,6 +464,28 @@ class UserAuthService {
     if (!user.email_verified_at) {
       await user.update({ email_verified_at: nowIso() });
     }
+    // The provider's address can change between sign-ins, and Apple's changes for
+    // a specific reason: switching "Hide My Email" to "Share My Email" replaces a
+    // `@privaterelay.appleid.com` forwarder with the person's real inbox. The
+    // account is found by `provider_subject`, so nothing above notices — without
+    // this the stored address stays frozen at whatever the first sign-in produced,
+    // and every code we send keeps going to the relay (or nowhere, if our sender
+    // is not registered with Apple).
+    //
+    // Only moved when the provider says the new address is verified, and only onto
+    // an address no one else holds — `email` is the login identifier, so silently
+    // taking one that belongs to another account would merge two people.
+    if (identity.email && identity.email !== user.email) {
+      const conflict = await this.findWithSecret(identity.email);
+      if (conflict && conflict.id !== user.id) {
+        logger.warn("[auth] provider email already belongs to another account", {
+          provider,
+          userId: user.id,
+        });
+      } else {
+        await user.update({ email: identity.email, email_verified_at: nowIso() });
+      }
+    }
     // Apple returns the name only on first authorisation; capture it if we have
     // nothing better.
     if (!user.display_name && fullName) {
@@ -476,7 +498,19 @@ class UserAuthService {
         provider,
         provider_subject: identity.subject,
         provider_email: identity.email ?? null,
+        provider_email_is_private: identity.isPrivateEmail,
         linked_at: nowIso(),
+      });
+    } else if (
+      // Keep the link's own record of what the provider last reported. It is not
+      // used for lookup, but it is what support reads to answer "why did their
+      // code never arrive" — a stale relay address here hides the answer.
+      linked.provider_email !== (identity.email ?? null) ||
+      linked.provider_email_is_private !== identity.isPrivateEmail
+    ) {
+      await linked.update({
+        provider_email: identity.email ?? null,
+        provider_email_is_private: identity.isPrivateEmail,
       });
     }
 

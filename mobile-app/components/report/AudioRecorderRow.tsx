@@ -19,7 +19,12 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, View, type StyleProp, type ViewStyle } from "react-native";
-import { Audio } from "expo-av";
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioRecorder,
+} from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
 import { colors, radius } from "@/constants/theme";
@@ -38,41 +43,54 @@ export function AudioRecorderRow({
   style?: StyleProp<ViewStyle>;
 }): React.ReactElement {
   const { addAttachment } = useReportDraft();
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  /**
+   * `useAudioRecorder` returns one long-lived recorder for the component's whole
+   * life, rather than the per-take `new Audio.Recording()` this used to build. So
+   * "am I recording" is no longer "do I hold an object" — it is tracked here.
+   * `recorder.isRecording` exists but is a native read that does not re-render.
+   */
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Read by the unmount cleanup, which must not re-subscribe on every tick. */
+  const isRecordingRef = useRef(false);
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
 
   /** Stop the tick and release the recorder if the screen goes away mid-take. */
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      // Deliberately not awaited: an unmount cannot wait, and a stranded
-      // recording is released by the OS when the audio session ends.
-      void recording?.stopAndUnloadAsync().catch(() => {});
+      // Deliberately not awaited: an unmount cannot wait. Guarded because
+      // stopping a recorder that never started throws on Android.
+      if (isRecordingRef.current) void recorder.stop().catch(() => {});
     };
-  }, [recording]);
+  }, [recorder]);
 
   const start = useCallback(async () => {
     setError(null);
     setBusy(true);
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) {
         setError("Microphone access is off. You can still type what happened.");
         return;
       }
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
       });
 
-      const created = new Audio.Recording();
-      await created.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await created.startAsync();
+      // Required by expo-audio before every take, not once per recorder.
+      await recorder.prepareToRecordAsync();
+      recorder.record();
 
-      setRecording(created);
+      setIsRecording(true);
       setElapsed(0);
       timerRef.current = setInterval(() => setElapsed((value) => value + 250), 250);
       if (Platform.OS !== "web") Haptics.selectionAsync().catch(() => {});
@@ -81,17 +99,20 @@ export function AudioRecorderRow({
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [recorder]);
 
   const stop = useCallback(async () => {
-    if (!recording) return;
+    if (!isRecording) return;
     setBusy(true);
     if (timerRef.current) clearInterval(timerRef.current);
 
     try {
-      await recording.stopAndUnloadAsync();
-      const status = await recording.getStatusAsync();
-      const uri = recording.getURI();
+      // Read the duration *before* stopping: `stop()` tears the session down and
+      // the reported duration goes to 0, which would attach a file claiming to be
+      // zero seconds long.
+      const durationMs = recorder.getStatus().durationMillis || elapsed;
+      await recorder.stop();
+      const uri = recorder.uri;
       if (!uri) throw new Error("no uri");
 
       const info = await FileSystem.getInfoAsync(uri);
@@ -99,11 +120,12 @@ export function AudioRecorderRow({
 
       addAttachment({
         kind: "audio",
-        // The recorder writes m4a on both platforms with the HIGH_QUALITY preset.
+        // Still m4a on both platforms: expo-audio's HIGH_QUALITY preset keeps the
+        // `.m4a` extension with MPEG4/AAC, same as the expo-av preset it replaces.
         mime: "audio/m4a",
         uri,
         bytes,
-        durationMs: status.durationMillis ?? elapsed,
+        durationMs,
         capturedAt: new Date().toISOString(),
       });
 
@@ -113,14 +135,12 @@ export function AudioRecorderRow({
     } catch {
       setError("That recording could not be saved. Try again.");
     } finally {
-      setRecording(null);
+      setIsRecording(false);
       setElapsed(0);
       setBusy(false);
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+      await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
     }
-  }, [addAttachment, elapsed, recording]);
-
-  const isRecording = recording !== null;
+  }, [addAttachment, elapsed, isRecording, recorder]);
 
   return (
     <View style={style}>

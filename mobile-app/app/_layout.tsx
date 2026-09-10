@@ -18,10 +18,12 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as NavigationBar from "expo-navigation-bar";
+import { INTRO_SEEN_KEY } from "@/app/(auth)/location";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -65,24 +67,65 @@ const queryClient = new QueryClient({
  */
 function AuthGate(): React.ReactElement | null {
   const { status } = useAuth();
-  const [splashHidden, setSplashHidden] = useState(false);
-
-  const hideSplash = useCallback(async () => {
-    if (splashHidden) return;
-    setSplashHidden(true);
-    await SplashScreen.hideAsync().catch(() => {});
-  }, [splashHidden]);
+  const segments = useSegments();
+  const router = useRouter();
+  const [initialRouteReady, setInitialRouteReady] = useState(false);
 
   useEffect(() => {
-    // Held until the session check settles, so a returning member never sees
-    // Welcome flash before their feed.
-    if (status !== "restoring") void hideSplash();
-  }, [hideSplash, status]);
+    if (status === "restoring") return;
 
-  if (status === "restoring") return null;
+    const firstSegment = segments[0] as string | undefined;
+    const inAuthGroup = firstSegment === "(auth)";
+    const inOnboardingGroup = firstSegment === "(onboarding)";
+    const isPublicRoute =
+      firstSegment === "legal" ||
+      firstSegment === "news" ||
+      firstSegment === "incident" ||
+      firstSegment === "r" ||
+      firstSegment === "modal";
+
+    if (status === "signedOut" && !inAuthGroup && !isPublicRoute) {
+      AsyncStorage.getItem(INTRO_SEEN_KEY)
+        .then((seen) => {
+          if (seen === "true") {
+            router.replace("/(auth)/welcome");
+          } else {
+            router.replace("/(auth)/intro");
+          }
+          setInitialRouteReady(true);
+        })
+        .catch(() => {
+          router.replace("/(auth)/intro");
+          setInitialRouteReady(true);
+        });
+    } else if (
+      status === "onboarding" &&
+      !inOnboardingGroup &&
+      !isPublicRoute
+    ) {
+      router.replace("/(onboarding)/notifications");
+      setInitialRouteReady(true);
+    } else if (status === "signedIn" && (inAuthGroup || inOnboardingGroup)) {
+      router.replace("/(tabs)");
+      setInitialRouteReady(true);
+    } else {
+      setInitialRouteReady(true);
+    }
+  }, [status, segments, router]);
+
+  useEffect(() => {
+    // Only release the splash screen once auth status AND initial target route are ready,
+    // so no intermediate screen or tab bar ever flashes.
+    if (status !== "restoring" && initialRouteReady) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [status, initialRouteReady]);
+
+  if (status === "restoring" || !initialRouteReady) return null;
 
   return (
     <Stack
+      initialRouteName={status === "signedIn" ? "(tabs)" : "(auth)"}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.bg },
@@ -90,13 +133,9 @@ function AuthGate(): React.ReactElement | null {
         animation: "slide_from_right",
       }}
     >
-      {status === "signedOut" ? (
-        <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-      ) : status === "onboarding" ? (
-        <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
-      ) : (
-        <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-      )}
+      <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+      <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
 
       {/* Reachable from the signed-in stack. */}
       <Stack.Screen name="search" options={{ animation: "fade" }} />
@@ -168,19 +207,21 @@ export default function RootLayout(): React.ReactElement | null {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <KeyboardProvider>
-          <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
+          <GestureHandlerRootView
+            style={{ flex: 1, backgroundColor: colors.bg }}
+          >
             <StatusBar style="dark" />
             <AuthProvider>
               <SettingsProvider>
-                <IncidentsProvider>
-                  <LocationProvider>
+                <LocationProvider>
+                  <IncidentsProvider>
                     <NewsProvider>
                       <GeoLegalProvider>
                         <AuthGate />
                       </GeoLegalProvider>
                     </NewsProvider>
-                  </LocationProvider>
-                </IncidentsProvider>
+                  </IncidentsProvider>
+                </LocationProvider>
               </SettingsProvider>
             </AuthProvider>
           </GestureHandlerRootView>

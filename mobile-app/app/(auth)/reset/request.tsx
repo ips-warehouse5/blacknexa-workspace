@@ -11,7 +11,7 @@
 
 import React, { useCallback, useState } from "react";
 import { View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { colors, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
@@ -25,6 +25,24 @@ export default function ResetRequestScreen(): React.ReactElement {
   const { forgotPassword, busy, error, clearError } = useAuth();
   const [email, setEmail] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      clearError();
+      return () => {
+        clearError();
+      };
+    }, [clearError]),
+  );
+
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      if (error) clearError();
+      if (problem) setProblem(null);
+      setEmail(text);
+    },
+    [clearError, error, problem],
+  );
 
   const submit = useCallback(async () => {
     clearError();
@@ -59,7 +77,7 @@ export default function ResetRequestScreen(): React.ReactElement {
       <TextField
         label="EMAIL"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={handleEmailChange}
         error={problem ?? error}
         placeholder="you@example.com"
         keyboardType="email-address"

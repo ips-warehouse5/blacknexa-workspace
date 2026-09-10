@@ -13,6 +13,7 @@ import { colors } from "@/constants/theme";
 export default function AuthLayout(): React.ReactElement {
   return (
     <Stack
+      initialRouteName="intro"
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.bg },

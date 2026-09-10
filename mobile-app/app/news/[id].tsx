@@ -14,7 +14,7 @@ import {
   Sparkles,
   Volume2,
 } from "lucide-react-native";
-import { Audio } from "expo-av";
+import { type AudioPlayer } from "expo-audio";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
@@ -83,7 +83,7 @@ export default function NewsArticleScreen(): React.ReactElement {
   const [audioLoading, setAudioLoading] = useState<boolean>(false);
   const [audioPlaying, setAudioPlaying] = useState<boolean>(false);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -219,14 +219,37 @@ export default function NewsArticleScreen(): React.ReactElement {
 
   const stopAudio = useCallback(async () => {
     try {
-      await soundRef.current?.stopAsync();
-      await soundRef.current?.unloadAsync();
+      // `remove()` is expo-audio's replacement for `unloadAsync()` and is not
+      // optional: an AudioPlayer owns a native object that outlives the ref being
+      // nulled, so skipping it leaks a player per playback.
+      soundRef.current?.pause();
+      soundRef.current?.remove();
     } catch {
       /* ignore */
     }
     stopNativeTTS();
     soundRef.current = null;
     setAudioPlaying(false);
+  }, []);
+
+  /**
+   * Release the player and reset the button once a briefing plays out.
+   *
+   * Both playback paths below need this, and expo-audio replaces expo-av's
+   * `setOnPlaybackStatusUpdate` with an event subscription.
+   */
+  const attachFinishHandler = useCallback((player: AudioPlayer) => {
+    const subscription = player.addListener("playbackStatusUpdate", (status) => {
+      if (!status.didJustFinish) return;
+      setAudioPlaying(false);
+      subscription.remove();
+      try {
+        player.remove();
+      } catch {
+        /* already released */
+      }
+      soundRef.current = null;
+    });
   }, []);
 
   const playAudioBriefing = useCallback(async () => {
@@ -258,13 +281,7 @@ export default function NewsArticleScreen(): React.ReactElement {
           const sound = await playAudioUri(backendAudioUrl);
           soundRef.current = sound;
           setAudioPlaying(true);
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status && "didJustFinish" in status && status.didJustFinish) {
-              setAudioPlaying(false);
-              sound.unloadAsync().catch(() => {});
-              soundRef.current = null;
-            }
-          });
+          attachFinishHandler(sound);
           return;
         } catch (playerErr) {
           const msg = playerErr instanceof Error ? playerErr.message : String(playerErr);
@@ -290,17 +307,11 @@ export default function NewsArticleScreen(): React.ReactElement {
       const sound = await playAudioUri(tts.uri);
       soundRef.current = sound;
       setAudioPlaying(true);
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status && "didJustFinish" in status && status.didJustFinish) {
-          setAudioPlaying(false);
-          sound.unloadAsync().catch(() => {});
-          soundRef.current = null;
-        }
-      });
+      attachFinishHandler(sound);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Could not play the audio briefing.";
       // Last resort: native TTS. This uses the OS speech synthesizer, not the
-      // network or expo-av file formats, so it works on real devices even when
+      // network or a decoded audio file, so it works on real devices even when
       // everything else fails.
       if (isNativeTtsAvailable()) {
         try {

@@ -76,11 +76,20 @@ export interface SessionSummary {
  */
 function deviceContext(): { deviceLabel: string; platform: string } {
   const fallback =
-    Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android device" : "Browser";
+    Platform.OS === "ios"
+      ? "iPhone"
+      : Platform.OS === "android"
+        ? "Android device"
+        : "Browser";
   const name = Constants.deviceName ?? fallback;
   return {
     deviceLabel: name.slice(0, 120),
-    platform: Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web",
+    platform:
+      Platform.OS === "ios"
+        ? "ios"
+        : Platform.OS === "android"
+          ? "android"
+          : "web",
   };
 }
 
@@ -129,7 +138,11 @@ export const authApi = {
 
   /** A8 and A14's "Resend code in 0:24". */
   resendCode(email: string, purpose: OtpPurpose): Promise<OtpChallenge> {
-    return api.post<OtpChallenge>("/auth/resend-code", { email, purpose }, { anonymous: true });
+    return api.post<OtpChallenge>(
+      "/auth/resend-code",
+      { email, purpose },
+      { anonymous: true },
+    );
   },
 
   /** A10. */
@@ -147,10 +160,11 @@ export const authApi = {
     provider: SocialProvider,
     identityToken: string,
     fullName?: string,
+    email?: string,
   ): Promise<AuthResult> {
     const result = await api.post<AuthResult>(
       `/auth/oauth/${provider}`,
-      { identityToken, fullName, ...deviceContext() },
+      { identityToken, fullName, email, ...deviceContext() },
       { anonymous: true },
     );
     return adopt(result);
@@ -158,11 +172,19 @@ export const authApi = {
 
   /** A13. Same response whether or not the address is registered. */
   forgotPassword(email: string): Promise<OtpChallenge> {
-    return api.post<OtpChallenge>("/auth/password/forgot", { email }, { anonymous: true });
+    return api.post<OtpChallenge>(
+      "/auth/password/forgot",
+      { email },
+      { anonymous: true },
+    );
   },
 
   /** A14 → A15. Signs in here and ends every other session. */
-  async resetPassword(email: string, code: string, password: string): Promise<AuthResult> {
+  async resetPassword(
+    email: string,
+    code: string,
+    password: string,
+  ): Promise<AuthResult> {
     const result = await api.post<AuthResult>(
       "/auth/password/reset",
       { email, code, password, ...deviceContext() },
@@ -211,13 +233,19 @@ export const authApi = {
   },
 
   /** A7. One record per acceptance, per document. */
-  recordConsents(documents: ("tos" | "privacy")[], version: number): Promise<null> {
+  recordConsents(
+    documents: ("tos" | "privacy")[],
+    version: number,
+  ): Promise<null> {
     return api.post<null>("/users/me/consents", { documents, version });
   },
 
   /** A11, once the OS prompt is accepted. */
   registerPushToken(pushToken: string): Promise<null> {
-    return api.post<null>("/users/me/devices", { pushToken, ...deviceContext() });
+    return api.post<null>("/users/me/devices", {
+      pushToken,
+      ...deviceContext(),
+    });
   },
 
   /**
