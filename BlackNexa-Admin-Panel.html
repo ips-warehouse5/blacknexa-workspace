@@ -482,8 +482,9 @@
         line-height: 1.4;
         text-align: left;
         flex: 1;
-        overflow: visible;
-        text-overflow: clip;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .custom-select-trigger:hover {
         border-color: var(--accent);
@@ -1136,6 +1137,52 @@
         box-shadow: 0 25px 65px rgba(0, 0, 0, 0.18);
         border: 1px solid rgba(0, 0, 0, 0.06);
         font-family: "Work Sans", sans-serif;
+      }
+      .modal.modal-wide {
+        width: min(640px, 95vw);
+        max-width: 640px;
+      }
+      .modal .custom-select-wrap {
+        width: 100% !important;
+        min-width: 0 !important;
+        display: block !important;
+      }
+      .modal .custom-select-trigger {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .modal .custom-select-label {
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+      .modal .custom-select-menu {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+      }
+      .modal .custom-select-option {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .custom-select-wrap.dropup .custom-select-menu {
+        top: auto !important;
+        bottom: calc(100% + 6px) !important;
+        animation: dropFadeUp 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes dropFadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       .modal h3 {
         margin: 0 0 10px;
@@ -3881,7 +3928,7 @@
             <div class="sub-nav" id="subNewsTags">Tags Management</div>
             <div class="sub-nav" id="subDailyBriefing">Daily Briefing</div>
           </div>
-          <div class="nav soon-nav" data-target="Notifications & Announcements">
+          <div class="nav" id="notificationsMenu" data-target="Notifications & Announcements">
             <span class="nav-icon"
               ><svg viewBox="0 0 24 24">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -5922,6 +5969,16 @@
                       class="value"
                       id="userProfCreated"
                       style="font-weight: 400"
+                    >
+                      —
+                    </div>
+                  </div>
+                  <div>
+                    <div class="label">Region &amp; Tier</div>
+                    <div
+                      class="value"
+                      id="userProfRegionTier"
+                      style="font-weight: 400; display: flex; align-items: center; gap: 6px"
                     >
                       —
                     </div>
@@ -10391,6 +10448,188 @@
             </div>
           </div>
         </section>
+
+        <!-- =========================================================
+             MODULE: NOTIFICATIONS & ANNOUNCEMENTS
+             ========================================================= -->
+        <section id="notificationsView" class="cm-page" style="display: none">
+          <div class="card">
+            <div class="card-header-bar" style="margin-bottom: 20px">
+              <div>
+                <h1 class="title">Notifications &amp; Announcements</h1>
+                <p style="color:var(--muted);font-size:13px;margin:4px 0 0">
+                  Compose and dispatch system-wide announcements, target community segments by region, role, and subscription tier, and broadcast news push notifications.
+                </p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center">
+                <button class="btn outline" id="btnExportNotificationLogs" title="Export delivery audit log">
+                  <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:6px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export Log
+                </button>
+                <button class="btn primary" id="btnOpenCreateAnnouncementModal">
+                  <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:6px" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Create Announcement
+                </button>
+              </div>
+            </div>
+
+            <!-- Notification KPIs -->
+            <div class="kpi-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px">
+              <div class="kpi-card">
+                <div class="kpi-label">Total Broadcasts</div>
+                <div class="kpi-value" id="kpiTotalBroadcasts">0</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">All channels</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Active / Scheduled</div>
+                <div class="kpi-value" id="kpiActiveBroadcasts" style="color:var(--accent)">0</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">In delivery queue</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Avg. Open / Read Rate</div>
+                <div class="kpi-value" id="kpiAvgOpenRate">0%</div>
+                <div style="font-size:11.5px;color:#059669;margin-top:4px">↑ 14.2% this month</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Total Audience Reach</div>
+                <div class="kpi-value" id="kpiTotalAudienceReach">0</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Verified recipients</div>
+              </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="tabs" id="notificationTabs">
+              <div class="tab active" data-notif-tab="announcements">
+                System Announcements (<span id="notifTabAnnouncementsCount">0</span>)
+              </div>
+              <div class="tab" data-notif-tab="news">
+                News Notifications (<span id="notifTabNewsCount">0</span>)
+              </div>
+              <div class="tab" data-notif-tab="segments">
+                Audience Segmentation Overview
+              </div>
+            </div>
+
+            <!-- TAB 1: Announcements Table Panel -->
+            <div id="notifAnnouncementsPanel">
+              <div class="filters">
+                <input class="search" id="notifSearchInput" placeholder="Search announcements by title or content..." />
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <div class="custom-select-wrap" style="min-width:160px">
+                    <input type="hidden" id="notifTypeFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Categories</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu">
+                      <div class="custom-select-option selected" data-value="All">All Categories</div>
+                      <div class="custom-select-option" data-value="System Announcement">System Announcement</div>
+                      <div class="custom-select-option" data-value="Urgent Safety Alert">Urgent Safety Alert</div>
+                      <div class="custom-select-option" data-value="Community Notice">Community Notice</div>
+                      <div class="custom-select-option" data-value="App Update">App Update</div>
+                      <div class="custom-select-option" data-value="Legal Notice">Legal Notice</div>
+                    </div>
+                  </div>
+                  <div class="custom-select-wrap" style="min-width:170px">
+                    <input type="hidden" id="notifRegionFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Regions</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu">
+                      <div class="custom-select-option selected" data-value="All">All Regions (Global)</div>
+                      <div class="custom-select-option" data-value="united_states">🇺🇸 United States</div>
+                      <div class="custom-select-option" data-value="united_kingdom">🇬🇧 United Kingdom</div>
+                      <div class="custom-select-option" data-value="france">🇫🇷 France</div>
+                      <div class="custom-select-option" data-value="africa_hub">🌍 Africa Continental</div>
+                      <div class="custom-select-option" data-value="india">🇮🇳 India</div>
+                      <div class="custom-select-option" data-value="brazil">🇧🇷 Brazil</div>
+                      <div class="custom-select-option" data-value="south_africa">🇿🇦 South Africa</div>
+                      <div class="custom-select-option" data-value="canada">🇨🇦 Canada</div>
+                    </div>
+                  </div>
+                  <div class="custom-select-wrap" style="min-width:140px">
+                    <input type="hidden" id="notifStatusFilter" value="All" />
+                    <button type="button" class="custom-select-trigger" style="width:100%"><span class="custom-select-label">All Statuses</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+                    <div class="custom-select-menu">
+                      <div class="custom-select-option selected" data-value="All">All Statuses</div>
+                      <div class="custom-select-option" data-value="Sent">Sent</div>
+                      <div class="custom-select-option" data-value="Scheduled">Scheduled</div>
+                      <div class="custom-select-option" data-value="Draft">Draft</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <table class="table" id="announcementsTable">
+                <thead>
+                  <tr>
+                    <th style="width:34%">Announcement &amp; ID</th>
+                    <th style="width:16%">Target Audience</th>
+                    <th style="width:13%">Category</th>
+                    <th style="width:11%">Status</th>
+                    <th style="width:12%">Delivery Stats</th>
+                    <th style="width:14%; text-align: right; padding-right: 18px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="announcementsTableBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="announcementsPagination"></div>
+            </div>
+
+            <!-- TAB 2: News Push Notifications Panel -->
+            <div id="notifNewsPanel" style="display:none">
+              <div class="filters">
+                <input class="search" id="notifNewsSearchInput" placeholder="Search news notifications..." />
+                <button class="btn primary" id="btnComposeNewsPush">
+                  <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:6px" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
+                  Push From News Story
+                </button>
+              </div>
+
+              <table class="table" id="newsNotifTable">
+                <thead>
+                  <tr>
+                    <th style="width:36%">News Story &amp; Headline</th>
+                    <th style="width:16%">Target Audience</th>
+                    <th style="width:14%">Sent Time</th>
+                    <th style="width:12%">Status</th>
+                    <th style="width:10%">Direct Opens</th>
+                    <th style="width:12%; text-align: right; padding-right: 18px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="newsNotifTableBody"></tbody>
+              </table>
+              <div class="pagination-bar" id="newsNotifPagination"></div>
+            </div>
+
+            <!-- TAB 3: Audience Segmentation Overview -->
+            <div id="notifSegmentsPanel" style="display:none">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px;margin-top:6px">
+                <!-- Region Breakdown Card -->
+                <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <h3 style="margin:0;font-size:15px;color:var(--text);font-weight:600">Audience by Region</h3>
+                    <span style="font-size:12px;color:var(--muted)">8 Active Regions</span>
+                  </div>
+                  <div id="segmentRegionStatsList" style="display:flex;flex-direction:column;gap:10px"></div>
+                </div>
+
+                <!-- Role Breakdown Card -->
+                <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <h3 style="margin:0;font-size:15px;color:var(--text);font-weight:600">Audience by Role</h3>
+                    <span style="font-size:12px;color:var(--muted)">Permissions &amp; Casework</span>
+                  </div>
+                  <div id="segmentRoleStatsList" style="display:flex;flex-direction:column;gap:10px"></div>
+                </div>
+
+                <!-- Tier Breakdown Card -->
+                <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <h3 style="margin:0;font-size:15px;color:var(--text);font-weight:600">Audience by Subscription Tier</h3>
+                    <span style="font-size:12px;color:var(--muted)">Paid vs Free</span>
+                  </div>
+                  <div id="segmentTierStatsList" style="display:flex;flex-direction:column;gap:10px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
     <div class="modal-wrap" id="modal">
@@ -10675,6 +10914,7 @@
         if ($("#newsCategoriesView")) $("#newsCategoriesView").style.display = "none";
         if ($("#newsTagsView")) $("#newsTagsView").style.display = "none";
         if ($("#dailyBriefingView")) $("#dailyBriefingView").style.display = "none";
+        if ($("#notificationsView")) $("#notificationsView").style.display = "none";
         if ($("#resourcesQueueView"))
           $("#resourcesQueueView").style.display = "none";
         if ($("#resourceDetailsView"))
@@ -11036,6 +11276,10 @@
       }
 
       function openModal() {
+        const m = $("#modal .modal");
+        if (m && action !== "create_announcement") {
+          m.classList.remove("modal-wide");
+        }
         $("#modal").style.display = "flex";
         if (typeof initCustomDropdowns === "function") {
           initCustomDropdowns();
@@ -11044,6 +11288,8 @@
 
       function closeModal() {
         $("#modal").style.display = "none";
+        const m = $("#modal .modal");
+        if (m) m.classList.remove("modal-wide");
       }
 
       $("#approve").onclick = () => showModal("approve");
@@ -11525,8 +11771,28 @@
             // Close all dropdowns first
             document
               .querySelectorAll(".custom-select-wrap")
-              .forEach((w) => w.classList.remove("open"));
+              .forEach((w) => {
+                w.classList.remove("open");
+                w.classList.remove("dropup");
+              });
             if (!isOpen) {
+              const rect = trigger.getBoundingClientRect();
+              const spaceBelow = window.innerHeight - rect.bottom;
+              const modalEl = wrap.closest(".modal");
+              if (modalEl) {
+                const modalRect = modalEl.getBoundingClientRect();
+                const spaceInModalBelow = modalRect.bottom - rect.bottom;
+                if (spaceInModalBelow < 220 || spaceBelow < 220) {
+                  wrap.classList.add("dropup");
+                } else {
+                  wrap.classList.remove("dropup");
+                }
+              } else if (spaceBelow < 220 && rect.top > 200) {
+                wrap.classList.add("dropup");
+              } else {
+                wrap.classList.remove("dropup");
+              }
+
               wrap.classList.add("open");
               if (hiddenInput && hiddenInput.id === "incidentDateFilter") {
                 const customPanel = $("#incCustomDatePanel");
@@ -11545,6 +11811,7 @@
               trigger.click();
             } else if (e.key === "Escape") {
               wrap.classList.remove("open");
+              wrap.classList.remove("dropup");
             }
           };
 
@@ -11577,6 +11844,7 @@
                 label.style.color = "";
               }
               wrap.classList.remove("open");
+              wrap.classList.remove("dropup");
 
               // Trigger appropriate table filter update
               if (hiddenInput && hiddenInput.id === "sort") {
@@ -11674,6 +11942,16 @@
                 renderResourcesTable();
               } else if (
                 hiddenInput &&
+                (hiddenInput.id === "notifTypeFilter" ||
+                  hiddenInput.id === "notifRegionFilter" ||
+                  hiddenInput.id === "notifStatusFilter")
+              ) {
+                if (typeof renderAnnouncementsTable === "function") {
+                  notifAnnouncePage = 1;
+                  renderAnnouncementsTable();
+                }
+              } else if (
+                hiddenInput &&
                 hiddenInput.id === "auditActionFilter"
               ) {
                 auditFilterAction = val;
@@ -11733,7 +12011,10 @@
           if (!e.target.closest(".custom-select-wrap")) {
             document
               .querySelectorAll(".custom-select-wrap")
-              .forEach((w) => w.classList.remove("open"));
+              .forEach((w) => {
+                w.classList.remove("open");
+                w.classList.remove("dropup");
+              });
           }
         });
       }
@@ -13719,6 +14000,8 @@
           email: "jason.dilo@example.com",
           email_verified_at: "2026-05-12T10:30:00Z",
           role: "advocate",
+          region: "united_kingdom",
+          tier: "paid",
           status: "active",
           avatar_mode: "initials",
           default_visibility: "trusted",
@@ -13752,6 +14035,8 @@
           email: "sarah.miller@lawadvocates.org",
           email_verified_at: "2026-04-01T08:20:00Z",
           role: "advocate",
+          region: "united_states",
+          tier: "paid",
           status: "active",
           avatar_mode: "photo",
           default_visibility: "trusted",
@@ -13778,6 +14063,8 @@
           email: "mark.vance99@domain.net",
           email_verified_at: "2026-06-18T14:10:00Z",
           role: "member",
+          region: "united_states",
+          tier: "free",
           status: "suspended",
           avatar_mode: "initials",
           default_visibility: "public",
@@ -13796,6 +14083,8 @@
           email: "chloe.bennett@sample.co.uk",
           email_verified_at: "2026-05-20T11:00:00Z",
           role: "member",
+          region: "united_kingdom",
+          tier: "paid",
           status: "active",
           avatar_mode: "initials",
           default_visibility: "public",
@@ -13821,6 +14110,8 @@
           email: "david.lee@blacknexa.org",
           email_verified_at: "2026-01-15T09:00:00Z",
           role: "moderator",
+          region: "canada",
+          tier: "paid",
           status: "active",
           avatar_mode: "initials",
           default_visibility: "trusted",
@@ -13838,6 +14129,8 @@
           email: "elena.rostova@privacymail.org",
           email_verified_at: "2026-07-04T16:45:00Z",
           role: "member",
+          region: "france",
+          tier: "free",
           status: "active",
           avatar_mode: "anonymous",
           default_visibility: "private",
@@ -13864,6 +14157,8 @@
           email: "m.thorne@enterprise-sec.com",
           email_verified_at: "2026-03-10T12:00:00Z",
           role: "member",
+          region: "united_states",
+          tier: "paid",
           status: "active",
           avatar_mode: "initials",
           default_visibility: "public",
@@ -13890,6 +14185,8 @@
           email: "alex.w@webmail.io",
           email_verified_at: null,
           role: "member",
+          region: "united_kingdom",
+          tier: "free",
           status: "deleted",
           avatar_mode: "initials",
           default_visibility: "public",
@@ -13908,6 +14205,8 @@
           email: "tanya.morales@communityaid.org",
           email_verified_at: "2026-06-01T10:00:00Z",
           role: "member",
+          region: "brazil",
+          tier: "paid",
           status: "active",
           avatar_mode: "photo",
           default_visibility: "trusted",
@@ -13925,6 +14224,8 @@
           email: "kofi.mensah@gh-advocate.org",
           email_verified_at: "2026-02-28T14:30:00Z",
           role: "member",
+          region: "africa_hub",
+          tier: "paid",
           status: "active",
           avatar_mode: "initials",
           default_visibility: "public",
@@ -13942,6 +14243,8 @@
           email: "zara.q@legaljustice.uk",
           email_verified_at: "2026-05-05T08:45:00Z",
           role: "member",
+          region: "india",
+          tier: "free",
           status: "active",
           avatar_mode: "initials",
           default_visibility: "trusted",
@@ -13959,6 +14262,8 @@
           email: "devon.reed@spamnet.info",
           email_verified_at: "2026-08-01T12:00:00Z",
           role: "member",
+          region: "south_africa",
+          tier: "free",
           status: "suspended",
           avatar_mode: "initials",
           default_visibility: "public",
@@ -14328,6 +14633,13 @@
           ? "inline"
           : "none";
         $("#userProfCreated").textContent = currentUser.created_at;
+
+        if ($("#userProfRegionTier")) {
+          const regionObj = GLOBAL_NOTIFICATION_REGIONS.find((r) => r.id === currentUser.region);
+          const regText = regionObj ? `${regionObj.flag} ${regionObj.label}` : "🌐 Global";
+          const tierBadge = currentUser.tier === "paid" ? '<span class="badge" style="background:#fef3c7;color:#b45309;font-size:11px">⭐ Paid</span>' : '<span class="badge draft" style="font-size:11px">Free</span>';
+          $("#userProfRegionTier").innerHTML = `<span>${regText}</span> · ${tierBadge}`;
+        }
 
         if ($("#userProfLastLogin")) {
           $("#userProfLastLogin").textContent =
@@ -18790,7 +19102,7 @@
             <td>${story.publishedDate || "Not published"}</td>
             <td style="text-align: right; padding-right: 18px">
               <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
-                <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}')" title="View Story" aria-label="View Story">
+                <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}', 'dailyBriefing')" title="View Story" aria-label="View Story">
                   <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
                 <button class="action-icon-btn" onclick="moveDailyBriefingStory('${story.id}',-1)" ${fullIndex === 0 ? "disabled" : ""} title="Move Up" aria-label="Move Up" ${fullIndex === 0 ? 'style="opacity: 0.4; cursor: default"' : ""}>
@@ -18842,7 +19154,7 @@
             <td><span class="badge ${briefingAudioLabel(story) === "Ready" ? "active" : "draft"}">${briefingAudioLabel(story)}</span></td>
             <td style="text-align: right; padding-right: 18px">
               <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
-                <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}')" title="View Story" aria-label="View Story">
+                <button class="action-icon-btn" onclick="loadNewsDetails('${story.id}', 'dailyBriefing')" title="View Story" aria-label="View Story">
                   <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
                 <button class="action-icon-btn" onclick="addStoryToDailyBriefing('${story.id}')" title="Add to Briefing" aria-label="Add to Briefing" style="color:var(--accent)">
@@ -19206,7 +19518,11 @@
       }
 
       // News Details Loader
-      window.loadNewsDetails = function (id) {
+      let newsDetailsOrigin = "news";
+      window.loadNewsDetails = function (id, origin = null) {
+        if (origin) {
+          newsDetailsOrigin = origin;
+        }
         targetNewsIdForAction = id;
         const story = newsStories.find((s) => s.id === id) || newsStories[0];
         if (!story) return;
@@ -19214,6 +19530,16 @@
         hideAllSections();
         const view = document.querySelector("#newsDetailsView");
         if (view) view.style.display = "block";
+
+        const backBtn = document.querySelector("#btnBackToNewsFromDetails");
+        if (backBtn) {
+          backBtn.title =
+            newsDetailsOrigin === "notifications"
+              ? "Back to News Notifications"
+              : newsDetailsOrigin === "dailyBriefing"
+                ? "Back to Daily Briefing"
+                : "Back to News Management";
+        }
 
         $("#newsDetailsId").textContent = story.id;
         const statusClass =
@@ -19593,7 +19919,7 @@
           const idx = newsStories.findIndex(
             (s) => s.id === targetNewsIdForAction,
           );
-          if (idx > 0) loadNewsDetails(newsStories[idx - 1].id);
+          if (idx > 0) loadNewsDetails(newsStories[idx - 1].id, newsDetailsOrigin);
         };
       }
 
@@ -19605,7 +19931,7 @@
             (s) => s.id === targetNewsIdForAction,
           );
           if (idx < newsStories.length - 1)
-            loadNewsDetails(newsStories[idx + 1].id);
+            loadNewsDetails(newsStories[idx + 1].id, newsDetailsOrigin);
         };
       }
 
@@ -19614,7 +19940,23 @@
       );
       if (btnBackToNewsFromDetails) {
         btnBackToNewsFromDetails.onclick = () => {
-          showNewsPage();
+          if (newsDetailsOrigin === "notifications") {
+            if (typeof showNotificationsPage === "function") {
+              showNotificationsPage();
+            } else {
+              $("#notificationsMenu")?.click();
+            }
+            const newsTab = document.querySelector("#notificationTabs [data-notif-tab='news']");
+            if (newsTab) newsTab.click();
+          } else if (newsDetailsOrigin === "dailyBriefing") {
+            if (typeof showDailyBriefingPage === "function") {
+              showDailyBriefingPage();
+            } else {
+              $("#subDailyBriefing")?.click();
+            }
+          } else {
+            showNewsPage();
+          }
         };
       }
 
@@ -20609,6 +20951,1131 @@
           `DLM Pruning Script Executed:\n- Scanned ${newsStories.length} news stories.\n- Evaluated against ${aiNewsEngineSettings.dlmRetentionDays}-day retention policy.\n- Database storage optimized, JSON-LD sitemaps refreshed.`,
         );
       };
+
+      // ═══════════════════════════════════════════════════════════════
+      // NOTIFICATIONS & SYSTEM-WIDE ANNOUNCEMENTS CONTROLLER
+      // ═══════════════════════════════════════════════════════════════
+
+      const GLOBAL_NOTIFICATION_REGIONS = [
+        { id: "all", label: "All Regions (Global Network)", flag: "🌐" },
+        { id: "united_states", label: "United States", flag: "🇺🇸" },
+        { id: "united_kingdom", label: "United Kingdom", flag: "🇬🇧" },
+        { id: "france", label: "France", flag: "🇫🇷" },
+        { id: "africa_hub", label: "Africa Continental Hub", flag: "🌍" },
+        { id: "india", label: "India", flag: "🇮🇳" },
+        { id: "brazil", label: "Brazil", flag: "🇧🇷" },
+        { id: "south_africa", label: "South Africa", flag: "🇿🇦" },
+        { id: "canada", label: "Canada", flag: "🇨🇦" },
+      ];
+
+      let announcementsList = [
+        {
+          id: "ANN-301",
+          title: "Critical Security Advisory: Two-Factor Authentication Recommended",
+          body: "We strongly recommend all verified legal advocates and community moderators activate 2FA in Account Security to protect sensitive case files and incident telemetry.",
+          category: "Urgent Safety Alert",
+          channel: "push_and_in_app",
+          targetRegion: "all",
+          targetRole: "all",
+          targetTier: "all",
+          status: "Sent",
+          sentAt: "Today, 08:30 AM",
+          reachEstimate: 12500,
+          deliveredCount: 12480,
+          openedCount: 8940,
+          openRate: "71.6%",
+          articleId: null,
+          author: "Super Admin (Console)",
+        },
+        {
+          id: "ANN-302",
+          title: "Legal Defense Fund Round 2 Subsidies Now Live",
+          body: "Subsidies for mobile legal clinics and community pro-bono defense across London and Manchester are now disbursed. Verified advocates can review funding status in the case portal.",
+          category: "Community Notice",
+          channel: "in_app",
+          targetRegion: "united_kingdom",
+          targetRole: "advocate",
+          targetTier: "all",
+          status: "Sent",
+          sentAt: "Yesterday, 02:15 PM",
+          reachEstimate: 850,
+          deliveredCount: 844,
+          openedCount: 680,
+          openRate: "80.5%",
+          articleId: null,
+          author: "Sarah Miller (Advocate)",
+        },
+        {
+          id: "ANN-303",
+          title: "Scheduled Maintenance Window: Mobile Sync Offline",
+          body: "Black Nexa cloud infrastructure will undergo scheduled maintenance this Sunday from 02:00 to 03:30 UTC. Offline incident drafting remains fully functional during this window.",
+          category: "System Announcement",
+          channel: "banner_and_push",
+          targetRegion: "all",
+          targetRole: "all",
+          targetTier: "all",
+          status: "Scheduled",
+          sentAt: "Sep 06, 2026 02:00 AM",
+          reachEstimate: 14200,
+          deliveredCount: 0,
+          openedCount: 0,
+          openRate: "0%",
+          articleId: null,
+          author: "DevOps / Infrastructure",
+        },
+        {
+          id: "ANN-304",
+          title: "New Premium Legal Advisory Perks for Paid Subscribers",
+          body: "Subscribers on the Paid Tier now receive expedited 24/7 advocate review on emergency housing and unlawful detention submissions with priority incident encryption.",
+          category: "App Update",
+          channel: "push_and_in_app",
+          targetRegion: "all",
+          targetRole: "member",
+          targetTier: "paid",
+          status: "Sent",
+          sentAt: "Aug 29, 2026 11:00 AM",
+          reachEstimate: 3400,
+          deliveredCount: 3385,
+          openedCount: 2640,
+          openRate: "78.0%",
+          articleId: null,
+          author: "Super Admin (Console)",
+        },
+        {
+          id: "ANN-305",
+          title: "Brazil Regional Legal Clinic Pilot Launching in São Paulo",
+          body: "In partnership with Defensoria Pública da União, Black Nexa launches rapid emergency legal counsel support for Afro-descendant and underserved communities across São Paulo.",
+          category: "Community Notice",
+          channel: "push_and_in_app",
+          targetRegion: "brazil",
+          targetRole: "all",
+          targetTier: "all",
+          status: "Sent",
+          sentAt: "Aug 24, 2026 09:30 AM",
+          reachEstimate: 1650,
+          deliveredCount: 1638,
+          openedCount: 1195,
+          openRate: "73.0%",
+          articleId: null,
+          author: "Tanya Morales (Community)",
+        },
+      ];
+
+      let newsNotificationsList = [
+        {
+          id: "NOTIF-NWS-01",
+          articleId: "NWS-101",
+          headline: "Global African Diaspora Investment Summit Announces $50M Tech Fund",
+          summary: "Joint early-stage venture fund launched across Lagos, Nairobi, London, and Kingston.",
+          targetRegion: "all",
+          targetRole: "all",
+          targetTier: "all",
+          status: "Sent",
+          sentAt: "Sep 02, 2026 08:45 AM",
+          sentCount: 12500,
+          openCount: 6840,
+          openRate: "54.7%",
+          deepLink: "blacknexa://news/NWS-101",
+        },
+        {
+          id: "NOTIF-NWS-02",
+          articleId: "NWS-102",
+          headline: "Atlanta City Council Approves Landmark Community Defense & Rights Initiative",
+          summary: "Municipal lawmakers pass $14M package for mobile legal assistance and rapid rights documentation.",
+          targetRegion: "united_states",
+          targetRole: "all",
+          targetTier: "all",
+          status: "Sent",
+          sentAt: "Sep 02, 2026 07:30 AM",
+          sentCount: 4850,
+          openCount: 3120,
+          openRate: "64.3%",
+          deepLink: "blacknexa://news/NWS-102",
+        },
+        {
+          id: "NOTIF-NWS-03",
+          articleId: "NWS-103",
+          headline: "HBCU Engineering Consortium Launches Quantum AI & STEM Fellowship",
+          summary: "250 graduate research fellowships announced with leading supercomputing centers.",
+          targetRegion: "united_states",
+          targetRole: "member",
+          targetTier: "paid",
+          status: "Sent",
+          sentAt: "Sep 01, 2026 10:15 AM",
+          sentCount: 2200,
+          openCount: 1540,
+          openRate: "70.0%",
+          deepLink: "blacknexa://news/NWS-103",
+        },
+      ];
+
+      let activeNotifTab = "announcements";
+      let notifAnnouncePage = 1;
+      let notifAnnouncePageSize = 10;
+      let notifNewsPage = 1;
+      let notifNewsPageSize = 10;
+
+      function renderNotificationPagination(container, totalItems, currentPage, pageSize, idPrefix, onPageChange, onPageSizeChange) {
+        if (!container) return;
+        if (totalItems <= 0) {
+          container.style.display = "none";
+          container.innerHTML = "";
+          return;
+        }
+        container.style.display = "flex";
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const page = Math.min(currentPage, totalPages);
+        const startRecord = (page - 1) * pageSize + 1;
+        const endRecord = Math.min(page * pageSize, totalItems);
+
+        container.innerHTML = `
+          <div class="pagination-left-info">
+            <span>Showing <strong>${startRecord}–${endRecord}</strong> of <strong>${totalItems}</strong> records</span>
+            <select class="page-size-select" id="${idPrefix}PageSizeSelect" aria-label="Records per page">
+              <option value="10" ${pageSize === 10 ? "selected" : ""}>10</option>
+              <option value="25" ${pageSize === 25 ? "selected" : ""}>25</option>
+              <option value="50" ${pageSize === 50 ? "selected" : ""}>50</option>
+              <option value="75" ${pageSize === 75 ? "selected" : ""}>75</option>
+              <option value="100" ${pageSize === 100 ? "selected" : ""}>100</option>
+              <option value="500" ${pageSize === 500 ? "selected" : ""}>500</option>
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button class="page-btn notif-prev" ${page === 1 ? "disabled" : ""}>Previous</button>
+            ${
+              totalPages > 1
+                ? Array.from(
+                    { length: totalPages },
+                    (_, i) => `
+                <button class="page-btn notif-page ${page === i + 1 ? "active" : ""}" data-page="${i + 1}">${i + 1}</button>
+              `,
+                  ).join("")
+                : `<button class="page-btn notif-page active" data-page="1">1</button>`
+            }
+            <button class="page-btn notif-next" ${page === totalPages ? "disabled" : ""}>Next</button>
+          </div>
+        `;
+
+        const sizeSelect = container.querySelector(`#${idPrefix}PageSizeSelect`);
+        if (sizeSelect) {
+          sizeSelect.onchange = (e) => {
+            onPageSizeChange(Number(e.target.value));
+          };
+        }
+
+        const prevBtn = container.querySelector(".notif-prev");
+        if (prevBtn) {
+          prevBtn.onclick = () => {
+            if (page > 1) onPageChange(page - 1);
+          };
+        }
+
+        const nextBtn = container.querySelector(".notif-next");
+        if (nextBtn) {
+          nextBtn.onclick = () => {
+            if (page < totalPages) onPageChange(page + 1);
+          };
+        }
+
+        container.querySelectorAll(".pagination-controls [data-page]").forEach((btn) => {
+          btn.onclick = () => {
+            onPageChange(Number(btn.dataset.page));
+          };
+        });
+      }
+
+      function calculateEstimatedAudience(region = "all", role = "all", tier = "all") {
+        let matched = allUsers.filter((u) => {
+          if (u.status === "deleted") return false;
+          if (region !== "all" && u.region !== region) return false;
+          if (role !== "all" && u.role !== role) return false;
+          if (tier !== "all" && u.tier !== tier) return false;
+          return true;
+        });
+
+        // Scaled estimate representative of production member base
+        const sampleRatio = 1200; // 1 sample user represents ~1,200 active users
+        const estimate = Math.max(matched.length * sampleRatio, matched.length > 0 ? 150 : 0);
+        return {
+          count: estimate,
+          sampleUsers: matched.length,
+          totalSamples: allUsers.filter((u) => u.status !== "deleted").length,
+        };
+      }
+
+      function updateAudienceEstimatorDisplay(region, role, tier) {
+        const estBox = $("#modalAudienceEstCount");
+        const sampleBox = $("#modalAudienceEstSample");
+        if (!estBox) return;
+        const res = calculateEstimatedAudience(region, role, tier);
+        estBox.textContent = res.count.toLocaleString();
+        if (sampleBox) {
+          sampleBox.textContent = `Based on ${res.sampleUsers} matching user accounts in prototype directory`;
+        }
+      }
+
+      function getRegionDisplayName(regionId) {
+        const r = GLOBAL_NOTIFICATION_REGIONS.find((item) => item.id === regionId);
+        return r ? `${r.flag} ${r.label}` : regionId;
+      }
+
+      function renderNotificationKPIs() {
+        const total = announcementsList.length + newsNotificationsList.length;
+        const active = announcementsList.filter((a) => a.status === "Scheduled").length;
+        
+        let totalSent = 0;
+        let totalOpened = 0;
+        announcementsList.forEach((a) => {
+          if (a.status === "Sent") {
+            totalSent += a.deliveredCount || a.reachEstimate || 0;
+            totalOpened += a.openedCount || 0;
+          }
+        });
+        newsNotificationsList.forEach((n) => {
+          totalSent += n.sentCount || 0;
+          totalOpened += n.openCount || 0;
+        });
+
+        const avgOpen = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 71;
+
+        if ($("#kpiTotalBroadcasts")) $("#kpiTotalBroadcasts").textContent = total;
+        if ($("#kpiActiveBroadcasts")) $("#kpiActiveBroadcasts").textContent = active;
+        if ($("#kpiAvgOpenRate")) $("#kpiAvgOpenRate").textContent = `${avgOpen}%`;
+        if ($("#kpiTotalAudienceReach")) $("#kpiTotalAudienceReach").textContent = totalSent.toLocaleString();
+        
+        if ($("#notifTabAnnouncementsCount")) $("#notifTabAnnouncementsCount").textContent = announcementsList.length;
+        if ($("#notifTabNewsCount")) $("#notifTabNewsCount").textContent = newsNotificationsList.length;
+      }
+
+      function renderAnnouncementsTable() {
+        const tbody = $("#announcementsTableBody");
+        if (!tbody) return;
+
+        const searchVal = ($("#notifSearchInput")?.value || "").toLowerCase().trim();
+        const typeVal = $("#notifTypeFilter")?.value || "All";
+        const regionVal = $("#notifRegionFilter")?.value || "All";
+        const statusVal = $("#notifStatusFilter")?.value || "All";
+
+        let filtered = announcementsList.filter((a) => {
+          if (typeVal !== "All" && a.category !== typeVal) return false;
+          if (regionVal !== "All" && a.targetRegion !== regionVal) return false;
+          if (statusVal !== "All" && a.status !== statusVal) return false;
+          if (searchVal) {
+            const matchTitle = (a.title || "").toLowerCase().includes(searchVal);
+            const matchBody = (a.body || "").toLowerCase().includes(searchVal);
+            const matchId = (a.id || "").toLowerCase().includes(searchVal);
+            if (!matchTitle && !matchBody && !matchId) return false;
+          }
+          return true;
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / notifAnnouncePageSize) || 1;
+        if (notifAnnouncePage > totalPages) notifAnnouncePage = totalPages;
+        const startIndex = (notifAnnouncePage - 1) * notifAnnouncePageSize;
+        const paged = filtered.slice(startIndex, startIndex + notifAnnouncePageSize);
+
+        if (paged.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6"><div class="empty" style="display:block">No announcements match the selected criteria.</div></td></tr>';
+          renderNotificationPagination($("#announcementsPagination"), 0, 1, notifAnnouncePageSize, "notifAnnounce", () => {}, () => {});
+          return;
+        }
+
+        tbody.innerHTML = paged.map((a) => {
+          const regionBadge = a.targetRegion === "all" ? "🌐 Global" : getRegionDisplayName(a.targetRegion);
+          const roleBadge = a.targetRole === "all" ? "All Roles" : a.targetRole.toUpperCase();
+          const tierBadge = a.targetTier === "all" ? "All Tiers" : a.targetTier === "paid" ? "⭐ Paid" : "Free";
+          const statusClass = a.status === "Sent" ? "active" : a.status === "Scheduled" ? "draft" : "pending";
+
+          return `
+            <tr>
+              <td>
+                <div style="min-width:0">
+                  <span class="title-truncate" title="${escapeHtml(a.title)}" style="font-size:13.5px;font-weight:500;color:var(--text)">${escapeHtml(a.title)}</span>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px;display:flex;gap:6px;align-items:center">
+                    <span>${a.id}</span>
+                    <span>•</span>
+                    <span>${a.sentAt}</span>
+                    ${a.articleId ? `<span>• Linked to <strong>${a.articleId}</strong></span>` : ""}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <span style="font-size:12px;color:var(--text)">${regionBadge}</span>
+                  <div style="font-size:11px;color:var(--muted)">${roleBadge} · ${tierBadge}</div>
+                </div>
+              </td>
+              <td>
+                <span class="badge" style="background:var(--accent-soft);color:var(--accent);border:none">${escapeHtml(a.category)}</span>
+              </td>
+              <td>
+                <span class="badge ${statusClass}">${a.status}</span>
+              </td>
+              <td>
+                <div style="font-size:12.5px;color:var(--text);font-weight:500">${(a.deliveredCount || a.reachEstimate || 0).toLocaleString()} reach</div>
+                <div style="font-size:11px;color:#059669">${a.openRate} open rate</div>
+              </td>
+              <td style="text-align:right;padding-right:18px">
+                <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
+                  <button class="action-icon-btn" onclick="openViewAnnouncementModal('${a.id}')" title="View Details" aria-label="View Details">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button class="action-icon-btn" onclick="openResendAnnouncementPrompt('${a.id}')" title="Resend Announcement" aria-label="Resend Announcement" style="color:var(--accent)">
+                    <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  </button>
+                  <button class="action-icon-btn delete-icon-btn" onclick="deleteAnnouncementPrompt('${a.id}')" title="Delete Announcement" aria-label="Delete Announcement">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        renderNotificationPagination(
+          $("#announcementsPagination"),
+          totalItems,
+          notifAnnouncePage,
+          notifAnnouncePageSize,
+          "notifAnnounce",
+          (page) => {
+            notifAnnouncePage = page;
+            renderAnnouncementsTable();
+          },
+          (newSize) => {
+            notifAnnouncePageSize = newSize;
+            notifAnnouncePage = 1;
+            renderAnnouncementsTable();
+          }
+        );
+      }
+
+      function renderNewsNotificationsTable() {
+        const tbody = $("#newsNotifTableBody");
+        if (!tbody) return;
+
+        const searchVal = ($("#notifNewsSearchInput")?.value || "").toLowerCase().trim();
+        let filtered = newsNotificationsList.filter((n) => {
+          if (searchVal) {
+            const matchH = (n.headline || "").toLowerCase().includes(searchVal);
+            const matchId = (n.articleId || "").toLowerCase().includes(searchVal);
+            if (!matchH && !matchId) return false;
+          }
+          return true;
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / notifNewsPageSize) || 1;
+        if (notifNewsPage > totalPages) notifNewsPage = totalPages;
+        const startIndex = (notifNewsPage - 1) * notifNewsPageSize;
+        const paged = filtered.slice(startIndex, startIndex + notifNewsPageSize);
+
+        if (paged.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6"><div class="empty" style="display:block">No news notifications dispatched yet.</div></td></tr>';
+          renderNotificationPagination($("#newsNotifPagination"), 0, 1, notifNewsPageSize, "notifNews", () => {}, () => {});
+          return;
+        }
+
+        tbody.innerHTML = paged.map((n) => {
+          const regionBadge = n.targetRegion === "all" ? "🌐 Global" : getRegionDisplayName(n.targetRegion);
+          const roleBadge = n.targetRole === "all" ? "All Roles" : n.targetRole.toUpperCase();
+
+          return `
+            <tr>
+              <td>
+                <div style="min-width:0">
+                  <span class="title-truncate" title="${escapeHtml(n.headline)}" style="font-size:13.5px;font-weight:500;color:var(--text)">${escapeHtml(n.headline)}</span>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px;display:flex;gap:6px;align-items:center">
+                    <span style="color:var(--accent);font-weight:600">${n.articleId}</span>
+                    <span>•</span>
+                    <span class="title-truncate" style="max-width:260px">${escapeHtml(n.summary)}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size:12px;color:var(--text)">${regionBadge}</div>
+                <div style="font-size:11px;color:var(--muted)">${roleBadge}</div>
+              </td>
+              <td style="font-size:12px;color:var(--muted)">${n.sentAt}</td>
+              <td><span class="badge active">${n.status}</span></td>
+              <td>
+                <div style="font-size:12.5px;color:var(--text);font-weight:500">${n.openCount.toLocaleString()}</div>
+                <div style="font-size:11px;color:#059669">${n.openRate}</div>
+              </td>
+              <td style="text-align:right;padding-right:18px">
+                <div style="display:inline-flex;justify-content:flex-end;gap:6px;align-items:center">
+                  <button class="action-icon-btn" onclick="loadNewsDetails('${n.articleId}', 'notifications')" title="View News Story" aria-label="View News Story">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button class="action-icon-btn" onclick="openResendNewsPushPrompt('${n.id}')" title="Push Update" aria-label="Push Update" style="color:var(--accent)">
+                    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        renderNotificationPagination(
+          $("#newsNotifPagination"),
+          totalItems,
+          notifNewsPage,
+          notifNewsPageSize,
+          "notifNews",
+          (page) => {
+            notifNewsPage = page;
+            renderNewsNotificationsTable();
+          },
+          (newSize) => {
+            notifNewsPageSize = newSize;
+            notifNewsPage = 1;
+            renderNewsNotificationsTable();
+          }
+        );
+      }
+
+      function renderSegmentationBreakdown() {
+        // 1. Region Breakdown
+        const regionContainer = $("#segmentRegionStatsList");
+        if (regionContainer) {
+          const regionCounts = {};
+          GLOBAL_NOTIFICATION_REGIONS.forEach((r) => { if (r.id !== "all") regionCounts[r.id] = 0; });
+          allUsers.forEach((u) => {
+            if (u.status !== "deleted" && u.region && regionCounts[u.region] !== undefined) {
+              regionCounts[u.region]++;
+            }
+          });
+
+          const totalUsers = allUsers.filter((u) => u.status !== "deleted").length || 1;
+          regionContainer.innerHTML = Object.keys(regionCounts).map((regId) => {
+            const count = regionCounts[regId];
+            const pct = Math.round((count / totalUsers) * 100);
+            const estReach = (count * 1200).toLocaleString();
+            return `
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;justify-content:space-between;font-size:12.5px">
+                  <span style="font-weight:500;color:var(--text)">${getRegionDisplayName(regId)}</span>
+                  <span style="color:var(--muted)">~${estReach} users (${pct}%)</span>
+                </div>
+                <div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden">
+                  <div style="height:100%;width:${Math.max(pct, 5)}%;background:var(--accent);border-radius:4px"></div>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        // 2. Role Breakdown
+        const roleContainer = $("#segmentRoleStatsList");
+        if (roleContainer) {
+          const roleCounts = { member: 0, advocate: 0, moderator: 0 };
+          allUsers.forEach((u) => {
+            if (u.status !== "deleted" && roleCounts[u.role] !== undefined) roleCounts[u.role]++;
+          });
+          const totalUsers = allUsers.filter((u) => u.status !== "deleted").length || 1;
+          roleContainer.innerHTML = Object.keys(roleCounts).map((roleKey) => {
+            const count = roleCounts[roleKey];
+            const pct = Math.round((count / totalUsers) * 100);
+            const label = roleKey === "member" ? "Standard Members" : roleKey === "advocate" ? "Verified Advocates" : "Community Moderators";
+            return `
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;justify-content:space-between;font-size:12.5px">
+                  <span style="font-weight:500;color:var(--text)">${label}</span>
+                  <span style="color:var(--muted)">~${(count * 1200).toLocaleString()} users (${pct}%)</span>
+                </div>
+                <div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden">
+                  <div style="height:100%;width:${Math.max(pct, 5)}%;background:#10b981;border-radius:4px"></div>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        // 3. Tier Breakdown
+        const tierContainer = $("#segmentTierStatsList");
+        if (tierContainer) {
+          const tierCounts = { paid: 0, free: 0 };
+          allUsers.forEach((u) => {
+            if (u.status !== "deleted" && tierCounts[u.tier] !== undefined) tierCounts[u.tier]++;
+          });
+          const totalUsers = allUsers.filter((u) => u.status !== "deleted").length || 1;
+          tierContainer.innerHTML = Object.keys(tierCounts).map((tierKey) => {
+            const count = tierCounts[tierKey];
+            const pct = Math.round((count / totalUsers) * 100);
+            const label = tierKey === "paid" ? "⭐ Paid Subscribers (Supporters)" : "Free Community Tier";
+            return `
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;justify-content:space-between;font-size:12.5px">
+                  <span style="font-weight:500;color:var(--text)">${label}</span>
+                  <span style="color:var(--muted)">~${(count * 1200).toLocaleString()} users (${pct}%)</span>
+                </div>
+                <div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden">
+                  <div style="height:100%;width:${Math.max(pct, 5)}%;background:#f59e0b;border-radius:4px"></div>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+      }
+
+      function showNotificationsPage() {
+        clearAllActive();
+        closeAllSubMenus();
+        const menu = $("#notificationsMenu");
+        if (menu) menu.classList.add("active");
+        hideAllSections();
+        const view = $("#notificationsView");
+        if (view) view.style.display = "block";
+
+        renderNotificationKPIs();
+        renderAnnouncementsTable();
+        renderNewsNotificationsTable();
+        renderSegmentationBreakdown();
+      }
+
+      // Wire sidebar menu navigation
+      $("#notificationsMenu")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        showNotificationsPage();
+      });
+
+      // Wire tab switching
+      document.querySelectorAll("#notificationTabs [data-notif-tab]").forEach((tab) => {
+        tab.onclick = () => {
+          activeNotifTab = tab.dataset.notifTab;
+          document.querySelectorAll("#notificationTabs .tab").forEach((t) => t.classList.toggle("active", t === tab));
+          $("#notifAnnouncementsPanel").style.display = activeNotifTab === "announcements" ? "block" : "none";
+          $("#notifNewsPanel").style.display = activeNotifTab === "news" ? "block" : "none";
+          $("#notifSegmentsPanel").style.display = activeNotifTab === "segments" ? "block" : "none";
+          if (activeNotifTab === "segments") renderSegmentationBreakdown();
+        };
+      });
+
+      // Filter events
+      $("#notifSearchInput")?.addEventListener("input", () => { notifAnnouncePage = 1; renderAnnouncementsTable(); });
+      $("#notifNewsSearchInput")?.addEventListener("input", () => { notifNewsPage = 1; renderNewsNotificationsTable(); });
+
+      // Create Announcement Composer Modal
+      function openCreateAnnouncementModal(prefillStory = null, isNewsPushMode = false) {
+        action = "create_announcement";
+        const modalBox = $("#modal .modal");
+        if (modalBox) modalBox.classList.add("modal-wide");
+
+        if (isNewsPushMode) {
+          $("#modalTitle").textContent = "Broadcast News Notification";
+          $("#modalText").textContent = "Compose a push broadcast directly from an approved news story or breaking event.";
+        } else if (prefillStory) {
+          $("#modalTitle").textContent = `Broadcast News: ${prefillStory.id}`;
+          $("#modalText").textContent = "Configure notification content, target audience segmentation, and delivery options.";
+        } else {
+          $("#modalTitle").textContent = "Compose System-Wide Announcement";
+          $("#modalText").textContent = "Configure notification content, target audience segmentation, and delivery options.";
+        }
+
+        const typeOptions = [
+          { value: "System Announcement", label: "System Announcement" },
+          { value: "Urgent Safety Alert", label: "Urgent Safety Alert" },
+          { value: "Community Notice", label: "Community Notice" },
+          { value: "App Update", label: "App Update" },
+          { value: "News Alert", label: "News Alert (Story Push)" },
+        ];
+
+        const regionOptions = GLOBAL_NOTIFICATION_REGIONS.map((r) => ({
+          value: r.id,
+          label: `${r.flag} ${r.label}`,
+        }));
+
+        const roleOptions = [
+          { value: "all", label: "All Account Roles" },
+          { value: "member", label: "Standard Members Only" },
+          { value: "advocate", label: "Verified Advocates Only" },
+          { value: "moderator", label: "Queue Moderators Only" },
+        ];
+
+        const tierOptions = [
+          { value: "all", label: "All Subscription Tiers" },
+          { value: "paid", label: "⭐ Paid Subscribers Only" },
+          { value: "free", label: "Free Tier Only" },
+        ];
+
+        const channelOptions = [
+          { value: "push_and_in_app", label: "Push Notification + In-App Notice" },
+          { value: "push_only", label: "Mobile Push Notification Only" },
+          { value: "in_app", label: "In-App Notice Drawer Only" },
+          { value: "banner_and_push", label: "Critical Priority Banner + Push" },
+        ];
+
+        const storyOptions = [
+          { value: "", label: isNewsPushMode ? "Select a news story to push..." : "None (General Announcement)" },
+          ...newsStories.filter((s) => s.status === "Published" || s.status === "Approved").map((s) => ({
+            value: s.id,
+            label: `[${s.id}] ${s.title}`,
+          })),
+        ];
+
+        const defaultTitle = prefillStory ? `Breaking: ${prefillStory.title}` : "";
+        const defaultBody = prefillStory ? prefillStory.summary : "";
+        const defaultType = isNewsPushMode || prefillStory ? "News Alert" : "System Announcement";
+        const selectedStoryId = prefillStory ? prefillStory.id : "";
+        const titlePlaceholder = isNewsPushMode ? "Select a linked story above or enter a breaking headline..." : "e.g. Important Security Update or Community Alert";
+        const bodyPlaceholder = isNewsPushMode ? "Select a linked story above or provide a concise push message..." : "Provide a concise, direct message for mobile push and in-app display...";
+
+        $("#form").innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:11px;max-height:76vh;overflow-y:auto;overflow-x:hidden;padding-right:6px;padding-bottom:12px;box-sizing:border-box">
+            <!-- Title -->
+            <div>
+              <label style="margin-top:0">Announcement Title <span style="color:var(--danger)">*</span></label>
+              <input type="text" id="announceInputTitle" value="${escapeHtml(defaultTitle)}" placeholder="${escapeHtml(titlePlaceholder)}" style="width:100%;box-sizing:border-box" />
+              <div id="announceTitleError" class="field-error-msg" style="display:none">Announcement title is required.</div>
+            </div>
+
+            <!-- Body -->
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <label style="margin-top:0">Message Content <span style="color:var(--danger)">*</span></label>
+                <span id="announceBodyCount" style="font-size:11.5px;color:var(--muted)">0 / 280 chars</span>
+              </div>
+              <textarea id="announceInputBody" rows="2" placeholder="${escapeHtml(bodyPlaceholder)}" style="width:100%;min-height:64px;height:64px;box-sizing:border-box;font-family:inherit">${escapeHtml(defaultBody)}</textarea>
+              <div id="announceBodyError" class="field-error-msg" style="display:none">Message content is required.</div>
+            </div>
+
+            <!-- Grid 1: Category & Linked Story -->
+            <div style="display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);gap:12px">
+              <div style="min-width:0">
+                <label style="margin-top:0">Category / Type</label>
+                ${createCustomSelectHTML("announceInputType", typeOptions, defaultType)}
+              </div>
+              <div style="min-width:0">
+                <label style="margin-top:0">Linked News Story (Optional)</label>
+                ${createCustomSelectHTML("announceInputStory", storyOptions, selectedStoryId)}
+              </div>
+            </div>
+
+            <!-- Audience Segmentation Section -->
+            <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+                <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Audience Segmentation &amp; Targeting
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <label style="margin-top:0;font-size:11.5px">Target Region</label>
+                  ${createCustomSelectHTML("announceInputRegion", regionOptions, "all")}
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div>
+                    <label style="margin-top:0;font-size:11.5px">User Role</label>
+                    ${createCustomSelectHTML("announceInputRole", roleOptions, "all")}
+                  </div>
+                  <div>
+                    <label style="margin-top:0;font-size:11.5px">Subscription Tier</label>
+                    ${createCustomSelectHTML("announceInputTier", tierOptions, "all")}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Reach Estimator Card -->
+              <div style="margin-top:12px;background:var(--card);border:1px dashed var(--accent);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div style="font-size:11.5px;color:var(--muted)">Estimated Live Reach</div>
+                  <div id="modalAudienceEstSample" style="font-size:11px;color:var(--muted);margin-top:2px">All active accounts</div>
+                </div>
+                <div style="text-align:right">
+                  <div id="modalAudienceEstCount" style="font-size:18px;font-weight:700;color:var(--accent)">12,500</div>
+                  <div style="font-size:10.5px;color:#059669">Eligible recipients</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Delivery Channels & Schedule -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+              <div>
+                <label style="margin-top:0">Delivery Channel</label>
+                ${createCustomSelectHTML("announceInputChannel", channelOptions, "push_and_in_app")}
+              </div>
+              <div>
+                <label style="margin-top:0">Dispatch Schedule</label>
+                <div style="display:flex;gap:12px;margin-top:8px">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
+                    <input type="radio" name="announceScheduleType" value="now" checked style="cursor:pointer" />
+                    <span>Send Immediately</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
+                    <input type="radio" name="announceScheduleType" value="later" style="cursor:pointer" />
+                    <span>Schedule</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const confirm = $("#confirm");
+        confirm.textContent = "Send Broadcast";
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.style.opacity = "";
+        confirm.style.cursor = "";
+        confirm.disabled = false;
+        confirm.onclick = executeSendAnnouncement;
+
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = closeModal;
+
+        openModal();
+        initCustomDropdowns();
+
+        // Update body character counter
+        const titleInput = $("#announceInputTitle");
+        const bodyInput = $("#announceInputBody");
+        const countSpan = $("#announceBodyCount");
+        if (bodyInput && countSpan) {
+          const updateCount = () => {
+            const len = bodyInput.value.length;
+            countSpan.textContent = `${len} / 280 chars`;
+            countSpan.style.color = len > 280 ? "var(--danger)" : "var(--muted)";
+          };
+          bodyInput.addEventListener("input", () => {
+            updateCount();
+            if ($("#announceBodyError")) $("#announceBodyError").style.display = "none";
+            bodyInput.classList.remove("field-invalid");
+          });
+          updateCount();
+        }
+
+        if (titleInput) {
+          titleInput.addEventListener("input", () => {
+            delete titleInput.dataset.autoPrefilled;
+            if ($("#announceTitleError")) $("#announceTitleError").style.display = "none";
+            titleInput.classList.remove("field-invalid");
+          });
+        }
+        if (bodyInput) {
+          bodyInput.addEventListener("input", () => {
+            delete bodyInput.dataset.autoPrefilled;
+          });
+        }
+
+        // Dynamic News Story Linking: populate title and summary when story is selected
+        const storyHiddenInput = $("#announceInputStory");
+        if (storyHiddenInput) {
+          storyHiddenInput.addEventListener("change", () => {
+            const storyId = storyHiddenInput.value;
+            const chosen = newsStories.find((s) => s.id === storyId);
+            if (chosen) {
+              if (titleInput && (!titleInput.value || titleInput.dataset.autoPrefilled === "1")) {
+                titleInput.value = `Breaking: ${chosen.title}`;
+                titleInput.dataset.autoPrefilled = "1";
+                if ($("#announceTitleError")) $("#announceTitleError").style.display = "none";
+                titleInput.classList.remove("field-invalid");
+              }
+              if (bodyInput && (!bodyInput.value || bodyInput.dataset.autoPrefilled === "1")) {
+                bodyInput.value = chosen.summary || "";
+                bodyInput.dataset.autoPrefilled = "1";
+                if (countSpan) {
+                  const len = bodyInput.value.length;
+                  countSpan.textContent = `${len} / 280 chars`;
+                  countSpan.style.color = len > 280 ? "var(--danger)" : "var(--muted)";
+                }
+                if ($("#announceBodyError")) $("#announceBodyError").style.display = "none";
+                bodyInput.classList.remove("field-invalid");
+              }
+            } else {
+              if (titleInput && titleInput.dataset.autoPrefilled === "1") {
+                titleInput.value = "";
+                delete titleInput.dataset.autoPrefilled;
+              }
+              if (bodyInput && bodyInput.dataset.autoPrefilled === "1") {
+                bodyInput.value = "";
+                delete bodyInput.dataset.autoPrefilled;
+                if (countSpan) countSpan.textContent = "0 / 280 chars";
+              }
+            }
+          });
+        }
+
+        // Connect audience estimator listeners
+        const regInput = $("#announceInputRegion");
+        const roleInput = $("#announceInputRole");
+        const tierInput = $("#announceInputTier");
+
+        const updateEstimator = () => {
+          updateAudienceEstimatorDisplay(regInput?.value || "all", roleInput?.value || "all", tierInput?.value || "all");
+        };
+
+        if (regInput) regInput.addEventListener("change", updateEstimator);
+        if (roleInput) roleInput.addEventListener("change", updateEstimator);
+        if (tierInput) tierInput.addEventListener("change", updateEstimator);
+
+        // Also trigger on custom select option click
+        document.querySelectorAll("#modal .custom-select-option").forEach((opt) => {
+          opt.addEventListener("click", () => setTimeout(updateEstimator, 50));
+        });
+
+        updateEstimator();
+      }
+
+      function executeSendAnnouncement() {
+        const titleInput = $("#announceInputTitle");
+        const bodyInput = $("#announceInputBody");
+        const typeInput = $("#announceInputType");
+        const storyInput = $("#announceInputStory");
+        const regInput = $("#announceInputRegion");
+        const roleInput = $("#announceInputRole");
+        const tierInput = $("#announceInputTier");
+        const channelInput = $("#announceInputChannel");
+        const scheduleRadio = document.querySelector('input[name="announceScheduleType"]:checked');
+
+        let hasError = false;
+        if (!titleInput || !titleInput.value.trim()) {
+          if ($("#announceTitleError")) $("#announceTitleError").style.display = "block";
+          if (titleInput) titleInput.classList.add("field-invalid");
+          hasError = true;
+        }
+        if (!bodyInput || !bodyInput.value.trim()) {
+          if ($("#announceBodyError")) $("#announceBodyError").style.display = "block";
+          if (bodyInput) bodyInput.classList.add("field-invalid");
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        const isLater = scheduleRadio && scheduleRadio.value === "later";
+        const targetRegion = regInput?.value || "all";
+        const targetRole = roleInput?.value || "all";
+        const targetTier = tierInput?.value || "all";
+        const category = typeInput?.value || "System Announcement";
+        const articleId = storyInput?.value || null;
+        const channel = channelInput?.value || "push_and_in_app";
+        const estReach = calculateEstimatedAudience(targetRegion, targetRole, targetTier).count;
+
+        const newId = `ANN-${announcementsList.length + 301}`;
+        const newRecord = {
+          id: newId,
+          title: titleInput.value.trim(),
+          body: bodyInput.value.trim(),
+          category: category,
+          channel: channel,
+          targetRegion: targetRegion,
+          targetRole: targetRole,
+          targetTier: targetTier,
+          status: isLater ? "Scheduled" : "Sent",
+          sentAt: isLater ? "Scheduled for Tomorrow 08:00 AM" : "Just now",
+          reachEstimate: estReach,
+          deliveredCount: isLater ? 0 : Math.round(estReach * 0.98),
+          openedCount: isLater ? 0 : 0,
+          openRate: isLater ? "0%" : "0%",
+          articleId: articleId,
+          author: "Admin Console (Current User)",
+        };
+
+        announcementsList.unshift(newRecord);
+
+        // If it's a news notification, also log in news notifications table
+        if (articleId || category === "News Alert") {
+          const linkedStory = newsStories.find((s) => s.id === articleId);
+          newsNotificationsList.unshift({
+            id: `NOTIF-${newId}`,
+            articleId: articleId || "NWS-CUSTOM",
+            headline: titleInput.value.trim(),
+            summary: bodyInput.value.trim(),
+            targetRegion: targetRegion,
+            targetRole: targetRole,
+            targetTier: targetTier,
+            status: isLater ? "Scheduled" : "Sent",
+            sentAt: "Just now",
+            sentCount: isLater ? 0 : estReach,
+            openCount: 0,
+            openRate: "0%",
+            deepLink: articleId ? `blacknexa://news/${articleId}` : "blacknexa://news",
+          });
+        }
+
+        closeModal();
+        renderNotificationKPIs();
+        renderAnnouncementsTable();
+        renderNewsNotificationsTable();
+        renderSegmentationBreakdown();
+
+        alert(`Broadcast ${newId} ${isLater ? "scheduled" : "dispatched"} successfully to ~${estReach.toLocaleString()} recipients.`);
+      }
+
+      function openViewAnnouncementModal(id) {
+        const item = announcementsList.find((a) => a.id === id);
+        if (!item) return;
+
+        $("#modalTitle").textContent = item.title;
+        $("#modalText").textContent = `Broadcast Record: ${item.id} · ${item.category}`;
+        $("#form").innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:13px">
+            <div style="background:var(--bg);padding:12px 14px;border-radius:8px;border:1px solid var(--line);line-height:1.5;color:var(--text)">
+              ${escapeHtml(item.body)}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div>
+                <span style="color:var(--muted);font-size:11.5px">Target Region</span>
+                <div style="font-weight:500;color:var(--text)">${getRegionDisplayName(item.targetRegion)}</div>
+              </div>
+              <div>
+                <span style="color:var(--muted);font-size:11.5px">Target Role</span>
+                <div style="font-weight:500;color:var(--text)">${item.targetRole === "all" ? "All Account Roles" : item.targetRole.toUpperCase()}</div>
+              </div>
+              <div>
+                <span style="color:var(--muted);font-size:11.5px">Subscription Tier</span>
+                <div style="font-weight:500;color:var(--text)">${item.targetTier === "all" ? "All Tiers (Free & Paid)" : item.targetTier.toUpperCase()}</div>
+              </div>
+              <div>
+                <span style="color:var(--muted);font-size:11.5px">Dispatched Time</span>
+                <div style="font-weight:500;color:var(--text)">${item.sentAt}</div>
+              </div>
+            </div>
+
+            <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:11.5px;color:var(--muted)">Verified Delivery Reach</div>
+                <div style="font-size:16px;font-weight:700;color:var(--text)">${(item.deliveredCount || item.reachEstimate || 0).toLocaleString()} Users</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11.5px;color:var(--muted)">Direct Open Rate</div>
+                <div style="font-size:16px;font-weight:700;color:#059669">${item.openRate} (${(item.openedCount || 0).toLocaleString()})</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const confirm = $("#confirm");
+        confirm.textContent = "Close";
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.onclick = closeModal;
+        const cancel = $("#cancel");
+        cancel.textContent = "Resend";
+        cancel.className = "btn outline";
+        cancel.onclick = () => { closeModal(); openResendAnnouncementPrompt(item.id); };
+        openModal();
+      }
+
+      function openResendAnnouncementPrompt(id) {
+        const item = announcementsList.find((a) => a.id === id);
+        if (!item) return;
+
+        $("#modalTitle").textContent = `Resend Broadcast ${item.id}?`;
+        $("#modalText").textContent = `“${item.title}” will be re-dispatched to the ${getRegionDisplayName(item.targetRegion)} segment (~${item.reachEstimate.toLocaleString()} users).`;
+        $("#form").innerHTML = "";
+
+        const confirm = $("#confirm");
+        confirm.textContent = "Confirm Resend";
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          item.sentAt = "Just now (Re-sent)";
+          item.status = "Sent";
+          closeModal();
+          renderAnnouncementsTable();
+          renderNotificationKPIs();
+          alert(`Broadcast ${item.id} re-sent successfully.`);
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = closeModal;
+        openModal();
+      }
+
+      function deleteAnnouncementPrompt(id) {
+        const item = announcementsList.find((a) => a.id === id);
+        if (!item) return;
+
+        $("#modalTitle").textContent = `Delete Announcement ${item.id}?`;
+        $("#modalText").textContent = `“${item.title}” will be removed from console dispatch logs.`;
+        $("#form").innerHTML = "";
+
+        const confirm = $("#confirm");
+        confirm.textContent = "Delete Record";
+        confirm.className = "btn danger";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          announcementsList = announcementsList.filter((a) => a.id !== id);
+          confirm.className = "btn primary";
+          confirm.style.background = "";
+          closeModal();
+          renderAnnouncementsTable();
+          renderNotificationKPIs();
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = () => {
+          confirm.className = "btn primary";
+          confirm.style.background = "";
+          closeModal();
+        };
+        openModal();
+      }
+
+      function openResendNewsPushPrompt(id) {
+        const notif = newsNotificationsList.find((n) => n.id === id);
+        if (!notif) return;
+
+        $("#modalTitle").textContent = `Push News Update: ${notif.articleId}?`;
+        $("#modalText").textContent = `Re-send push notification for "${notif.headline}" with direct deep-linking (${notif.deepLink}).`;
+        $("#form").innerHTML = "";
+
+        const confirm = $("#confirm");
+        confirm.textContent = "Send Push";
+        confirm.className = "btn primary";
+        confirm.style.background = "";
+        confirm.onclick = () => {
+          notif.sentAt = "Just now (Re-pushed)";
+          closeModal();
+          renderNewsNotificationsTable();
+          alert(`Push notification for story ${notif.articleId} dispatched to verified subscribers.`);
+        };
+        const cancel = $("#cancel");
+        cancel.textContent = "Cancel";
+        cancel.className = "btn outline";
+        cancel.onclick = closeModal;
+        openModal();
+      }
+
+      // Compose from News Story modal
+      function openComposeNewsPushModal() {
+        const eligibleStories = newsStories.filter((s) => s.status === "Published" || s.status === "Approved");
+        if (eligibleStories.length === 0) {
+          alert("No published or approved news stories available to push.");
+          return;
+        }
+        openCreateAnnouncementModal(null, true);
+      }
+
+      // Attach button events
+      $("#btnOpenCreateAnnouncementModal")?.addEventListener("click", () => openCreateAnnouncementModal());
+      $("#btnComposeNewsPush")?.addEventListener("click", openComposeNewsPushModal);
+      $("#btnExportNotificationLogs")?.addEventListener("click", () => {
+        const logData = JSON.stringify({ announcements: announcementsList, newsNotifications: newsNotificationsList }, null, 2);
+        const blob = new Blob([logData], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `blacknexa-broadcast-audit-log-${new Date().toISOString().split("T")[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // Filter select change listeners
+      ["#notifTypeFilter", "#notifRegionFilter", "#notifStatusFilter"].forEach((sel) => {
+        const input = document.querySelector(sel);
+        if (input) {
+          input.addEventListener("change", () => {
+            notifAnnouncePage = 1;
+            renderAnnouncementsTable();
+          });
+        }
+      });
 
       // ═══════════════════════════════════════════════════════════════
       // RESOURCE DIRECTORY MANAGEMENT MODULE CONTROLLER
@@ -22150,9 +23617,9 @@
               key: "news",
             },
             {
-              el: document.querySelector(
-                '.nav[data-target="Notifications & Announcements"]',
-              ),
+              el:
+                document.querySelector("#notificationsMenu") ||
+                document.querySelector('.nav[data-target="Notifications & Announcements"]'),
               key: "notifications",
             },
             {
