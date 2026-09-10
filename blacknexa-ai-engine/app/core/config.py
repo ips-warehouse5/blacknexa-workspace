@@ -58,15 +58,15 @@ class Settings(BaseSettings):
     exa_base_url: str = Field(default="https://api.exa.ai", alias="EXA_BASE_URL")
 
     # Transport tuning, ported verbatim from ai_gateway.service.ts / http.util.ts.
-    ai_timeout_seconds: float = Field(default=20.0, gt=0, alias="AI_TIMEOUT_SECONDS")
+    ai_timeout_seconds: float = Field(default=60.0, gt=0, alias="AI_TIMEOUT_SECONDS")
     ai_retry_delay_seconds: float = Field(default=0.3, ge=0, alias="AI_RETRY_DELAY_SECONDS")
     ai_max_attempts: int = Field(default=2, ge=1, le=5, alias="AI_MAX_ATTEMPTS")
 
     # Bare Gemini model ids — no `google/` provider prefix, which was a gateway
     # routing convention rather than part of the model name.
-    synthesis_model: str = Field(default="gemini-2.5-flash-lite", alias="AI_SYNTHESIS_MODEL")
+    synthesis_model: str = Field(default="gemini-3.5-flash-lite", alias="AI_SYNTHESIS_MODEL")
     image_model: str = Field(default="gemini-2.5-flash-image", alias="AI_IMAGE_MODEL")
-    translation_model: str = Field(default="gemini-2.5-flash-lite", alias="AI_TRANSLATION_MODEL")
+    translation_model: str = Field(default="gemini-3.5-flash-lite", alias="AI_TRANSLATION_MODEL")
     tts_model: str = Field(default="gemini-2.5-flash-preview-tts", alias="AI_TTS_MODEL")
     # Gemini's prebuilt voice names are a fixed, capitalised set; "Kore" is the
     # closest match to the newsreader delivery the old `eve` voice gave.

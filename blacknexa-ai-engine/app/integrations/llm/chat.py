@@ -46,11 +46,9 @@ async def chat_completion(
     generation_config: dict[str, Any] = {
         "temperature": temperature,
         "maxOutputTokens": max_tokens,
-        # Off by default — see `GEMINI_THINKING_BUDGET`. Sent explicitly rather
-        # than left to the model default so latency does not change under the
-        # service when Google shifts that default.
-        "thinkingConfig": {"thinkingBudget": settings.gemini_thinking_budget},
     }
+    if settings.gemini_thinking_budget > 0:
+        generation_config["thinkingConfig"] = {"thinkingBudget": settings.gemini_thinking_budget}
     if json_output:
         generation_config["responseMimeType"] = "application/json"
 

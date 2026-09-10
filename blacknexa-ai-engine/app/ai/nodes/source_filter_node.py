@@ -53,6 +53,7 @@ def _from_hit(hit: ExaHit) -> VerifiedSource:
         url=hit.url,
         excerpt=excerpt or None,
         publishedDate=hit.publishedDate[:10] if hit.publishedDate else None,
+        imageUrl=hit.image,
     )
 
 
@@ -97,6 +98,7 @@ def filter_sources(
                 url=url,
                 excerpt=excerpt or None,
                 publishedDate=hit.publishedDate[:10] if hit.publishedDate else None,
+                imageUrl=hit.image,
             )
         )
 

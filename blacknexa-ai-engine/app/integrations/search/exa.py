@@ -117,6 +117,7 @@ async def search_web(
                 author=sanitise_model_text(str(raw.get("author") or ""), max_chars=200) or None,
                 highlights=highlights,
                 score=_clean_score(raw.get("score")),
+                image=str(raw.get("image")).strip() if raw.get("image") else None,
             )
         )
 

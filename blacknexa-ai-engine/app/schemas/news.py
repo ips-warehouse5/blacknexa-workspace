@@ -61,6 +61,7 @@ class ExaHit(_Response):
     author: str | None = None
     highlights: list[str] = Field(default_factory=list)
     score: float | None = None
+    image: str | None = None
 
 
 class SearchRequest(_Wire):
@@ -84,6 +85,7 @@ class VerifiedSource(_Response):
     url: str
     excerpt: str | None = None
     publishedDate: str | None = None
+    imageUrl: str | None = None
 
 
 class GeneratedImage(_Response):
