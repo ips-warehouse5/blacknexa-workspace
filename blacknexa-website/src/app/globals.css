@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+@theme inline {
+  --color-background: var(--bn-background);
+  --color-surface: var(--bn-surface);
+  --color-surface-elevated: var(--bn-surface-elevated);
+  --color-text-primary: var(--bn-text-primary);
+  --color-text-secondary: var(--bn-text-secondary);
+  --color-text-muted: var(--bn-text-muted);
+  --color-border: var(--bn-border);
+  --color-accent: var(--bn-accent);
+  --color-accent-hover: var(--bn-accent-hover);
+  --color-accent-foreground: var(--bn-accent-foreground);
+  --color-ok: var(--bn-ok);
+  --color-err: var(--bn-err);
+  --font-serif: var(--bn-font-serif);
+  --font-sans: var(--bn-font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--bn-background);
+  color: var(--bn-text-primary);
+  font-family: var(--bn-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--bn-duration-standard) var(--bn-ease),
+    color var(--bn-duration-standard) var(--bn-ease);
+}
+
+/*
+ * Base element resets must live inside Tailwind's `base` cascade
+ * layer. Un-layered rules always win over layered ones regardless of
+ * specificity, so an un-layered `a { color }` here would silently
+ * beat every `text-*` utility applied to a Link/`<a>` — which is
+ * exactly what made accent-colored button text disappear onto an
+ * accent-colored button background. Keeping resets in `@layer base`
+ * lets Tailwind utilities override them as expected.
+ */
+@layer base {
+  a {
+    color: var(--bn-accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--bn-text-primary);
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--bn-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--bn-accent);
+  color: var(--bn-accent-foreground);
+}
+
+::placeholder {
+  color: var(--bn-text-muted);
+  opacity: 1;
+}
+
+@keyframes bn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bn-shimmer {
+  0% {
+    background-position: -420px 0;
+  }
+  100% {
+    background-position: 420px 0;
+  }
+}
+
+@keyframes bn-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+
+/*
+  .bn-reveal elements are visible by default: the fade/slide-in is
+  applied entirely via inline styles from RevealInit at runtime (see
+  reveal-init.tsx), matching the source site's initReveal() behavior.
+  Content must never depend on JS to become visible in the first
+  place, only to animate in when JS is available.
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}
