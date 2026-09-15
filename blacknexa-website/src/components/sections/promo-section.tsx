@@ -1,9 +1,13 @@
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import Image from "next/image";
+import { versionedAsset } from "@/lib/asset-version";
 
+// Plain, non-interactive image — no play button/video affordance — so it
+// isn't mistaken for an actual clickable video before the launch film
+// exists. Swap this block for a real <video poster="..."> once delivered.
 export function PromoSection() {
   return (
     <section
-      aria-label="Promotional video"
+      aria-label="Media showcase"
       className="relative overflow-hidden px-7 py-[clamp(80px,10vw,132px)]"
       style={{ background: "var(--bn-hero-background)" }}
     >
@@ -11,7 +15,8 @@ export function PromoSection() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "radial-gradient(80% 110% at 50% 0%, var(--bn-accent-soft) 0%, rgba(0,0,0,0) 64%)",
+          background:
+            "radial-gradient(80% 110% at 50% 0%, var(--bn-accent-soft) 0%, rgba(0,0,0,0) 64%)",
         }}
       />
       <div className="bn-reveal relative mx-auto max-w-[1080px]">
@@ -27,13 +32,18 @@ export function PromoSection() {
           </h2>
         </div>
         <div className="mt-[clamp(32px,4vw,52px)]">
-          <ImagePlaceholder
-            label="PROMO VIDEO POSTER FRAME · 1920×1080 landscape — the opening frame of the launch film"
-            aspect="16 / 9"
-          />
-          <p className="mt-3.5 text-[12.5px] leading-[1.55] text-text-muted">
-            Drop the poster frame above; the final film replaces this frame when it is delivered.
-          </p>
+          <div
+            className="relative overflow-hidden rounded-[5px] border border-border"
+            style={{ aspectRatio: "16 / 9" }}
+          >
+            <Image
+              src={versionedAsset("/images/blacknexa/promo-showcase.jpg")}
+              alt="Black women collaborating together on laptops, representing the community BlackNexa is built for"
+              fill
+              sizes="(min-width: 1080px) 1080px, 100vw"
+              className="object-cover"
+            />
+          </div>
         </div>
       </div>
     </section>

@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/container";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { getNewsArticleBySlug } from "@/data/news";
 import { siteConfig } from "@/data/site";
+import { versionedAsset } from "@/lib/asset-version";
+
+// Generic editorial fallback for articles the backend hasn't supplied an
+// image for yet — matches the fallback used on the news list/cards.
+const FALLBACK_NEWS_IMAGE = "/images/blacknexa/feature-news-engine.jpg";
 
 // News content is fetched fresh per request, never statically cached — see
 // getNewsArticleBySlug's cache: "no-store".
@@ -108,8 +113,25 @@ export default async function NewsArticlePage({ params }: Props) {
           {article.author ? ` · ${article.author}` : ""} · {article.sourcesCount} sources
         </p>
 
-        <div className="mt-8">
-          <ImagePlaceholder label={`${article.category} story image · 16:10`} aspect="16 / 9" />
+        <div className="relative mt-8 overflow-hidden rounded-[5px]" style={{ aspectRatio: "16 / 9" }}>
+          {article.image ? (
+            <Image
+              src={article.image}
+              alt={article.title}
+              fill
+              unoptimized
+              sizes="(min-width: 820px) 820px, 100vw"
+              className="object-cover"
+            />
+          ) : (
+            <Image
+              src={versionedAsset(FALLBACK_NEWS_IMAGE)}
+              alt={`${article.category} story`}
+              fill
+              sizes="(min-width: 820px) 820px, 100vw"
+              className="object-cover"
+            />
+          )}
         </div>
 
         <div className="mt-10 flex flex-col gap-[18px]">

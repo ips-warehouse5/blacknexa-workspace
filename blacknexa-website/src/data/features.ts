@@ -123,28 +123,29 @@ export const whyChoose: { n: string; title: string; body: string }[] = [
   },
 ];
 
-export const securityPoints: { title: string; body: string; icon: IconName }[] = [
-  {
-    title: "USPTO filing",
-    body: "Trademark-pending and officially filed as a legally protected social media platform.",
-    icon: "trademark",
-  },
-  {
-    title: "Encryption throughout",
-    body: "Files are encrypted in transit and at rest inside the secure vault.",
-    icon: "lock",
-  },
-  {
-    title: "Sealed records",
-    body: "Each record is hashed at creation so a recipient can confirm it has not been altered.",
-    icon: "shield",
-  },
-  {
-    title: "Moderated community",
-    body: "Zero tolerance for vulgarity or abuse keeps the feed credible and safe to use.",
-    icon: "eye",
-  },
-];
+export const securityPoints: { title: string; body: string; icon: IconName }[] =
+  [
+    {
+      title: "USPTO filing",
+      body: "Trademark-pending and officially filed as a legally protected social media platform.",
+      icon: "trademark",
+    },
+    {
+      title: "Encryption throughout",
+      body: "Files are encrypted in transit and at rest inside the secure vault.",
+      icon: "lock",
+    },
+    {
+      title: "Sealed records",
+      body: "Each record is hashed at creation so a recipient can confirm it has not been altered.",
+      icon: "shield",
+    },
+    {
+      title: "Moderated community",
+      body: "Zero tolerance for vulgarity or abuse keeps the feed credible and safe to use.",
+      icon: "eye",
+    },
+  ];
 
 export const impactPoints: { title: string; body: string; icon: IconName }[] = [
   {
@@ -182,7 +183,12 @@ export const impactStats: { value: string; label: string; note: string }[] = [
   },
 ];
 
-export const reportingSteps: { num: string; title: string; body: string; icon: IconName }[] = [
+export const reportingSteps: {
+  num: string;
+  title: string;
+  body: string;
+  icon: IconName;
+}[] = [
   {
     num: "01",
     icon: "geo",
@@ -229,7 +235,7 @@ export const featureBlocks: {
       "Think of BlackNexa as our own dedicated social media platform, featuring a vibrant, worldwide community feed. But this space is built differently-anchored entirely in love, respect, and God's word. There is zero tolerance for vulgar language or unGodly principles here; everyone treats one another just as they want to be treated, fulfilling the greatest commandment to “Love our neighbor.”",
       "Just like Facebook or X, you can connect, network, share ideas, and grow together across borders. From discussing economic development, business ventures, job creation, and how to walk in an abundant life, to sharing what's happening right now from Atlanta, GA all the way to Johannesburg, South Africa-our global community comes together to build true, lasting power. (And this is only the beginning-more groundbreaking features are rolling out as our global family scales!)",
     ],
-    caption: "Clip: scrolling the worldwide feed, from Atlanta to Johannesburg.",
+    caption: "Scrolling the worldwide feed, from Atlanta to Johannesburg.",
   },
   {
     num: "02",
@@ -239,38 +245,46 @@ export const featureBlocks: {
       "Never get caught sleeping or out of the loop. Our automated AI news engine cuts straight through the bias and confusion, delivering 100% verified daily news content straight to your phone and syndicated globally via blacknexa.com.",
       "Focusing entirely on what matters most for our growth-Black business, tech advancements, economic power, and rich, uplifting faith-based content centered on God's Word-every piece of news is backed by 3 to 5 factual sources and reviewed daily by our editorial team. It keeps our minds informed, sharp, and moving with divine wisdom to make smart decisions for our future.",
     ],
-    caption: "Clip: opening a story and its list of named, checkable sources.",
+    caption: "Opening a story and its list of named, checkable sources.",
   },
   {
     num: "03",
-    title: "Protection with Purpose: The Geo-Stamp Incident Reporting & Vetting Tool",
+    title:
+      "Protection with Purpose: The Geo-Stamp Incident Reporting & Vetting Tool",
     sub: "Call it out wherever it happens. You are never powerless.",
     body: [
       "When discrimination, bias, or misconduct rears its ugly head-whether it's police profiling, housing discrimination, medical bias, or any other forms of discrimination-you don't have to stay silent. Call it out wherever it happens. You are never powerless. You now have a powerful, purpose-driven tool to document these events precisely where they take place and hold wrongdoers accountable in a peaceful, Godly manner.",
     ],
-    caption: "Clip: recording an incident as the geo-stamp locks the coordinates and time.",
+    caption:
+      "Recording an incident as the geo-stamp locks the coordinates and time.",
   },
 ];
 
-export const newsCategories: { title: string; body: string; icon: IconName }[] = [
-  {
-    title: "Black Business & Entrepreneurship",
-    body: "Real growth, funding, and economic power.",
-    icon: "wealth",
-  },
-  {
-    title: "Technology & Innovation",
-    body: "Staying ahead in the digital age.",
-    icon: "tech",
-  },
-  {
-    title: "Civic Engagement & Global Progress",
-    body: "What it takes to build, protect and scale worldwide.",
-    icon: "civic",
-  },
-];
+export const newsCategories: { title: string; body: string; icon: IconName }[] =
+  [
+    {
+      title: "Black Business & Entrepreneurship",
+      body: "Real growth, funding, and economic power.",
+      icon: "wealth",
+    },
+    {
+      title: "Technology & Innovation",
+      body: "Staying ahead in the digital age.",
+      icon: "tech",
+    },
+    {
+      title: "Civic Engagement & Global Progress",
+      body: "What it takes to build, protect and scale worldwide.",
+      icon: "civic",
+    },
+  ];
 
-export const referralSteps: { num: string; title: string; body: string; icon: IconName }[] = [
+export const referralSteps: {
+  num: string;
+  title: string;
+  body: string;
+  icon: IconName;
+}[] = [
   {
     num: "01",
     title: "Share your link",

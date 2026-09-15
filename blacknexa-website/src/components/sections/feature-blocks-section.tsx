@@ -1,6 +1,25 @@
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { featureBlocks } from "@/data/features";
+import { versionedAsset } from "@/lib/asset-version";
+
+// Content-relevant stock photos (Unsplash) standing in for real product
+// screenshots/clips of each feature. Swap for actual BlackNexa app captures
+// (feed scroll, article view, geo-stamp incident flow) once available.
+const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
+  "01": {
+    src: "/images/blacknexa/feature-social-feed.jpg",
+    alt: "Hands holding a smartphone scrolling a social feed, representing the Global Community Feed",
+  },
+  "02": {
+    src: "/images/blacknexa/feature-news-engine.jpg",
+    alt: "A vintage typewriter with a page reading \"News\", representing the BlackNexa AI News Engine",
+  },
+  "03": {
+    src: "/images/blacknexa/feature-geo-stamp.jpg",
+    alt: "Push pins marking locations on a map, representing the Geo-Stamp incident reporting tool",
+  },
+};
 
 export function FeatureBlocksSection() {
   return (
@@ -21,10 +40,18 @@ export function FeatureBlocksSection() {
               }`}
             >
               <div className="min-w-[min(100%,300px)] flex-[1_1_440px]">
-                <ImagePlaceholder
-                  label={`Poster frame — feature ${b.num}: ${b.caption}`}
-                  aspect="4 / 3"
-                />
+                <div
+                  className="relative overflow-hidden rounded-[5px] border border-border"
+                  style={{ aspectRatio: "4 / 3" }}
+                >
+                  <Image
+                    src={versionedAsset(FEATURE_IMAGES[b.num].src)}
+                    alt={FEATURE_IMAGES[b.num].alt}
+                    fill
+                    sizes="(min-width: 768px) 440px, 100vw"
+                    className="object-cover"
+                  />
+                </div>
                 <p className="mt-3 text-[12.5px] leading-[1.55] text-text-muted">{b.caption}</p>
               </div>
               <div className="min-w-[min(100%,290px)] flex-[1_1_380px]">

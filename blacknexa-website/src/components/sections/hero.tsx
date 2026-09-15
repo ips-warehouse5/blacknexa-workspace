@@ -1,6 +1,8 @@
+import Image from "next/image";
 import { AppleLogo, GooglePlayLogo } from "@/components/icons/store-badges";
 import { WaitlistForm } from "@/components/forms/waitlist-form";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { HeroPhoneMockup } from "./hero-phone-mockup";
+import { versionedAsset } from "@/lib/asset-version";
 
 export function Hero() {
   return (
@@ -10,10 +12,13 @@ export function Hero() {
       style={{ background: "var(--bn-feature-bg)" }}
     >
       <div className="absolute inset-0">
-        <ImagePlaceholder
-          label="HERO IMAGE · 2400×1600 or larger, landscape — everyday people, a street, a community gathering. Keep the left third clear of faces so the headline reads."
-          aspect="auto"
-          className="h-full w-full border-0"
+        <Image
+          src={versionedAsset("/images/blacknexa/hero-community.jpg")}
+          alt="A diverse crowd of everyday people at a real outdoor community street market, representing the communities BlackNexa serves"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
       </div>
       <div
@@ -60,6 +65,8 @@ export function Hero() {
             </span>
           </div>
         </div>
+
+        <HeroPhoneMockup />
       </div>
 
       <div

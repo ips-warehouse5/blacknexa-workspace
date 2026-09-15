@@ -86,6 +86,20 @@
   --bn-feature-on: var(--bn-on-hero);
   --bn-feature-input-border: rgba(255, 255, 255, 0.2);
 
+  /*
+   * The Hero phone mockup's screen renders a neutral iOS-style app UI —
+   * not the site's warm-gold-tinted dark surface — so it needs its own
+   * light/dark pair matching the source's generic `surfaces` palette,
+   * independent of the accent-tinted --bn-background/--bn-surface above.
+   */
+  --bn-phone-bg: #0f1318;
+  --bn-phone-bg2: #131820;
+  --bn-phone-bg3: #1c242f;
+  --bn-phone-line: #3a4653;
+  --bn-phone-ink: #edf2f8;
+  --bn-phone-ink2: #98a5b4;
+  --bn-phone-ink3: #7d8a99;
+
   --bn-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.65);
   --bn-shadow-lg: 0 40px 90px -30px rgba(0, 0, 0, 0.8);
 
@@ -120,6 +134,15 @@
 
   --bn-scrim: 8 11 14;
   --bn-on-hero: 255 255 255;
+
+  /* See the dark-theme block above for why the phone mockup has its own pair. */
+  --bn-phone-bg: #ffffff;
+  --bn-phone-bg2: #f1f5fa;
+  --bn-phone-bg3: #eef2f7;
+  --bn-phone-line: #d5dce4;
+  --bn-phone-ink: #0e1116;
+  --bn-phone-ink2: #55606e;
+  --bn-phone-ink3: #7a8593;
 
   /*
    * In light mode, "feature" surfaces (Hero, Faith section) switch

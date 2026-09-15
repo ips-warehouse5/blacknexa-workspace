@@ -11,7 +11,7 @@ export function ServicesSection() {
           title="Everything the platform does, in one place."
           maxWidth="660px"
         />
-        <div className="mt-[clamp(44px,5vw,68px)] grid grid-cols-[repeat(auto-fit,minmax(276px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
+        <div className="mt-[clamp(44px,5vw,68px)] grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
           {services.map((s) => (
             <div key={s.title} className="bn-reveal flex flex-col bg-background px-7 pb-9 pt-8">
               <span className="text-accent">

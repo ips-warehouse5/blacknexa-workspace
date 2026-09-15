@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/icons/icon";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { HashLink } from "@/components/ui/hash-link";
 import { newsCategories } from "@/data/features";
 import { getNewsArticles } from "@/data/news";
 import { NewsCard } from "./news-card";
@@ -59,18 +58,10 @@ export async function NewsSection() {
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-[5px] border border-dashed border-border px-[30px] py-[clamp(44px,6vw,72px)] text-center">
-            <p className="font-serif text-2xl text-text-primary">The newsroom opens with the app.</p>
-            <p className="mt-3 text-[14.5px] leading-[1.6] text-text-secondary">
-              No stories are published yet. Join the waitlist and the first briefing lands in your
-              inbox.
-            </p>
-            <HashLink
-              href="/#waitlist"
-              className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-[3px] border border-border px-6 text-[14px] text-text-primary transition-colors hover:border-accent hover:text-accent"
-            >
-              Join the waitlist
-            </HashLink>
+          <div className="mt-8 rounded-[5px] px-[30px] py-[clamp(44px,6vw,72px)] text-center">
+            <span className="inline-flex rounded-[2px] border border-accent px-[9px] py-1 text-[11px] font-semibold tracking-[0.16em] text-accent">
+              COMING SOON
+            </span>
           </div>
         )}
       </div>

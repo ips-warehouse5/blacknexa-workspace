@@ -1,12 +1,42 @@
 import Link from "next/link";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import Image from "next/image";
 import type { NewsArticle } from "@/data/news";
+import { versionedAsset } from "@/lib/asset-version";
+
+// Generic editorial fallback for articles the backend hasn't supplied an
+// image for yet — a real, content-relevant "news reporting" photo rather
+// than an empty placeholder box. Per-article `article.image` (when the
+// backend provides one) always takes priority over this.
+const FALLBACK_NEWS_IMAGE = "/images/blacknexa/feature-news-engine.jpg";
 
 /** Extracted from the homepage News section so `/news` renders identical cards. */
 export function NewsCard({ article }: { article: NewsArticle }) {
   return (
     <article className="bn-reveal overflow-hidden rounded-[5px] border border-border bg-surface transition-transform duration-300 hover:-translate-y-1 hover:border-accent">
-      <ImagePlaceholder label={`${article.category} story image · 16:10`} aspect="16 / 10" />
+      <div className="relative overflow-hidden" style={{ aspectRatio: "16 / 10" }}>
+        {article.image ? (
+          // Backend-supplied image can be on any host, so this can't use a
+          // static `remotePatterns` allowlist — `unoptimized` keeps it a
+          // real <img> under the hood without failing the Next.js Image
+          // domain check.
+          <Image
+            src={article.image}
+            alt={article.title}
+            fill
+            unoptimized
+            sizes="(min-width: 768px) 380px, 100vw"
+            className="object-cover"
+          />
+        ) : (
+          <Image
+            src={versionedAsset(FALLBACK_NEWS_IMAGE)}
+            alt={`${article.category} story`}
+            fill
+            sizes="(min-width: 768px) 380px, 100vw"
+            className="object-cover"
+          />
+        )}
+      </div>
       <div className="p-[22px] pb-[26px]">
         <div className="flex items-center gap-2">
           <span className="rounded-[2px] border border-accent px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-accent">
