@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 56">
+  <style>
+    /*
+     * Same shield mark used everywhere else in the app
+     * (see src/components/ui/logo.tsx) — colored here to follow the
+     * visitor's OS/browser color-scheme preference, since a favicon
+     * has no access to the in-page theme toggle's React state or CSS
+     * variables. Warm Gold matches the app's dark theme default;
+     * Signal Blue matches its light theme.
+     */
+    .bn-outer { stroke: #0a7cff; }
+    .bn-inner { fill: #0a7cff; }
+    @media (prefers-color-scheme: dark) {
+      .bn-outer { stroke: #c9a227; }
+      .bn-inner { fill: #c9a227; }
+    }
+  </style>
+  <path
+    class="bn-outer"
+    d="M24 2.6 44.2 9.4V28.2C44.2 41 35.4 50.2 24 53.8 12.6 50.2 3.8 41 3.8 28.2V9.4Z"
+    fill="none"
+    stroke-width="3.1"
+    stroke-linejoin="round"
+  />
+  <path
+    class="bn-inner"
+    d="M24 12.6 35.4 16.5V28.4C35.4 36.2 30.2 41.8 24 44.4 17.8 41.8 12.6 36.2 12.6 28.4V16.5Z"
+  />
+</svg>

@@ -1,0 +1,172 @@
+/**
+ * BlackNexa design tokens.
+ *
+ * Two themes are supported:
+ *  - dark  (default) — Warm Gold accent
+ *  - light            — Signal Blue accent
+ *
+ * Theme is applied via `data-theme="dark" | "light"` on <html>.
+ * Only color tokens differ between themes; layout/spacing/typography
+ * tokens are shared so components never need theme-specific markup.
+ */
+
+:root {
+  /* Typography */
+  --bn-font-serif: var(--font-spectral), Georgia, serif;
+  --bn-font-sans: var(--font-work-sans), system-ui, -apple-system, sans-serif;
+
+  /* Spacing scale */
+  --bn-space-1: 0.25rem;
+  --bn-space-2: 0.5rem;
+  --bn-space-3: 0.75rem;
+  --bn-space-4: 1rem;
+  --bn-space-5: 1.5rem;
+  --bn-space-6: 2rem;
+  --bn-space-7: 3rem;
+  --bn-space-8: 4rem;
+  --bn-space-9: 6rem;
+  --bn-space-10: 8rem;
+
+  /* Layout */
+  --bn-container-max: 1280px;
+  --bn-container-pad: 28px;
+  --bn-radius-sm: 3px;
+  --bn-radius-md: 5px;
+  --bn-radius-lg: 8px;
+
+  /* Motion */
+  --bn-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --bn-duration-fast: 180ms;
+  --bn-duration-standard: 260ms;
+  --bn-duration-section: 560ms;
+}
+
+/* ---------------------------------------------------------------- */
+/* DARK THEME (default) — Warm Gold accent                          */
+/* ---------------------------------------------------------------- */
+:root,
+[data-theme="dark"] {
+  --bn-background: #0f0d09;
+  --bn-surface: #17140f;
+  --bn-surface-elevated: #1e1a14;
+
+  --bn-text-primary: #f5efe4;
+  --bn-text-secondary: #b9ac97;
+  --bn-text-muted: #857a68;
+
+  --bn-border: #332c22;
+
+  --bn-accent: #c9a227;
+  --bn-accent-hover: #dab646;
+  --bn-accent-soft: rgba(201, 162, 39, 0.14);
+  --bn-accent-foreground: #1a1509;
+
+  --bn-hero-background: #0a0806;
+  --bn-hero-text: #f5efe4;
+  --bn-hero-secondary-text: #c7bba6;
+
+  --bn-ok: #4fbf8b;
+  --bn-err: #f0736b;
+
+  --bn-scrim: 8 6 4;
+  --bn-on-hero: 255 255 255;
+
+  /*
+   * "Feature" tokens back the Hero and Faith sections, which are the
+   * two sections designed to flip fully with the theme (dark +
+   * photographic in dark mode, light + airy in light mode) rather
+   * than stay a permanently dark band like the footer, mobile menu,
+   * promo and final-CTA sections do. In dark mode a "feature" surface
+   * is identical to the fixed hero surface.
+   */
+  --bn-feature-bg: var(--bn-hero-background);
+  --bn-feature-ink: var(--bn-hero-text);
+  --bn-feature-ink2: var(--bn-hero-secondary-text);
+  --bn-feature-scrim: var(--bn-scrim);
+  --bn-feature-on: var(--bn-on-hero);
+  --bn-feature-input-border: rgba(255, 255, 255, 0.2);
+
+  /*
+   * The Hero phone mockup's screen renders a neutral iOS-style app UI —
+   * not the site's warm-gold-tinted dark surface — so it needs its own
+   * light/dark pair matching the source's generic `surfaces` palette,
+   * independent of the accent-tinted --bn-background/--bn-surface above.
+   */
+  --bn-phone-bg: #0f1318;
+  --bn-phone-bg2: #131820;
+  --bn-phone-bg3: #1c242f;
+  --bn-phone-line: #3a4653;
+  --bn-phone-ink: #edf2f8;
+  --bn-phone-ink2: #98a5b4;
+  --bn-phone-ink3: #7d8a99;
+
+  --bn-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.65);
+  --bn-shadow-lg: 0 40px 90px -30px rgba(0, 0, 0, 0.8);
+
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------- */
+/* LIGHT THEME — Signal Blue accent                                 */
+/* ---------------------------------------------------------------- */
+[data-theme="light"] {
+  --bn-background: #ffffff;
+  --bn-surface: #f1f5fa;
+  --bn-surface-elevated: #eef2f7;
+
+  --bn-text-primary: #0e1116;
+  --bn-text-secondary: #55606e;
+  --bn-text-muted: #7a8593;
+
+  --bn-border: #d5dce4;
+
+  --bn-accent: #0a7cff;
+  --bn-accent-hover: #2f91ff;
+  --bn-accent-soft: rgba(10, 124, 255, 0.1);
+  --bn-accent-foreground: #ffffff;
+
+  --bn-hero-background: #0e1116;
+  --bn-hero-text: #ffffff;
+  --bn-hero-secondary-text: #b7c2cf;
+
+  --bn-ok: #1a8f4c;
+  --bn-err: #d23b33;
+
+  --bn-scrim: 8 11 14;
+  --bn-on-hero: 255 255 255;
+
+  /* See the dark-theme block above for why the phone mockup has its own pair. */
+  --bn-phone-bg: #ffffff;
+  --bn-phone-bg2: #f1f5fa;
+  --bn-phone-bg3: #eef2f7;
+  --bn-phone-line: #d5dce4;
+  --bn-phone-ink: #0e1116;
+  --bn-phone-ink2: #55606e;
+  --bn-phone-ink3: #7a8593;
+
+  /*
+   * In light mode, "feature" surfaces (Hero, Faith section) switch
+   * to the same light surface + ink used everywhere else on the
+   * page, instead of staying black. See the dark-theme block above
+   * for the full rationale.
+   */
+  --bn-feature-bg: var(--bn-surface);
+  --bn-feature-ink: var(--bn-text-primary);
+  --bn-feature-ink2: var(--bn-text-secondary);
+  --bn-feature-scrim: 255 255 255;
+  --bn-feature-on: 14 17 22;
+  --bn-feature-input-border: var(--bn-border);
+
+  --bn-shadow: 0 24px 60px -24px rgba(14, 17, 22, 0.25);
+  --bn-shadow-lg: 0 40px 90px -30px rgba(14, 17, 22, 0.35);
+
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --bn-duration-fast: 0ms;
+    --bn-duration-standard: 0ms;
+    --bn-duration-section: 0ms;
+  }
+}
