@@ -49,6 +49,7 @@ import { IncidentsProvider } from "@/providers/IncidentsProvider";
 import { LocationProvider } from "@/providers/LocationProvider";
 import { NewsProvider } from "@/providers/NewsProvider";
 import { SettingsProvider } from "@/providers/SettingsProvider";
+import { SnackbarProvider, SnackbarHost } from "@/providers/SnackbarProvider";
 import { colors } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -211,19 +212,22 @@ export default function RootLayout(): React.ReactElement | null {
             style={{ flex: 1, backgroundColor: colors.bg }}
           >
             <StatusBar style="dark" />
-            <AuthProvider>
-              <SettingsProvider>
-                <LocationProvider>
-                  <IncidentsProvider>
-                    <NewsProvider>
-                      <GeoLegalProvider>
-                        <AuthGate />
-                      </GeoLegalProvider>
-                    </NewsProvider>
-                  </IncidentsProvider>
-                </LocationProvider>
-              </SettingsProvider>
-            </AuthProvider>
+            <SnackbarProvider>
+              <AuthProvider>
+                <SettingsProvider>
+                  <LocationProvider>
+                    <IncidentsProvider>
+                      <NewsProvider>
+                        <GeoLegalProvider>
+                          <AuthGate />
+                        </GeoLegalProvider>
+                      </NewsProvider>
+                    </IncidentsProvider>
+                  </LocationProvider>
+                </SettingsProvider>
+              </AuthProvider>
+              <SnackbarHost />
+            </SnackbarProvider>
           </GestureHandlerRootView>
         </KeyboardProvider>
       </SafeAreaProvider>

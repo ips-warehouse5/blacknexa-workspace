@@ -15,7 +15,6 @@ import { AlertTriangle, Bluetooth, Radio, ShieldAlert, X } from "lucide-react-na
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Platform,
   Pressable,
@@ -28,6 +27,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "@/providers/LocationProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
 
@@ -63,6 +63,7 @@ async function fireBeaconTrigger(
 
 export default function SafetyBeaconButton(): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const { showSnackbar } = useSnackbar();
   const { user } = useAuth();
   const { location } = useLocation();
   const [sheetVisible, setSheetVisible] = useState<boolean>(false);
@@ -84,21 +85,21 @@ export default function SafetyBeaconButton(): React.ReactElement {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
       setBeaconStatus(data.status ?? "ARMED_AND_LOGGED");
-      Alert.alert(
-        "Safety Beacon Activated",
-        "Your encrypted event payload with GPS coordinates has been logged to the secure vault. Emergency contacts and the BlackNexa safety network have been notified.",
-        [{ text: "OK", onPress: () => setSheetVisible(false) }]
-      );
+      setSheetVisible(false);
+      showSnackbar({
+        message: "Safety beacon activated. Your location and emergency contacts have been notified.",
+        type: "success",
+      });
     },
     onError: (err: unknown) => {
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       }
       setBeaconStatus("FAILED");
-      Alert.alert(
-        "Beacon Failed",
-        err instanceof Error ? err.message : "Could not activate the safety beacon. Check your connection.",
-      );
+      showSnackbar({
+        message: err instanceof Error ? err.message : "Could not activate the safety beacon. Check your connection.",
+        type: "error",
+      });
     },
   });
 

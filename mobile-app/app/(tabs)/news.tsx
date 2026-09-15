@@ -35,6 +35,7 @@ import {
 import { useNews, type GenerateNewsResult } from "@/providers/NewsProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 
 type FilterKey = "all" | NewsCategory;
 
@@ -274,6 +275,7 @@ export default function NewsScreen(): React.ReactElement {
     refetchLocal,
   } = useLocation();
   const { settings } = useSettings();
+  const { showSnackbar } = useSnackbar();
   const [filter, setFilter] = useState<FilterKey>("all");
   const [scope, setScope] = useState<NewsScope | "all">("all");
   const [query, setQuery] = useState<string>("");
@@ -407,14 +409,14 @@ export default function NewsScreen(): React.ReactElement {
         onError: (e: unknown) => {
           setGenStep(0);
           setGenSlow(false);
-          Alert.alert(
-            "Generation failed",
-            e instanceof Error ? e.message : "The AI engine could not produce a briefing. Please try again."
-          );
+          showSnackbar({
+            message: e instanceof Error ? e.message : "The AI engine could not produce a briefing. Please try again.",
+            type: "error",
+          });
         },
       }
     );
-  }, [topic, genCategory, genScope, sourceUrls, generate, settings.preferredLanguage]);
+  }, [topic, genCategory, genScope, sourceUrls, generate, settings.preferredLanguage, showSnackbar]);
 
   // Cycle through progress steps while generation is running, and flag when it
   // is slower than the backend's fast-path target so the user knows to wait.

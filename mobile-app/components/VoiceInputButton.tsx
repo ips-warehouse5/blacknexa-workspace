@@ -10,6 +10,7 @@ import {
 } from "expo-audio";
 import Colors from "@/constants/colors";
 import { transcribeRecordingUri } from "@/utils/audio";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 
 export type VoiceInputButtonProps = {
   onTranscript: (text: string) => void;
@@ -23,6 +24,7 @@ export default function VoiceInputButton({
   placeholder = "Tap to speak",
   prominent = false,
 }: VoiceInputButtonProps): React.ReactElement {
+  const { showSnackbar } = useSnackbar();
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
   /**
@@ -41,10 +43,10 @@ export default function VoiceInputButton({
         (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition ??
         (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
       if (!SR) {
-        Alert.alert(
-          "Voice input unsupported",
-          "Microphone voice search is not supported on this browser. Please update your browser or use the text field."
-        );
+        showSnackbar({
+          message: "Voice input isn't supported on this browser. Please update it or use the text field.",
+          type: "error",
+        });
         return;
       }
       const recognition = new (SR as new () => {
@@ -69,19 +71,19 @@ export default function VoiceInputButton({
         if (transcript) {
           onTranscript(transcript);
         } else {
-          Alert.alert("Voice input", "No speech was detected. Please try again.");
+          showSnackbar({ message: "No speech was detected. Please try again.", type: "warning" });
         }
       };
       recognition.onerror = (event: { error: string }) => {
         setIsRecording(false);
         setIsTranscribing(false);
         if (event.error === "not-allowed") {
-          Alert.alert(
-            "Microphone permission denied",
-            "Please enable microphone access in your browser settings to use voice input."
-          );
+          showSnackbar({
+            message: "Please enable microphone access in your browser settings to use voice input.",
+            type: "error",
+          });
         } else {
-          Alert.alert("Voice input", `Microphone error: ${event.error}`);
+          showSnackbar({ message: `Microphone error: ${event.error}`, type: "error" });
         }
       };
       recognition.onend = () => {
@@ -93,7 +95,7 @@ export default function VoiceInputButton({
       try {
         recognition.start();
       } catch {
-        Alert.alert("Voice input", "Failed to start speech recognition. Please try again.");
+        showSnackbar({ message: "Failed to start speech recognition. Please try again.", type: "error" });
         setIsRecording(false);
         webRecognitionRef.current = null;
       }
@@ -120,11 +122,11 @@ export default function VoiceInputButton({
           ]
         );
       } else {
-        Alert.alert("Microphone", message);
+        showSnackbar({ message, type: "error" });
       }
       setIsRecording(false);
     }
-  }, [recorder]);
+  }, [recorder, showSnackbar]);
 
   const stop = useCallback(async () => {
     // Web: stop the browser SpeechRecognition session.
@@ -156,16 +158,16 @@ export default function VoiceInputButton({
       if (result.text) {
         onTranscript(result.text);
       } else {
-        Alert.alert("Voice input", "No speech was detected. Please try again.");
+        showSnackbar({ message: "No speech was detected. Please try again.", type: "warning" });
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : "Transcription failed";
-      Alert.alert("Voice input", message);
+      showSnackbar({ message, type: "error" });
     } finally {
       setIsTranscribing(false);
       await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
     }
-  }, [isRecording, onTranscript, recorder]);
+  }, [isRecording, onTranscript, recorder, showSnackbar]);
 
   const cancel = useCallback(async () => {
     if (Platform.OS === "web") {
