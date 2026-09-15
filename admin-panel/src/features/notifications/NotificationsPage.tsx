@@ -6,8 +6,9 @@
  * share an audience and a delivery mechanism, and an operator asking "what did
  * we send members this week" means both.
  *
- * Delivery and open figures are shown per row. An announcement with a 3% open
- * rate is a problem worth seeing next to one at 70%.
+ * Delivery and open figures are per row, as the prototype has them. An earlier
+ * version added a summary tile row on top; it was not in the approved design
+ * and has been removed.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -17,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { SearchInput } from "@/components/ui/Fields";
 import { Icon } from "@/components/ui/Icon";
-import { Card, KpiCard, KpiGrid, PageHeader, Tabs } from "@/components/ui/Page";
+import { Card, PageHeader, Tabs } from "@/components/ui/Page";
 import { Pagination } from "@/components/ui/Pagination";
 import env from "@/config/env";
 import { FixtureNotice } from "@/features/misc/FixtureNotice";
@@ -74,20 +75,6 @@ export function NotificationsPage() {
   });
 
   const table = tab === "announcements" ? announcementTable : newsTable;
-
-  // Totals across everything sent, for the summary tiles.
-  const totals = useMemo(() => {
-    const delivered = announcements.reduce((sum, a) => sum + a.deliveredCount, 0);
-    const opened = announcements.reduce((sum, a) => sum + a.openedCount, 0);
-    const pushed = newsNotifications.reduce((sum, n) => sum + n.sentCount, 0);
-    return {
-      delivered,
-      opened,
-      pushed,
-      // Guarded: a fresh install has delivered nothing, and 0/0 is NaN on screen.
-      openRate: delivered > 0 ? `${((opened / delivered) * 100).toFixed(1)}%` : "—",
-    };
-  }, []);
 
   const announcementColumns: Column<Announcement>[] = [
     {
@@ -201,13 +188,6 @@ export function NotificationsPage() {
       />
 
       <FixtureNotice module="Notifications" />
-
-      <KpiGrid columns={4} style={{ marginBottom: 20 }}>
-        <KpiCard compact label="Announcements" value={announcements.length} />
-        <KpiCard compact label="Delivered" value={totals.delivered.toLocaleString()} />
-        <KpiCard compact label="Average Open Rate" value={totals.openRate} />
-        <KpiCard compact label="News Pushes" value={totals.pushed.toLocaleString()} />
-      </KpiGrid>
 
       <Tabs
         label="Notification type"

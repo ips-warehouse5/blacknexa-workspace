@@ -6,6 +6,7 @@
    app.css comes last so React-specific corrections win. */
 
 @import "./tokens.css";
+@import "./base.css";
 
 @import "./design/layout.css";
 @import "./design/forms.css";

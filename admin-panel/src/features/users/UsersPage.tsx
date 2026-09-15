@@ -2,8 +2,10 @@
  * User Management — the end-user directory.
  *
  * The one screen with bulk actions, which is why selection is tracked here
- * rather than inside the table. Two details that matter:
+ * rather than inside the table. Three details that matter:
  *
+ *   • The selection column is rendered only for roles holding `users.bulk`.
+ *     A checkbox that leads nowhere is an offer the screen cannot honour.
  *   • Selection is scoped to the current page. Selecting rows, changing a
  *     filter, and then hitting "suspend" must not act on rows the operator can
  *     no longer see — so the set is cleared whenever the result set changes.
@@ -15,7 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useToast } from "@/app/providers/ToastProvider";
-import { Can, useDeniedReason } from "@/components/rbac/Can";
+import { Can, usePermission } from "@/components/rbac/Can";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -94,7 +96,14 @@ export function UsersPage() {
   const [bulkAction, setBulkAction] = useState<"suspend" | "delete" | null>(null);
 
   const headerCheckbox = useRef<HTMLInputElement>(null);
-  const bulkDenied = useDeniedReason("users.bulk");
+
+  /*
+   * Selection exists to feed the bulk actions, so a role that cannot perform
+   * them has no use for a checkbox. Showing one and then refusing the action —
+   * or worse, showing a bulk bar whose buttons are all disabled — offers work
+   * that cannot be done. The column is dropped entirely for those roles.
+   */
+  const canBulk = usePermission("users.bulk");
 
   useEffect(() => {
     document.title = `Users · ${env.appName} Admin`;
@@ -185,32 +194,32 @@ export function UsersPage() {
     setBulkAction(null);
   };
 
+  const selectColumn: Column<AppUser> = {
+    key: "select",
+    header: (
+      <input
+        ref={headerCheckbox}
+        type="checkbox"
+        checked={allSelected}
+        onChange={toggleAll}
+        aria-label="Select all users on this page"
+      />
+    ),
+    width: "4%",
+    align: "center",
+    render: (user) => (
+      <input
+        type="checkbox"
+        checked={selected.has(user.id)}
+        onChange={() => toggleRow(user.id)}
+        onClick={(e) => e.stopPropagation()}
+        aria-label={`Select ${user.display_name}`}
+      />
+    ),
+  };
+
   const columns: Column<AppUser>[] = [
-    {
-      key: "select",
-      header: (
-        <>
-          <input
-            ref={headerCheckbox}
-            type="checkbox"
-            checked={allSelected}
-            onChange={toggleAll}
-            aria-label="Select all users on this page"
-          />
-        </>
-      ),
-      width: "4%",
-      align: "center",
-      render: (user) => (
-        <input
-          type="checkbox"
-          checked={selected.has(user.id)}
-          onChange={() => toggleRow(user.id)}
-          onClick={(e) => e.stopPropagation()}
-          aria-label={`Select ${user.display_name}`}
-        />
-      ),
-    },
+    ...(canBulk ? [selectColumn] : []),
     {
       key: "name",
       header: "User Name & ID",
@@ -336,18 +345,10 @@ export function UsersPage() {
               <strong>{selected.size}</strong> {selected.size === 1 ? "user" : "users"} selected
             </span>
             <div className="bulk-actions">
-              <Button
-                variant="outline"
-                {...(bulkDenied ? { deniedReason: bulkDenied } : {})}
-                onClick={() => setBulkAction("suspend")}
-              >
+              <Button variant="outline" onClick={() => setBulkAction("suspend")}>
                 Suspend
               </Button>
-              <Button
-                variant="danger"
-                {...(bulkDenied ? { deniedReason: bulkDenied } : {})}
-                onClick={() => setBulkAction("delete")}
-              >
+              <Button variant="danger" onClick={() => setBulkAction("delete")}>
                 Delete
               </Button>
               <Button variant="outline" onClick={clearSelection}>

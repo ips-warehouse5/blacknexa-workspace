@@ -1,0 +1,14 @@
+/* Base reset.
+   Ported from the prototype, where it sat between the two :root blocks.
+
+   This is load-bearing and easy to overlook: almost every width and height in
+   the design system is written assuming padding and borders are inside the box.
+   Without it a 440px container with 32px padding measures 504px, `height: 100vh`
+   on a padded element exceeds the viewport, and fixed-width inputs in a flex row
+   overflow their parent — which is exactly what happened when it went missing. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

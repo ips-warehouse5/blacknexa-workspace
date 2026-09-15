@@ -137,7 +137,24 @@ http.interceptors.response.use(
 
     const { status, data } = error.response;
 
-    if (status === 401 && config && !config._retried && !config._skipAuthRefresh) {
+    /*
+     * A 401 from a sign-in endpoint means the credentials were wrong, not that
+     * a session ended — there was no session. Treating the two the same is what
+     * made a mistyped password answer "Your session has ended. Please sign in
+     * again.", which is both untrue and unhelpful. These requests are also left
+     * out of the refresh-and-retry path: they carry no access token, so there is
+     * nothing to refresh, and attempting it would spend the refresh token and
+     * sign the operator out for getting their password wrong.
+     */
+    const establishingSession = isSessionEstablishingRequest(config);
+
+    if (
+      status === 401 &&
+      config &&
+      !config._retried &&
+      !config._skipAuthRefresh &&
+      !establishingSession
+    ) {
       config._retried = true;
       try {
         const token = await refreshAccessToken();
@@ -154,7 +171,7 @@ http.interceptors.response.use(
       }
     }
 
-    if (status === 401) expireSession();
+    if (status === 401 && !establishingSession) expireSession();
 
     return Promise.reject(
       new ApiError(
@@ -184,6 +201,25 @@ function retryAfterFrom(headers: unknown): number | undefined {
   const asDate = Date.parse(String(raw));
   if (Number.isNaN(asDate)) return undefined;
   return Math.max(0, Math.round((asDate - Date.now()) / 1000));
+}
+
+/**
+ * Whether a request is trying to *create* a session rather than use one.
+ *
+ * `/refresh` is deliberately absent: a 401 there does mean the session is over,
+ * and should be handled as an expiry.
+ */
+const SESSION_ESTABLISHING_PATHS = [
+  "/admin/auth/login",
+  "/admin/auth/mfa/verify",
+  "/admin/auth/mfa/resend",
+  "/admin/auth/password/forgot",
+  "/admin/auth/password/reset",
+];
+
+function isSessionEstablishingRequest(config: RetriableConfig | undefined): boolean {
+  const url = config?.url ?? "";
+  return SESSION_ESTABLISHING_PATHS.some((path) => url.includes(path));
 }
 
 function defaultMessageFor(status: number): string {

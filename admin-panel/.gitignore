@@ -25,3 +25,6 @@ dist-ssr
 
 # Screenshots written by `npm run smoke`
 smoke-shots/
+
+# Screenshots written by the QA repro script
+repro-shots/

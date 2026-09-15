@@ -22,8 +22,19 @@ import { ROLE_LIST } from "@/lib/rbac";
 import type { StaffMember } from "@/features/admin-roles/staff.types";
 import { ROLE_KEYS, type RoleKey } from "@/types/rbac";
 
-/** Role choices, with the remit spelled out so the picker is self-explaining. */
-const ROLE_OPTIONS = ROLE_LIST.map((role) => ({
+/**
+ * Role choices, with the remit spelled out so the picker is self-explaining.
+ *
+ * Super Admin is deliberately absent, and the API refuses it too. Super Admin
+ * accounts are "Protected" — they cannot be edited, disabled or deleted from
+ * this screen — so allowing one to be created here would mint an account nobody
+ * could subsequently remove, a mistyped address included. Additional Super
+ * Admins are provisioned out of band via `ADMIN_BOOTSTRAP_*`.
+ *
+ * Offering the option and then failing the request was the earlier behaviour;
+ * the two ends now agree, and the form says why.
+ */
+const ROLE_OPTIONS = ROLE_LIST.filter((role) => role.key !== "superadmin").map((role) => ({
   value: role.key,
   label: `${role.label} (${role.tagline})`,
 }));
@@ -152,7 +163,12 @@ function StaffForm({ open, staff, busy, onClose, onSubmit }: StaffFormDialogProp
             <div className="field-error-msg" style={{ display: "block" }}>
               {errors.role.message}
             </div>
-          ) : null}
+          ) : (
+            <div className="field-hint">
+              Super Admin cannot be assigned here. Those accounts are protected once
+              created, so they are provisioned by the platform team.
+            </div>
+          )}
         </div>
 
         {editing ? null : (

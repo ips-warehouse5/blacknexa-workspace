@@ -615,6 +615,35 @@ body.dark .verified-chip {
   text-align: left;
 }
 
+/*
+ * Restate hover and active for the sidebar.
+ *
+ * The reset above zeroes `background` and `color` to strip button and anchor
+ * chrome, and it is written as `.side-menu .nav` — the same specificity as the
+ * ported `.nav.active`, but later in the cascade, so it silently won and the
+ * active item lost its highlight. Dark mode was unaffected only because its
+ * rules are `body.dark .nav.active`, which outranks both.
+ *
+ * Restating them here rather than raising specificity in the ported file keeps
+ * the prototype CSS untouched, and keeps the fix next to the reset that caused
+ * the problem.
+ */
+.side-menu .nav:hover,
+.side-menu .sub-nav:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.side-menu .nav.active,
+.side-menu .sub-nav.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.side-menu .nav.active .nav-icon {
+  color: var(--accent);
+  opacity: 1;
+}
+
 /* `.section-tab` draws its own underline, which the border reset above wiped. */
 .section-tab {
   border-bottom: 2px solid transparent;

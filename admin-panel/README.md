@@ -94,12 +94,19 @@ real gain.
 `styles/design/` holds it, split into 21 files **in the original source order**.
 That order is load-bearing: later files intentionally flatten surfaces and
 restate the type scale, so `styles/index.css` imports them in the same sequence
-they appeared in the prototype. The split was verified lossless — concatenating
-the files reproduces the original stylesheet byte for byte.
+they appeared in the prototype.
 
-Two files sit outside that:
+Three files sit outside that:
 
 - `styles/tokens.css` — hand-written. Defines both accents in both modes.
+- `styles/base.css` — the global `box-sizing: border-box` reset. It lives apart
+  because it was originally *lost*: it sat between the prototype's two `:root`
+  blocks, and the slice that dropped those dropped three extra lines with them.
+  Nearly every width in the design system assumes it, so its absence produced
+  five separate layout bugs at once — overflowing OTP inputs, a sidebar that
+  scrolled, and unnecessary page scrollbars. Worth knowing if the CSS is ever
+  re-split: the losslessness check compared the rebuild against a reconstruction
+  that excluded the same range, so it passed while the lines were missing.
 - `styles/app.css` — corrections the port needs, kept separate so the line
   between "approved design" and "made it work in React" stays visible. Mostly
   two things: shells the prototype hid by default (it kept every screen in one
