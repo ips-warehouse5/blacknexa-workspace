@@ -66,16 +66,35 @@ for the future News API.
 
 ## Integration points
 
-The contact form is **live**: it posts to `src/app/api/contact/route.ts`,
-which validates and forwards to the platform API's public
-`POST /api/v1/contact`. Set `CONTACT_API_URL` to enable it — without
-that variable the route answers 503 and the form says so. Submissions
-land in the admin console under **Contact Us**.
+Backend calls go through one client, `src/lib/api/client.ts`, built on
+a single `API_BASE_URL`. Endpoint paths live in code beside the feature
+that uses them (`src/lib/api/contact.ts`, `…/waitlist.ts`), not in the
+environment — adding an endpoint is a code change, not a deploy-time
+config change.
 
-Still to be wired, where a real backend call needs to replace a mocked
-one (search for `TODO:`):
+The layering:
 
-- `src/components/forms/waitlist-form.tsx` — waitlist signup
+```
+browser ──► /api/* route handler ──► lib/api/<resource> ──► lib/api/client ──► platform API
+            validates, maps errors    path + payload        base URL, envelope,
+            (lib/api/respond)                               timeout, ApiError
+```
+
+`API_BASE_URL` is server-side only (no `NEXT_PUBLIC_` prefix), so the
+API's address never reaches the browser bundle and the calls are not
+subject to CORS. When it is unset, the routes that need it answer 503
+and say so.
+
+**Contact form — live.** `POST /api/contact` forwards to the platform
+API's `POST /contact`. Submissions land in the admin console under
+**Contact Us**.
+
+**Waitlist — pending a backend.** The route and client call are written,
+but the API has no `POST /waitlist` yet, so `WAITLIST_ENDPOINT_READY` in
+`src/lib/api/waitlist.ts` gates it. Ship the endpoint, flip the flag.
+
+Still mocked (search for `TODO:`):
+
 - `src/data/news.ts` — news feed
 
 ## Environment

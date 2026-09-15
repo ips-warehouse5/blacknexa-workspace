@@ -3,22 +3,17 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-
-const SUBJECT_OPTIONS = [
-  { value: "general", label: "General enquiry" },
-  { value: "partnership", label: "Partnership" },
-  { value: "press", label: "Press" },
-  { value: "problem", label: "Report a problem" },
-  { value: "legal", label: "Legal" },
-];
+import {
+  CONTACT_MESSAGE_MAX,
+  CONTACT_MESSAGE_MIN,
+  CONTACT_SUBJECT_DEFAULT,
+  CONTACT_SUBJECT_OPTIONS,
+} from "@/data/contact";
 
 type Errors = Partial<Record<"name" | "email" | "message" | "submit", string>>;
 type Status = "idle" | "sending" | "success";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
-
-/** The platform API's cap. Enforced here so the field simply stops accepting. */
-const MESSAGE_MAX = 5000;
 
 async function submitContact(payload: {
   name: string;
@@ -40,7 +35,7 @@ async function submitContact(payload: {
 export function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("general");
+  const [subject, setSubject] = useState<string>(CONTACT_SUBJECT_DEFAULT);
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>("idle");
@@ -50,7 +45,7 @@ export function ContactForm() {
     if (!name.trim()) next.name = "Tell us your name.";
     if (!email.trim()) next.email = "We need an email to reply to.";
     else if (!EMAIL_RE.test(email.trim())) next.email = "That email address doesn't look right.";
-    if (message.trim().length < 12) next.message = "A little more detail helps us route this.";
+    if (message.trim().length < CONTACT_MESSAGE_MIN) next.message = "A little more detail helps us route this.";
     return next;
   }
 
@@ -92,7 +87,7 @@ export function ContactForm() {
             setStatus("idle");
             setName("");
             setEmail("");
-            setSubject("general");
+            setSubject(CONTACT_SUBJECT_DEFAULT);
             setMessage("");
           }}
         >
@@ -149,7 +144,7 @@ export function ContactForm() {
           id="c-subject"
           name="subject"
           value={subject}
-          options={SUBJECT_OPTIONS}
+          options={CONTACT_SUBJECT_OPTIONS}
           onChange={setSubject}
         />
       </Field>
@@ -159,13 +154,13 @@ export function ContactForm() {
           id="c-message"
           name="message"
           rows={6}
-          maxLength={MESSAGE_MAX}
+          maxLength={CONTACT_MESSAGE_MAX}
           aria-invalid={!!errors.message}
           placeholder="Tell us what you need."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onBlur={() => {
-            if (message.trim() && message.trim().length < 12) {
+            if (message.trim() && message.trim().length < CONTACT_MESSAGE_MIN) {
               setErrors((s) => ({ ...s, message: "A little more detail helps us route this." }));
             }
           }}

@@ -1,35 +1,35 @@
 import { NextResponse } from "next/server";
 
+import { WAITLIST_ENDPOINT_READY, joinWaitlist } from "@/lib/api/waitlist";
+import { badRequest, respondToApiError, unavailable } from "@/lib/api/respond";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
+/**
+ * `POST /api/waitlist` — the waitlist form's endpoint.
+ *
+ * Structured like the contact route, but the API endpoint it calls does not
+ * exist yet, so the flag short-circuits it. Failing here and saying so beats
+ * posting into a 404 and reporting a server fault for a feature that was
+ * simply never built.
+ */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
 
   if (!email || !EMAIL_RE.test(email)) {
-    return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
+    return badRequest("A valid email address is required.");
   }
 
-  const waitlistApiUrl = process.env.WAITLIST_API_URL;
-  if (!waitlistApiUrl) {
-    return NextResponse.json(
-      { error: "Waitlist service is not configured yet." },
-      { status: 503 }
-    );
+  if (!WAITLIST_ENDPOINT_READY) {
+    return unavailable("Waitlist signups are not open yet.");
   }
 
-  const upstream = await fetch(waitlistApiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, phone: phone || undefined }),
-  });
-
-  if (!upstream.ok) {
-    return NextResponse.json(
-      { error: "Something went wrong on our end — try again." },
-      { status: 502 }
-    );
+  try {
+    await joinWaitlist({ email, ...(phone ? { phone } : {}) });
+  } catch (error) {
+    return respondToApiError(error, "The waitlist is not configured yet.");
   }
 
   return NextResponse.json({ ok: true }, { status: 200 });
