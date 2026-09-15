@@ -1,26 +1,46 @@
 /**
- * Admin authentication routes — `/api/v1/admin/auth`.
+ * Admin console routes — `/api/v1/admin/auth` and `/api/v1/admin/staff`.
  *
- * New surface, added because the operational endpoints needed something to guard
- * them. `authLimiter` is deliberately very tight here (8 attempts per window,
- * keyed by IP + email, successful logins not counted) since this is the only
- * password-checking endpoint in the service.
+ * `authLimiter` is deliberately very tight on every unauthenticated path here
+ * (keyed by IP + email, successful attempts not counted). Those endpoints check
+ * passwords, verify one-time codes and send email — all three are things worth
+ * rate-limiting even before the per-account lockout applies.
  */
 
 import { Router } from "express";
+
 import adminAuthController from "@/controllers/admin_auth.controller";
+import adminStaffController from "@/controllers/admin_staff.controller";
 import { validate } from "@/middlewares/validate.middleware";
-import { adminAuthGuard, checkRole } from "@/middlewares/auth.middleware";
+import { adminAuthGuard, requirePermission } from "@/middlewares/auth.middleware";
 import { authLimiter } from "@/middlewares/rate_limit.middleware";
 import { asyncHandler } from "@/middlewares/error.middleware";
 
 const router = Router();
 
+// ── Authentication ──────────────────────────────────────────────────────────
+
+/** First factor. Returns a challenge; never a session. */
 router.post(
   "/login",
   authLimiter,
   validate("admin.login"),
   asyncHandler((req, res) => adminAuthController.login(req, res)),
+);
+
+/** Second factor. The only route that issues an operator session. */
+router.post(
+  "/mfa/verify",
+  authLimiter,
+  validate("admin.mfaVerify"),
+  asyncHandler((req, res) => adminAuthController.verifyMfa(req, res)),
+);
+
+router.post(
+  "/mfa/resend",
+  authLimiter,
+  validate("admin.mfaResend"),
+  asyncHandler((req, res) => adminAuthController.resendMfa(req, res)),
 );
 
 router.post(
@@ -42,13 +62,80 @@ router.get(
   asyncHandler((req, res) => adminAuthController.me(req, res)),
 );
 
-/** Only a super-admin may mint another operator account. */
+// ── Password recovery ───────────────────────────────────────────────────────
+
 router.post(
-  "/admins",
-  adminAuthGuard,
-  checkRole(["super-admin"]),
-  validate("admin.create"),
-  asyncHandler((req, res) => adminAuthController.createAdmin(req, res)),
+  "/password/forgot",
+  authLimiter,
+  validate("admin.forgotPassword"),
+  asyncHandler((req, res) => adminAuthController.forgotPassword(req, res)),
+);
+
+router.post(
+  "/password/reset",
+  authLimiter,
+  validate("admin.resetPassword"),
+  asyncHandler((req, res) => adminAuthController.resetPassword(req, res)),
 );
 
 export default router;
+
+// ── Staff directory ─────────────────────────────────────────────────────────
+
+/**
+ * Mounted separately at `/api/v1/admin/staff`.
+ *
+ * Every route states the ability it needs rather than a list of role names, so
+ * what a route protects is readable without cross-referencing the role model.
+ */
+export const staffRouter = Router();
+
+staffRouter.use(adminAuthGuard);
+
+staffRouter.get(
+  "/",
+  requirePermission("staff.view"),
+  validate("admin.staffList"),
+  asyncHandler((req, res) => adminStaffController.list(req, res)),
+);
+
+staffRouter.get(
+  "/summary",
+  requirePermission("staff.view"),
+  asyncHandler((req, res) => adminStaffController.summary(req, res)),
+);
+
+staffRouter.post(
+  "/",
+  requirePermission("staff.create"),
+  validate("admin.staffCreate"),
+  asyncHandler((req, res) => adminStaffController.create(req, res)),
+);
+
+staffRouter.patch(
+  "/:id",
+  requirePermission("staff.edit"),
+  validate("admin.staffUpdate"),
+  asyncHandler((req, res) => adminStaffController.update(req, res)),
+);
+
+staffRouter.patch(
+  "/:id/status",
+  requirePermission("staff.toggle"),
+  validate("admin.staffStatus"),
+  asyncHandler((req, res) => adminStaffController.setStatus(req, res)),
+);
+
+staffRouter.post(
+  "/:id/reset-password",
+  requirePermission("staff.reset"),
+  validate("admin.staffId"),
+  asyncHandler((req, res) => adminStaffController.resetPassword(req, res)),
+);
+
+staffRouter.delete(
+  "/:id",
+  requirePermission("staff.delete"),
+  validate("admin.staffId"),
+  asyncHandler((req, res) => adminStaffController.remove(req, res)),
+);

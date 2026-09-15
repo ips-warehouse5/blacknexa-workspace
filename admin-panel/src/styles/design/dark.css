@@ -1,0 +1,103 @@
+/* Dark-mode overrides for the shell and shared components
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+body.dark {
+  --bg: #0c111b;
+  --surface: #151c29;
+  --text: #ecf1f8;
+  --muted: #9aa6b8;
+  --line: #273244;
+  --accent-soft: #102d50;
+}
+body.dark .side {
+  background: #111723;
+  border-color: var(--line);
+  color: #9aa6b8;
+}
+body.dark .brand-title {
+  color: #fff;
+}
+body.dark .brand-sub {
+  color: #768499;
+}
+body.dark .nav {
+  color: #9aa6b8;
+}
+body.dark .nav:hover {
+  background: var(--accent-soft);
+  color: #fff;
+}
+body.dark .nav.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+body.dark .sub-menu {
+  border-left-color: var(--line);
+}
+body.dark .sub-nav {
+  color: #9aa6b8;
+}
+body.dark .sub-nav:hover {
+  background: var(--accent-soft);
+  color: #fff;
+}
+body.dark .sub-nav.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+body.dark .theme-switch {
+  background: #1a2333;
+}
+body.dark .theme-opt {
+  color: #8c9bb0;
+}
+body.dark .theme-opt.active {
+  background: #232e42;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+body.dark .user-name {
+  color: #fff;
+}
+body.dark .user-role {
+  color: #768499;
+}
+body.dark .logout-btn {
+  background: #1a2333;
+  border-color: var(--line);
+  color: #ecf1f8;
+}
+body.dark .logout-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+body.dark .palette-circle.active {
+  border-color: #111723;
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px #fff;
+}
+body.dark .table th {
+  background: #18202d;
+}
+body.dark .evidence {
+  opacity: 0.9;
+}
+body.dark .pagination-bar {
+  background: #151c29;
+}
+body.dark .page-btn {
+  background: #18202d;
+  border-color: var(--line);
+  color: #ecf1f8;
+}
+body.dark .page-btn.active {
+  background: var(--accent);
+  color: var(--accent-text, #fff);
+}
+body.dark .brand-icon {
+  color: var(--accent-text, #fff);
+}
+body.dark .approve-full-btn {
+  color: var(--accent-text, #fff);
+}

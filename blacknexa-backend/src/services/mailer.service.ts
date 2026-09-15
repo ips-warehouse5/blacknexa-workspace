@@ -215,6 +215,102 @@ class MailerService {
     });
   }
 
+  // ── Admin console ─────────────────────────────────────────────────────────
+
+  /**
+   * The second factor for an operator sign-in.
+   *
+   * The subject line leads with the code so it is readable from a notification
+   * without opening the mail — which is how most people will use it.
+   */
+  async sendAdminMfaCode(to: string, code: string, ttlSeconds: number): Promise<boolean> {
+    const minutes = minutesFrom(ttlSeconds);
+    return this.deliver({
+      to,
+      subject: `${code} is your BlackNexa admin sign-in code`,
+      text: [
+        `Your BlackNexa admin console sign-in code is ${code}.`,
+        ``,
+        `It expires in ${minutes} minutes and can be used once.`,
+        ``,
+        `If you did not try to sign in, your password may be known to someone else.`,
+        `Change it immediately and tell your Super Admin.`,
+      ].join("\n"),
+      html: wrap(
+        "Confirm your sign-in",
+        `<p style="margin:12px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Enter this code to finish signing in to the admin console.</p>
+         ${codeBlock(code)}
+         <p style="margin:20px 0 0;font:400 14px/1.6 -apple-system,sans-serif;color:#55606E;">The code expires in ${minutes} minutes and works once.</p>`,
+        "If you did not try to sign in, someone else may know your password. Change it now and tell your Super Admin.",
+      ),
+    });
+  }
+
+  /**
+   * A reset code for an operator account.
+   *
+   * Sent only when the address has an account, though the endpoint answers
+   * identically either way so it cannot be used to enumerate operators.
+   */
+  async sendAdminPasswordReset(to: string, code: string, ttlSeconds: number): Promise<boolean> {
+    const minutes = minutesFrom(ttlSeconds);
+    return this.deliver({
+      to,
+      subject: `${code} is your BlackNexa admin password reset code`,
+      text: [
+        `Your BlackNexa admin console password reset code is ${code}.`,
+        ``,
+        `It expires in ${minutes} minutes and can be used once.`,
+        `Resetting your password signs you out everywhere.`,
+        ``,
+        `If you did not ask for this, you can ignore the email — your password has not changed.`,
+      ].join("\n"),
+      html: wrap(
+        "Reset your admin password",
+        `<p style="margin:12px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Enter this code in the console, then choose a new password.</p>
+         ${codeBlock(code)}
+         <p style="margin:20px 0 0;font:400 14px/1.6 -apple-system,sans-serif;color:#55606E;">The code expires in ${minutes} minutes. Resetting your password signs you out on every device.</p>`,
+        "If you did not ask for this, you can ignore the email — your password has not changed.",
+      ),
+    });
+  }
+
+  /**
+   * Tell a new operator their account exists.
+   *
+   * The temporary password is deliberately *not* included. It is shown once to
+   * the administrator who created the account, to be passed on through a channel
+   * they choose — putting it in email would mean the credential and the address
+   * it unlocks travel together.
+   */
+  async sendAdminAccountCreated(
+    to: string,
+    name: string,
+    roleLabel: string,
+    consoleUrl: string,
+  ): Promise<boolean> {
+    return this.deliver({
+      to,
+      subject: "Your BlackNexa admin account is ready",
+      text: [
+        `Hello ${name},`,
+        ``,
+        `An admin console account has been created for you as ${roleLabel}.`,
+        `Sign in at ${consoleUrl} using this address.`,
+        ``,
+        `Your temporary password will be shared with you separately. You will be asked`,
+        `to choose your own password the first time you sign in.`,
+      ].join("\n"),
+      html: wrap(
+        "Your admin account is ready",
+        `<p style="margin:12px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Hello ${name}, an admin console account has been created for you as <strong>${roleLabel}</strong>.</p>
+         <p style="margin:16px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Sign in at <a href="${consoleUrl}" style="color:#0A7CFF;">${consoleUrl}</a> using this email address.</p>
+         <p style="margin:16px 0 0;font:400 14px/1.6 -apple-system,sans-serif;color:#55606E;">Your temporary password will be shared with you separately. You will be asked to choose your own the first time you sign in.</p>`,
+        "If you were not expecting this, tell your Super Admin.",
+      ),
+    });
+  }
+
   /** Screen D9 — "You will hear back: By email". */
   async sendFlagOutcome(
     to: string,

@@ -1,0 +1,245 @@
+/* Inputs, native selects, search fields and the custom popover dropdown
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+input,
+textarea,
+select,
+.select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 9px 13px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  font-family: "Work Sans", sans-serif;
+}
+input:focus,
+textarea:focus,
+select:focus,
+.select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+select,
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 36px;
+  cursor: pointer;
+}
+select:hover,
+.select:hover {
+  border-color: var(--accent);
+}
+select option,
+.select option {
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px;
+}
+.search {
+  flex: 1;
+  max-width: 380px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 13px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+.search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+body.dark input,
+body.dark textarea,
+body.dark select,
+body.dark .select,
+body.dark .search {
+  background: #151c29;
+  border-color: var(--line);
+  color: #ecf1f8;
+}
+body.dark select,
+body.dark .select {
+  background-color: #151c29;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+}
+body.dark select option,
+body.dark .select option {
+  background: #151c29;
+  color: #ecf1f8;
+}
+
+/* Custom SaaS Popover Dropdowns */
+.custom-select-wrap {
+  position: relative;
+  display: inline-block;
+}
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 9px 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  min-width: 140px;
+  text-align: left;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+.custom-select-label {
+  white-space: nowrap;
+  line-height: 1.4;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-select-trigger:hover {
+  border-color: var(--accent);
+}
+.custom-select-trigger.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.custom-select-trigger svg {
+  width: 14px;
+  height: 14px;
+  stroke: #64748b;
+  stroke-width: 2.2;
+  fill: none;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.custom-select-trigger.active svg {
+  transform: rotate(180deg);
+  stroke: var(--accent);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: 340px;
+  box-sizing: border-box;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.14),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 99999;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  animation: dropFade 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.custom-select-wrap.open .custom-select-menu {
+  display: flex !important;
+}
+.custom-select-wrap.open .custom-select-trigger {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.custom-select-wrap.open .custom-select-trigger svg {
+  transform: rotate(180deg);
+  stroke: var(--accent);
+}
+@keyframes dropFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+  line-height: 1.35;
+  text-align: left;
+  box-sizing: border-box;
+}
+.custom-select-option:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.custom-select-option.selected {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.custom-select-option.selected::after {
+  content: "✓";
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+body.dark .custom-select-trigger {
+  background: #151c29;
+  border-color: var(--line);
+  color: #ecf1f8;
+}
+body.dark .custom-select-menu {
+  background: #151c29;
+  border-color: var(--line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+body.dark .custom-select-option:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+body.dark .custom-select-trigger svg {
+  stroke: #94a3b8;
+}

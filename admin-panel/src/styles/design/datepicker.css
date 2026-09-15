@@ -1,0 +1,238 @@
+/* Dashboard date-range picker and dual-month calendar
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.dash-date-picker-wrap {
+  position: relative;
+  display: inline-block;
+}
+.dash-date-trigger {
+  min-width: 140px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  line-height: 1.4;
+}
+.dash-date-trigger:hover {
+  border-color: var(--accent);
+}
+.dash-date-picker-wrap.open .dash-date-trigger {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.dash-date-trigger svg {
+  width: 14px;
+  height: 14px;
+  stroke: #64748b;
+  stroke-width: 2.2;
+  fill: none;
+  transition: transform 0.2s ease;
+}
+.dash-date-picker-wrap.open .dash-date-trigger svg {
+  transform: rotate(180deg);
+  stroke: var(--accent);
+}
+.dash-date-dropdown-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 99999;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.14),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  min-width: 150px;
+  padding: 6px;
+  box-sizing: border-box;
+  animation: dropFade 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.dash-date-picker-wrap.open .dash-date-dropdown-panel {
+  display: block;
+}
+.dash-date-dropdown-panel.show-calendar {
+  display: flex;
+  width: 580px;
+  max-width: 90vw;
+  padding: 0;
+}
+.dash-date-presets-col {
+  width: 100%;
+  min-width: 140px;
+  background: var(--surface);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-date-dropdown-panel.show-calendar .dash-date-presets-col {
+  width: 150px;
+  min-width: 150px;
+  border-right: 1px solid var(--line);
+  padding: 6px;
+  border-radius: 10px 0 0 10px;
+}
+.dash-date-preset-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  white-space: nowrap;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+.dash-date-preset-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.dash-date-preset-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.dash-date-preset-item.active::after {
+  content: "✓";
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+.dash-calendar-container {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  background: var(--surface);
+  padding: 16px 20px 14px;
+}
+.dash-date-dropdown-panel.show-calendar .dash-calendar-container {
+  display: flex;
+}
+.dash-cal-header-summary {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.dash-cal-months-row {
+  display: flex;
+  gap: 20px;
+}
+.dash-cal-month-box {
+  flex: 1;
+}
+.dash-cal-month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+  height: 28px;
+}
+.dash-cal-nav-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+}
+.dash-cal-nav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.dash-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 3px;
+  text-align: center;
+}
+.dash-cal-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 0;
+}
+.dash-cal-day {
+  font-size: 12px;
+  color: var(--text);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 0;
+  transition:
+    background 0.1s,
+    color 0.1s;
+  user-select: none;
+}
+.dash-cal-day.empty {
+  cursor: default;
+}
+.dash-cal-day.dimmed {
+  color: var(--muted);
+  opacity: 0.4;
+}
+.dash-cal-day:not(.empty):not(.dimmed):hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 6px;
+}
+.dash-cal-day.range-start {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+  font-weight: 600;
+}
+.dash-cal-day.range-end {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  font-weight: 600;
+}
+.dash-cal-day.in-range {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-radius: 0 !important;
+}
+.dash-cal-day.range-start.range-end {
+  border-radius: 14px !important;
+}
+/* ── Content Management Module Styles ─────────────────────────────── */

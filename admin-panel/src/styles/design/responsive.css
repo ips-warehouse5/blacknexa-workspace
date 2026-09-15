@@ -1,0 +1,34 @@
+/* Narrow-viewport layout collapse
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+@media (max-width: 800px) {
+  .side {
+    display: none;
+  }
+  .main {
+    padding: 22px 16px;
+  }
+  .info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+  .table {
+    min-width: 720px;
+  }
+  .card {
+    overflow: auto;
+  }
+  .top {
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .controls {
+    flex-wrap: wrap;
+  }
+  .title {
+    font-size: 23px;
+  }
+}
+/* BlackNexa admin-panel visual reference overrides */

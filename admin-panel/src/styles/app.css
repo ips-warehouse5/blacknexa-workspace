@@ -1,0 +1,678 @@
+/* Corrections the port needs, kept apart from the verbatim prototype files so
+   the line between "approved design" and "made it work in React" stays visible.
+
+   The prototype was one HTML document with every screen present and toggled by
+   `display`. Here each screen is a route that mounts and unmounts, so a handful
+   of rules that relied on that single-document arrangement need restating. */
+
+#root {
+  min-height: 100vh;
+}
+
+/* The prototype kept every screen in one document and revealed the active one
+   by flipping `display`. Under a router only the active screen is ever
+   mounted, so each of these shells must default to visible instead — the
+   complete list of classes the prototype hid at rest. */
+.cm-page,
+.keyword-page,
+.details-page,
+.dashboard-page {
+  display: block;
+}
+
+/* Auth is its own route rather than an overlay over the console, so it lays
+   itself out in normal flow instead of covering a fixed viewport. */
+.auth-page #authScreen {
+  position: static;
+  inset: auto;
+  min-height: 100vh;
+}
+
+/* Scroll the content column, not the document: the sidebar is `position: sticky`
+   and a scrolling body detaches it from the viewport on short screens. */
+.app > .main {
+  min-width: 0;
+}
+
+/* Focus visibility. The prototype removed outlines for looks; keyboard users
+   still need to see where they are, so it comes back on keyboard focus only. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Utility used by screens the port renders as empty-but-reachable. */
+.page-placeholder {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--surface);
+}
+.page-placeholder h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: var(--text);
+}
+.page-placeholder p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Respect a reduced-motion preference across the ported animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Additions the React components introduce ───────────────────────────────
+   Each of these backs a component that has no counterpart in the prototype —
+   a state it never rendered, or an affordance it did not need because it was
+   a click-through rather than something people use. */
+
+/* Visually hidden, still read aloud. Used for labels and live regions that
+   would be redundant on screen but are the only cue without one. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Keyboard shortcut past the sidebar. Off-screen until focused. */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 12px;
+  z-index: 2000;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* Route-level loading text, shown while a lazy screen resolves. */
+.route-loading {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: 48px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Table skeletons. Sized like a line of body text so the row height matches
+   the real content and the table does not resize when data arrives. */
+.skeleton-line {
+  display: block;
+  height: 12px;
+  width: 78%;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--line) 25%,
+    var(--accent-soft) 50%,
+    var(--line) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonSweep 1.4s ease-in-out infinite;
+}
+@keyframes skeletonSweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Select: keyboard cursor, distinct from the chosen value. Without it, arrowing
+   through the list gives no feedback about where you are. */
+.custom-select-option.cursor:not(.selected) {
+  background: var(--accent-soft);
+}
+.custom-select-option-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.custom-select-outer-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Pagination: the windowing gap, and a wrapper for the page-size control. */
+.page-gap {
+  padding: 0 4px;
+  color: var(--muted);
+  user-select: none;
+}
+.pagination-size-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Field hint text, shown under an input above any error. */
+.field-hint {
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* The "Protected" marker on a row that cannot be acted on. */
+.protected-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.protected-chip svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* One-time temporary password, shown once after a reset. Monospace and
+   selectable — it exists to be copied. */
+.temp-password-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+.temp-password-value {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+  user-select: all;
+}
+
+/* Error boundary fallback. */
+.app-error {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--bg);
+}
+.app-error-detail {
+  margin: 16px 0 0;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* Password strength meter fill, coloured by score rather than by accent —
+   "weak" should read as weak in both themes and under either accent. */
+.pw-strength-fill[data-strength="0"],
+.pw-strength-fill[data-strength="1"] {
+  background: var(--danger);
+}
+.pw-strength-fill[data-strength="2"] {
+  background: var(--warning);
+}
+.pw-strength-fill[data-strength="3"],
+.pw-strength-fill[data-strength="4"] {
+  background: var(--success);
+}
+
+/* Screens ported with fixture data flag themselves, so nobody mistakes a
+   prototype surface for a live one. */
+.fixture-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--muted);
+  font-size: 12px;
+}
+.fixture-notice strong {
+  color: var(--text);
+}
+
+/* ── Screen-level additions ─────────────────────────────────────────────────
+   Classes the ported screens need that the prototype expressed as inline
+   styles. Pulled out so the same treatment is applied consistently rather than
+   re-typed per call site. */
+
+/* Type and flag badges in the moderation queue. */
+.badge.type-comment {
+  background: #f5f3ff;
+  color: #6b21a8;
+  font-weight: 600;
+  font-size: 11px;
+}
+.badge.type-incident,
+.badge.type-profile {
+  background: #f0f2f5;
+  color: #334155;
+  font-weight: 600;
+  font-size: 11px;
+}
+.badge.flag-user {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11.5px;
+}
+.badge.flag-ai {
+  background: #f5f3ff;
+  color: #7c3aed;
+  font-size: 11.5px;
+}
+.badge.flag-source-badge {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+body.dark .badge.type-comment,
+body.dark .badge.flag-ai {
+  background: #2b2350;
+  color: #c4b5fd;
+}
+body.dark .badge.type-incident,
+body.dark .badge.type-profile {
+  background: #232e42;
+  color: #cbd5e1;
+}
+body.dark .badge.flag-user {
+  background: #12294d;
+  color: #93c5fd;
+}
+
+/* Dashboard risk chips. "Moderate" has no badge class in the design. */
+.badge.risk-badge {
+  font-size: 11px;
+}
+.badge.risk-moderate {
+  background: #fef3c7;
+  color: #b45309;
+}
+body.dark .badge.risk-moderate {
+  background: #3b2f12;
+  color: #fcd34d;
+}
+
+/* Detail-page previous/next buttons. */
+.details-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.details-nav-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
+}
+.back-btn-pill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The flagged comment, quoted inside the moderation detail. */
+.flagged-comment-box {
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+}
+.flagged-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.flagged-comment-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #4f46e5;
+  display: grid;
+  place-items: center;
+  font-weight: 750;
+  font-size: 11.5px;
+}
+.flagged-comment-body {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+  padding-left: 38px;
+}
+
+/* The text an AI rule matched, shown verbatim. */
+.matched-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--accent-soft);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Evidence tile: the kind label under the type marker. */
+.evidence-kind-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* Keyword and tag chips, and the editor that manages them. */
+.keyword-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text);
+}
+.keyword-chip.editable {
+  padding-right: 4px;
+}
+.keyword-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+/* Verification markers. */
+.verified-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e6f7f0;
+  color: var(--success);
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+body.dark .verified-chip {
+  background: #123928;
+  color: #43c792;
+}
+.verified-tick {
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* Two-column form rows, collapsing on narrow viewports. */
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form footer, aligned right and sticky-adjacent to the content. */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+/* Adding a source row in the news form. */
+.source-add-row {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr auto auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+@media (max-width: 860px) {
+  .source-add-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Legal document cards. */
+.legal-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+.cm-legal-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.cm-legal-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.cm-legal-card-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.cm-legal-card-sections {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Long-form article body. */
+.article-body p {
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+
+/* Settings panels. */
+.settings-panel {
+  margin-top: 18px;
+}
+.settings-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.settings-panel-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-panel-sub {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+/* Role summary cards above the permission matrix. */
+.role-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.role-summary-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--surface);
+}
+.role-summary-card p {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.role-summary-count {
+  margin-top: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Permission matrix cells. */
+.perm-yes {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 15px;
+}
+.perm-no {
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+/* ── Element-swap corrections ───────────────────────────────────────────────
+   The prototype built its navigation from <div>s and drove it with click
+   handlers. Here those are real <button>s and <a>s so they are keyboard
+   reachable and announce themselves correctly — which means the ported rules
+   now have browser defaults to overcome that they never had to before. */
+
+.tab,
+.section-tab,
+.side-menu .nav,
+.side-menu .sub-nav {
+  /* Kill the button chrome: background, border, native font and centring. */
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  /* Links must not underline, and none of these should inherit a link blue. */
+  text-decoration: none;
+  color: var(--muted);
+}
+
+/* Sidebar entries fill the column; tabs size to their own label. */
+.side-menu .nav,
+.side-menu .sub-nav {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+}
+
+/* `.section-tab` draws its own underline, which the border reset above wiped. */
+.section-tab {
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.side-menu .nav {
+  /* Restated because the reset above also resets the ported padding. */
+  padding: 10px 12px;
+  gap: 0;
+}
+.side-menu .sub-nav {
+  display: block;
+}
+
+/* `.nav-label` grows so the submenu arrow sits hard right, as in the design. */
+.side-menu .nav-label {
+  flex: 1;
+}
+
+/* Icon sizing. The prototype set these inline on each SVG; the shared Icon
+   component carries no dimensions of its own, so they belong here. */
+.add-keyword-btn svg,
+.btn svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  flex-shrink: 0;
+}
+
+/* Icon buttons that are links (the dashboard's urgent-queue rows) need the
+   same box as their <button> siblings. */
+a.action-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+/* The sidebar is a column: the menu scrolls, the footer stays put. Without a
+   minimum of zero the menu refuses to shrink and pushes the account block off
+   the bottom of a short viewport. */
+.side-menu {
+  min-height: 0;
+}
+.side-footer {
+  flex-shrink: 0;
+}
+
+/* A row header is a label for its row, not a column heading. The ported
+   `.table th` rule is written for the header row — uppercase, tinted, muted —
+   and applying it down the first column of the permission matrix makes the
+   permission names shout. Reset it to read as body text. */
+.table tbody th[scope="row"] {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  background: transparent;
+  white-space: normal;
+  border-top: 0;
+}

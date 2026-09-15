@@ -20,7 +20,7 @@ import { asyncHandler } from "@/middlewares/error.middleware";
 const router = Router();
 
 /** Who may work the queue. */
-const MODERATORS = ["super-admin", "admin", "moderator"] as const;
+const MODERATORS = ["superadmin", "moderator"] as const;
 
 // ── The thin internal page ───────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ router.get(
 router.get(
   "/stats",
   adminAuthGuard,
-  checkRole([...MODERATORS, "auditor"]),
+  checkRole([...MODERATORS]),
   readLimiter,
   asyncHandler((req, res) => moderationController.stats(req, res)),
 );
@@ -51,7 +51,7 @@ router.get(
 router.get(
   "/reports",
   adminAuthGuard,
-  checkRole([...MODERATORS, "auditor"]),
+  checkRole([...MODERATORS]),
   readLimiter,
   validate("moderation.queue"),
   asyncHandler((req, res) => moderationController.queue(req, res)),
@@ -60,7 +60,7 @@ router.get(
 router.get(
   "/reports/:id",
   adminAuthGuard,
-  checkRole([...MODERATORS, "auditor"]),
+  checkRole([...MODERATORS]),
   readLimiter,
   validate("moderation.reportId"),
   asyncHandler((req, res) => moderationController.detail(req, res)),
@@ -112,7 +112,7 @@ router.post(
 router.post(
   "/maintenance",
   adminAuthGuard,
-  checkRole(["super-admin"]),
+  checkRole(["superadmin"]),
   writeLimiter,
   asyncHandler((req, res) => moderationController.runMaintenance(req, res)),
 );
@@ -126,7 +126,7 @@ router.post(
 router.post(
   "/broadcast",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   writeLimiter,
   validate("moderation.broadcast"),
   asyncHandler((req, res) => moderationController.broadcast(req, res)),

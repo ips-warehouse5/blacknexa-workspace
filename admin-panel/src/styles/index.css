@@ -1,0 +1,32 @@
+/* Stylesheet entry point.
+   Import order is load-bearing: the ported prototype files rely on source order
+   for their cascade (later files intentionally flatten surfaces and restate the
+   type scale), so they are imported in the same order they appeared in the
+   prototype. Tokens come first so every rule below resolves against them, and
+   app.css comes last so React-specific corrections win. */
+
+@import "./tokens.css";
+
+@import "./design/layout.css";
+@import "./design/forms.css";
+@import "./design/components.css";
+@import "./design/modal.css";
+@import "./design/pagination.css";
+@import "./design/dark.css";
+@import "./design/responsive.css";
+@import "./design/typography.css";
+@import "./design/keywords.css";
+@import "./design/users.css";
+@import "./design/details.css";
+@import "./design/dashboard.css";
+@import "./design/moderation.css";
+@import "./design/auth.css";
+@import "./design/roles.css";
+@import "./design/toast.css";
+@import "./design/auth-extras.css";
+@import "./design/rbac.css";
+@import "./design/misc.css";
+@import "./design/datepicker.css";
+@import "./design/cms.css";
+
+@import "./app.css";

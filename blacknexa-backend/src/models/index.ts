@@ -31,6 +31,7 @@ import {
 } from "@/models/enterprise_article.model";
 import PersistenceSnapshotModel from "@/models/persistence_snapshot.model";
 import AdminUser from "@/models/admin_user.model";
+import AdminCredential from "@/models/admin_credential.model";
 import {
   AppUser,
   EmailOtp,
@@ -288,6 +289,7 @@ export const models = {
   HardwareTrigger,
   PersistenceSnapshot: PersistenceSnapshotModel,
   AdminUser,
+  AdminCredential,
   AppUser,
   UserSession,
   UserIdentity,
@@ -356,6 +358,7 @@ export {
   HardwareTrigger,
   PersistenceSnapshotModel,
   AdminUser,
+  AdminCredential,
   AppUser,
   UserSession,
   UserIdentity,

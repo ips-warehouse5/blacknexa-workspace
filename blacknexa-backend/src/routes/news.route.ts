@@ -92,7 +92,7 @@ router.post(
 router.post(
   "/refresh-daily",
   adminAuthGuard,
-  checkRole(["super-admin", "admin", "editor"]),
+  checkRole(["superadmin"]),
   validate("news.refreshDaily"),
   asyncHandler((req, res) => newsController.refreshDaily(req, res)),
 );
@@ -100,14 +100,14 @@ router.post(
 router.post(
   "/prune-duplicates",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   asyncHandler((req, res) => newsController.pruneDuplicates(req, res)),
 );
 
 router.post(
   "/backfill-images",
   adminAuthGuard,
-  checkRole(["super-admin", "admin", "editor"]),
+  checkRole(["superadmin"]),
   validate("news.backfillImages"),
   asyncHandler((req, res) => newsController.backfillImages(req, res)),
 );
@@ -115,7 +115,7 @@ router.post(
 router.post(
   "/backfill-translations",
   adminAuthGuard,
-  checkRole(["super-admin", "admin", "editor"]),
+  checkRole(["superadmin"]),
   validate("news.backfillTranslations"),
   asyncHandler((req, res) => newsController.backfillTranslations(req, res)),
 );

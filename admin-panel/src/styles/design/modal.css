@@ -1,0 +1,296 @@
+/* Modal shell, modal form controls and icon action buttons
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.modal-wrap {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 999;
+}
+.modal {
+  background: var(--surface);
+  border-radius: 14px;
+  width: min(470px, 100%);
+  padding: 28px 28px 24px;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.modal h3 {
+  margin: 0 0 12px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal p {
+  color: #55606e;
+  line-height: 1.55;
+  font-size: 13.5px;
+  margin: 0 0 20px;
+}
+.modal label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 18px 0 7px;
+}
+.modal textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.modal-actions .btn {
+  padding: 10px 20px;
+  font-size: 13.5px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.modal-actions .btn.outline {
+  background: #fff;
+  border: 1px solid #d0d7e2;
+  color: #333f51;
+}
+.modal-actions .btn.outline:hover {
+  background: #f4f6fa;
+}
+.modal-actions .btn.danger {
+  background: #c63d49;
+  color: #fff;
+  border: 1px solid #b32f3b;
+}
+.modal-actions .btn.danger:hover {
+  background: #ae2f3b;
+}
+
+/* Modern SaaS Enterprise Action Icon Buttons */
+.action-icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 7px !important;
+  background: var(--surface) !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: border-color 0.15s ease;
+}
+.action-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    transform 0.15s ease,
+    stroke 0.15s ease;
+}
+.action-icon-btn:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+.action-icon-btn:hover svg {
+  transform: scale(1.15);
+}
+
+.action-icon-btn.delete-icon-btn {
+  color: #ef4444 !important;
+  border-color: #fee2e2 !important;
+  background: #fff5f5 !important;
+}
+.action-icon-btn.delete-icon-btn:hover {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+}
+
+body.dark .action-icon-btn {
+  background: #18202d !important;
+  border-color: var(--line) !important;
+  color: #94a3b8 !important;
+}
+/* Unavailable actions stay in place so every row keeps the same
+   number of action slots and the column never shifts. */
+.action-icon-btn:disabled,
+.action-icon-btn[disabled] {
+  opacity: 0.35 !important;
+  cursor: default !important;
+  color: #94a3b8 !important;
+}
+body.dark .action-icon-btn:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+body.dark .action-icon-btn.delete-icon-btn {
+  background: #2a1a1e !important;
+  border-color: #5c2429 !important;
+  color: #f87171 !important;
+}
+body.dark .action-icon-btn.delete-icon-btn:hover {
+  border-color: #f87171 !important;
+  color: #fca5a5 !important;
+}
+.modal {
+  background: var(--surface);
+  border-radius: 14px;
+  width: min(520px, 100%);
+  padding: 28px 28px 24px;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: "Work Sans", sans-serif;
+}
+.modal.modal-wide {
+  width: min(640px, 95vw);
+  max-width: 640px;
+}
+.modal .custom-select-wrap {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: block !important;
+}
+.modal .custom-select-trigger {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.modal .custom-select-label {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.modal .custom-select-menu {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+}
+.modal .custom-select-option {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.custom-select-wrap.dropup .custom-select-menu {
+  top: auto !important;
+  bottom: calc(100% + 6px) !important;
+  animation: dropFadeUp 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes dropFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.modal h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: "Work Sans", sans-serif;
+  letter-spacing: -0.2px;
+}
+.modal p {
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 13.5px;
+  margin: 0 0 18px;
+  font-weight: 400;
+}
+.modal label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 14px 0 6px;
+}
+/* Page-level forms had no label rule, so field labels sat flush against
+   their input. Match the breathing room modals already use. Component
+   labels that wrap their own control are excluded. */
+.cm-page label:not(.switch-toggle):not(.remember-wrap):not(
+    .delete-confirm-box
+  ) {
+  display: block;
+  margin-bottom: 7px;
+}
+.modal input,
+.modal select,
+.modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal input.field-invalid {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(198, 61, 73, 0.1) !important;
+}
+.modal .password-input-wrap.field-invalid input {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(198, 61, 73, 0.1) !important;
+}
+.modal .custom-select-wrap.field-invalid .custom-select-trigger {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(198, 61, 73, 0.1) !important;
+}
+.modal .field-error-msg {
+  color: var(--danger);
+  font-size: 11.5px;
+  font-weight: 500;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+.modal textarea {
+  min-height: 85px;
+  resize: vertical;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.modal-actions .btn {
+  padding: 9px 18px;
+  font-size: 13.5px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.modal-actions .btn.outline {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+.modal-actions .btn.outline:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.modal-actions .btn.danger {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+}
+.modal-actions .btn.danger:hover {
+  background: #b91c1c;
+}
+
+/* Pagination Bar */
