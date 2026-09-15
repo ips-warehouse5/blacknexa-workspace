@@ -23,7 +23,7 @@ import puppeteer from "puppeteer-core";
 const CHROME =
   process.env.CHROME_PATH ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const BASE = process.env.SMOKE_BASE_URL ?? "http://localhost:5174";
-const API = process.env.SMOKE_API_URL ?? "http://localhost:4000/api/v1";
+const API = process.env.SMOKE_API_URL ?? "http://localhost:3010/api/v1";
 /** Seeded by `npm run db:seed:admin` in the backend. */
 const PASSWORD = process.env.SMOKE_PASSWORD ?? "BlackNexa2026!";
 

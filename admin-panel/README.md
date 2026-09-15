@@ -19,17 +19,22 @@ The console needs the API for sign-in, so start both.
 # 1. API — in ../blacknexa-backend
 npm run db:sync          # create tables
 npm run db:seed:admin    # one operator account per role (development only)
-npm run dev              # http://localhost:4000
+npm run dev              # http://localhost:3010 (whatever PORT in its .env says)
 
 # 2. Console — here
 npm install
 npm run dev              # http://localhost:5174
 ```
 
+The console proxies `/api` to `VITE_API_PROXY_TARGET`. Point it at whichever API
+you are working against — a local `npm run dev`, or a deployed host.
+
 ### Signing in
 
 `db:seed:admin` creates four accounts, one per role, all with the password
-**`BlackNexa2026!`**:
+**`BlackNexa2026!`**. It refuses to run when `NODE_ENV=production`, because a
+published password on a reachable server is four working administrator logins —
+production gets its first account from `ADMIN_BOOTSTRAP_*` instead.
 
 | Email                       | Role          |
 | --------------------------- | ------------- |
@@ -194,6 +199,22 @@ done.
 
 ## Configuration
 
-See `.env.example`. `VITE_API_BASE_URL` is left as the relative `/api/v1` so the
-dev proxy in `vite.config.ts` can serve it same-origin, which keeps CORS out of
-the local loop entirely.
+See `.env.example` — it documents each value and the two deployment
+arrangements.
+
+**One trap worth stating twice.** Every `VITE_*` value is inlined by Vite at
+*build* time. Editing `.env` on a server does nothing until you rebuild.
+
+And `VITE_API_PROXY_TARGET` configures **Vite's dev server only**. A production
+build has no dev server, so that value never reaches the browser — it is not
+even present in the bundle. A deployed console sends its requests to
+`VITE_API_BASE_URL`, and if that is left as the relative `/api/v1` it resolves
+against the origin serving the page, not the API host.
+
+So for a deployment where the console and API are on different subdomains,
+either:
+
+- set `VITE_API_BASE_URL` to the absolute API URL and add the console's origin
+  to the API's `CORS_ORIGINS`, then rebuild; or
+- keep it relative and have the web server in front of the console reverse-proxy
+  `/api` to the API host, which avoids CORS entirely.
