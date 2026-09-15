@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { HashLink } from "@/components/ui/hash-link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { mainNav } from "@/data/navigation";
 
 export function MobileMenu() {
@@ -93,7 +94,11 @@ export function MobileMenu() {
               </button>
             </div>
 
-            <nav className="mt-[40px] flex flex-col gap-[18px]" aria-label="Mobile">
+            <div className="mt-[26px]">
+              <ThemeToggle onDark />
+            </div>
+
+            <nav className="mt-[26px] flex flex-col gap-[18px]" aria-label="Mobile">
               {mainNav.map((item) => (
                 <HashLink
                   key={item.href}

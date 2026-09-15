@@ -39,7 +39,10 @@ export function FinalCtaSection() {
         </p>
 
         <div className="mt-10 border-t border-border pt-8">
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-text-muted">
+          <p
+            className="text-[11px] font-semibold tracking-[0.18em]"
+            style={{ color: "var(--bn-hero-secondary-text)" }}
+          >
             DOWNLOAD THE APP TODAY
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">

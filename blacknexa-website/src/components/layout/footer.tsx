@@ -22,7 +22,10 @@ export function Footer() {
             <p className="mt-[18px] text-sm tracking-wide" style={{ color: "var(--bn-hero-secondary-text)" }}>
               {siteConfig.tagline}
             </p>
-            <p className="mt-3.5 text-[13px] leading-[1.6] text-text-muted">
+            <p
+              className="mt-3.5 text-[13px] leading-[1.6]"
+              style={{ color: "var(--bn-hero-secondary-text)" }}
+            >
               {siteConfig.trademarkNote}
             </p>
           </div>
@@ -33,7 +36,7 @@ export function Footer() {
         </div>
 
         <div className="mt-[52px] border-t border-border pt-[34px]">
-          <p className="text-[13px] text-text-muted">
+          <p className="text-[13px]" style={{ color: "var(--bn-hero-secondary-text)" }}>
             © {new Date().getFullYear()} BlackNexa. All rights reserved.
           </p>
         </div>
@@ -51,7 +54,10 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <p className="mb-[18px] text-[11px] font-semibold tracking-[0.16em] text-text-muted">
+      <p
+        className="mb-[18px] text-[11px] font-semibold tracking-[0.16em]"
+        style={{ color: "var(--bn-hero-secondary-text)" }}
+      >
         {title}
       </p>
       <div className="flex flex-col gap-3">
