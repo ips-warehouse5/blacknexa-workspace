@@ -9,7 +9,7 @@ export async function NewsSection() {
   const newsArticles = await getNewsArticles();
 
   return (
-    <section id="news" className="px-7 py-[clamp(84px,10vw,140px)]">
+    <section id="news" className="bg-surface-elevated px-7 py-[clamp(56px,6vw,86px)]">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading
           eyebrow="PRODUCT HIGHLIGHTS · THE NEWS ENGINE"
@@ -18,10 +18,10 @@ export async function NewsSection() {
           maxWidth="660px"
         />
 
-        <div className="mt-[clamp(44px,5vw,64px)] grid grid-cols-[repeat(auto-fit,minmax(268px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
+        <div className="mt-[clamp(30px,3.4vw,44px)] grid grid-cols-[repeat(auto-fit,minmax(244px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
           {newsCategories.map((c) => (
-            <div key={c.title} className="bn-reveal bg-surface px-[30px] pb-[38px] pt-[34px]">
-              <span className="text-accent">
+            <div key={c.title} className="bn-reveal bg-background px-6 pb-[30px] pt-[26px]">
+              <span className="text-accent-text">
                 <Icon name={c.icon} size={24} />
               </span>
               <h3 className="mt-5 font-serif text-[1.32rem] font-semibold leading-[1.22] text-text-primary">
@@ -32,7 +32,7 @@ export async function NewsSection() {
           ))}
         </div>
 
-        <div className="mt-[clamp(56px,6vw,86px)] flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+        <div className="mt-[clamp(36px,4vw,52px)] flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
           <div>
             <h3 className="font-serif text-[clamp(1.4rem,2.2vw,1.9rem)] font-semibold text-text-primary">
               Latest from BlackNexa News
@@ -44,7 +44,7 @@ export async function NewsSection() {
           {newsArticles.length > 0 ? (
             <Link
               href="/news"
-              className="text-[13.5px] text-text-secondary transition-colors hover:text-accent"
+              className="text-[13.5px] text-text-secondary transition-colors hover:text-accent-text"
             >
               View all news →
             </Link>
@@ -59,7 +59,7 @@ export async function NewsSection() {
           </div>
         ) : (
           <div className="mt-8 rounded-[5px] px-[30px] py-[clamp(44px,6vw,72px)] text-center">
-            <span className="inline-flex rounded-[2px] border border-accent px-[9px] py-1 text-[11px] font-semibold tracking-[0.16em] text-accent">
+            <span className="inline-flex rounded-[2px] border border-accent px-[9px] py-1 text-[11px] font-semibold tracking-[0.16em] text-accent-text">
               COMING SOON
             </span>
           </div>

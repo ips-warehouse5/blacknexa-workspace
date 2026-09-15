@@ -28,7 +28,7 @@ export function Header() {
               <HashLink
                 key={item.href}
                 href={item.href}
-                className="text-sm tracking-wide transition-colors hover:!text-accent"
+                className="text-sm tracking-wide transition-colors hover:!text-accent-text"
                 style={{ color: "var(--bn-header-ink2)" }}
               >
                 {item.label}

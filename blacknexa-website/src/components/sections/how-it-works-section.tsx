@@ -6,7 +6,7 @@ export function HowItWorksSection() {
   return (
     <section
       aria-label="How a report travels"
-      className="border-t border-border px-7 py-[clamp(84px,10vw,140px)]"
+      className="border-t border-border bg-surface-elevated px-7 py-[clamp(56px,6vw,86px)]"
     >
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading
@@ -15,11 +15,11 @@ export function HowItWorksSection() {
           maxWidth="720px"
         />
 
-        <div className="mt-[clamp(48px,5.5vw,76px)] grid grid-cols-[repeat(auto-fit,minmax(272px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
+        <div className="mt-[clamp(32px,3.6vw,46px)] grid grid-cols-[repeat(auto-fit,minmax(244px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
           {reportingSteps.map((s) => (
-            <div key={s.num} className="bn-reveal flex flex-col bg-surface px-[30px] pb-[38px] pt-[34px]">
+            <div key={s.num} className="bn-reveal flex flex-col bg-background px-6 pb-[30px] pt-[26px]">
               <div className="flex items-center justify-between">
-                <span className="text-accent">
+                <span className="text-accent-text">
                   <Icon name={s.icon} size={24} />
                 </span>
                 <span className="font-serif text-[15px] tracking-[0.06em] text-text-muted">
@@ -36,14 +36,14 @@ export function HowItWorksSection() {
           ))}
         </div>
 
-        <div className="mt-[clamp(52px,6vw,86px)]">
+        <div className="mt-[clamp(36px,4vw,52px)]">
           <h3 className="font-serif text-[clamp(1.4rem,2.2vw,1.9rem)] font-semibold text-text-primary">
             Example Workflow in Action
           </h3>
-          <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-[22px]">
+          <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(268px,1fr))] gap-[22px]">
             {workflowExamples.map((w) => (
-              <div key={w.label} className="rounded-[5px] border border-border bg-surface p-[30px]">
-                <p className="text-[11px] font-semibold tracking-[0.16em] text-accent">{w.label}</p>
+              <div key={w.label} className="rounded-[5px] border border-border bg-background p-[26px]">
+                <p className="text-[11px] font-semibold tracking-[0.16em] text-accent-text">{w.label}</p>
                 <p className="mt-4 text-pretty text-[15px] leading-[1.72] text-text-secondary">
                   {w.body}
                 </p>

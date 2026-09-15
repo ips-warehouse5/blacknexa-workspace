@@ -12,6 +12,8 @@
   --color-accent: var(--bn-accent);
   --color-accent-hover: var(--bn-accent-hover);
   --color-accent-foreground: var(--bn-accent-foreground);
+  --color-accent-text: var(--bn-accent-text);
+  --color-accent-soft: var(--bn-accent-soft);
   --color-ok: var(--bn-ok);
   --color-err: var(--bn-err);
   --font-serif: var(--bn-font-serif);
@@ -50,7 +52,7 @@ body {
  */
 @layer base {
   a {
-    color: var(--bn-accent);
+    color: var(--bn-accent-text);
     text-decoration: none;
   }
 

@@ -26,7 +26,7 @@ export default function DisclaimerPage() {
   return (
     <div className="px-7 pb-[clamp(80px,9vw,120px)] pt-[clamp(122px,13vw,172px)]">
       <div className="mx-auto max-w-[760px]">
-        <p className="mb-5 text-[11px] font-semibold tracking-[0.22em] text-accent">LEGAL</p>
+        <p className="mb-5 text-[11px] font-semibold tracking-[0.22em] text-accent-text">LEGAL</p>
         <h1 className="font-serif text-[clamp(2.2rem,5vw,3.4rem)] font-bold leading-[1.06] tracking-[-0.02em] text-text-primary">
           Disclaimers
         </h1>
@@ -53,7 +53,7 @@ export default function DisclaimerPage() {
           </Link>
           <Link
             href="/contact"
-            className="inline-flex min-h-[48px] items-center rounded-[3px] border border-border px-[22px] text-[14px] text-text-secondary transition-colors hover:border-accent hover:text-accent"
+            className="inline-flex min-h-[48px] items-center rounded-[3px] border border-border px-[22px] text-[14px] text-text-secondary transition-colors hover:border-accent hover:text-accent-text"
           >
             Contact us
           </Link>

@@ -8,7 +8,7 @@ export function PromoSection() {
   return (
     <section
       aria-label="Media showcase"
-      className="relative overflow-hidden px-7 py-[clamp(80px,10vw,132px)]"
+      className="relative overflow-hidden px-7 py-[clamp(52px,5.6vw,80px)]"
       style={{ background: "var(--bn-hero-background)" }}
     >
       <div
@@ -31,7 +31,7 @@ export function PromoSection() {
             See BlackNexa in ninety seconds.
           </h2>
         </div>
-        <div className="mt-[clamp(32px,4vw,52px)]">
+        <div className="mt-[clamp(24px,2.8vw,36px)]">
           <div
             className="relative overflow-hidden rounded-[5px] border border-border"
             style={{ aspectRatio: "16 / 9" }}

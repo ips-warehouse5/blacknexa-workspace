@@ -16,7 +16,7 @@ export function SectionHeading({
       className={`bn-reveal max-w-[660px] ${align === "center" ? "mx-auto text-center" : ""}`}
       style={align === "center" ? undefined : { maxWidth }}
     >
-      <p className="mb-[22px] text-[11px] font-semibold tracking-[0.22em] text-accent">
+      <p className="mb-[22px] text-[11px] font-semibold tracking-[0.22em] text-accent-text">
         {eyebrow}
       </p>
       <h2 className="font-serif text-[clamp(1.95rem,4vw,3.05rem)] font-semibold leading-[1.08] tracking-[-0.015em] text-balance text-text-primary">

@@ -1,7 +1,7 @@
 export function NexaSection() {
   return (
-    <section aria-label="NEXA" className="border-t border-border bg-surface px-7 py-[clamp(76px,9vw,124px)]">
-      <div className="bn-reveal mx-auto flex max-w-[1180px] flex-wrap items-start gap-[clamp(32px,5vw,76px)]">
+    <section aria-label="NEXA" className="border-t border-border px-7 py-[clamp(48px,5.2vw,74px)]">
+      <div className="bn-reveal mx-auto flex max-w-[1180px] flex-wrap items-start gap-[clamp(28px,3.4vw,52px)]">
         <div className="min-w-[min(100%,280px)] flex-[0_1_380px]">
           <p className="font-serif text-[clamp(3.4rem,8vw,6.6rem)] font-bold leading-[0.86] tracking-[-0.03em] text-accent">
             NEXA

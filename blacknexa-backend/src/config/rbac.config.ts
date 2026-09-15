@@ -48,6 +48,10 @@ export const PERMISSIONS = [
   "staff.toggle",
   "staff.delete",
 
+  "contact.view",
+  "contact.manage",
+  "contact.delete",
+
   "audit.view",
 
   // Operational surface — not represented in the console.
@@ -74,6 +78,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
     "moderation.view", "moderation.decide", "moderation.ban", "moderation.keywords",
     "staff.view", "staff.create", "staff.edit", "staff.role", "staff.reset",
     "staff.toggle", "staff.delete",
+    "contact.view", "contact.manage", "contact.delete",
     "audit.view",
     "platform.content", "platform.operate", "platform.restore",
   ],
@@ -81,12 +86,19 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
     "users.view", "users.suspend",
     "incidents.view", "incidents.verify", "incidents.dismiss", "incidents.notes",
     "moderation.view", "moderation.decide", "moderation.ban", "moderation.keywords",
+    "contact.view", "contact.manage",
   ],
-  // Advocate and Support Staff hold the same abilities but differ in intent: an
-  // advocate works assigned cases, support staff answer inquiries. Listed
-  // separately so changing one does not silently change the other.
+  /*
+   * Advocate and Support Staff were once identical sets kept apart only by
+   * intent: an advocate works assigned cases, support staff answer inquiries.
+   * The contact queue is where that intent finally has a permission behind it,
+   * which is the payoff for having listed them separately rather than aliased.
+   */
   advocate: ["users.view", "incidents.view", "incidents.notes"],
-  staff: ["users.view", "incidents.view", "incidents.notes"],
+  staff: [
+    "users.view", "incidents.view", "incidents.notes",
+    "contact.view", "contact.manage",
+  ],
 };
 
 /** Sets for O(1) checks — `can()` runs on every guarded request. */

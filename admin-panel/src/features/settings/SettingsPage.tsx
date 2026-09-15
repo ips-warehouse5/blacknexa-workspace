@@ -57,6 +57,9 @@ const PERMISSION_LABELS: Record<Permission, string> = {
   "staff.reset": "Reset staff passwords",
   "staff.toggle": "Enable and disable staff accounts",
   "staff.delete": "Delete staff accounts",
+  "contact.view": "View contact inquiries",
+  "contact.manage": "Set inquiry status and notes",
+  "contact.delete": "Remove contact inquiries",
   "audit.view": "View the audit log",
 };
 

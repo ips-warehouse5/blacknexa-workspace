@@ -10,11 +10,11 @@ import { siteConfig } from "@/data/site";
 export function Footer() {
   return (
     <footer
-      className="border-t border-border px-7 pb-[46px] pt-[62px] md:pt-[92px]"
+      className="border-t border-border px-7 pb-10 pt-12 md:pt-[72px]"
       style={{ background: "var(--bn-hero-background)" }}
     >
       <div className="mx-auto max-w-[1280px]">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(196px,1fr))] gap-11">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(196px,1fr))] gap-[30px]">
           <div>
             <span style={{ color: "var(--bn-hero-text)" }}>
               <BlackNexaLogo size={26} />

@@ -5,7 +5,7 @@ import { ReferralLink } from "./referral-link";
 
 export function ReferralSection() {
   return (
-    <section aria-label="Referral program" className="bg-surface px-7 py-[clamp(80px,10vw,132px)]">
+    <section aria-label="Referral program" className="px-7 py-[clamp(52px,5.6vw,80px)]">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading
           eyebrow="REFERRAL PROGRAM"
@@ -13,11 +13,11 @@ export function ReferralSection() {
           description="A community millions strong is built one invitation at a time. Share your link, and every person who joins through it moves both of you up the early-access list."
           maxWidth="660px"
         />
-        <div className="mt-[clamp(40px,4.6vw,64px)] grid grid-cols-[repeat(auto-fit,minmax(272px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
+        <div className="mt-[clamp(28px,3.2vw,40px)] grid grid-cols-[repeat(auto-fit,minmax(244px,1fr))] gap-px overflow-hidden rounded border border-border bg-border">
           {referralSteps.map((r) => (
-            <div key={r.num} className="bn-reveal bg-background px-7 pb-9 pt-8">
+            <div key={r.num} className="bn-reveal bg-background px-6 pb-[30px] pt-[26px]">
               <div className="flex items-center justify-between">
-                <span className="text-accent">
+                <span className="text-accent-text">
                   <Icon name={r.icon} size={24} />
                 </span>
                 <span className="font-serif text-[15px] tracking-[0.06em] text-text-muted">

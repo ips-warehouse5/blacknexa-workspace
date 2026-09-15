@@ -28,7 +28,7 @@ export const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   superadmin: "Full console access, including staff and settings.",
   moderator: "Content moderation and incident triage. No staff or settings access.",
   advocate: "Assigned cases only. Read-only user profiles. No moderation queue.",
-  staff: "Read-only across the console. Can add internal notes only.",
+  staff: "Contact inquiries, plus read-only incidents and user profiles.",
 };
 
 /** Short capability tag shown on the role KPI tiles. */
@@ -56,6 +56,7 @@ export const NAV_SECTIONS = [
   "notifications",
   "content",
   "users",
+  "contact",
   "adminRoles",
   "settings",
 ] as const;
@@ -96,6 +97,10 @@ export const PERMISSIONS = [
   "staff.reset",
   "staff.toggle",
   "staff.delete",
+
+  "contact.view",
+  "contact.manage",
+  "contact.delete",
 
   "audit.view",
 ] as const;

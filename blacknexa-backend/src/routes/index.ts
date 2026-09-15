@@ -22,6 +22,7 @@ import reportRoutes, {
   notificationRouter,
 } from "@/routes/report.route";
 import moderationRoutes from "@/routes/moderation.route";
+import contactRoutes, { adminContactRouter } from "@/routes/contact.route";
 import reportShareController from "@/controllers/report_share.controller";
 import seoController from "@/controllers/seo.controller";
 import newsService from "@/services/news.service";
@@ -185,6 +186,13 @@ export const ROUTE_MANIFEST: string[] = [
   "POST   /api/v1/admin/moderation/comments/:id/hide",
   "POST   /api/v1/admin/moderation/broadcast (superadmin)",
   "POST   /api/v1/admin/moderation/maintenance (superadmin)",
+  // Contact us — the marketing site's enquiry form and the console's queue
+  "POST   /api/v1/contact (public)",
+  "GET    /api/v1/admin/contact?page=&limit=&search=&status=&subject= (contact.view)",
+  "GET    /api/v1/admin/contact/summary (contact.view)",
+  "GET    /api/v1/admin/contact/:id (contact.view)",
+  "PATCH  /api/v1/admin/contact/:id (contact.manage)",
+  "DELETE /api/v1/admin/contact/:id (contact.delete)",
 ];
 
 export function mountRoutes(app: Express): void {
@@ -242,6 +250,8 @@ export function mountRoutes(app: Express): void {
   api.use("/admin/auth", adminRoutes);
   api.use("/admin/staff", staffRouter);
   api.use("/admin/moderation", moderationRoutes);
+  api.use("/contact", contactRoutes);
+  api.use("/admin/contact", adminContactRouter);
 
   // Route discovery, mirroring the Worker's 404 payload. Outside production only:
   // publishing the full surface in production is free reconnaissance.

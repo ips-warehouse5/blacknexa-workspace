@@ -2,7 +2,7 @@ export function FaithSection() {
   return (
     <section
       aria-label="Built on faith"
-      className="relative overflow-hidden px-7 py-[clamp(84px,10vw,136px)]"
+      className="relative overflow-hidden px-7 py-[clamp(56px,6vw,86px)]"
       style={{ background: "var(--bn-feature-bg)" }}
     >
       <div
@@ -21,7 +21,7 @@ export function FaithSection() {
           BLACKNEXA™: Built on Faith. Driven by Truth. Unstoppable.
         </h2>
         <div className="mt-[clamp(38px,4vw,58px)] flex flex-wrap items-start gap-[clamp(26px,3.5vw,58px)]">
-          <p className="flex-none font-serif text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.1] text-accent">
+          <p className="flex-none font-serif text-[clamp(1.6rem,2.6vw,2.2rem)] leading-[1.1] text-accent-text">
             First, God.
           </p>
           <p

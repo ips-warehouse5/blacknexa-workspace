@@ -12,7 +12,7 @@ const FALLBACK_NEWS_IMAGE = "/images/blacknexa/feature-news-engine.jpg";
 /** Extracted from the homepage News section so `/news` renders identical cards. */
 export function NewsCard({ article }: { article: NewsArticle }) {
   return (
-    <article className="bn-reveal overflow-hidden rounded-[5px] border border-border bg-surface transition-transform duration-300 hover:-translate-y-1 hover:border-accent">
+    <article className="bn-reveal overflow-hidden rounded-[5px] border border-border bg-background transition-transform duration-300 hover:-translate-y-1 hover:border-accent">
       <div className="relative overflow-hidden" style={{ aspectRatio: "16 / 10" }}>
         {article.image ? (
           // Backend-supplied image can be on any host, so this can't use a
@@ -39,7 +39,7 @@ export function NewsCard({ article }: { article: NewsArticle }) {
       </div>
       <div className="p-[22px] pb-[26px]">
         <div className="flex items-center gap-2">
-          <span className="rounded-[2px] border border-accent px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-accent">
+          <span className="rounded-[2px] border border-accent px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-accent-text">
             {article.category.toUpperCase()}
           </span>
           <span className="rounded-[2px] border border-border px-2 py-1 text-[10px] tracking-[0.1em] text-text-muted">

@@ -66,11 +66,16 @@ for the future News API.
 
 ## Integration points
 
-Search for `TODO:` to find every place a real backend call needs to
-replace a mocked one:
+The contact form is **live**: it posts to `src/app/api/contact/route.ts`,
+which validates and forwards to the platform API's public
+`POST /api/v1/contact`. Set `CONTACT_API_URL` to enable it — without
+that variable the route answers 503 and the form says so. Submissions
+land in the admin console under **Contact Us**.
+
+Still to be wired, where a real backend call needs to replace a mocked
+one (search for `TODO:`):
 
 - `src/components/forms/waitlist-form.tsx` — waitlist signup
-- `src/components/forms/contact-form.tsx` — contact submission
 - `src/data/news.ts` — news feed
 
 ## Environment

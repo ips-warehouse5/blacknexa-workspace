@@ -4,7 +4,7 @@ import { AppleLogo, GooglePlayLogo } from "@/components/icons/store-badges";
 export function FinalCtaSection() {
   return (
     <section
-      className="relative overflow-hidden px-7 py-[clamp(88px,11vw,152px)]"
+      className="relative overflow-hidden px-7 py-[clamp(64px,7vw,100px)]"
       style={{ background: "var(--bn-hero-background)" }}
     >
       <div

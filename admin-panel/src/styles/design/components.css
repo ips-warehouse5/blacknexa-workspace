@@ -369,6 +369,23 @@
   font-family: inherit;
   box-sizing: border-box;
 }
+/*
+ * A disabled button has to look disabled.
+ *
+ * Without this a `.btn.primary[disabled]` renders at full accent and reads as
+ * clickable, which is worst where disabling is a normal resting state rather
+ * than a brief one — a Save that stays off until something has actually
+ * changed. Matches the dimming `.perm-locked` already uses for the permission
+ * case, so the two kinds of "not right now" look like one idea.
+ *
+ * `pointer-events` is deliberately left alone: the element must keep receiving
+ * hover so a `title` tooltip explaining the lock can still appear.
+ */
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
 .btn-reset-filter {
   height: 38px;
   padding: 0 14px;

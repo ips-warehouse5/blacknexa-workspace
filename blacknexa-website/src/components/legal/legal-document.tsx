@@ -12,7 +12,7 @@ export function LegalDocument({
   return (
     <div className="px-7 pb-[clamp(80px,9vw,120px)] pt-[clamp(122px,13vw,172px)]">
       <div className="mx-auto max-w-[1120px]">
-        <p className="mb-5 text-[11px] font-semibold tracking-[0.22em] text-accent">LEGAL</p>
+        <p className="mb-5 text-[11px] font-semibold tracking-[0.22em] text-accent-text">LEGAL</p>
         <h1 className="font-serif text-[clamp(2.2rem,5vw,3.6rem)] font-bold leading-[1.04] tracking-[-0.02em] text-text-primary">
           {title}
         </h1>
@@ -31,7 +31,7 @@ export function LegalDocument({
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="-ml-px border-l-2 border-transparent py-[9px] pl-4 text-[13.5px] leading-[1.45] text-text-muted hover:border-accent hover:text-accent"
+                  className="-ml-px border-l-2 border-transparent py-[9px] pl-4 text-[13.5px] leading-[1.45] text-text-muted hover:border-accent hover:text-accent-text"
                 >
                   {s.n}. {s.title}
                 </a>
@@ -43,7 +43,7 @@ export function LegalDocument({
             {sections.map((s) => (
               <section key={s.id} id={s.id} className="scroll-mt-[120px] pb-[46px]">
                 <h2 className="flex gap-3.5 font-serif text-[clamp(1.35rem,2.2vw,1.72rem)] font-semibold leading-[1.2] text-text-primary">
-                  <span className="pt-[0.16em] text-[0.8em] text-accent">{s.n}</span>
+                  <span className="pt-[0.16em] text-[0.8em] text-accent-text">{s.n}</span>
                   {s.title}
                 </h2>
                 {s.body.map((p, i) => (

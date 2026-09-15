@@ -95,6 +95,12 @@ export const NAVIGATION: readonly NavItem[] = [
     to: "/users",
   },
   {
+    section: "contact",
+    label: "Contact Us",
+    icon: "message",
+    to: "/contact-inquiries",
+  },
+  {
     section: "adminRoles",
     label: "Admin & Roles",
     icon: "adminRoles",

@@ -1,7 +1,7 @@
 /**
  * Model registry, associations, and schema bootstrap.
  *
- * Importing this module registers all 41 models on the shared Sequelize
+ * Importing this module registers all 42 models on the shared Sequelize
  * instance. `initializeModels()` optionally syncs the schema (development only —
  * `DB_SYNC` is forced to false in production by env validation) and seeds the
  * article table on first boot, which is the behaviour the Durable Object's
@@ -30,6 +30,7 @@ import {
   HardwareTrigger,
 } from "@/models/enterprise_article.model";
 import PersistenceSnapshotModel from "@/models/persistence_snapshot.model";
+import ContactInquiry from "@/models/contact_inquiry.model";
 import AdminUser from "@/models/admin_user.model";
 import AdminCredential from "@/models/admin_credential.model";
 import {
@@ -290,6 +291,7 @@ export const models = {
   PersistenceSnapshot: PersistenceSnapshotModel,
   AdminUser,
   AdminCredential,
+  ContactInquiry,
   AppUser,
   UserSession,
   UserIdentity,
@@ -359,6 +361,7 @@ export {
   PersistenceSnapshotModel,
   AdminUser,
   AdminCredential,
+  ContactInquiry,
   AppUser,
   UserSession,
   UserIdentity,

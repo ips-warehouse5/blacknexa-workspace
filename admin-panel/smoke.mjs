@@ -133,6 +133,7 @@ async function main() {
     "/content/legal",
     "/content/legal/terms",
     "/users",
+    "/contact-inquiries",
     "/admin-roles",
     "/settings",
   ];

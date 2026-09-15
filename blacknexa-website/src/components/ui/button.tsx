@@ -22,7 +22,7 @@ export function Button({ variant = "solid", className = "", children, ...props }
 
   return (
     <button
-      className={`${base} ${variant === "solid" ? "hover:brightness-110 active:translate-y-px" : "hover:border-accent hover:text-accent"} ${className}`}
+      className={`${base} ${variant === "solid" ? "hover:brightness-110 active:translate-y-px" : "hover:border-accent hover:text-accent-text"} ${className}`}
       style={style}
       {...props}
     >

@@ -28,30 +28,37 @@ const ROLE_PERMISSIONS: Record<RoleKey, readonly Permission[]> = {
     "moderation.view", "moderation.decide", "moderation.ban", "moderation.keywords",
     "staff.view", "staff.create", "staff.edit", "staff.role", "staff.reset",
     "staff.toggle", "staff.delete",
+    "contact.view", "contact.manage", "contact.delete",
     "audit.view",
   ],
   moderator: [
     "users.view", "users.suspend",
     "incidents.view", "incidents.verify", "incidents.dismiss", "incidents.notes",
     "moderation.view", "moderation.decide", "moderation.ban", "moderation.keywords",
+    "contact.view", "contact.manage",
   ],
-  // Advocate and Support Staff carry the same abilities but differ in intent:
-  // an advocate works the cases assigned to them, support staff answer
-  // inquiries. They are listed separately rather than aliased so that changing
-  // one later does not silently change the other.
+  /*
+   * Advocate and Support Staff were once identical sets kept apart only by
+   * intent: an advocate works the cases assigned to them, support staff answer
+   * inquiries. The contact queue is where that intent finally has a permission
+   * behind it — the payoff for listing them separately rather than aliasing.
+   */
   advocate: ["users.view", "incidents.view", "incidents.notes"],
-  staff: ["users.view", "incidents.view", "incidents.notes"],
+  staff: [
+    "users.view", "incidents.view", "incidents.notes",
+    "contact.view", "contact.manage",
+  ],
 };
 
 /** Sections each role may open. */
 const ROLE_NAV: Record<RoleKey, readonly NavSection[]> = {
   superadmin: [
     "dashboard", "incidents", "moderation", "resources", "news",
-    "notifications", "content", "users", "adminRoles", "settings",
+    "notifications", "content", "users", "contact", "adminRoles", "settings",
   ],
-  moderator: ["dashboard", "incidents", "moderation", "users"],
+  moderator: ["dashboard", "incidents", "moderation", "users", "contact"],
   advocate: ["dashboard", "incidents", "users"],
-  staff: ["dashboard", "incidents", "users"],
+  staff: ["dashboard", "incidents", "users", "contact"],
 };
 
 /** Fully-resolved definitions, keyed by role. */

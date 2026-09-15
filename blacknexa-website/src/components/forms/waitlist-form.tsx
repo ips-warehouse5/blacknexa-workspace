@@ -178,7 +178,7 @@ export function WaitlistForm({
         <button
           type="button"
           onClick={() => setShowPhone(true)}
-          className="mt-3 border-0 border-b bg-transparent p-0 text-[13.5px] hover:text-accent"
+          className="mt-3 border-0 border-b bg-transparent p-0 text-[13.5px] hover:text-accent-text"
           style={{
             color: isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)",
             borderColor: isHero ? "var(--bn-feature-input-border)" : "var(--bn-border)",

@@ -20,7 +20,7 @@ export default function ContactPage() {
   return (
     <div className="px-7 pb-[clamp(80px,9vw,120px)] pt-[clamp(122px,13vw,176px)]">
       <div className="mx-auto max-w-[1120px]">
-        <p className="mb-[22px] text-[11px] font-semibold tracking-[0.22em] text-accent">CONTACT</p>
+        <p className="mb-[22px] text-[11px] font-semibold tracking-[0.22em] text-accent-text">CONTACT</p>
         <h1 className="max-w-[20ch] font-serif text-[clamp(2.2rem,5vw,3.9rem)] font-bold leading-[1.02] tracking-[-0.02em] text-text-primary">
           Reach the people building this.
         </h1>

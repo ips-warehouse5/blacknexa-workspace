@@ -45,7 +45,7 @@ export default async function NewsPage() {
           </div>
         ) : (
           <div className="mt-[clamp(40px,5vw,64px)] rounded-[5px] px-[30px] py-[clamp(44px,6vw,72px)] text-center">
-            <span className="inline-flex rounded-[2px] border border-accent px-[9px] py-1 text-[11px] font-semibold tracking-[0.16em] text-accent">
+            <span className="inline-flex rounded-[2px] border border-accent px-[9px] py-1 text-[11px] font-semibold tracking-[0.16em] text-accent-text">
               COMING SOON
             </span>
           </div>

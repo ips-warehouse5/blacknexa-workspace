@@ -17,7 +17,7 @@ export default function GlobalError({
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center px-7 py-[clamp(80px,10vw,132px)] text-center">
-      <p className="text-[11px] font-semibold tracking-[0.22em] text-accent">ERROR</p>
+      <p className="text-[11px] font-semibold tracking-[0.22em] text-accent-text">ERROR</p>
       <h1 className="mt-[18px] font-serif text-[clamp(1.9rem,4vw,2.8rem)] font-bold leading-[1.1] tracking-[-0.02em] text-text-primary">
         Something went wrong.
       </h1>

@@ -91,18 +91,18 @@ export default async function NewsArticlePage({ params }: Props) {
 
       <Container className="max-w-[820px] px-0">
         <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap gap-2 text-[13px] text-text-muted">
-          <Link href="/" className="hover:text-accent">
+          <Link href="/" className="hover:text-accent-text">
             Home
           </Link>
           <span aria-hidden="true">/</span>
-          <Link href="/news" className="hover:text-accent">
+          <Link href="/news" className="hover:text-accent-text">
             News
           </Link>
           <span aria-hidden="true">/</span>
           <span className="text-text-secondary">{article.title}</span>
         </nav>
 
-        <p className="mb-[18px] text-[11px] font-semibold tracking-[0.22em] text-accent">
+        <p className="mb-[18px] text-[11px] font-semibold tracking-[0.22em] text-accent-text">
           {article.category.toUpperCase()}
         </p>
         <h1 className="font-serif text-[clamp(2rem,4.6vw,3.4rem)] font-bold leading-[1.06] tracking-[-0.02em] text-text-primary">
@@ -161,7 +161,7 @@ export default async function NewsArticlePage({ params }: Props) {
 
         <Link
           href="/news"
-          className="mt-[clamp(40px,5vw,56px)] inline-flex min-h-[48px] items-center rounded-[3px] border border-border px-[22px] text-[14px] text-text-secondary transition-colors hover:border-accent hover:text-accent"
+          className="mt-[clamp(40px,5vw,56px)] inline-flex min-h-[48px] items-center rounded-[3px] border border-border px-[22px] text-[14px] text-text-secondary transition-colors hover:border-accent hover:text-accent-text"
         >
           ← Back to all news
         </Link>

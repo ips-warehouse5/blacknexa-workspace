@@ -87,7 +87,7 @@ export function Select({
                   onChange(o.value);
                   setOpen(false);
                 }}
-                className="block w-full px-4 py-[10px] text-left text-[15px] text-text-primary hover:bg-surface-elevated hover:text-accent"
+                className="block w-full px-4 py-[10px] text-left text-[15px] text-text-primary hover:bg-surface-elevated hover:text-accent-text"
                 style={o.value === value ? { color: "var(--bn-accent)" } : undefined}
               >
                 {o.label}

@@ -17,6 +17,9 @@ type Status = "idle" | "sending" | "success";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
+/** The platform API's cap. Enforced here so the field simply stops accepting. */
+const MESSAGE_MAX = 5000;
+
 async function submitContact(payload: {
   name: string;
   email: string;
@@ -156,6 +159,7 @@ export function ContactForm() {
           id="c-message"
           name="message"
           rows={6}
+          maxLength={MESSAGE_MAX}
           aria-invalid={!!errors.message}
           placeholder="Tell us what you need."
           value={message}

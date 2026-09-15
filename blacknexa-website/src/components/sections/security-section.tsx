@@ -4,7 +4,7 @@ import { securityPoints } from "@/data/features";
 
 export function SecuritySection() {
   return (
-    <section aria-label="Brand protection and security" className="px-7 py-[clamp(80px,10vw,132px)]">
+    <section aria-label="Brand protection and security" className="bg-surface-elevated px-7 py-[clamp(52px,5.6vw,80px)]">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading
           eyebrow="BRAND PROTECTION & SECURITY"
@@ -12,10 +12,10 @@ export function SecuritySection() {
           description="The BlackNexa™ name and our custom technology are legally protected, so the platform our community depends on stays ours. The same seriousness governs how your data is held."
           maxWidth="660px"
         />
-        <div className="mt-[clamp(40px,4.6vw,64px)] grid grid-cols-[repeat(auto-fit,minmax(258px,1fr))] gap-[clamp(24px,3vw,40px)]">
+        <div className="mt-[clamp(28px,3.2vw,40px)] grid grid-cols-[repeat(auto-fit,minmax(238px,1fr))] gap-[18px]">
           {securityPoints.map((s) => (
-            <div key={s.title} className="bn-reveal border-t border-border pt-[22px]">
-              <span className="text-accent">
+            <div key={s.title} className="bn-reveal rounded-[5px] border border-border bg-background px-[22px] pb-[26px] pt-6">
+              <span className="text-accent-text">
                 <Icon name={s.icon} size={24} />
               </span>
               <h3 className="mt-[18px] font-serif text-[1.2rem] font-semibold leading-[1.22] text-text-primary">

@@ -2,8 +2,8 @@ import { proofStats } from "@/data/features";
 
 export function ProofBar() {
   return (
-    <section aria-label="At a glance" className="border-y border-border">
-      <div className="mx-auto grid max-w-[1280px] grid-cols-[repeat(auto-fit,minmax(232px,1fr))] px-7">
+    <section aria-label="At a glance" className="border-y border-border bg-surface-elevated">
+      <div className="mx-auto grid max-w-[1280px] grid-cols-[repeat(auto-fit,minmax(212px,1fr))] px-7">
         {proofStats.map((item) => (
           <div
             key={item.label}

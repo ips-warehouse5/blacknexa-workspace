@@ -47,6 +47,9 @@ const FaqsPage = lazy(() => import("@/features/content/FaqsPage"));
 const LegalContentPage = lazy(() => import("@/features/content/LegalContentPage"));
 const LegalEditorPage = lazy(() => import("@/features/content/LegalEditorPage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const ContactInquiriesPage = lazy(
+  () => import("@/features/contact/ContactInquiriesPage"),
+);
 
 export const router = createBrowserRouter([
   {
@@ -131,6 +134,11 @@ export const router = createBrowserRouter([
               { path: "users", element: <UsersPage /> },
               { path: "users/:userId", element: <UserDetailPage /> },
             ],
+          },
+
+          {
+            element: <RequireSection section="contact" />,
+            children: [{ path: "contact-inquiries", element: <ContactInquiriesPage /> }],
           },
 
           {
