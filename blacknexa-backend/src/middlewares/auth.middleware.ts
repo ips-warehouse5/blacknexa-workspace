@@ -21,6 +21,7 @@ import authService, { AuthError } from "@/services/auth.service";
 import { legacyError } from "@/utils/response.util";
 import responseMessage from "@/utils/response_message.util";
 import logger from "@/utils/logger.util";
+import { roleHasPermission, type Permission } from "@/config/rbac.config";
 import type { AdminRole, TokenAudience } from "@/types/admin.interface";
 import type { UserRole } from "@/types/user.interface";
 
@@ -150,6 +151,37 @@ export function checkRole(allowed: AdminRole[]): RequestHandler {
         id: req.user.id,
         role: req.user.role,
         required: allowed,
+        path: req.originalUrl,
+      });
+      legacyError(res, responseMessage("forbidden"), 403);
+      return;
+    }
+    next();
+  };
+}
+
+/**
+ * Require a specific ability. Must run after `adminAuthGuard`.
+ *
+ * Preferred over `checkRole` for anything the console can reach. A route that
+ * says `requirePermission("moderation.decide")` states what it is protecting;
+ * one that lists three role names states who happens to have it today, and has
+ * to be revisited every time the role model changes.
+ *
+ * The matrix it reads (`config/rbac.config.ts`) is the same one the console
+ * mirrors to decide what to render. This copy is the one that enforces.
+ */
+export function requirePermission(permission: Permission): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || req.user.audience !== "admin") {
+      legacyError(res, responseMessage("unauthorized"), 401);
+      return;
+    }
+    if (!roleHasPermission(req.user.role, permission)) {
+      logger.warn("[rbac] permission denied", {
+        id: req.user.id,
+        role: req.user.role,
+        required: permission,
         path: req.originalUrl,
       });
       legacyError(res, responseMessage("forbidden"), 403);

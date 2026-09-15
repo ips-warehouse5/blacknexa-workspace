@@ -1,0 +1,75 @@
+/* Keyword rules page: page head, add button, delete chip
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.keyword-page {
+  display: none;
+}
+.keyword-page .page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  border-top-left-radius: 11px;
+  border-top-right-radius: 11px;
+}
+.keyword-page .page-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+  font-family: "Work Sans", sans-serif;
+}
+.keyword-page .page-copy {
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+}
+.add-keyword-btn {
+  background: var(--accent);
+  color: var(--accent-text, #fff);
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.15s ease;
+  font-family: "Work Sans", sans-serif;
+}
+.add-keyword-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.add-keyword-btn:active {
+  transform: translateY(0);
+}
+.delete-keyword {
+  border: 1px solid #fecaca;
+  background: #fff5f5;
+  color: #dc2626;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-weight: 400;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.delete-keyword:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+/* User Management Styles */

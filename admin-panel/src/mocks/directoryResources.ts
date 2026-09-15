@@ -1,0 +1,298 @@
+/**
+ * The support-resource directory.
+ *
+ * Lifted verbatim from the approved prototype so that the ported screens show
+ * exactly what was signed off. Replaced by a real endpoint when this module is
+ * wired up — the typing is the domain shape, not the fixture's shape, so the
+ * screen does not change when that happens.
+ */
+
+import type { DirectoryResource } from "@/mocks/types";
+
+export const directoryResources: DirectoryResource[] = [
+  {
+    id: "RES-101",
+    name: "NAACP Legal Defense and Educational Fund",
+    category: "legal",
+    reach: "National",
+    regionsServed: "United States (Nationwide)",
+    contact: "naacpldf.org",
+    verified: true,
+    status: "Published",
+    tags: [
+      "civil rights",
+      "litigation",
+      "supreme court",
+      "voting rights",
+    ],
+    description:
+      "America's premier legal organization fighting for racial justice. Through litigation, advocacy, and public education, LDF seeks structural changes to expand democracy, eliminate disparities, and achieve racial justice in a society that fulfills the promise of equality for all Americans.",
+    createdDate: "Aug 15, 2026",
+    author: "Advocate Sarah Miller",
+  },
+  {
+    id: "RES-102",
+    name: "ACLU Racial Justice Program",
+    category: "legal",
+    reach: "National",
+    regionsServed: "United States (Nationwide)",
+    contact: "aclu.org",
+    verified: true,
+    status: "Published",
+    tags: ["criminal justice", "civil liberties", "police reform"],
+    description:
+      "Challenges policies and practices that cause racial inequality in the criminal legal system. Litigates impact cases addressing biased policing, debtor's prisons, and prosecutorial misconduct.",
+    createdDate: "Aug 16, 2026",
+    author: "Staff Admin",
+  },
+  {
+    id: "RES-103",
+    name: "National Suicide & Crisis Lifeline",
+    category: "hotline",
+    reach: "National",
+    regionsServed: "United States (Nationwide)",
+    contact: "988",
+    verified: true,
+    status: "Published",
+    tags: [
+      "24/7 hotline",
+      "mental health",
+      "crisis counseling",
+      "free support",
+    ],
+    description:
+      "24/7, free and confidential support for people in distress, prevention and crisis resources for you or your loved ones. Call or text 988 directly.",
+    createdDate: "Aug 17, 2026",
+    author: "Health Operations",
+  },
+  {
+    id: "RES-104",
+    name: "Black Emotional and Mental Health Collective (BEAM)",
+    category: "mental",
+    reach: "National",
+    regionsServed: "United States, Atlanta GA, Chicago IL",
+    contact: "beam.community",
+    verified: true,
+    status: "Published",
+    tags: [
+      "trauma support",
+      "peer networks",
+      "wellness grants",
+      "black healing",
+    ],
+    description:
+      "National training, movement building, and grant-making institution dedicated to the healing, wellness, and liberation of Black and marginalized communities.",
+    createdDate: "Aug 18, 2026",
+    author: "Advocate Sarah Miller",
+  },
+  {
+    id: "RES-105",
+    name: "National Domestic Violence Hotline",
+    category: "hotline",
+    reach: "National",
+    regionsServed: "United States, UK, International",
+    contact: "1-800-799-7233",
+    verified: true,
+    status: "Published",
+    tags: [
+      "safety planning",
+      "24/7 hotline",
+      "survivor shelter",
+      "confidential",
+    ],
+    description:
+      "24/7 confidential support, safety planning, local shelter referrals, and resources for survivors of domestic and relationship abuse.",
+    createdDate: "Aug 19, 2026",
+    author: "Staff Admin",
+  },
+  {
+    id: "RES-106",
+    name: "National Low Income Housing Coalition",
+    category: "housing",
+    reach: "National",
+    regionsServed: "United States (Nationwide)",
+    contact: "nlihc.org",
+    verified: true,
+    status: "Published",
+    tags: [
+      "tenant rights",
+      "eviction prevention",
+      "rental assistance",
+      "policy",
+    ],
+    description:
+      "Dedicated to achieving racially and socially equitable public policy that ensures people with the lowest incomes have quality, accessible, and affordable homes.",
+    createdDate: "Aug 20, 2026",
+    author: "Advocate Sarah Miller",
+  },
+  {
+    id: "RES-107",
+    name: "Equal Employment Opportunity Commission (EEOC)",
+    category: "work",
+    reach: "National",
+    regionsServed: "United States (Federal Jurisdiction)",
+    contact: "eeoc.gov",
+    verified: true,
+    status: "Published",
+    tags: [
+      "workplace bias",
+      "title vii",
+      "wrongful termination",
+      "federal complaint",
+    ],
+    description:
+      "Responsible for enforcing federal laws that make it illegal to discriminate against a job applicant or an employee because of the person's race, color, religion, sex, or national origin.",
+    createdDate: "Aug 21, 2026",
+    author: "Lead Legal Admin",
+  },
+  {
+    id: "RES-108",
+    name: "Black Voters Matter Capacity Building Institute",
+    category: "voting",
+    reach: "Regional",
+    regionsServed:
+      "Southern States, Atlanta GA, Charlotte NC, Jackson MS",
+    contact: "blackvotersmatterfund.org",
+    verified: true,
+    status: "Published",
+    tags: [
+      "voter registration",
+      "election protection",
+      "community organizing",
+    ],
+    description:
+      "Dedicated to increasing civic engagement and power in marginalized, predominantly Black communities. Supports local grassroots organizations across the rural and urban South.",
+    createdDate: "Aug 22, 2026",
+    author: "Advocate Sarah Miller",
+  },
+  {
+    id: "RES-109",
+    name: "Immigrant Legal Resource Center",
+    category: "immigration",
+    reach: "National",
+    regionsServed: "United States, Texas, California, New York",
+    contact: "ilrc.org",
+    verified: true,
+    status: "Published",
+    tags: [
+      "asylum defense",
+      "daca",
+      "know your rights",
+      "immigrant rights",
+    ],
+    description:
+      "Provides comprehensive legal trainings, technical assistance, educational materials, and advocacy to protect the rights of immigrants and refugees.",
+    createdDate: "Aug 23, 2026",
+    author: "Staff Admin",
+  },
+  {
+    id: "RES-110",
+    name: "National Reentry Resource Center",
+    category: "reentry",
+    reach: "National",
+    regionsServed: "United States (Nationwide)",
+    contact: "nationalreentryresourcecenter.org",
+    verified: true,
+    status: "Published",
+    tags: [
+      "reentry housing",
+      "expungement",
+      "job placement",
+      "community care",
+    ],
+    description:
+      "Delivers evidence-based training, housing assistance resources, and employment transition support for individuals returning home from incarceration.",
+    createdDate: "Aug 24, 2026",
+    author: "Lead Legal Admin",
+  },
+  {
+    id: "RES-111",
+    name: "Southern Poverty Law Center (SPLC)",
+    category: "legal",
+    reach: "Regional",
+    regionsServed: "Southern United States, Alabama, Georgia, Florida",
+    contact: "splcenter.org",
+    verified: true,
+    status: "Published",
+    tags: [
+      "hate crime monitoring",
+      "civil rights litigation",
+      "voting access",
+    ],
+    description:
+      "Catalyst for racial justice in the South and beyond, working in partnership with communities to dismantle white supremacy, strengthen intersectional movements, and advance human rights.",
+    createdDate: "Aug 25, 2026",
+    author: "Advocate Sarah Miller",
+  },
+  {
+    id: "RES-112",
+    name: "Chicago Community Defense Legal Clinic",
+    category: "legal",
+    reach: "Local",
+    regionsServed: "Chicago, IL (Cook County)",
+    contact: "312-555-0199",
+    verified: false,
+    status: "Pending Review",
+    tags: [
+      "local pro bono",
+      "stop-and-search defense",
+      "police accountability",
+    ],
+    description:
+      "Grassroots pro-bono defense clinic providing rapid emergency arraignment representation, bail assistance, and rights counseling for South and West Side Chicago residents.",
+    createdDate: "Sep 01, 2026",
+    author: "Community Submitter",
+  },
+  {
+    id: "RES-113",
+    name: "Brixton Community Law & Advice Centre",
+    category: "legal",
+    reach: "Local",
+    regionsServed: "London, United Kingdom (Lambeth / Southwark)",
+    contact: "brixtonadvice.org.uk",
+    verified: false,
+    status: "Pending Review",
+    tags: ["uk legal aid", "stop and search uk", "housing disputes"],
+    description:
+      "UK registered charity providing free, independent legal advice on housing, social welfare, immigration, and stop-and-search police monitoring in South London.",
+    createdDate: "Sep 02, 2026",
+    author: "UK Advocacy Partner",
+  },
+  {
+    id: "RES-114",
+    name: "Atlanta Reproductive & Maternal Health Collective",
+    category: "health",
+    reach: "Local",
+    regionsServed: "Atlanta, GA (Fulton & DeKalb Counties)",
+    contact: "404-555-0144",
+    verified: true,
+    status: "Pending Review",
+    tags: [
+      "maternal health",
+      "black doulas",
+      "wellness clinics",
+      "community care",
+    ],
+    description:
+      "Community health coalition addressing Black maternal mortality disparities through free doula care, postpartum mental health therapy, and patient advocacy navigation.",
+    createdDate: "Sep 02, 2026",
+    author: "Health Operations",
+  },
+  {
+    id: "RES-115",
+    name: "Detroit Urban Growers & Food Security Co-op",
+    category: "financial",
+    reach: "Local",
+    regionsServed: "Detroit, MI",
+    contact: "detroitgrowers.org",
+    verified: false,
+    status: "Draft",
+    tags: ["food justice", "mutual aid", "micro-grants", "urban farming"],
+    description:
+      "Community co-op building food sovereignty, micro-grant funding for Black growers, and emergency neighborhood food distribution pantries.",
+    createdDate: "Sep 02, 2026",
+    author: "Draft Editor",
+  },
+];
+
+export default directoryResources;

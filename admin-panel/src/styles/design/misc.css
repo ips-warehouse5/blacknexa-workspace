@@ -1,0 +1,133 @@
+/* Section tabs, cell truncation, session countdown
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.section-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.section-tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: 0.15s;
+}
+.section-tab:hover {
+  color: var(--text);
+}
+.section-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Truncation for long names/emails ───────────────────────── */
+.cell-truncate {
+  max-width: 210px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* ── Demo states panel ──────────────────────────────────────── */
+#demoStatePanel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 19000;
+  width: 232px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  font-size: 12px;
+  overflow: hidden;
+  display: none;
+}
+#demoStatePanel .dsp-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#demoStatePanel .dsp-body {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+}
+#demoStatePanel button.dsp-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+  border-radius: 7px;
+  cursor: pointer;
+}
+#demoStatePanel button.dsp-item:hover {
+  background: var(--accent-soft);
+}
+#demoStateToggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 18999;
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+#demoStateToggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Session timeout modal emphasis ─────────────────────────── */
+.session-countdown {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--danger);
+  text-align: center;
+  margin: 6px 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 26px 20px !important;
+    margin: 0 14px;
+  }
+  .pw-rules {
+    grid-template-columns: 1fr;
+  }
+  #demoStatePanel {
+    width: calc(100vw - 32px);
+  }
+  .section-tabs {
+    overflow-x: auto;
+  }
+}
+
+/* Dashboard Date Picker Dropdown & Custom Range Popover */

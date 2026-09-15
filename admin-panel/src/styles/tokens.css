@@ -1,0 +1,59 @@
+/* Design tokens.
+   The whole palette is expressed as custom properties so that switching accent
+   or light/dark is a single attribute flip on <html> — no component knows which
+   theme is active. The ported prototype CSS reads these same names, which is why
+   the design survives the port unchanged.
+
+   Two axes, set by ThemeProvider:
+     <html data-accent="blue|gold" data-mode="light|dark">
+   plus `body.dark`, which the ported CSS uses for surface overrides. */
+
+:root {
+  /* Neutral surfaces — light. Dark counterparts live in design/dark.css. */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: #1e232b;
+  --muted: #74777d;
+  --line: #e7e4de;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+
+  /* Status colours are accent-independent: they mean the same thing in both
+     themes, so tying them to the accent would make "danger" read as decoration. */
+  --success: #248a55;
+  --warning: #b76b00;
+  --danger: #c63d49;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  --font-sans: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Spectral", Georgia, serif;
+}
+
+/* ── Accent × mode ──────────────────────────────────────────────────────────
+   Four blocks rather than two: an accent that reads well on white is too dark
+   on a near-black ground, so each accent carries its own dark-mode value. The
+   two-attribute selector also outranks `body.dark`, which sets a default
+   --accent-soft of its own. */
+
+:root[data-accent="blue"][data-mode="light"] {
+  --accent: #0a7cff;
+  --accent-soft: #e8f2ff;
+  --accent-text: #ffffff;
+}
+:root[data-accent="blue"][data-mode="dark"] {
+  --accent: #3d97ff;
+  --accent-soft: #132847;
+  --accent-text: #ffffff;
+}
+:root[data-accent="gold"][data-mode="light"] {
+  --accent: #b78a00;
+  --accent-soft: #fef7e0;
+  --accent-text: #ffffff;
+}
+:root[data-accent="gold"][data-mode="dark"] {
+  --accent: #d8b64b;
+  --accent-soft: #3b3213;
+  --accent-text: #14100a;
+}

@@ -122,6 +122,16 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const clientMessage =
     exposeMessage || !env.isProduction ? message : "An unexpected error occurred.";
 
+  /*
+   * An account lockout carries how long it has left. Sending it as `Retry-After`
+   * rather than burying it in the message means the client can render a real
+   * countdown without parsing prose — and it is the header the status code is
+   * defined to travel with.
+   */
+  if (err instanceof AuthError && err.retryAfterSeconds !== undefined) {
+    res.setHeader("Retry-After", String(err.retryAfterSeconds));
+  }
+
   // Legacy error envelope — the mobile clients read `body.error`.
   legacyError(res, clientMessage, status);
 };

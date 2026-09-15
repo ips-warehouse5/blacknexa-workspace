@@ -26,9 +26,16 @@ import env from "@/config/env.config";
 import { uuidv4 } from "@/utils/id.util";
 import type { AdminRole } from "@/types/admin.interface";
 
+/*
+ * The `omit` list keeps the convenience getters below out of the inferred
+ * attribute set. Without it Sequelize treats `isLocked` as a column and demands
+ * one in `init()` and in every `create()` call.
+ */
+type AdminUserGetters = "isLocked" | "lockoutSecondsRemaining";
+
 export class AdminUser extends Model<
-  InferAttributes<AdminUser>,
-  InferCreationAttributes<AdminUser>
+  InferAttributes<AdminUser, { omit: AdminUserGetters }>,
+  InferCreationAttributes<AdminUser, { omit: AdminUserGetters }>
 > {
   declare id: CreationOptional<string>;
   declare email: string;
@@ -41,10 +48,42 @@ export class AdminUser extends Model<
   /** Current refresh-token id. Rotated on every refresh; null once logged out. */
   declare refresh_token_id: CreationOptional<string | null>;
 
+  /**
+   * Consecutive failed sign-in attempts. Reset to zero on success.
+   *
+   * Counted on the row rather than in memory so a lockout survives a restart
+   * and applies across every instance behind a load balancer — an in-process
+   * counter is defeated by either.
+   */
+  declare failed_login_count: CreationOptional<number>;
+
+  /** ISO timestamp the lockout expires at, or null when not locked. */
+  declare locked_until: CreationOptional<string | null>;
+
+  /**
+   * Set when an account is created or its password reset by an administrator.
+   * The console asks the operator to choose their own password before letting
+   * them work, so an administrator-chosen password is never a standing one.
+   */
+  declare must_change_password: CreationOptional<boolean>;
+
   /** Constant-time comparison of a candidate password against the stored hash. */
   async verifyPassword(candidate: string): Promise<boolean> {
     if (!this.password_hash) return false;
     return bcrypt.compare(candidate, this.password_hash);
+  }
+
+  /** Whether a lockout is currently in force. */
+  get isLocked(): boolean {
+    if (!this.locked_until) return false;
+    return new Date(this.locked_until).getTime() > Date.now();
+  }
+
+  /** Seconds remaining on the lockout, for the `Retry-After` header. */
+  get lockoutSecondsRemaining(): number {
+    if (!this.locked_until) return 0;
+    const remaining = new Date(this.locked_until).getTime() - Date.now();
+    return remaining > 0 ? Math.ceil(remaining / 1000) : 0;
   }
 }
 
@@ -76,7 +115,7 @@ AdminUser.init(
     role: {
       type: DataTypes.STRING(32),
       allowNull: false,
-      defaultValue: "admin",
+      defaultValue: "staff",
     },
     is_active: {
       type: DataTypes.BOOLEAN,
@@ -90,6 +129,20 @@ AdminUser.init(
     refresh_token_id: {
       type: DataTypes.STRING(64),
       allowNull: true,
+    },
+    failed_login_count: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    locked_until: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+    },
+    must_change_password: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {

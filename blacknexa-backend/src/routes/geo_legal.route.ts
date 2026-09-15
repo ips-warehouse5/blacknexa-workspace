@@ -72,7 +72,7 @@ router.delete(
 router.post(
   "/refresh",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   asyncHandler((req, res) => geoLegalController.refresh(req, res)),
 );
 

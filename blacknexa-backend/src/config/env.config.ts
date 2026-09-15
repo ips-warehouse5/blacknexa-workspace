@@ -46,6 +46,15 @@ export interface AppEnv {
 
   corsOrigins: string[];
 
+  /**
+   * Where the admin console is served.
+   *
+   * Used only to build the sign-in link in operator emails. It is a display
+   * value, never a redirect target derived from a request, so it cannot become
+   * an open-redirect.
+   */
+  adminConsoleUrl: string;
+
   jwt: {
     accessSecret: string;
     refreshSecret: string;
@@ -223,6 +232,7 @@ const schema = Joi.object({
   DB_SYNC_ALTER: Joi.boolean().truthy("true").falsy("false").default(false),
 
   CORS_ORIGINS: Joi.string().allow("").default(""),
+  ADMIN_CONSOLE_URL: Joi.string().uri().default("http://localhost:5174"),
 
   JWT_ACCESS_SECRET: Joi.string().min(32).required().messages({
     "any.required": "JWT_ACCESS_SECRET is required",
@@ -504,6 +514,7 @@ export const env: AppEnv = {
   },
 
   corsOrigins: parseList(raw.CORS_ORIGINS),
+  adminConsoleUrl: raw.ADMIN_CONSOLE_URL,
 
   jwt: {
     accessSecret: raw.JWT_ACCESS_SECRET,

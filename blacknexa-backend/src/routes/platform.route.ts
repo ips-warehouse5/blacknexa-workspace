@@ -151,7 +151,7 @@ router.get(
 router.post(
   "/tipping/payout/:id/status",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   validate("platform.payoutStatus"),
   asyncHandler((req, res) => tippingController.updatePayoutStatus(req, res)),
 );
@@ -174,7 +174,7 @@ router.get(
 router.post(
   "/cache/prune",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   asyncHandler((req, res) => platformController.cachePrune(req, res)),
 );
 
@@ -187,7 +187,7 @@ router.get(
 router.post(
   "/queue/drain",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   validate("platform.queueDrain"),
   asyncHandler((req, res) => platformController.queueDrain(req, res)),
 );
@@ -195,7 +195,7 @@ router.post(
 router.post(
   "/queue/prune",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   validate("platform.queuePrune"),
   asyncHandler((req, res) => platformController.queuePrune(req, res)),
 );
@@ -246,14 +246,14 @@ router.get(
 router.get(
   "/persistence/snapshot",
   adminAuthGuard,
-  checkRole(["super-admin", "admin", "auditor"]),
+  checkRole(["superadmin"]),
   asyncHandler((req, res) => platformController.snapshot(req, res)),
 );
 
 router.post(
   "/persistence/restore",
   adminAuthGuard,
-  checkRole(["super-admin", "admin"]),
+  checkRole(["superadmin"]),
   validate("platform.persistenceRestore"),
   asyncHandler((req, res) => platformController.restore(req, res)),
 );
@@ -261,14 +261,14 @@ router.post(
 router.get(
   "/persistence/integrity",
   adminAuthGuard,
-  checkRole(["super-admin", "admin", "auditor"]),
+  checkRole(["superadmin"]),
   asyncHandler((req, res) => platformController.integrity(req, res)),
 );
 
 router.get(
   "/persistence/snapshots",
   adminAuthGuard,
-  checkRole(["super-admin", "admin", "auditor"]),
+  checkRole(["superadmin"]),
   validate("platform.snapshotList"),
   asyncHandler((req, res) => platformController.listSnapshots(req, res)),
 );

@@ -43,6 +43,8 @@ prints the offending keys. That is deliberate — see `src/config/env.config.ts`
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:sync` | create/align the schema (`--no-alter` to skip alter) |
 | `npm run db:seed` | seed articles, jurisdictions, bootstrap admin |
+| `npm run db:seed:admin` | one operator account per role, for the admin console (refuses to run in production) |
+| `npm run db:migrate:roles` | migrate operator roles onto the four-role model (idempotent) |
 | `npm run db:snapshot` | take a persistence snapshot (`-- --integrity` to check instead) |
 
 ---
@@ -131,6 +133,77 @@ both apps. Moving a route onto it later is a one-line controller change.
 | Private files | `s3.service.ts` — presigned GET/PUT, server-side encryption, never a public directory |
 | Error leakage | the error handler logs stacks, SQL and driver messages server-side and returns a generic message; Sequelize and Joi internals never reach the client |
 | Secrets | nothing hardcoded; every required variable validated at boot |
+
+### The admin console surface
+
+The console (`../admin-panel`) is served by two route groups:
+
+```
+POST /api/v1/admin/auth/login           first factor — returns an MFA challenge, never a session
+POST /api/v1/admin/auth/mfa/verify      second factor — the only route that issues tokens
+POST /api/v1/admin/auth/mfa/resend
+POST /api/v1/admin/auth/refresh
+POST /api/v1/admin/auth/logout
+GET  /api/v1/admin/auth/me
+POST /api/v1/admin/auth/password/forgot
+POST /api/v1/admin/auth/password/reset
+
+GET    /api/v1/admin/staff              staff.view
+GET    /api/v1/admin/staff/summary      staff.view
+POST   /api/v1/admin/staff              staff.create
+PATCH  /api/v1/admin/staff/:id          staff.edit
+PATCH  /api/v1/admin/staff/:id/status   staff.toggle
+POST   /api/v1/admin/staff/:id/reset-password   staff.reset
+DELETE /api/v1/admin/staff/:id          staff.delete
+```
+
+**Sign-in is two calls, and that is load-bearing.** `login` verifies the password
+and returns a challenge id; `mfa/verify` verifies the emailed code and is the
+only method that issues tokens. There is no response shape in which a correct
+password alone produces a session, so a leaked password is not by itself enough
+to sign in.
+
+Enforced by `auth.service.ts`:
+
+| Rule | Value |
+|---|---|
+| Failed passwords before lockout | 5 |
+| Lockout duration | 15 minutes, counted on the row so it survives a restart and applies across instances |
+| Code lifetime | 5 minutes |
+| Wrong codes before the challenge dies | 5 |
+| Resends per sign-in | 3 |
+
+A lockout answers 429 with `Retry-After`, which the console renders as a live
+countdown. `Retry-After` is in the CORS `exposedHeaders` list — without that a
+browser cannot read it.
+
+Codes are stored as SHA-256, never in the clear, and consumed on use. SHA-256
+rather than bcrypt deliberately: these live for minutes and are bounded by the
+attempt counter, so a slow hash would buy nothing and would make the verify
+endpoint a CPU-exhaustion lever.
+
+Password recovery answers identically whether or not the account exists — saying
+"no such account" would turn the endpoint into a way to discover which addresses
+are administrators.
+
+### Roles
+
+Four, fixed: `superadmin`, `moderator`, `advocate`, `staff`. This replaced the
+earlier five (`super-admin | admin | editor | auditor | moderator`), which had
+grown from what individual routes happened to need rather than from how the
+organisation works.
+
+`config/rbac.config.ts` is the authoritative permission matrix. The console
+mirrors it to decide what to render; this copy is the access control. Prefer
+`requirePermission("moderation.decide")` over `checkRole([...])` on new routes —
+it states what is being protected rather than who happens to hold it today.
+
+**Existing deployments must run `npm run db:migrate:roles`.** Rows written before
+the change carry the old spelling, and because the matrix is keyed by the new
+values such an account can sign in and then do nothing, with no error explaining
+why. The mapping folds `admin`, `editor` and `auditor` into `superadmin`, which
+is a genuine widening — the script reports every account it does that to, by
+email, so the list can be reviewed.
 
 ### Where authentication is applied
 

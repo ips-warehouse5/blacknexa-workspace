@@ -1,0 +1,67 @@
+/* Shared details-page chrome: back pill, meta chips, two-column grid
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.details-page {
+  display: none;
+  width: 100%;
+}
+.details-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.back-btn-pill {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.back-btn-pill:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.meta-chip-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.meta-chip-wrap strong {
+  color: var(--text);
+}
+.details-main-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: var(--text);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  gap: 20px;
+  align-items: start;
+}
+.details-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.details-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Dashboard Overview Styling */

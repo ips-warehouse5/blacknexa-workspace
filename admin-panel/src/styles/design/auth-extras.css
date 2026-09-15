@@ -1,0 +1,178 @@
+/* Auth secondary states: alerts, spinner, password strength, locked MFA
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.auth-link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.auth-link-btn:hover {
+  text-decoration: underline;
+}
+.login-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px 0 18px;
+}
+.remember-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #64748b;
+  cursor: pointer;
+  user-select: none;
+}
+.remember-wrap input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.login-submit-btn[disabled] {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 8px;
+  animation: bnSpin 0.7s linear infinite;
+}
+@keyframes bnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.login-info-alert {
+  display: none;
+  background: var(--accent-soft);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.login-warn-alert {
+  display: none;
+  background: #fff7e6;
+  border: 1px solid #f5d9a0;
+  color: #7a4b00;
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+body.dark .login-warn-alert {
+  background: #2a2113;
+  border-color: #5c4520;
+  color: #f0c674;
+}
+.auth-success-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #e6f6ed;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+}
+body.dark .auth-success-icon {
+  background: #16301f;
+}
+.auth-success-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke: var(--success);
+  fill: none;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.auth-center {
+  text-align: center;
+}
+
+/* ── Password strength meter ────────────────────────────────── */
+.pw-strength-wrap {
+  margin: 10px 0 4px;
+}
+.pw-strength-bar {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.pw-strength-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 4px;
+  background: var(--danger);
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+.pw-strength-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.pw-rules {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+.pw-rules li {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pw-rules li .tick {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: inline-grid;
+  place-items: center;
+  font-size: 9px;
+  color: transparent;
+  flex-shrink: 0;
+}
+.pw-rules li.ok {
+  color: var(--success);
+}
+.pw-rules li.ok .tick {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+/* ── MFA lock / expiry ──────────────────────────────────────── */
+.mfa-digit-input.locked,
+.mfa-digit-input:disabled {
+  background: var(--line);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── "View as role" demo switcher ───────────────────────────── */

@@ -18,6 +18,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:sync": "ts-node -r tsconfig-paths/register src/scripts/sync_db.ts",
     "db:seed": "ts-node -r tsconfig-paths/register src/scripts/seed_db.ts",
+    "db:seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed_admin.ts",
+    "db:migrate:roles": "ts-node -r tsconfig-paths/register src/scripts/migrate_admin_roles.ts",
     "db:snapshot": "ts-node -r tsconfig-paths/register src/scripts/snapshot.ts",
     "smoke:auth": "bash scripts/smoke_auth.sh",
     "smoke:reports": "bash scripts/smoke_reports.sh",

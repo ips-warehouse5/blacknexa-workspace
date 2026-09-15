@@ -48,7 +48,20 @@ export const corsOptions: CorsOptions = {
   },
   methods: ALLOWED_METHODS,
   allowedHeaders: ALLOWED_HEADERS,
-  exposedHeaders: ["Content-Length", "Content-Type", "RateLimit-Limit", "RateLimit-Remaining"],
+  /*
+   * A browser can only read a response header that is named here. `Retry-After`
+   * is on the list because the admin console renders the sign-in lockout
+   * countdown from it — without the exposure it reads as absent and the console
+   * silently falls back to a lockout with no visible end.
+   */
+  exposedHeaders: [
+    "Content-Length",
+    "Content-Type",
+    "Retry-After",
+    "RateLimit-Limit",
+    "RateLimit-Remaining",
+    "RateLimit-Reset",
+  ],
   credentials: true,
   maxAge: 86_400,
   optionsSuccessStatus: 204,

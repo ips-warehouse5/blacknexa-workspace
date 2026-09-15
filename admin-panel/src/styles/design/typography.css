@@ -1,0 +1,62 @@
+/* Type scale and the flat-surface treatment applied over the base components
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+body {
+  background: var(--bg);
+  font-family: "Work Sans", sans-serif;
+  font-weight: 400;
+}
+.brand-title,
+.title,
+.section h2,
+.modal h3,
+.details-main-title,
+.keyword-page .page-title {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 600;
+}
+.main {
+  padding: 20px 24px 28px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.card {
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+}
+.tab {
+  border-radius: 6px;
+  font-weight: 400;
+}
+.tab.active {
+  font-weight: 600;
+}
+.table th {
+  background: #fcfbf8;
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+.table th,
+.table td {
+  padding: 14px 18px;
+  font-weight: 400;
+}
+.btn,
+.select,
+input,
+textarea {
+  border-radius: 7px;
+  font-weight: 400;
+}
+.section h2 {
+  font-size: 18px;
+  font-weight: 600;
+}

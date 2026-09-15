@@ -8,29 +8,42 @@
  * This surface therefore exists to protect the destructive and operational
  * routes — daily refresh, backfills, duplicate pruning, cache/queue admin,
  * payout status transitions, and persistence restore — which were previously
- * callable by anyone who knew the URL.
+ * callable by anyone who knew the URL, and to back the admin console.
  */
 
 import type { UserRole } from "@/types/user.interface";
 
 /**
- * Roles recognised by `checkRole`.
+ * Operator roles.
  *
- * `moderator` lives here rather than with the member roles. Moderation is an
- * operational function: every decision writes an actor id onto a report's
- * timeline, and that actor has to be an account an administrator can grant and
- * revoke. Making it a member role would also blur the two token audiences, which
- * are deliberately disjoint.
+ * Four, fixed. This replaces the earlier five-role set
+ * (`super-admin | admin | editor | auditor | moderator`), which had grown from
+ * what individual routes happened to need rather than from how the organisation
+ * actually works. The console ships four roles and the same four keys are used
+ * here, so a token maps onto a console role with no translation table — and
+ * there is exactly one place to read to find out what a role can do.
+ *
+ * Mapping applied to the routes that used the old set:
+ *   super-admin, admin, editor, auditor → superadmin
+ *   moderator                           → moderator
+ * `advocate` and `staff` are new, and hold no operational route permissions.
  */
-export type AdminRole = "super-admin" | "admin" | "editor" | "auditor" | "moderator";
+export type AdminRole = "superadmin" | "moderator" | "advocate" | "staff";
 
 export const ALL_ADMIN_ROLES: AdminRole[] = [
-  "super-admin",
-  "admin",
-  "editor",
-  "auditor",
+  "superadmin",
   "moderator",
+  "advocate",
+  "staff",
 ];
+
+/** Display names, used in responses and email copy. */
+export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
+  superadmin: "Super Admin",
+  moderator: "Moderator",
+  advocate: "Advocate",
+  staff: "Support Staff",
+};
 
 /**
  * Any role a token can carry.
@@ -86,6 +99,8 @@ export interface AdminProfile {
   email: string;
   name: string;
   role: AdminRole;
+  /** Two-letter monogram, derived from the name for the console sidebar. */
+  avatar: string;
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
@@ -110,4 +125,42 @@ export interface TokenPair {
 export interface LoginResult {
   admin: AdminProfile;
   tokens: TokenPair;
+}
+
+/**
+ * What a successful first factor returns.
+ *
+ * Deliberately carries no tokens. Passing the password earns a challenge and
+ * nothing else; the session is issued only by `/mfa/verify`. That is what makes
+ * the second factor mandatory rather than advisory — there is no response shape
+ * in which a password alone produces a session.
+ */
+export interface MfaChallengeResult {
+  challengeId: string;
+  /** Partially masked, so the screen can say where the code went. */
+  email: string;
+  codeLength: number;
+  resendAfterSeconds: number;
+  expiresInSeconds: number;
+  /** Development only — omitted when `NODE_ENV=production`. */
+  devCode?: string;
+}
+
+export interface MfaVerifyDto {
+  challengeId: string;
+  code: string;
+}
+
+export interface MfaResendDto {
+  challengeId: string;
+}
+
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  email: string;
+  code: string;
+  password: string;
 }

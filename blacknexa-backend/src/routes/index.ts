@@ -15,7 +15,7 @@ import newsRoutes from "@/routes/news.route";
 import geoLegalRoutes from "@/routes/geo_legal.route";
 import platformRoutes from "@/routes/platform.route";
 import enterpriseRoutes from "@/routes/enterprise.route";
-import adminRoutes from "@/routes/admin.route";
+import adminRoutes, { staffRouter } from "@/routes/admin.route";
 import authRoutes, { userRouter } from "@/routes/auth.route";
 import reportRoutes, {
   commentRouter,
@@ -158,11 +158,22 @@ export const ROUTE_MANIFEST: string[] = [
   "GET    /api/v1/notifications",
   "POST   /api/v1/notifications/read-all",
   // Admin
-  "POST   /api/v1/admin/auth/login",
+  "POST   /api/v1/admin/auth/login (first factor — returns an MFA challenge)",
+  "POST   /api/v1/admin/auth/mfa/verify (second factor — issues the session)",
+  "POST   /api/v1/admin/auth/mfa/resend",
   "POST   /api/v1/admin/auth/refresh",
   "POST   /api/v1/admin/auth/logout",
   "GET    /api/v1/admin/auth/me",
-  "POST   /api/v1/admin/auth/admins (super-admin)",
+  "POST   /api/v1/admin/auth/password/forgot",
+  "POST   /api/v1/admin/auth/password/reset",
+  // Admin & Roles module
+  "GET    /api/v1/admin/staff?page=&limit=&search=&role=&status= (staff.view)",
+  "GET    /api/v1/admin/staff/summary (staff.view)",
+  "POST   /api/v1/admin/staff (staff.create)",
+  "PATCH  /api/v1/admin/staff/:id (staff.edit)",
+  "PATCH  /api/v1/admin/staff/:id/status (staff.toggle)",
+  "POST   /api/v1/admin/staff/:id/reset-password (staff.reset)",
+  "DELETE /api/v1/admin/staff/:id (staff.delete)",
   // Moderation — the surface that makes the status/verified story real
   "GET    /api/v1/admin/moderation (internal HTML queue)",
   "GET    /api/v1/admin/moderation/stats",
@@ -172,8 +183,8 @@ export const ROUTE_MANIFEST: string[] = [
   "POST   /api/v1/admin/moderation/reports/:id/status",
   "POST   /api/v1/admin/moderation/flags/:id/resolve",
   "POST   /api/v1/admin/moderation/comments/:id/hide",
-  "POST   /api/v1/admin/moderation/broadcast (super-admin | admin)",
-  "POST   /api/v1/admin/moderation/maintenance (super-admin)",
+  "POST   /api/v1/admin/moderation/broadcast (superadmin)",
+  "POST   /api/v1/admin/moderation/maintenance (superadmin)",
 ];
 
 export function mountRoutes(app: Express): void {
@@ -229,6 +240,7 @@ export function mountRoutes(app: Express): void {
   api.use("/platform", platformRoutes);
   api.use("/blacknexa", enterpriseRoutes);
   api.use("/admin/auth", adminRoutes);
+  api.use("/admin/staff", staffRouter);
   api.use("/admin/moderation", moderationRoutes);
 
   // Route discovery, mirroring the Worker's 404 payload. Outside production only:

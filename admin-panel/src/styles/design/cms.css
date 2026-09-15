@@ -1,0 +1,85 @@
+/* Content module pages: legal cards, section boxes, third-level nav
+   Ported verbatim from the approved prototype (BlackNexa-Admin-Panel 10). */
+
+.cm-page {
+  display: none;
+  width: 100%;
+}
+.cm-legal-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.cm-legal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+.cm-section-box {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.cm-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.cm-section-num {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.cm-btn-danger-text {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.cm-btn-danger-text:hover {
+  background: #fee2e2;
+}
+body.dark .cm-btn-danger-text:hover {
+  background: #451a1a;
+}
+.sub-sub-menu {
+  padding-left: 20px;
+  margin-top: 4px;
+  display: none;
+}
+.sub-sub-nav {
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+}
+.sub-sub-nav:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+.sub-sub-nav.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+}
