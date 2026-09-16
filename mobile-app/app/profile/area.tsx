@@ -93,7 +93,7 @@ export default function AreaScreen(): React.ReactElement {
     <ScrollScreen padding={screenPadding.detail} testID="profile-area">
       <BackHeader title="Your area" onBack={() => router.back()} padding={0} />
 
-      <View style={styles.searchBox}>
+      <View style={[styles.searchBox, { backgroundColor: colors.s3 }]}>
         <Search size={16} color={colors.t4} />
         <TextInput
           value={query}
@@ -103,7 +103,7 @@ export default function AreaScreen(): React.ReactElement {
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="search"
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.t0 }]}
           accessibilityLabel="Search city or ZIP code"
         />
       </View>
@@ -119,6 +119,7 @@ export default function AreaScreen(): React.ReactElement {
         accessibilityLabel="Use my current location"
         style={({ pressed }) => [
           styles.locationAction,
+          { backgroundColor: colors.s3 },
           pressed ? styles.pressed : null,
         ]}
       >
@@ -140,7 +141,7 @@ export default function AreaScreen(): React.ReactElement {
       <Text variant="eyebrow" color={colors.t3} style={styles.sectionTitle}>
         CURRENT
       </Text>
-      <View style={styles.currentCard}>
+      <View style={[styles.currentCard, { backgroundColor: colors.s4 }]}>
         <View style={styles.rowCopy}>
           <Text variant="labelLg" color={colors.t0}>
             {currentLabel}
@@ -173,7 +174,13 @@ export default function AreaScreen(): React.ReactElement {
                 accessibilityLabel={`Set area to ${area.label}`}
                 style={({ pressed }) => [
                   styles.recentRow,
-                  index < recentAreas.length - 1 ? styles.recentDivider : null,
+                  { backgroundColor: colors.s0 },
+                  index < recentAreas.length - 1
+                    ? {
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: alpha(colors.t0, hairline.row),
+                      }
+                    : null,
                   pressed ? styles.pressed : null,
                 ]}
               >
@@ -194,7 +201,7 @@ export default function AreaScreen(): React.ReactElement {
             );
           })
         ) : (
-          <View style={styles.emptyCard}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.s3 }]}>
             <Text variant="bodySm" color={colors.t3}>
               No saved areas match that search.
             </Text>
@@ -216,7 +223,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingHorizontal: 14,
     borderRadius: radius.lg,
-    backgroundColor: colors.s3,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -225,7 +231,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 46,
     paddingVertical: 0,
-    color: colors.t0,
     fontSize: 15,
     lineHeight: 20,
   },
@@ -239,7 +244,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: radius.xl,
-    backgroundColor: colors.s3,
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
@@ -253,7 +257,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: radius.xl,
-    backgroundColor: colors.s4,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -266,14 +269,9 @@ const styles = StyleSheet.create({
     minHeight: 62,
     paddingHorizontal: 16,
     paddingVertical: 13,
-    backgroundColor: colors.s0,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  recentDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, hairline.row),
   },
   rowCopy: {
     flex: 1,
@@ -284,7 +282,6 @@ const styles = StyleSheet.create({
   emptyCard: {
     padding: 16,
     borderRadius: radius.xl,
-    backgroundColor: colors.s3,
   },
   footnote: {
     marginTop: 16,

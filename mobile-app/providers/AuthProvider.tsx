@@ -20,6 +20,8 @@
  */
 
 import createContextHook from "@nkzw/create-context-hook";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
@@ -147,6 +149,14 @@ interface AuthState {
  */
 const APPLE_NAME_KEY = "bn.apple_pending_name";
 const SIGN_IN_METHOD_KEY = "bn.sign_in_method";
+const LOCAL_USER_STORAGE_KEYS = [
+  "blacknexa.settings.v1",
+  "blacknexa.location.v1",
+  "blacknexa.user_incidents.v2",
+  "blacknexa.supported.v2",
+  "bn.report_draft.v1",
+  "bn.search_recents.v1",
+];
 
 interface PendingAppleName {
   /** Apple's stable user id, so a name is never applied to a different account. */
@@ -246,6 +256,7 @@ async function clearStoredSignInMethod(): Promise<void> {
 }
 
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
+  const qc = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>("restoring");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -261,6 +272,16 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   const clearError = useCallback(() => setError(null), []);
+
+  const clearLocalUserData = useCallback(async () => {
+    await AsyncStorage.multiRemove(LOCAL_USER_STORAGE_KEYS).catch(() => {});
+    qc.removeQueries({ queryKey: ["settings"] });
+    qc.removeQueries({ queryKey: ["location_cached"] });
+    qc.removeQueries({ queryKey: ["feed"] });
+    qc.removeQueries({ queryKey: ["feed-facets"] });
+    qc.removeQueries({ queryKey: ["search"] });
+    qc.removeQueries({ queryKey: ["sessions"] });
+  }, [qc]);
 
   /** Translate a thrown error into the sentence a screen shows. */
   const capture = useCallback((err: unknown): null => {
@@ -601,13 +622,14 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   const signOut = useCallback(async () => {
     await authApi.logout();
+    await clearLocalUserData();
     setUser(null);
     setSignInMethod(null);
     void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
-  }, []);
+  }, [clearLocalUserData]);
 
   /**
    * Drop the local session without telling the server.
@@ -619,23 +641,25 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
    * decides which stack renders.
    */
   const forgetSession = useCallback(() => {
+    void clearLocalUserData();
     setUser(null);
     setSignInMethod(null);
     void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
-  }, []);
+  }, [clearLocalUserData]);
 
   const signOutEverywhere = useCallback(async () => {
     await authApi.logoutEverywhere();
+    await clearLocalUserData();
     setUser(null);
     setSignInMethod(null);
     void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
-  }, []);
+  }, [clearLocalUserData]);
 
   const updateProfile = useCallback(
     async (patch: Parameters<AuthState["updateProfile"]>[0]) => {

@@ -140,6 +140,7 @@ export function ScrollScreen({
             style={[
               styles.footer,
               {
+                backgroundColor: colors.s0,
                 paddingHorizontal: padding,
                 paddingBottom: bottomPad,
                 borderTopWidth: footerBorder ? StyleSheet.hairlineWidth : 0,
@@ -177,9 +178,10 @@ export function StickyFooter({
     <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
       <View
         style={[
-          styles.footer,
-          {
-            paddingHorizontal: padding,
+            styles.footer,
+            {
+              backgroundColor: colors.s0,
+              paddingHorizontal: padding,
             paddingBottom: Math.max(insets.bottom, MIN_BOTTOM),
             borderTopWidth: border ? StyleSheet.hairlineWidth : 0,
             borderTopColor: alpha(colors.t0, 0.07),
@@ -250,8 +252,8 @@ export function BackButton({ onPress }: { onPress: () => void }): React.ReactEle
       accessibilityLabel="Go back"
       style={styles.chevronBox}
     >
-      <View style={styles.chevronUpper} />
-      <View style={styles.chevronLower} />
+      <View style={[styles.chevronUpper, { backgroundColor: colors.t1 }]} />
+      <View style={[styles.chevronLower, { backgroundColor: colors.t1 }]} />
     </Pressable>
   );
 }
@@ -259,7 +261,7 @@ export function BackButton({ onPress }: { onPress: () => void }): React.ReactEle
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  footer: { paddingTop: 12, backgroundColor: colors.s0 },
+  footer: { paddingTop: 12 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -275,7 +277,6 @@ const styles = StyleSheet.create({
     width: 11,
     height: 1.8,
     borderRadius: 1,
-    backgroundColor: colors.t1,
     transform: [{ rotate: "-45deg" }, { translateY: -3.9 }],
   },
   chevronLower: {
@@ -283,7 +284,6 @@ const styles = StyleSheet.create({
     width: 11,
     height: 1.8,
     borderRadius: 1,
-    backgroundColor: colors.t1,
     transform: [{ rotate: "45deg" }, { translateY: 3.9 }],
   },
 });

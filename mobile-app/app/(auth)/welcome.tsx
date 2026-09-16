@@ -186,7 +186,7 @@ export default function WelcomeScreen(): React.ReactElement {
   }, [clearError, signInWithApple]);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {/* The 330px brand band, with the artboard's scrim resolving into the page. */}
       <View style={[styles.band, { height: 330 }]}>
         <LinearGradient colors={[colors.s6, colors.s4]} style={StyleSheet.absoluteFill} />
@@ -329,7 +329,7 @@ function MailMark(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1 },
   band: { position: "absolute", top: 0, left: 0, right: 0 },
   routes: { paddingHorizontal: screenPadding.hero, paddingTop: 34, gap: 10 },
 });

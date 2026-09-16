@@ -60,7 +60,7 @@ export default function HelpScreen(): React.ReactElement {
     >
       <BackHeader title="Help & FAQ" onBack={() => router.back()} padding={0} />
 
-      <View style={styles.searchBox}>
+      <View style={[styles.searchBox, { backgroundColor: colors.s1 }]}>
         <Search size={16} color={colors.t4} />
         <TextInput
           value={query}
@@ -70,7 +70,7 @@ export default function HelpScreen(): React.ReactElement {
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.t0 }]}
           accessibilityLabel="Search help"
         />
       </View>
@@ -95,7 +95,7 @@ export default function HelpScreen(): React.ReactElement {
               accessibilityState={{ selected }}
               style={({ pressed }) => [
                 styles.categoryChip,
-                selected ? styles.categoryChipSelected : null,
+                { backgroundColor: selected ? colors.acc : colors.s1 },
                 pressed ? styles.pressed : null,
               ]}
             >
@@ -126,7 +126,7 @@ export default function HelpScreen(): React.ReactElement {
             />
           ))
         ) : (
-          <View style={styles.emptyCard}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.s3 }]}>
             <Text variant="labelLg" color={colors.t0}>
               No results found
             </Text>
@@ -143,7 +143,7 @@ export default function HelpScreen(): React.ReactElement {
 
 function SupportCard(): React.ReactElement {
   return (
-    <View style={styles.supportCard}>
+    <View style={[styles.supportCard, { backgroundColor: colors.s4 }]}>
       <View style={styles.supportCopy}>
         <Text variant="labelLg" color={colors.t0}>
           Still stuck?
@@ -175,7 +175,7 @@ function FaqCard({
   onToggle: () => void;
 }): React.ReactElement {
   return (
-    <View style={styles.faqCard}>
+    <View style={[styles.faqCard, { backgroundColor: colors.s3 }]}>
       <Pressable
         onPress={onToggle}
         accessibilityRole="button"
@@ -210,7 +210,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingHorizontal: 14,
     borderRadius: radius.lg,
-    backgroundColor: colors.s1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -219,7 +218,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     paddingVertical: 0,
-    color: colors.t0,
     fontSize: 15,
     lineHeight: 20,
   },
@@ -237,10 +235,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.s1,
-  },
-  categoryChipSelected: {
-    backgroundColor: colors.acc,
   },
   sectionTitle: {
     marginTop: 18,
@@ -251,7 +245,6 @@ const styles = StyleSheet.create({
   },
   faqCard: {
     borderRadius: radius.xl,
-    backgroundColor: colors.s3,
     overflow: "hidden",
   },
   faqHeader: {
@@ -278,7 +271,6 @@ const styles = StyleSheet.create({
   emptyCard: {
     padding: 16,
     borderRadius: radius.xl,
-    backgroundColor: colors.s3,
   },
   emptyText: {
     marginTop: 6,
@@ -288,7 +280,6 @@ const styles = StyleSheet.create({
     padding: 14,
     minHeight: 78,
     borderRadius: radius.xl,
-    backgroundColor: colors.s4,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,

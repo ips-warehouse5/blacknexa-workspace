@@ -92,7 +92,7 @@ export default function DefaultsScreen(): React.ReactElement {
       </Text>
 
       <SectionLabel>YOUR NAME</SectionLabel>
-      <View style={styles.group}>
+      <View style={[styles.group, { backgroundColor: colors.s3 }]}>
         <ToggleRow
           title="Stay anonymous"
           description="Applies to new reports and comments alike."
@@ -109,7 +109,7 @@ export default function DefaultsScreen(): React.ReactElement {
       </View>
 
       <SectionLabel>LOCATION</SectionLabel>
-      <View style={styles.locationCard}>
+      <View style={[styles.locationCard, { backgroundColor: colors.s3 }]}>
         <Text variant="label" color={colors.t0}>
           Default precision
         </Text>
@@ -124,7 +124,7 @@ export default function DefaultsScreen(): React.ReactElement {
                 accessibilityState={{ selected }}
                 style={({ pressed }) => [
                   styles.segmentOption,
-                  selected && styles.segmentOptionSelected,
+                  { backgroundColor: selected ? colors.acc : colors.s5 },
                   pressed && { opacity: 0.88 },
                 ]}
               >
@@ -145,7 +145,7 @@ export default function DefaultsScreen(): React.ReactElement {
       </View>
 
       <SectionLabel>READ MORE</SectionLabel>
-      <View style={styles.group}>
+      <View style={[styles.group, { backgroundColor: colors.s3 }]}>
         <ReadMoreRow
           title="How BlackNexa protects your evidence"
           onPress={() => router.push("/legal/evidence-protection")}
@@ -187,7 +187,10 @@ function AudienceCard({
       accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.audienceCard,
-        selected && styles.audienceCardSelected,
+        {
+          backgroundColor: selected ? alpha(colors.acc, 0.045) : colors.s3,
+          borderColor: selected ? colors.acc : "transparent",
+        },
         pressed && { opacity: 0.92 },
       ]}
     >
@@ -221,7 +224,16 @@ function ToggleRow({
   last?: boolean;
 }): React.ReactElement {
   return (
-    <View style={[styles.toggleRow, !last && styles.divider, disabled && { opacity: 0.72 }]}>
+    <View
+      style={[
+        styles.toggleRow,
+        !last && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: alpha(colors.t0, 0.07),
+        },
+        disabled && { opacity: 0.72 },
+      ]}
+    >
       <View style={styles.toggleText}>
         <Text variant="label" color={disabled ? colors.t2 : colors.t0}>
           {title}
@@ -253,7 +265,14 @@ function ReadMoreRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.readRow, !last && styles.divider, pressed && { opacity: 0.9 }]}
+      style={({ pressed }) => [
+        styles.readRow,
+        !last && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: alpha(colors.t0, 0.07),
+        },
+        pressed && { opacity: 0.9 },
+      ]}
     >
       <Text variant="label" color={colors.t0} style={{ flex: 1 }}>
         {title}
@@ -266,7 +285,7 @@ function ReadMoreRow({
 function Chevron(): React.ReactElement {
   return (
     <View style={styles.chevronBox}>
-      <View style={styles.chevron} />
+      <View style={[styles.chevron, { borderColor: colors.t4 }]} />
     </View>
   );
 }
@@ -282,18 +301,12 @@ const styles = StyleSheet.create({
   audienceCard: {
     minHeight: 66,
     borderRadius: radius.lg,
-    backgroundColor: colors.s3,
     borderWidth: 1.4,
-    borderColor: "transparent",
     paddingVertical: 13,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-  },
-  audienceCardSelected: {
-    borderColor: colors.acc,
-    backgroundColor: alpha(colors.acc, 0.045),
   },
   audienceIcon: {
     width: 18,
@@ -309,7 +322,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   group: {
-    backgroundColor: colors.s3,
     borderRadius: radius.lg,
     marginTop: 8,
     overflow: "hidden",
@@ -326,14 +338,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  divider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.07),
-  },
   locationCard: {
     marginTop: 8,
     borderRadius: radius.lg,
-    backgroundColor: colors.s3,
     padding: 14,
   },
   segment: {
@@ -345,13 +352,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 38,
     borderRadius: radius.md,
-    backgroundColor: colors.s5,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
-  },
-  segmentOptionSelected: {
-    backgroundColor: colors.acc,
   },
   locationHelp: {
     marginTop: 10,
@@ -376,7 +379,6 @@ const styles = StyleSheet.create({
     height: 7,
     borderRightWidth: 1.4,
     borderBottomWidth: 1.4,
-    borderColor: colors.t4,
     transform: [{ rotate: "-45deg" }],
   },
 });

@@ -87,14 +87,22 @@ export function ConfirmDialog({
       <View style={styles.root}>
         {/* Tapping outside cancels: the safe outcome is always the easy one. */}
         <Pressable
-          style={styles.backdrop}
+          style={[styles.backdrop, { backgroundColor: alpha(colors.deep, scrim.dialog) }]}
           onPress={onCancel}
           accessibilityRole="button"
           accessibilityLabel={cancelLabel}
         />
 
-        <View style={styles.dialog} accessibilityViewIsModal accessibilityRole="alert">
-          {icon ? <View style={styles.mark}>{icon}</View> : null}
+        <View
+          style={[styles.dialog, { backgroundColor: colors.s3 }]}
+          accessibilityViewIsModal
+          accessibilityRole="alert"
+        >
+          {icon ? (
+            <View style={[styles.mark, { backgroundColor: alpha(colors.bad, 0.14) }]}>
+              {icon}
+            </View>
+          ) : null}
 
           <Text variant="sectionTitle" color={colors.t0} center style={{ marginTop: icon ? 16 : 0 }}>
             {title}
@@ -104,8 +112,8 @@ export function ConfirmDialog({
           </Text>
 
           {note ? (
-            <View style={styles.note}>
-              <View style={styles.noteIcon}>
+            <View style={[styles.note, { backgroundColor: colors.s0 }]}>
+              <View style={[styles.noteIcon, { borderColor: colors.warn }]}>
                 <Text variant="metaSm" color={colors.warn} style={styles.noteIconText}>
                   !
                 </Text>
@@ -135,11 +143,10 @@ export function ConfirmDialog({
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignItems: "center", justifyContent: "center" },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: alpha(colors.deep, scrim.dialog) },
+  backdrop: { ...StyleSheet.absoluteFillObject },
   dialog: {
     width: "86%",
     maxWidth: 340,
-    backgroundColor: colors.s3,
     borderRadius: radius.dialog,
     paddingHorizontal: 22,
     paddingTop: 22,
@@ -150,7 +157,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radius.lg,
-    backgroundColor: alpha(colors.bad, 0.14),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -159,7 +165,6 @@ const styles = StyleSheet.create({
     marginTop: 18,
     minHeight: 54,
     borderRadius: radius.md,
-    backgroundColor: colors.s0,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: "row",
@@ -171,7 +176,6 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 1.3,
-    borderColor: colors.warn,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -20,7 +20,13 @@ export default function TermsScreen(): React.ReactElement {
       <Text variant="metaSm" color={colors.t3} style={styles.updated}>{TERMS.updated}</Text>
 
       {TERMS.sections.map((s) => (
-        <View key={s.heading} style={styles.section}>
+        <View
+          key={s.heading}
+          style={[
+            styles.section,
+            { backgroundColor: colors.s3, borderColor: colors.line },
+          ]}
+        >
           <Text variant="labelLg" color={colors.acc} style={styles.heading}>{s.heading}</Text>
           <Text variant="body" color={colors.t2} style={styles.body}>{s.body}</Text>
         </View>
@@ -44,11 +50,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   section: {
-    backgroundColor: colors.s3,
     borderRadius: radius.lg,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
     marginBottom: 10,
   },
   heading: { marginBottom: 6 },

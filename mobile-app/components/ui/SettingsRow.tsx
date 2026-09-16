@@ -23,7 +23,7 @@ export function Group({
       <Text variant="fieldLabel" color={colors.t3}>
         {label}
       </Text>
-      <View style={styles.group}>{children}</View>
+      <View style={[styles.group, { backgroundColor: colors.s3 }]}>{children}</View>
     </View>
   );
 }
@@ -59,7 +59,7 @@ export function Row({
       testID={testID}
       style={({ pressed }) => [
         styles.row,
-        !last && styles.rowDivider,
+        !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: alpha(colors.t0, 0.07) },
         centered && styles.centeredRow,
         pressed && !disabled && { opacity: 0.9 },
         disabled && { opacity: 0.5 },
@@ -102,7 +102,11 @@ export function SwitchRow({
 }): React.ReactElement {
   return (
     <View
-      style={[styles.row, !last && styles.rowDivider, disabled && { opacity: 0.5 }]}
+      style={[
+        styles.row,
+        !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: alpha(colors.t0, 0.07) },
+        disabled && { opacity: 0.5 },
+      ]}
     >
       <View style={{ flex: 1 }}>
         <Text variant="labelLg" color={colors.t0}>
@@ -129,14 +133,13 @@ export function SwitchRow({
 function SettingsChevron(): React.ReactElement {
   return (
     <View style={styles.chevronBox}>
-      <View style={styles.chevron} />
+      <View style={[styles.chevron, { borderColor: colors.t4 }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   group: {
-    backgroundColor: colors.s3,
     borderRadius: radius.md,
     marginTop: 8,
     overflow: "hidden",
@@ -159,10 +162,6 @@ const styles = StyleSheet.create({
     flex: 0,
     textAlign: "center",
   },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.07),
-  },
   chevronBox: {
     width: 14,
     height: 18,
@@ -174,7 +173,6 @@ const styles = StyleSheet.create({
     height: 7,
     borderRightWidth: 1.4,
     borderBottomWidth: 1.4,
-    borderColor: colors.t4,
     transform: [{ rotate: "-45deg" }],
   },
 });

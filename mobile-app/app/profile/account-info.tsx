@@ -137,7 +137,7 @@ function AccountGroup({
       <Text variant="fieldLabel" color={colors.t3}>
         {label}
       </Text>
-      <View style={styles.group}>{children}</View>
+      <View style={[styles.group, { backgroundColor: colors.s3 }]}>{children}</View>
     </View>
   );
 }
@@ -168,7 +168,10 @@ function AccountRow({
       testID={testID}
       style={({ pressed }) => [
         styles.row,
-        !last && styles.divider,
+        !last && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: alpha(colors.t0, 0.07),
+        },
         pressed && !disabled && { opacity: 0.9 },
       ]}
     >
@@ -202,7 +205,15 @@ function DeviceRow({
     .join(" · ");
 
   return (
-    <View style={[styles.row, !last && styles.divider]}>
+    <View
+      style={[
+        styles.row,
+        !last && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: alpha(colors.t0, 0.07),
+        },
+      ]}
+    >
       <View style={styles.rowText}>
         <Text variant="label" color={colors.t0}>
           {session.current ? `${session.deviceLabel} · this device` : session.deviceLabel}
@@ -229,8 +240,8 @@ function DeviceSkeleton(): React.ReactElement {
   return (
     <View style={styles.row}>
       <View style={styles.rowText}>
-        <View style={[styles.bar, { width: 120, height: 13 }]} />
-        <View style={[styles.bar, { width: 88, height: 11, marginTop: 8 }]} />
+        <View style={[styles.bar, { width: 120, height: 13, backgroundColor: colors.s5 }]} />
+        <View style={[styles.bar, { width: 88, height: 11, marginTop: 8, backgroundColor: colors.s5 }]} />
       </View>
     </View>
   );
@@ -239,7 +250,7 @@ function DeviceSkeleton(): React.ReactElement {
 function Chevron(): React.ReactElement {
   return (
     <View style={styles.chevronBox}>
-      <View style={styles.chevron} />
+      <View style={[styles.chevron, { borderColor: colors.t4 }]} />
     </View>
   );
 }
@@ -249,7 +260,6 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   group: {
-    backgroundColor: colors.s3,
     borderRadius: radius.md,
     marginTop: 8,
     overflow: "hidden",
@@ -266,10 +276,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  divider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.07),
-  },
   chevronBox: {
     width: 14,
     height: 18,
@@ -281,11 +287,9 @@ const styles = StyleSheet.create({
     height: 7,
     borderRightWidth: 1.4,
     borderBottomWidth: 1.4,
-    borderColor: colors.t4,
     transform: [{ rotate: "-45deg" }],
   },
   bar: {
-    backgroundColor: colors.s5,
     borderRadius: 5,
   },
 });

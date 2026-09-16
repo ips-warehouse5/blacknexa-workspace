@@ -97,7 +97,7 @@ export default function ProfileScreen(): React.ReactElement {
 
       {/* Identity header. */}
       <View style={styles.identity}>
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, { backgroundColor: colors.s6 }]}>
           <Text variant="cardTitle" color={colors.acc}>
             {user?.initials ?? "?"}
           </Text>
@@ -114,7 +114,7 @@ export default function ProfileScreen(): React.ReactElement {
 
       {prefs ? (
         <View style={styles.badges}>
-          <View style={styles.badge}>
+          <View style={[styles.badge, { backgroundColor: colors.s5 }]}>
             <Text variant="metaSm" color={colors.t1}>
               {prefs.defaultVisibility === "trusted"
                 ? "Trusted Circle by default"
@@ -123,7 +123,7 @@ export default function ProfileScreen(): React.ReactElement {
                   : "Community by default"}
             </Text>
           </View>
-          <View style={styles.badge}>
+          <View style={[styles.badge, { backgroundColor: colors.s5 }]}>
             <Text variant="metaSm" color={colors.t1}>
               Anonymous {prefs.anonymousByDefault ? "on" : "off"}
             </Text>
@@ -131,18 +131,18 @@ export default function ProfileScreen(): React.ReactElement {
         </View>
       ) : null}
 
-      <View style={styles.statsRow}>
+      <View style={[styles.statsRow, { backgroundColor: colors.s3 }]}>
         <Stat label="Reports" value={mine.isLoading ? "—" : reportCount} />
-        <View style={styles.statDivider} />
+        <View style={[styles.statDivider, { backgroundColor: alpha(colors.t0, 0.1) }]} />
         <Stat label="Corroborations" value={PLACEHOLDER_STATS.corroborations} />
-        <View style={styles.statDivider} />
+        <View style={[styles.statDivider, { backgroundColor: alpha(colors.t0, 0.1) }]} />
         <Stat label="Files" value={PLACEHOLDER_STATS.files} />
       </View>
 
       <Text variant="fieldLabel" color={colors.t3} style={{ marginTop: 22 }}>
         YOUR WORK
       </Text>
-      <View style={styles.group}>
+      <View style={[styles.group, { backgroundColor: colors.s3 }]}>
         <WorkRow
           title="Reports you filed"
           value={mine.isLoading ? "—" : reportCount}
@@ -207,7 +207,10 @@ function WorkRow({
       testID={testID}
       style={({ pressed }) => [
         styles.row,
-        !last && styles.rowDivider,
+        !last && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: alpha(colors.t0, 0.07),
+        },
         pressed && onPress && { opacity: 0.9 },
       ]}
     >
@@ -228,13 +231,11 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 20,
-    backgroundColor: colors.s6,
     alignItems: "center",
     justifyContent: "center",
   },
   badges: { flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" },
   badge: {
-    backgroundColor: colors.s5,
     borderRadius: radius.lg,
     paddingVertical: 7,
     paddingHorizontal: 11,
@@ -242,7 +243,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.s3,
     borderRadius: radius.xl,
     paddingVertical: 16,
     marginTop: 18,
@@ -250,10 +250,8 @@ const styles = StyleSheet.create({
   statDivider: {
     width: StyleSheet.hairlineWidth,
     height: 32,
-    backgroundColor: alpha(colors.t0, 0.1),
   },
   group: {
-    backgroundColor: colors.s3,
     borderRadius: radius.xl,
     marginTop: 10,
     overflow: "hidden",
@@ -264,9 +262,5 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 15,
     paddingHorizontal: 15,
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.07),
   },
 });

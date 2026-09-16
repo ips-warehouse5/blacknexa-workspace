@@ -9,14 +9,12 @@
  * the other side: "The bar appears only after a delay, so a fast launch never
  * flashes a loader."
  *
- * ── Locked to light ──────────────────────────────────────────────────────
- * `app.config.ts` sets `userInterfaceStyle: "light"` because the design has no dark
- * variant of the signal theme. The status bar is therefore dark-on-light, and the
- * Android navigation bar is painted to match the app surface rather than left
- * black behind the design's translucent footers.
+ * ── Theme bridge ───────────────────────────────────────────────────────────
+ * Settings owns the selected client-approved theme. The bridge below applies it
+ * to shared tokens and system bars before the signed-in stacks render.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -48,9 +46,9 @@ import { GeoLegalProvider } from "@/providers/GeoLegalProvider";
 import { IncidentsProvider } from "@/providers/IncidentsProvider";
 import { LocationProvider } from "@/providers/LocationProvider";
 import { NewsProvider } from "@/providers/NewsProvider";
-import { SettingsProvider } from "@/providers/SettingsProvider";
+import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
 import { SnackbarProvider, SnackbarHost } from "@/providers/SnackbarProvider";
-import { colors } from "@/constants/theme";
+import { colors, setActiveTheme } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -179,6 +177,37 @@ function AuthGate(): React.ReactElement | null {
   );
 }
 
+function ThemedAppShell(): React.ReactElement {
+  const { settings } = useSettings();
+  const { status } = useAuth();
+  const themeName = status === "signedIn" ? settings.theme : "signal";
+  const isDark = themeName === "gold";
+
+  setActiveTheme(themeName);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark").catch(() => {});
+  }, [isDark]);
+
+  return (
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.bg }}
+    >
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <LocationProvider>
+        <IncidentsProvider>
+          <NewsProvider>
+            <GeoLegalProvider>
+              <AuthGate />
+            </GeoLegalProvider>
+          </NewsProvider>
+        </IncidentsProvider>
+      </LocationProvider>
+    </GestureHandlerRootView>
+  );
+}
+
 export default function RootLayout(): React.ReactElement | null {
   const [fontsLoaded, fontError] = useFonts({
     Spectral_400Regular,
@@ -192,21 +221,6 @@ export default function RootLayout(): React.ReactElement | null {
     WorkSans_700Bold,
   });
 
-  /**
-   * Dark icons in the Android navigation bar.
-   *
-   * Expo 54 is edge-to-edge by default, so the bar is transparent and the app
-   * paints behind it. Without this the system keeps light icons, which vanish
-   * against the design's near-white `.97` footers.
-   *
-   * Only the button style is set: `setBackgroundColorAsync` is unsupported under
-   * edge-to-edge, and the transparency is what we want anyway.
-   */
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-    NavigationBar.setButtonStyleAsync("dark").catch(() => {});
-  }, []);
-
   // A font that fails to load must not brick the app — better the system face
   // than a permanent splash screen.
   if (!fontsLoaded && !fontError) return null;
@@ -215,27 +229,14 @@ export default function RootLayout(): React.ReactElement | null {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <KeyboardProvider>
-          <GestureHandlerRootView
-            style={{ flex: 1, backgroundColor: colors.bg }}
-          >
-            <StatusBar style="dark" />
-            <SnackbarProvider>
-              <AuthProvider>
-                <SettingsProvider>
-                  <LocationProvider>
-                    <IncidentsProvider>
-                      <NewsProvider>
-                        <GeoLegalProvider>
-                          <AuthGate />
-                        </GeoLegalProvider>
-                      </NewsProvider>
-                    </IncidentsProvider>
-                  </LocationProvider>
-                </SettingsProvider>
-              </AuthProvider>
-              <SnackbarHost />
-            </SnackbarProvider>
-          </GestureHandlerRootView>
+          <SnackbarProvider>
+            <AuthProvider>
+              <SettingsProvider>
+                <ThemedAppShell />
+              </SettingsProvider>
+            </AuthProvider>
+            <SnackbarHost />
+          </SnackbarProvider>
         </KeyboardProvider>
       </SafeAreaProvider>
     </QueryClientProvider>

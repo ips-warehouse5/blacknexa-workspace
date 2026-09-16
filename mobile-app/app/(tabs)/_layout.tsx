@@ -129,9 +129,14 @@ function CentreButton({
       accessibilityState={accessibilityState}
       style={styles.centreSlot}
     >
-      <View style={styles.centreButton}>
-        <View style={styles.plusH} />
-        <View style={styles.plusV} />
+      <View
+        style={[
+          styles.centreButton,
+          { backgroundColor: colors.acc, shadowColor: colors.acc },
+        ]}
+      >
+        <View style={[styles.plusH, { backgroundColor: colors.onAcc }]} />
+        <View style={[styles.plusV, { backgroundColor: colors.onAcc }]} />
       </View>
     </Pressable>
   );
@@ -187,19 +192,17 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 17,
-    backgroundColor: colors.acc,
     alignItems: "center",
     justifyContent: "center",
     // Lifted, but leaves a small gap below the tab bar hairline.
     marginTop: 3,
-    shadowColor: colors.acc,
     shadowOpacity: 0.28,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 7 },
     elevation: 6,
   },
-  plusH: { position: "absolute", width: 22, height: 2.1, borderRadius: 1, backgroundColor: colors.onAcc },
-  plusV: { position: "absolute", width: 2.1, height: 22, borderRadius: 1, backgroundColor: colors.onAcc },
+  plusH: { position: "absolute", width: 22, height: 2.1, borderRadius: 1 },
+  plusV: { position: "absolute", width: 2.1, height: 22, borderRadius: 1 },
 
   icon: { width: 22, height: 22, alignItems: "center", justifyContent: "center" },
 

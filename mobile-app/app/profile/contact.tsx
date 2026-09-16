@@ -128,7 +128,12 @@ export default function ContactScreen(): React.ReactElement {
           testID="contact-subject"
           style={({ pressed }) => [
             styles.subjectButton,
-            subjectsOpen && styles.subjectButtonOpen,
+            { backgroundColor: colors.s3 },
+            subjectsOpen && {
+              borderWidth: 1.2,
+              borderColor: colors.acc,
+              backgroundColor: colors.s0,
+            },
             pressed && { opacity: 0.9 },
           ]}
         >
@@ -142,7 +147,15 @@ export default function ContactScreen(): React.ReactElement {
           />
         </Pressable>
         {subjectsOpen ? (
-          <View style={styles.subjectMenu}>
+          <View
+            style={[
+              styles.subjectMenu,
+              {
+                backgroundColor: colors.s3,
+                borderColor: alpha(colors.t0, 0.07),
+              },
+            ]}
+          >
             {SUBJECTS.map((option, index) => {
               const selected = option === subject;
               return (
@@ -157,7 +170,10 @@ export default function ContactScreen(): React.ReactElement {
                   style={({ pressed }) => [
                     styles.subjectOption,
                     index === SUBJECTS.length - 1 && { borderBottomWidth: 0 },
-                    selected && styles.subjectOptionSelected,
+                    {
+                      borderBottomColor: alpha(colors.t0, 0.07),
+                    },
+                    selected && { backgroundColor: alpha(colors.acc, 0.07) },
                     pressed && { opacity: 0.88 },
                   ]}
                 >
@@ -234,16 +250,10 @@ const styles = StyleSheet.create({
   subjectButton: {
     minHeight: 50,
     borderRadius: radius.md,
-    backgroundColor: colors.s3,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-  subjectButtonOpen: {
-    borderWidth: 1.2,
-    borderColor: colors.acc,
-    backgroundColor: colors.s0,
   },
   subjectMenu: {
     position: "absolute",
@@ -253,20 +263,14 @@ const styles = StyleSheet.create({
     zIndex: 30,
     elevation: 8,
     borderRadius: radius.md,
-    backgroundColor: colors.s3,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: alpha(colors.t0, 0.07),
   },
   subjectOption: {
     minHeight: 44,
     paddingHorizontal: 14,
     justifyContent: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.07),
-  },
-  subjectOptionSelected: {
-    backgroundColor: alpha(colors.acc, 0.07),
   },
   messageField: {
     marginTop: 18,
