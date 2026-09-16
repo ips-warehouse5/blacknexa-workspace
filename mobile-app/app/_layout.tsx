@@ -166,6 +166,7 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
       <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
       <Stack.Screen name="legal/lookup" options={{ headerShown: false }} />
+      <Stack.Screen name="legal/evidence-protection" options={{ headerShown: false }} />
       <Stack.Screen name="news/[id]" />
       <Stack.Screen name="incident/[id]" />
       <Stack.Screen

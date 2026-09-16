@@ -209,6 +209,16 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     }
   }, [cacheQuery]);
 
+  const setLocation = useCallback(
+    async (loc: UserLocation): Promise<void> => {
+      await persistLocation(loc);
+      await cacheQuery.refetch();
+      setStatus("granted");
+      setError(null);
+    },
+    [cacheQuery],
+  );
+
   /**
    * Deliberately no auto-request here.
    *
@@ -268,6 +278,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     status,
     error,
     requestLocation,
+    setLocation,
     openSettings,
     localFeed,
     nearbyEnabled,

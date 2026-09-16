@@ -125,6 +125,9 @@ export const type = {
   sectionTitle: title(20),
   /** Small card title. */
   cardTitleSm: title(17),
+  /** H1 profile display name (24) and stat numbers (26), both Spectral 600. */
+  profileName: display(24),
+  statNumber: display(26),
 
   /** D1 report body. */
   bodyLg: body(15, 1.62),

@@ -31,6 +31,8 @@ const VARIANTS = {
   cardTitle: T.cardTitle,
   sectionTitle: T.sectionTitle,
   cardTitleSm: T.cardTitleSm,
+  profileName: T.profileName,
+  statNumber: T.statNumber,
   bodyLg: T.bodyLg,
   body: T.body,
   bodySm: T.bodySm,
@@ -79,6 +81,8 @@ const DISPLAY_VARIANTS = new Set<TextVariant>([
   "cardTitle",
   "sectionTitle",
   "cardTitleSm",
+  "profileName",
+  "statNumber",
 ]);
 
 export interface AppTextProps extends TextProps {

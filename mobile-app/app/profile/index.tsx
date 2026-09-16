@@ -103,7 +103,7 @@ export default function ProfileScreen(): React.ReactElement {
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant="sectionTitle" color={colors.t0}>
+          <Text variant="profileName" color={colors.t0}>
             {user?.displayName?.trim() || "Anonymous"}
           </Text>
           <Text variant="metaSm" color={colors.t4} style={{ marginTop: 3 }}>
@@ -163,7 +163,7 @@ export default function ProfileScreen(): React.ReactElement {
 
       <Button
         label="Edit profile"
-        variant="secondary"
+        variant="quiet"
         onPress={() => router.push("/profile/identity")}
         style={{ marginTop: 18 }}
         testID="profile-edit"
@@ -175,7 +175,7 @@ export default function ProfileScreen(): React.ReactElement {
 function Stat({ label, value }: { label: string; value: number | string }): React.ReactElement {
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
-      <Text variant="sectionTitle" color={colors.t0}>
+      <Text variant="statNumber" color={colors.t0}>
         {value}
       </Text>
       <Text variant="metaSm" color={colors.t4} style={{ marginTop: 4 }}>
@@ -234,10 +234,10 @@ const styles = StyleSheet.create({
   },
   badges: { flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" },
   badge: {
-    backgroundColor: colors.s6,
+    backgroundColor: colors.s5,
     borderRadius: radius.lg,
     paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
   },
   statsRow: {
     flexDirection: "row",

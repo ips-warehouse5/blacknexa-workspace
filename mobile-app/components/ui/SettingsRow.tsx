@@ -10,7 +10,6 @@ import React from "react";
 import { Pressable, StyleSheet, Switch, View } from "react-native";
 import { alpha, colors, radius } from "@/constants/theme";
 import Text from "@/components/ui/Text";
-import { Chevron } from "@/app/report/details";
 
 export function Group({
   label,
@@ -35,6 +34,8 @@ export function Row({
   onPress,
   destructive = false,
   disabled = false,
+  centered = false,
+  showChevron = true,
   last = false,
   testID,
 }: {
@@ -44,6 +45,8 @@ export function Row({
   destructive?: boolean;
   /** Visible but not actionable — used for board rows with no backing API yet. */
   disabled?: boolean;
+  centered?: boolean;
+  showChevron?: boolean;
   last?: boolean;
   testID?: string;
 }): React.ReactElement {
@@ -57,6 +60,7 @@ export function Row({
       style={({ pressed }) => [
         styles.row,
         !last && styles.rowDivider,
+        centered && styles.centeredRow,
         pressed && !disabled && { opacity: 0.9 },
         disabled && { opacity: 0.5 },
       ]}
@@ -64,7 +68,7 @@ export function Row({
       <Text
         variant="labelLg"
         color={destructive ? colors.bad2 : colors.t0}
-        style={{ flex: 1 }}
+        style={[styles.title, centered && styles.centeredTitle]}
       >
         {title}
       </Text>
@@ -73,7 +77,7 @@ export function Row({
           {value}
         </Text>
       ) : null}
-      {onPress && !disabled ? <Chevron open={false} /> : null}
+      {onPress && !disabled && showChevron ? <SettingsChevron /> : null}
     </Pressable>
   );
 }
@@ -122,22 +126,55 @@ export function SwitchRow({
   );
 }
 
+function SettingsChevron(): React.ReactElement {
+  return (
+    <View style={styles.chevronBox}>
+      <View style={styles.chevron} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   group: {
     backgroundColor: colors.s3,
-    borderRadius: radius.xl,
-    marginTop: 10,
+    borderRadius: radius.md,
+    marginTop: 8,
     overflow: "hidden",
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 15,
+    minHeight: 44,
+    paddingVertical: 12,
     paddingHorizontal: 15,
+  },
+  centeredRow: {
+    justifyContent: "center",
+  },
+  title: {
+    flex: 1,
+  },
+  centeredTitle: {
+    flex: 0,
+    textAlign: "center",
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: alpha(colors.t0, 0.07),
+  },
+  chevronBox: {
+    width: 14,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chevron: {
+    width: 7,
+    height: 7,
+    borderRightWidth: 1.4,
+    borderBottomWidth: 1.4,
+    borderColor: colors.t4,
+    transform: [{ rotate: "-45deg" }],
   },
 });
