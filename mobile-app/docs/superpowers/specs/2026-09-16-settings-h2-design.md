@@ -32,9 +32,11 @@ Settings (H2)
 
 ## Account and deletion
 
-`/profile/account-info` remains the H6 Account entry point. It contains the existing `SIGN IN` and `DEVICES` groups plus the destructive Delete account row. The Settings-root footer deletion shortcut is removed so deletion has one intentional route.
+`/profile/account-info` remains the H6 Account entry point. It follows the board's compact rows: email, password, and connected sign-in under `SIGN IN`; live device rows under `DEVICES`; and one destructive Delete account row under `YOUR DATA`. The Settings-root footer deletion shortcut is removed so deletion has one intentional route.
 
-The current combined delete screen is separated without changing the backend contract. H4 selects report disposition (`sever` or `erase`) and explains the irreversible consequences. It passes the selection to H12. H12 requires `DELETE` plus the account re-authentication the existing backend requires: password for password accounts, or an emailed six-digit code for Apple/Google-only accounts. Only H12 invokes `authApi.deleteAccount`. On success, the existing receipt and `AuthProvider.forgetSession` behavior remain in place.
+The current combined delete screen is separated without changing the backend contract. H4 uses the board's `Step 1 of 2` header, `This is what happens` title, side-by-side `WHAT GOES` / `WHAT STAYS` consequence cards, and its bottom Continue / Keep-my-account actions. It includes the backend-required report-disposition choice as part of the consequence content and passes that selection to H12.
+
+H12 uses the board's `Step 2 of 2` header, `Confirm it’s you` title, typed `DELETE` field, re-authentication field, acknowledgement checkbox, and a Today / final-deletion timeline. The board's 30-day restoration promise cannot be shown because the existing backend does not support pending deletion or account restoration. Copy instead explains the real immediate deletion behavior, including the existing delayed sealed-file purge when the selected disposition supports it. Only H12 invokes `authApi.deleteAccount`. On success, the existing receipt and `AuthProvider.forgetSession` behavior remain in place.
 
 ## Preferences and persistence
 
@@ -42,16 +44,16 @@ Notifications stay backed by `AuthProvider.updateProfile({ notificationsEnabled 
 
 Privacy & sharing reuses the existing profile-default fields already supported by the backend: default visibility, default location precision, and anonymous-by-default. The unsupported advocate-contact setting remains visibly unavailable; no API is invented.
 
-Your area continues to read and refresh actual `LocationProvider` data. The backend has no saved-area, city/ZIP search, or geocoding contract, so manual area search is not fabricated. The source remains clearly marked for that future backend dependency.
+Your area follows H11's header, search-field visual treatment, explanation, current-area row, and recent-area hierarchy where real data exists. It continues to read and refresh actual `LocationProvider` data. The backend has no saved-area, city/ZIP search, recent-area history, or geocoding contract, so those interactive capabilities are not fabricated. The source remains clearly marked for that future backend dependency.
 
 ## Appearance
 
-`SettingsProvider` gains a persisted local appearance value limited to `signal-light` and `gold-dark`. H2 presents only:
+`SettingsProvider` gains a persisted local appearance value limited to `signal-light` and `gold-dark`. H2 presents the board's selected-row treatment (colour preview tile, title, explanatory copy, and accent checkmark) for only:
 
 - Light · signal blue
 - Dark · warm gold
 
-The selection and selected-state indicator update immediately on H2. It does not alter global application colors in this phase because the current token module exports a static `colors` object used throughout the app. A TODO documents that a future centralized theme provider must consume this persisted preference and apply tokens, system bars, and navigation colors globally. No other themes are exposed.
+The selection and selected-state indicator update immediately on H2. It does not alter global application colors in this phase because the current token module exports a static `colors` object used throughout the app. A TODO documents that a future centralized theme provider must consume this persisted preference and apply tokens, system bars, and navigation colors globally. No other themes—including the board's Match the system row—are exposed per the approved scope.
 
 ## Protection
 
