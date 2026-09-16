@@ -45,6 +45,8 @@ export type AuthStatus =
   | "onboarding"
   | "signedIn";
 
+export type SignInMethod = "password" | "apple" | "google";
+
 /**
  * Sign-up draft, held across the A6 → A8 registration flow.
  *
@@ -65,6 +67,7 @@ interface AuthState {
   /** Last error from an explicit action, for a screen to display inline. */
   error: string | null;
   busy: boolean;
+  signInMethod: SignInMethod | null;
 
   signUpDraft: SignUpDraft | null;
   beginSignUp: (email: string, password: string, agreedToTerms: boolean) => void;
@@ -143,6 +146,7 @@ interface AuthState {
  * only, which is safe here: A5 offers the Apple route on iOS alone.
  */
 const APPLE_NAME_KEY = "bn.apple_pending_name";
+const SIGN_IN_METHOD_KEY = "bn.sign_in_method";
 
 interface PendingAppleName {
   /** Apple's stable user id, so a name is never applied to a different account. */
@@ -179,6 +183,17 @@ interface GoogleDecodedJwt {
   picture?: string;
 }
 
+function inferSignInMethod(user: UserProfile): SignInMethod | null {
+  const direct = user.signInProvider ?? user.authProvider ?? user.provider;
+  if (direct === "apple" || direct === "google" || direct === "password") {
+    return direct;
+  }
+  const linked = user.connectedProviders?.[0];
+  if (linked === "apple" || linked === "google") return linked;
+  if (user.hasPassword) return "password";
+  return null;
+}
+
 async function readPendingAppleName(): Promise<PendingAppleName | null> {
   try {
     const raw = await SecureStore.getItemAsync(APPLE_NAME_KEY);
@@ -205,11 +220,37 @@ async function clearPendingAppleName(): Promise<void> {
   }
 }
 
+async function readStoredSignInMethod(): Promise<SignInMethod | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(SIGN_IN_METHOD_KEY);
+    return raw === "apple" || raw === "google" || raw === "password" ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeStoredSignInMethod(method: SignInMethod): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(SIGN_IN_METHOD_KEY, method);
+  } catch {
+    /* best effort */
+  }
+}
+
+async function clearStoredSignInMethod(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(SIGN_IN_METHOD_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+}
+
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const [status, setStatus] = useState<AuthStatus>("restoring");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [signInMethod, setSignInMethod] = useState<SignInMethod | null>(null);
   const [signUpDraft, setSignUpDraft] = useState<SignUpDraft | null>(null);
   const [biometricsAvailable, setBiometricsAvailable] = useState(false);
   /**
@@ -231,8 +272,11 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     return null;
   }, []);
 
-  const adopt = useCallback((result: AuthResult) => {
+  const adopt = useCallback((result: AuthResult, method?: SignInMethod) => {
+    const resolvedMethod = method ?? inferSignInMethod(result.user);
     setUser(result.user);
+    setSignInMethod(resolvedMethod);
+    if (resolvedMethod) void writeStoredSignInMethod(resolvedMethod);
     setError(null);
     // A fresh sign-in on an existing account skips onboarding; a brand-new
     // account is walked through A7 → A9 by the sign-up flow itself, which calls
@@ -251,7 +295,9 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         return;
       }
       const profile = await authApi.me();
+      const restoredMethod = inferSignInMethod(profile) ?? (await readStoredSignInMethod());
       setUser(profile);
+      setSignInMethod(restoredMethod);
       setOnboardingComplete(true);
       setStatus("signedIn");
     } catch (err) {
@@ -273,6 +319,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   useEffect(() => {
     return api.onSignOut(() => {
       setUser(null);
+      setSignInMethod(null);
+      void clearStoredSignInMethod();
       setOnboardingComplete(false);
       setStatus("signedOut");
       setError("You have been signed out. Please log in again.");
@@ -348,6 +396,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           return "consent_failed";
         }
         setUser(result.user);
+        setSignInMethod("password");
+        void writeStoredSignInMethod("password");
         markVerified();
         // Registration is now A6 → A8; the existing onboarding stack follows.
         setStatus("onboarding");
@@ -379,7 +429,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       setBusy(true);
       setError(null);
       try {
-        adopt(await authApi.login(email, password));
+        adopt(await authApi.login(email, password), "password");
         return true;
       } catch (err) {
         capture(err);
@@ -452,6 +502,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           fullName || undefined,
           (decoded as DecodedJwt)?.email,
         ),
+        "apple",
       );
       // Safe to drop only now: the server has it, and re-sending is idempotent
       // there — it fills `display_name` only when that field is still empty.
@@ -502,6 +553,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
             fullName || decoded.name || undefined,
             decoded.email,
           ),
+          "google",
         );
         return true;
       } catch (err) {
@@ -535,7 +587,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       setBusy(true);
       setError(null);
       try {
-        adopt(await authApi.resetPassword(email, code, password));
+        adopt(await authApi.resetPassword(email, code, password), "password");
         return true;
       } catch (err) {
         capture(err);
@@ -550,6 +602,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const signOut = useCallback(async () => {
     await authApi.logout();
     setUser(null);
+    setSignInMethod(null);
+    void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
@@ -566,6 +620,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
    */
   const forgetSession = useCallback(() => {
     setUser(null);
+    setSignInMethod(null);
+    void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
@@ -574,6 +630,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const signOutEverywhere = useCallback(async () => {
     await authApi.logoutEverywhere();
     setUser(null);
+    setSignInMethod(null);
+    void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
@@ -647,6 +705,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     user,
     error,
     busy,
+    signInMethod,
     signUpDraft,
     beginSignUp,
     markVerified,

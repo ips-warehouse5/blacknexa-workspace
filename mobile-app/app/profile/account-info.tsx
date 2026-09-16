@@ -5,12 +5,9 @@
  * (reuses the real session list already built for `/profile/security`
  * rather than duplicating it), YOUR DATA group (Delete account).
  *
- * "Connected sign-in" (which OAuth provider, if any, is linked) has no
- * client-exposed field anywhere in this API surface — `UserIdentity` rows
- * exist server-side but nothing in `lib/api/auth.ts`'s `UserProfile`
- * returns them. Shown as unavailable rather than guessed from
- * `hasPassword` (a passwordless account could be Apple OR Google — that
- * distinction genuinely isn't knowable client-side today).
+ * "Connected sign-in" shows the login method/provider the account is currently
+ * connected to. Prefer server-sent provider metadata, then the method captured
+ * by AuthProvider during the successful sign-in.
  *
  * "Password — last changed" has no timestamp field on the backend
  * (`AppUser` has no `password_changed_at`), so only the action is shown,
@@ -27,6 +24,12 @@ import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useAuth } from "@/providers/AuthProvider";
 import authApi, { type SessionSummary } from "@/lib/api/auth";
 
+const SIGN_IN_LABEL = {
+  apple: "Apple",
+  google: "Google",
+  password: "Password",
+} as const;
+
 function whenSeen(iso: string): string {
   const value = Date.parse(iso);
   if (!Number.isFinite(value)) return "";
@@ -39,12 +42,13 @@ function whenSeen(iso: string): string {
 }
 
 export default function AccountInfoScreen(): React.ReactElement {
-  const { user } = useAuth();
+  const { user, signInMethod } = useAuth();
   const sessions = useQuery({
     queryKey: ["sessions"],
     queryFn: () => authApi.sessions(),
   });
   const visibleSessions = (sessions.data ?? []).slice(0, 2);
+  const connectedSignIn = getConnectedSignInLabel(user, signInMethod);
 
   return (
     <ScrollScreen padding={screenPadding.detail} testID="profile-account-info">
@@ -66,7 +70,7 @@ export default function AccountInfoScreen(): React.ReactElement {
             disabled
           />
         )}
-        <AccountRow title="Connected sign-in" detail="Not shown" disabled last />
+        <AccountRow title="Connected sign-in" detail={connectedSignIn} disabled last />
       </AccountGroup>
 
       <AccountGroup label="DEVICES">
@@ -102,6 +106,23 @@ export default function AccountInfoScreen(): React.ReactElement {
       </View>
     </ScrollScreen>
   );
+}
+
+function getConnectedSignInLabel(
+  user: ReturnType<typeof useAuth>["user"],
+  signInMethod: ReturnType<typeof useAuth>["signInMethod"],
+): string {
+  const direct = user?.signInProvider ?? user?.authProvider ?? user?.provider ?? signInMethod;
+  if (direct && direct in SIGN_IN_LABEL) {
+    return SIGN_IN_LABEL[direct as keyof typeof SIGN_IN_LABEL];
+  }
+
+  const providers = user?.connectedProviders ?? [];
+  if (providers.length > 0) {
+    return providers.map((provider) => SIGN_IN_LABEL[provider]).join(", ");
+  }
+
+  return user?.hasPassword ? "Password" : "Apple or Google";
 }
 
 function AccountGroup({
