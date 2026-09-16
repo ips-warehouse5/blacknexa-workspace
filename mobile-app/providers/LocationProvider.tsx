@@ -2,9 +2,10 @@ import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Location from "expo-location";
 import type { NewsArticle } from "@/mocks/news";
+import { RORK_FUNCTIONS_URL } from "@/lib/config/env";
 
 /**
  * UserLocation — a one-shot geographical fix plus reverse-geocoded place
@@ -25,7 +26,7 @@ export type UserLocation = {
 };
 
 const LOCATION_KEY = "blacknexa.location.v1";
-const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL;
+const FUNCTIONS_URL = RORK_FUNCTIONS_URL;
 
 type LocationStatus =
   | "idle"
@@ -41,7 +42,12 @@ type LocalFeedResponse = {
   nearby?: number;
   /** True when the feed expanded beyond the home city. */
   expandedNearby?: boolean;
-  location?: { city?: string; region?: string; country?: string; countryCode?: string };
+  location?: {
+    city?: string;
+    region?: string;
+    country?: string;
+    countryCode?: string;
+  };
   data?: NewsArticle[];
   error?: string;
 };
@@ -128,7 +134,7 @@ async function captureLocation(): Promise<UserLocation | null> {
 async function fetchLocalFeed(
   loc: UserLocation,
   nearby: boolean,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<NewsArticle[]> {
   if (!FUNCTIONS_URL) return [];
   const params = new URLSearchParams({
@@ -165,7 +171,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
 
   const location = useMemo<UserLocation | null>(
     () => cacheQuery.data ?? null,
-    [cacheQuery.data]
+    [cacheQuery.data],
   );
 
   // Mark granted when a cached location is present.
@@ -182,7 +188,8 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     setStatus("requesting");
     setError(null);
     try {
-      const { status: existing } = await Location.getForegroundPermissionsAsync();
+      const { status: existing } =
+        await Location.getForegroundPermissionsAsync();
       if (existing === "denied") {
         setStatus("denied");
         setError("Location permission was denied.");
@@ -202,19 +209,30 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     }
   }, [cacheQuery]);
 
-  // Auto-stamp location on first app load when no cached fix exists.
-  // This fires once after the cache query resolves — if the user has already
-  // granted permission (or a prior fix was cached), we skip. If permission was
-  // never asked, we request it silently so the feed can geostamp immediately.
-  const autoRequestedRef = useRef(false);
-  useEffect(() => {
-    if (autoRequestedRef.current) return;
-    if (cacheQuery.isLoading) return;
-    autoRequestedRef.current = true;
-    if (location) return; // already have a fix
-    // Fire-and-forget — the user can deny and still use the app.
-    void requestLocation();
-  }, [cacheQuery.isLoading, location, requestLocation]);
+  const setLocation = useCallback(
+    async (loc: UserLocation): Promise<void> => {
+      await persistLocation(loc);
+      await cacheQuery.refetch();
+      setStatus("granted");
+      setError(null);
+    },
+    [cacheQuery],
+  );
+
+  /**
+   * Deliberately no auto-request here.
+   *
+   * The native permission prompt must only ever fire from A4 (Location
+   * permission, `components/ui/LocationPermissionModal.tsx`, shown as an
+   * overlay from the Welcome screen), once, right after onboarding is
+   * skipped or completed — never as a side effect of mounting this provider,
+   * which happens at app launch for every session (signed in or not, before
+   * onboarding has even been shown). A prior version auto-requested here on
+   * first load with no cached fix, which meant the OS prompt could fire
+   * before the user ever saw onboarding. If a fix is already cached (or
+   * permission already granted), `location` above resolves it without asking
+   * again.
+   */
 
   /**
    * Open the device's app settings so the user can grant location permission.
@@ -224,6 +242,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
       await Linking.openSettings();
     } catch {
       /* non-fatal */
+      console.warn("Failed to open settings");
     }
   }, []);
 
@@ -241,7 +260,10 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     retry: 1,
   });
 
-  const localFeed = useMemo<NewsArticle[]>(() => localFeedQuery.data ?? [], [localFeedQuery.data]);
+  const localFeed = useMemo<NewsArticle[]>(
+    () => localFeedQuery.data ?? [],
+    [localFeedQuery.data],
+  );
 
   const refetchLocal = useCallback(() => {
     void localFeedQuery.refetch();
@@ -256,6 +278,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     status,
     error,
     requestLocation,
+    setLocation,
     openSettings,
     localFeed,
     nearbyEnabled,

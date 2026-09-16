@@ -6,12 +6,9 @@
  * not in this file, it is not in the design.
  *
  * ── Theme scope ─────────────────────────────────────────────────────────────
- * v1 ships `signal` light only. The design has no dark variant of `signal` — its
- * only dark palette is `gold`, supplied at token level, and not one of the 51
- * artboards is drawn in it. So the app is locked to light (`userInterfaceStyle:
- * "light"` in app.json), and the extra palettes below exist so that shipping one
- * later is a token swap rather than a rewrite. Wiring a theme switcher into the
- * UI is deliberately out of scope until those screens are designed.
+ * v1 ships two client-approved themes:
+ *   - signal: light surfaces, signal blue accent
+ *   - gold: dark warm surfaces, warm gold accent
  *
  * ── Three guardrails the design states outright ─────────────────────────────
  *   1. One accent colour, and one primary action per screen. (A5 Welcome
@@ -80,7 +77,7 @@ export interface ThemeColors {
   onDeep: string;
 }
 
-export type ThemeName = "signal" | "indigo" | "emerald" | "mono" | "gold";
+export type ThemeName = "signal" | "gold";
 
 /** `signal` — the default, and the only theme v1 ships. */
 const signal: ThemeColors = {
@@ -132,7 +129,7 @@ const signal: ThemeColors = {
   onDeep: "#FFFFFF",
 };
 
-/** Accent-only variants. Everything else inherits from `signal`. */
+/** Accent-only variants kept internal for future palette work. */
 const indigo: ThemeColors = {
   ...signal,
   acc: "#4F46E5",
@@ -192,54 +189,51 @@ const mono: ThemeColors = {
   onDeep: "#FFFFFF",
 };
 
-/** The design's only dark palette. Not shipped in v1 — see the file header. */
+/** Dark · warm gold, matched to the client-approved SYSTEM reference. */
 const gold: ThemeColors = {
-  bg: "#17130F",
-  deep: "#0C0A08",
-  s0: "#1A1511",
-  s1: "#1B1611",
-  s2: "#1D1813",
-  s3: "#201B16",
-  s4: "#221C17",
-  s5: "#241E19",
-  s6: "#2A231C",
-  s7: "#3A322A",
-  ph: "#262019",
-  t0: "#F5EFE6",
-  t1: "#C6BDB0",
-  t2: "#A79E92",
-  t3: "#8C8377",
-  t4: "#776E63",
-  t5: "#5C5348",
-  line: "#4A423A",
-  acc: "#C9A227",
-  onAcc: "#17130F",
-  ok: "#6FBF8E",
-  warn: "#D98A2B",
-  bad: "#D0574E",
-  bad2: "#E08078",
-  corro: "#A08FCB",
-  c1: "#C97B5A",
-  c2: "#A98BC9",
-  c3: "#6FA0C9",
-  c4: "#8FA86B",
-  c5: "#C9A0B8",
-  c6: "#5FA8A0",
-  c7: "#7C93C9",
-  c8: "#C98A6B",
-  c9: "#8C857A",
-  map: "#1B211F",
-  map2: "#1A1F1E",
-  road: "#2A322F",
-  road2: "#232A28",
+  bg: "#101418",
+  deep: "#080B0F",
+  s0: "#101418",
+  s1: "#151A21",
+  s2: "#171D25",
+  s3: "#1F2631",
+  s4: "#252E3A",
+  s5: "#2B3441",
+  s6: "#353F4D",
+  s7: "#46515F",
+  ph: "#202834",
+  t0: "#EAF0F8",
+  t1: "#CFD7E3",
+  t2: "#AEB8C6",
+  t3: "#8F9BAA",
+  t4: "#6F7B8A",
+  t5: "#515C69",
+  line: "#2E3845",
+  acc: "#D8BE58",
+  onAcc: "#101418",
+  ok: "#79C693",
+  warn: "#D9A144",
+  bad: "#C95E54",
+  bad2: "#E07B72",
+  corro: "#A997D9",
+  c1: "#D18A72",
+  c2: "#B99AD8",
+  c3: "#83A7D8",
+  c4: "#A0BC7A",
+  c5: "#D19AB8",
+  c6: "#86C7BF",
+  c7: "#9AAEDB",
+  c8: "#D8A372",
+  c9: "#9BA4AE",
+  map: "#151C20",
+  map2: "#182127",
+  road: "#2A333B",
+  road2: "#222B33",
   onDeep: "#FFFFFF",
 };
 
 export const THEMES: Record<ThemeName, ThemeColors> = {
   signal,
-  indigo,
-  emerald,
-  mono,
   gold,
 };
 
@@ -247,7 +241,13 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
 export const DEFAULT_THEME: ThemeName = "signal";
 
 /** Direct access for modules that run outside the React tree. */
-export const colors: ThemeColors = signal;
+export const colors: ThemeColors = { ...signal };
+
+export function setActiveTheme(theme: ThemeName): ThemeColors {
+  const next = THEMES[theme] ?? signal;
+  Object.assign(colors, next);
+  return colors;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Alpha helpers

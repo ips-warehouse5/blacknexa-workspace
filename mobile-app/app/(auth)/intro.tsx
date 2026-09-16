@@ -8,23 +8,34 @@
  *
  * Three slides, and the design's distinctive detail: the dots **stretch** rather
  * than fill — 26 × 4 active, 8 × 4 idle.
+ *
+ * Each slide's photograph is full-bleed — the image fills the entire screen,
+ * not just a header block — with a top-to-bottom scrim so it stays legible
+ * under Skip, the copy, and the sticky dots/button, all of which sit directly
+ * on top of the photo rather than on a solid page background below it.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
   Dimensions,
   FlatList,
+  Image,
+  type ImageSourcePropType,
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Check } from "lucide-react-native";
 import { alpha, colors } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
@@ -35,6 +46,8 @@ interface Slide {
   body: string;
   /** A3 adds two icon proof-rows; A2 has none. */
   proof?: string[];
+  /** Full-bleed background photo, per the artboard's `image-slot`. */
+  image: ImageSourcePropType;
 }
 
 const SLIDES: Slide[] = [
@@ -42,6 +55,8 @@ const SLIDES: Slide[] = [
     eyebrow: "Document",
     headline: "What happened to you is not going to disappear.",
     body: "Write it down in ninety seconds. Come back and finish it when you can.",
+    // Board placeholder: "Intro art 1 — a person, mid-street."
+    image: require("@/assets/onboarding/onboarding-slide-1.jpg"),
   },
   {
     eyebrow: "Preserve",
@@ -51,6 +66,7 @@ const SLIDES: Slide[] = [
       "Every file is sealed and timestamped",
       "Only you and a moderator can open it",
     ],
+    image: require("@/assets/onboarding/onboarding-slide-2.jpg"),
   },
   {
     eyebrow: "Connect",
@@ -60,6 +76,8 @@ const SLIDES: Slide[] = [
       "Every organisation is checked and dated",
       "Crisis lines work with no signal",
     ],
+    // Board placeholder: "Intro art 3 — community, hands, doorway."
+    image: require("@/assets/onboarding/onboarding-slide-3.jpg"),
   },
 ];
 
@@ -67,15 +85,52 @@ const SLIDES: Slide[] = [
 const LOADER_DELAY_MS = 600;
 /** How long the splash holds before the carousel takes over. */
 const SPLASH_MS = 1100;
+/** Clears the sticky footer (dots + button) so slide text never runs under it. */
+const FOOTER_CLEARANCE = 172;
+
+/**
+ * Marks onboarding as seen so a returning signed-out user lands on Welcome
+ * instead of the intro carousel — read by the root `AuthGate`. Previously
+ * lived in `location.tsx`, which no longer exists as a route now that A4 is
+ * a modal shown from Welcome rather than a screen of its own.
+ */
+export const INTRO_SEEN_KEY = "bn.intro_seen";
+
+/**
+ * The full physical display height, not the app's layout "window" height.
+ *
+ * On Android, `useWindowDimensions()` reports the *window* — which can be
+ * shorter than the actual screen when the OS reserves space for the
+ * navigation bar — while `Dimensions.get("screen")` is the true display
+ * size. Sizing the full-bleed photo to `window` left a sliver at the very
+ * bottom (the reserved nav-bar strip) unpainted, showing the plain page
+ * background through it instead of the photo. `screen` is always >= window,
+ * so using it here only ever adds harmless overscan behind the (transparent,
+ * edge-to-edge) system bar — it never crops anything.
+ */
+function useScreenSize(): { width: number; height: number } {
+  const [size, setSize] = useState(() => Dimensions.get("screen"));
+  useEffect(() => {
+    const sub = Dimensions.addEventListener("change", ({ screen }) => setSize(screen));
+    return () => sub.remove();
+  }, []);
+  return size;
+}
 
 export default function IntroScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const { width } = Dimensions.get("window");
+  const { width } = useWindowDimensions();
+  const { height: screenHeight } = useScreenSize();
   const [phase, setPhase] = useState<"splash" | "slides">("splash");
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null);
 
-  const finish = useCallback(() => router.replace("/(auth)/location"), []);
+  // Onboarding's endpoint is Welcome directly — A4 (location permission) is
+  // now a modal Welcome shows itself, not a screen in between.
+  const finish = useCallback(() => {
+    void AsyncStorage.setItem(INTRO_SEEN_KEY, "true").catch(() => {});
+    router.replace("/(auth)/welcome");
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setPhase("slides"), SPLASH_MS);
@@ -103,7 +158,11 @@ export default function IntroScreen(): React.ReactElement {
   const isLast = index === SLIDES.length - 1;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { width, height: screenHeight }]}>
+      {/* The photo is dark edge-to-edge now, so the OS status bar needs light
+          icons here — the opposite of every other screen in the app. */}
+      <StatusBar style="light" />
+
       <FlatList
         ref={listRef}
         data={SLIDES}
@@ -112,17 +171,51 @@ export default function IntroScreen(): React.ReactElement {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onMomentumEnd}
         keyExtractor={(item) => item.eyebrow}
+        style={[styles.list, { width, height: screenHeight }]}
         renderItem={({ item }) => (
-          <View style={{ width }}>
-            <SlideArt />
-            <View style={[styles.slideBody, { paddingBottom: 0 }]}>
+          <View style={{ width, height: screenHeight }}>
+            <Image
+              source={item.image}
+              resizeMode="cover"
+              style={StyleSheet.absoluteFill}
+              accessibilityIgnoresInvertColors
+            />
+            {/* Full-height scrim: legible at the top (status bar, Skip),
+                lightest around a third of the way down so the photo actually
+                reads, then steadily darkening to fully solid by the very
+                bottom. That last stop has to be 100% opaque, not just dark —
+                a bright patch in a real photo (wet road, bokeh) still showed
+                through at 94% right behind the footer, which is exactly
+                where the button needs a dependable, photo-proof background. */}
+            <LinearGradient
+              colors={[
+                alpha(colors.deep, 0.5),
+                alpha(colors.deep, 0.18),
+                alpha(colors.deep, 0.58),
+                alpha(colors.deep, 0.9),
+                colors.deep,
+              ]}
+              locations={[0, 0.3, 0.56, 0.8, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+
+            <View
+              style={[
+                styles.slideBody,
+                { paddingBottom: FOOTER_CLEARANCE + insets.bottom },
+              ]}
+            >
               <Text variant="eyebrow" color={colors.acc}>
                 {item.eyebrow}
               </Text>
-              <Text variant="hero" color={colors.t0} style={styles.headline}>
+              <Text variant="hero" color={colors.onDeep} style={styles.headline}>
                 {item.headline}
               </Text>
-              <Text variant="bodyLg" color={colors.t2} style={styles.slideText}>
+              <Text
+                variant="bodyLg"
+                color={alpha(colors.onDeep, 0.78)}
+                style={styles.slideText}
+              >
                 {item.body}
               </Text>
               {item.proof ? (
@@ -130,7 +223,11 @@ export default function IntroScreen(): React.ReactElement {
                   {item.proof.map((line) => (
                     <View key={line} style={styles.proofRow}>
                       <ShieldTick />
-                      <Text variant="label" color={colors.t1} style={{ flex: 1 }}>
+                      <Text
+                        variant="label"
+                        color={alpha(colors.onDeep, 0.92)}
+                        style={{ flex: 1 }}
+                      >
                         {line}
                       </Text>
                     </View>
@@ -150,12 +247,15 @@ export default function IntroScreen(): React.ReactElement {
         accessibilityLabel="Skip the introduction"
         style={[styles.skip, { top: insets.top + 6 }]}
       >
-        <Text variant="label" color={colors.t1} style={{ fontSize: 13.5 }}>
+        <Text variant="label" color={colors.acc} style={{ fontSize: 13.5 }}>
           Skip
         </Text>
       </Pressable>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 22 }]}>
+      <View
+        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 22 }]}
+        pointerEvents="box-none"
+      >
         <View style={styles.dots}>
           {SLIDES.map((slide, dotIndex) => (
             <View
@@ -164,7 +264,7 @@ export default function IntroScreen(): React.ReactElement {
                 styles.dot,
                 dotIndex === index
                   ? { width: 26, backgroundColor: colors.acc }
-                  : { width: 8, backgroundColor: alpha(colors.t0, 0.22) },
+                  : { width: 8, backgroundColor: alpha(colors.onDeep, 0.32) },
               ]}
             />
           ))}
@@ -259,31 +359,6 @@ function Splash(): React.ReactElement {
   );
 }
 
-/**
- * Stand-in for the full-bleed intro art.
- *
- * The design drops a photograph into an `image-slot` here. Until real art is
- * supplied, a token-derived gradient holds the space at the right height and
- * scrim so the type sits exactly where it will in the final build — rather than a
- * grey box that makes the layout look wrong.
- */
-function SlideArt(): React.ReactElement {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ height: 330 + insets.top }}>
-      <LinearGradient
-        colors={[colors.s6, colors.s4, colors.bg]}
-        style={StyleSheet.absoluteFill}
-      />
-      <LinearGradient
-        colors={[alpha(colors.deep, 0.12), "transparent", colors.bg]}
-        locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-    </View>
-  );
-}
-
 /** The brand shield, drawn once and reused by the splash and A10. */
 export function ShieldMark({ size = 30 }: { size?: number }): React.ReactElement {
   return (
@@ -322,18 +397,25 @@ export function ShieldMark({ size = 30 }: { size?: number }): React.ReactElement
   );
 }
 
-/** The small shield-and-tick used on A3's proof rows. */
+/**
+ * The proof-row mark — a solid accent disc with a white check, per the
+ * artboard. Filled (not outlined) because it now sits on a photograph rather
+ * than a white card, where a low-opacity outline would disappear.
+ */
 function ShieldTick(): React.ReactElement {
   return (
     <View style={styles.proofMark}>
-      <View style={styles.proofTickShort} />
-      <View style={styles.proofTickLong} />
+      <Check size={12} color={colors.onAcc} strokeWidth={3} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
+  // Without an explicit flex, a horizontal FlatList inside a flex column
+  // sizes to its own content rather than the space actually available on
+  // screen.
+  list: { flex: 1 },
 
   splashCentre: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 70 },
   mark: {
@@ -359,7 +441,13 @@ const styles = StyleSheet.create({
   },
   barFill: { height: "100%", borderRadius: 2, backgroundColor: colors.acc },
 
-  slideBody: { paddingHorizontal: 26, paddingTop: 4 },
+  // Bottom-anchored over the full-bleed photo, rather than a block below it.
+  slideBody: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingHorizontal: 26,
+    paddingTop: 4,
+  },
   headline: { marginTop: 14 },
   slideText: { marginTop: 14, maxWidth: 320 },
   proof: { marginTop: 22, gap: 12 },
@@ -368,30 +456,13 @@ const styles = StyleSheet.create({
     width: 19,
     height: 19,
     borderRadius: 6,
-    backgroundColor: alpha(colors.acc, 0.12),
+    backgroundColor: colors.acc,
     alignItems: "center",
     justifyContent: "center",
   },
-  proofTickShort: {
-    position: "absolute",
-    width: 4,
-    height: 1.6,
-    borderRadius: 1,
-    backgroundColor: colors.acc,
-    transform: [{ rotate: "45deg" }, { translateX: -2.4 }, { translateY: 1.6 }],
-  },
-  proofTickLong: {
-    position: "absolute",
-    width: 8,
-    height: 1.6,
-    borderRadius: 1,
-    backgroundColor: colors.acc,
-    transform: [{ rotate: "-45deg" }, { translateX: 1 }],
-  },
 
   skip: { position: "absolute", right: 20, paddingHorizontal: 4, paddingVertical: 9 },
-  footer: { paddingHorizontal: 26, paddingTop: 8 },
+  footer: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 26, paddingTop: 8 },
   dots: { flexDirection: "row", gap: 6 },
   dot: { height: 4, borderRadius: 2 },
 });
-

@@ -21,14 +21,10 @@ export default function AuthLayout(): React.ReactElement {
       }}
     >
       <Stack.Screen name="intro" options={{ gestureEnabled: false, animation: "fade" }} />
-      <Stack.Screen name="location" />
       <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
       <Stack.Screen name="log-in" />
       <Stack.Screen name="sign-up/account" />
-      <Stack.Screen name="sign-up/terms" />
       <Stack.Screen name="sign-up/verify" />
-      {/* Once the code is accepted the account exists; going back is meaningless. */}
-      <Stack.Screen name="sign-up/profile" options={{ gestureEnabled: false }} />
       <Stack.Screen name="reset/request" />
       <Stack.Screen name="reset/confirm" />
       <Stack.Screen name="reset/done" options={{ gestureEnabled: false }} />

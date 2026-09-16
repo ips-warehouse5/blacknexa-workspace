@@ -109,13 +109,14 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         style={[
           styles.field,
           {
+            backgroundColor: colors.s3,
             height: resolvedHeight,
             alignItems: multiline ? "flex-start" : "center",
             paddingVertical: multiline ? 13 : 0,
           },
-          focused && styles.fieldFocused,
+          focused && { borderColor: alpha(colors.acc, 0.4) },
           // An error outranks focus: it is the thing the person needs to see.
-          visibleError ? styles.fieldError : null,
+          visibleError ? { borderColor: alpha(colors.bad, 0.5) } : null,
         ]}
       >
         <TextInput
@@ -135,7 +136,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           // A field's own text must scale with accessibility settings, but not so
           // far that it outgrows a fixed-height row.
           maxFontSizeMultiplier={multiline ? undefined : 1.3}
-          style={[styles.input, multiline && styles.inputMultiline]}
+          style={[styles.input, { color: colors.t0 }, multiline && styles.inputMultiline]}
           {...rest}
         />
         {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
@@ -214,9 +215,9 @@ function EyeIcon({ open }: { open: boolean }): React.ReactElement {
   // identically and cost nothing to render.
   return (
     <View style={styles.eye}>
-      <View style={styles.eyeOuter} />
-      <View style={styles.eyePupil} />
-      {!open ? <View style={styles.eyeSlash} /> : null}
+      <View style={[styles.eyeOuter, { borderColor: colors.t3 }]} />
+      <View style={[styles.eyePupil, { borderColor: colors.t3 }]} />
+      {!open ? <View style={[styles.eyeSlash, { backgroundColor: colors.t3 }]} /> : null}
     </View>
   );
 }
@@ -225,7 +226,6 @@ const styles = StyleSheet.create({
   label: { marginBottom: 8 },
   field: {
     flexDirection: "row",
-    backgroundColor: colors.s3,
     borderRadius: radius.md,
     paddingHorizontal: 15,
     borderWidth: 1,
@@ -233,13 +233,10 @@ const styles = StyleSheet.create({
     // one — without this the field shifts by 2px on focus.
     borderColor: "transparent",
   },
-  fieldFocused: { borderColor: alpha(colors.acc, 0.4) },
-  fieldError: { borderColor: alpha(colors.bad, 0.5) },
   input: {
     flex: 1,
     fontFamily: fonts.bodyRegular,
     fontSize: 15,
-    color: colors.t0,
     // Android adds vertical padding that breaks a fixed-height row.
     paddingVertical: 0,
     ...(Platform.OS === "android" ? { textAlignVertical: "center" as const } : null),
@@ -265,7 +262,6 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: colors.t3,
   },
   eyePupil: {
     position: "absolute",
@@ -273,13 +269,11 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 2.5,
     borderWidth: 1.5,
-    borderColor: colors.t3,
   },
   eyeSlash: {
     position: "absolute",
     width: 22,
     height: 1.5,
-    backgroundColor: colors.t3,
     transform: [{ rotate: "-45deg" }],
   },
 });

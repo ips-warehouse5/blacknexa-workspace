@@ -9,21 +9,19 @@
  * the other side: "The bar appears only after a delay, so a fast launch never
  * flashes a loader."
  *
- * ── Locked to light ──────────────────────────────────────────────────────
- * `app.json` sets `userInterfaceStyle: "light"` because the design has no dark
- * variant of the signal theme. The status bar is therefore dark-on-light, and the
- * Android navigation bar is painted to match the app surface rather than left
- * black behind the design's translucent footers.
+ * ── Theme bridge ───────────────────────────────────────────────────────────
+ * Settings owns the selected client-approved theme. The bridge below applies it
+ * to shared tokens and system bars before the signed-in stacks render.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as NavigationBar from "expo-navigation-bar";
-import { INTRO_SEEN_KEY } from "@/app/(auth)/location";
+import { INTRO_SEEN_KEY } from "@/app/(auth)/intro";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -48,8 +46,9 @@ import { GeoLegalProvider } from "@/providers/GeoLegalProvider";
 import { IncidentsProvider } from "@/providers/IncidentsProvider";
 import { LocationProvider } from "@/providers/LocationProvider";
 import { NewsProvider } from "@/providers/NewsProvider";
-import { SettingsProvider } from "@/providers/SettingsProvider";
-import { colors } from "@/constants/theme";
+import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
+import { SnackbarProvider, SnackbarHost } from "@/providers/SnackbarProvider";
+import { colors, setActiveTheme } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -141,11 +140,17 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="search" options={{ animation: "fade" }} />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="profile/index" />
+      <Stack.Screen name="profile/settings" />
       <Stack.Screen name="profile/identity" />
       <Stack.Screen name="profile/defaults" />
       <Stack.Screen name="profile/notifications" />
       <Stack.Screen name="profile/security" />
       <Stack.Screen name="profile/account" />
+      <Stack.Screen name="profile/account-info" />
+      <Stack.Screen name="profile/change-password" />
+      <Stack.Screen name="profile/area" />
+      <Stack.Screen name="profile/help" />
+      <Stack.Screen name="profile/contact" />
       <Stack.Screen name="r/[ref]/index" />
       <Stack.Screen name="r/[ref]/owner" />
       <Stack.Screen name="r/[ref]/comments" />
@@ -159,6 +164,7 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
       <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
       <Stack.Screen name="legal/lookup" options={{ headerShown: false }} />
+      <Stack.Screen name="legal/evidence-protection" options={{ headerShown: false }} />
       <Stack.Screen name="news/[id]" />
       <Stack.Screen name="incident/[id]" />
       <Stack.Screen
@@ -168,6 +174,37 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       <Stack.Screen name="+not-found" />
     </Stack>
+  );
+}
+
+function ThemedAppShell(): React.ReactElement {
+  const { settings } = useSettings();
+  const { status } = useAuth();
+  const themeName = status === "signedIn" ? settings.theme : "signal";
+  const isDark = themeName === "gold";
+
+  setActiveTheme(themeName);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark").catch(() => {});
+  }, [isDark]);
+
+  return (
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.bg }}
+    >
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <LocationProvider>
+        <IncidentsProvider>
+          <NewsProvider>
+            <GeoLegalProvider>
+              <AuthGate />
+            </GeoLegalProvider>
+          </NewsProvider>
+        </IncidentsProvider>
+      </LocationProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -184,21 +221,6 @@ export default function RootLayout(): React.ReactElement | null {
     WorkSans_700Bold,
   });
 
-  /**
-   * Dark icons in the Android navigation bar.
-   *
-   * Expo 54 is edge-to-edge by default, so the bar is transparent and the app
-   * paints behind it. Without this the system keeps light icons, which vanish
-   * against the design's near-white `.97` footers.
-   *
-   * Only the button style is set: `setBackgroundColorAsync` is unsupported under
-   * edge-to-edge, and the transparency is what we want anyway.
-   */
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-    NavigationBar.setButtonStyleAsync("dark").catch(() => {});
-  }, []);
-
   // A font that fails to load must not brick the app — better the system face
   // than a permanent splash screen.
   if (!fontsLoaded && !fontError) return null;
@@ -207,24 +229,14 @@ export default function RootLayout(): React.ReactElement | null {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <KeyboardProvider>
-          <GestureHandlerRootView
-            style={{ flex: 1, backgroundColor: colors.bg }}
-          >
-            <StatusBar style="dark" />
+          <SnackbarProvider>
             <AuthProvider>
               <SettingsProvider>
-                <LocationProvider>
-                  <IncidentsProvider>
-                    <NewsProvider>
-                      <GeoLegalProvider>
-                        <AuthGate />
-                      </GeoLegalProvider>
-                    </NewsProvider>
-                  </IncidentsProvider>
-                </LocationProvider>
+                <ThemedAppShell />
               </SettingsProvider>
             </AuthProvider>
-          </GestureHandlerRootView>
+            <SnackbarHost />
+          </SnackbarProvider>
         </KeyboardProvider>
       </SafeAreaProvider>
     </QueryClientProvider>

@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import ComingSoon from "@/components/ui/ComingSoon";
 import BrandMark from "@/components/BrandMark";
 import {
   EMERGENCY_PROTOCOLS,
@@ -41,7 +42,7 @@ import {
 } from "@/mocks/resources";
 import { ENGINE_INFO, GLOBAL_RESOURCE_REGIONS } from "@/constants/geo-legal";
 
-export default function SupportScreen(): React.ReactElement {
+function ExistingSupportScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [active, setActive] = useState<ResourceCategory | "all">("all");
@@ -751,3 +752,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+export default function SupportScreen(): React.ReactElement {
+  // TODO(Support): Re-enable the Support screen implementation when Support development resumes.
+  return <ComingSoon />;
+}

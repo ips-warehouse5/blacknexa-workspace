@@ -18,6 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import ComingSoon from "@/components/ui/ComingSoon";
 import NewsCard from "@/components/NewsCard";
 import CivilRightsPremiumBanner from "@/components/CivilRightsPremiumBanner";
 import VoiceInputButton from "@/components/VoiceInputButton";
@@ -35,6 +36,7 @@ import {
 import { useNews, type GenerateNewsResult } from "@/providers/NewsProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 
 type FilterKey = "all" | NewsCategory;
 
@@ -258,7 +260,7 @@ const SCOPES: { key: NewsScope; label: string }[] = [
   { key: "global", label: "Global" },
 ];
 
-export default function NewsScreen(): React.ReactElement {
+function ExistingNewsScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { feed, briefings, isLoading, isRefetching, refetch, generate, isGenerating, generateError, searchResults, runSearch, isSearching } = useNews();
   const {
@@ -274,6 +276,7 @@ export default function NewsScreen(): React.ReactElement {
     refetchLocal,
   } = useLocation();
   const { settings } = useSettings();
+  const { showSnackbar } = useSnackbar();
   const [filter, setFilter] = useState<FilterKey>("all");
   const [scope, setScope] = useState<NewsScope | "all">("all");
   const [query, setQuery] = useState<string>("");
@@ -407,14 +410,14 @@ export default function NewsScreen(): React.ReactElement {
         onError: (e: unknown) => {
           setGenStep(0);
           setGenSlow(false);
-          Alert.alert(
-            "Generation failed",
-            e instanceof Error ? e.message : "The AI engine could not produce a briefing. Please try again."
-          );
+          showSnackbar({
+            message: e instanceof Error ? e.message : "The AI engine could not produce a briefing. Please try again.",
+            type: "error",
+          });
         },
       }
     );
-  }, [topic, genCategory, genScope, sourceUrls, generate, settings.preferredLanguage]);
+  }, [topic, genCategory, genScope, sourceUrls, generate, settings.preferredLanguage, showSnackbar]);
 
   // Cycle through progress steps while generation is running, and flag when it
   // is slower than the backend's fast-path target so the user knows to wait.
@@ -1394,3 +1397,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+export default function NewsScreen(): React.ReactElement {
+  // TODO(News): Re-enable the News screen implementation when News development resumes.
+  return <ComingSoon />;
+}

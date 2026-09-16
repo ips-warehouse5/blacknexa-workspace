@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import { alpha, colors, screenPadding } from "@/constants/theme";
+import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import { Chip } from "@/components/ui/Controls";
 import FeedCard, { CARD_GAP, cardHeight } from "@/components/report/FeedCard";
@@ -56,7 +57,7 @@ const SORT_SENTENCE: Record<NonNullable<FeedQuery["sort"]>, string> = {
   corroborated: "Most corroborated",
 };
 
-export default function FeedScreen(): React.ReactElement {
+function ExistingHomeScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -176,14 +177,14 @@ export default function FeedScreen(): React.ReactElement {
   const categoryChips = facets.data?.categories ?? [];
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, { paddingTop: insets.top, backgroundColor: colors.bg }]}>
       {/* Header: avatar / brand / search + bell. */}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.push("/profile")}
           accessibilityRole="button"
           accessibilityLabel="Your profile"
-          style={styles.avatar}
+          style={[styles.avatar, { backgroundColor: colors.s6 }]}
           testID="feed-avatar"
         >
           <Text variant="labelSm" color={colors.acc}>
@@ -218,7 +219,15 @@ export default function FeedScreen(): React.ReactElement {
       </View>
 
       {/* The pinned filter bar. Outside the list, so it never scrolls away. */}
-      <View style={styles.filterBar}>
+      <View
+        style={[
+          styles.filterBar,
+          {
+            backgroundColor: colors.s0,
+            borderBottomColor: alpha(colors.t0, 0.07),
+          },
+        ]}
+      >
         <View style={styles.filterRow}>
           <Chip
             label="Filters"
@@ -357,11 +366,62 @@ export default function FeedScreen(): React.ReactElement {
   );
 }
 
+export default function HomeScreen(): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top, backgroundColor: colors.bg }]}>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => router.push("/profile")}
+          accessibilityRole="button"
+          accessibilityLabel="Your profile"
+          style={[styles.avatar, { backgroundColor: colors.s6 }]}
+          testID="feed-avatar"
+        >
+          <Text variant="labelSm" color={colors.acc}>
+            {user?.initials ?? "?"}
+          </Text>
+        </Pressable>
+
+        <Text variant="cardTitle" color={colors.t0} style={{ fontSize: 18 }}>
+          BlackNexa
+        </Text>
+
+        <View style={styles.headerActions}>
+          <Pressable
+            disabled
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Search reports is coming soon"
+            testID="feed-search"
+          >
+            <SearchGlyph />
+          </Pressable>
+          <Pressable
+            disabled
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications are coming soon"
+            testID="feed-notifications"
+          >
+            <BellGlyph withDot />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* TODO(Home): Re-enable the Home feed, filters, search, and notifications when Home development resumes. */}
+      <ComingSoon />
+    </View>
+  );
+}
+
 function SearchGlyph(): React.ReactElement {
   return (
     <View style={styles.glyph}>
-      <View style={styles.searchRing} />
-      <View style={styles.searchHandle} />
+      <View style={[styles.searchRing, { borderColor: colors.t1 }]} />
+      <View style={[styles.searchHandle, { backgroundColor: colors.t1 }]} />
     </View>
   );
 }
@@ -369,16 +429,23 @@ function SearchGlyph(): React.ReactElement {
 function BellGlyph({ withDot }: { withDot?: boolean }): React.ReactElement {
   return (
     <View style={styles.glyph}>
-      <View style={styles.bellDome} />
-      <View style={styles.bellBar} />
-      <View style={styles.bellClapper} />
-      {withDot ? <View style={styles.bellDot} /> : null}
+      <View style={[styles.bellDome, { borderColor: colors.t1 }]} />
+      <View style={[styles.bellBar, { backgroundColor: colors.t1 }]} />
+      <View style={[styles.bellClapper, { borderColor: colors.t1 }]} />
+      {withDot ? (
+        <View
+          style={[
+            styles.bellDot,
+            { backgroundColor: colors.acc, borderColor: colors.bg },
+          ]}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1 },
 
   header: {
     flexDirection: "row",
@@ -392,16 +459,13 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: colors.s6,
     alignItems: "center",
     justifyContent: "center",
   },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
 
   filterBar: {
-    backgroundColor: colors.s0,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.07),
     paddingBottom: 9,
   },
   filterRow: { flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 16 },
@@ -430,7 +494,6 @@ const styles = StyleSheet.create({
     height: 13,
     borderRadius: 7,
     borderWidth: 1.7,
-    borderColor: colors.t1,
   },
   searchHandle: {
     position: "absolute",
@@ -439,7 +502,6 @@ const styles = StyleSheet.create({
     width: 6,
     height: 1.7,
     borderRadius: 1,
-    backgroundColor: colors.t1,
     transform: [{ rotate: "45deg" }],
   },
   bellDome: {
@@ -449,10 +511,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 7,
     borderWidth: 1.7,
     borderBottomWidth: 0,
-    borderColor: colors.t1,
     marginTop: 1,
   },
-  bellBar: { width: 17, height: 1.7, backgroundColor: colors.t1 },
+  bellBar: { width: 17, height: 1.7 },
   bellClapper: {
     width: 5,
     height: 2.5,
@@ -460,7 +521,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 3,
     borderWidth: 1.7,
     borderTopWidth: 0,
-    borderColor: colors.t1,
     marginTop: 1,
   },
   bellDot: {
@@ -470,8 +530,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.acc,
     borderWidth: 2,
-    borderColor: colors.bg,
   },
 });

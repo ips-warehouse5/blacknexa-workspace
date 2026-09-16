@@ -10,15 +10,17 @@ import {
   type NewsScope,
 } from "@/mocks/news";
 import { type ArticleTranslation, type LanguageCode } from "@/constants/i18n";
+import { RORK_FUNCTIONS_URL } from "@/lib/config/env";
 
 /**
  * Live feed source: the BlackNexa News & Syndication Cloudflare Worker.
- * `EXPO_PUBLIC_RORK_FUNCTIONS_URL` is injected from expo/.env and points at
- * the provisioned Worker (e.g. https://blacknexa-backend.rork.app). The
- * Worker owns the article table in a Durable Object and brokers Grok via
- * the Rork AI Gateway, so the toolkit secret never reaches the client.
+ * Resolved from environment config (`EXPO_PUBLIC_RORK_FUNCTIONS_URL`, falling
+ * back to `EXPO_PUBLIC_API_BASE_URL`) and points at the provisioned Worker
+ * (e.g. https://blacknexa-backend.rork.app). The Worker owns the article
+ * table in a Durable Object and brokers Grok via the Rork AI Gateway, so the
+ * toolkit secret never reaches the client.
  */
-const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL;
+const FUNCTIONS_URL = RORK_FUNCTIONS_URL;
 const FEED_STALE_MS = 60_000;
 const SEARCH_STALE_MS = 60_000;
 const TRANSLATION_STALE_MS = 5 * 60_000;

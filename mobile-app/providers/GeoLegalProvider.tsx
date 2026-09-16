@@ -10,6 +10,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import createContextHook from "@nkzw/create-context-hook";
 import { useState, useCallback } from "react";
+import { RORK_FUNCTIONS_URL } from "@/lib/config/env";
 import type {
   JurisdictionProfile,
   ReportDraft,
@@ -19,9 +20,9 @@ import type {
   CreateIncidentResponse,
 } from "@/constants/geo-legal";
 
-/** Backend base URL — same env var used by NewsProvider. */
+/** Backend base URL — same config used by NewsProvider. */
 function backendBase(): string {
-  return process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
+  return RORK_FUNCTIONS_URL;
 }
 
 export type LookupParams = {

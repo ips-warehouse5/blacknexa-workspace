@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { isSupportedLanguage, type LanguageCode } from "@/constants/i18n";
+import type { ThemeName } from "@/constants/theme";
 
 export type Settings = {
   biometrics: boolean;
@@ -39,6 +40,8 @@ export type Settings = {
   vaultPinSet: boolean;
   /** Preferred reading language for news articles. Defaults to English. */
   preferredLanguage: LanguageCode;
+  /** App appearance theme. Defaults to Light · signal blue. */
+  theme: ThemeName;
 };
 
 const SETTINGS_KEY = "blacknexa.settings.v1";
@@ -61,6 +64,7 @@ const DEFAULTS: Settings = {
   redactPublicDetails: true,
   vaultPinSet: false,
   preferredLanguage: "en",
+  theme: "signal",
 };
 
 async function loadSettings(): Promise<Settings> {
@@ -85,6 +89,9 @@ async function loadSettings(): Promise<Settings> {
     // Guard against a stale or invalid language code stored on disk.
     if (!isSupportedLanguage(merged.preferredLanguage)) {
       merged.preferredLanguage = "en";
+    }
+    if (merged.theme !== "signal" && merged.theme !== "gold") {
+      merged.theme = "signal";
     }
     return merged;
   } catch (e) {

@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 
 const FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ?? "";
 
@@ -79,6 +80,7 @@ export default function ArtistTippingSheet({
   artistName,
 }: Props): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const { showSnackbar } = useSnackbar();
   const { user } = useAuth();
   const [amount, setAmount] = useState<number>(2);
   const [customAmount, setCustomAmount] = useState<string>("");
@@ -99,11 +101,12 @@ export default function ArtistTippingSheet({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
       const amountStr = customAmount.trim() ? `$${customAmount}` : `$${amount}`;
-      Alert.alert(
-        "Tip sent!",
-        `Your ${amountStr} tip to ${artistName} has been securely processed and credited.`,
-        [{ text: "Done", onPress: () => { reset(); onClose(); } }]
-      );
+      showSnackbar({
+        message: `Your ${amountStr} tip to ${artistName} has been sent.`,
+        type: "success",
+      });
+      reset();
+      onClose();
     },
     onError: (err: unknown) => {
       if (Platform.OS !== "web") {

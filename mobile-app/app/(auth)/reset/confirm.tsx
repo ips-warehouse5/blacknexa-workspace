@@ -10,7 +10,7 @@
  * a rejection surfaces on that row rather than as a generic error.
  */
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import type { TextInput } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -31,7 +31,12 @@ import OtpInput, {
   type OtpInputHandle,
 } from "@/components/ui/OtpInput";
 import { useAuth } from "@/providers/AuthProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 import authApi from "@/lib/api/auth";
+import {
+  safeResetErrorMessage,
+  validateResetConfirmation,
+} from "@/lib/auth/reset-validation";
 
 const CODE_LENGTH = 6;
 
@@ -39,13 +44,20 @@ export default function ResetConfirmScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ email?: string; resendAfter?: string }>();
   const email = params.email ?? "";
   const { resetPassword, busy, error, clearError } = useAuth();
+  const { showSnackbar } = useSnackbar();
 
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
-  /** Set when the server rejects the password as previously used. */
-  const [reused, setReused] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordApiError, setPasswordApiError] = useState<string | null>(null);
+  const [codeTouched, setCodeTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [resending, setResending] = useState(false);
   const otpRef = useRef<OtpInputHandle>(null);
   const passwordRef = useRef<TextInput>(null);
+  const submittingRef = useRef(false);
+  const shownErrorRef = useRef<string | null>(null);
   const { secondsRemaining, restart } = useCountdown(Number(params.resendAfter ?? 30));
 
   const strength = evaluatePassword(password);
@@ -58,38 +70,98 @@ export default function ResetConfirmScreen(): React.ReactElement {
         label: "One capital letter, one number, one symbol",
         met: strength.rules[1].met && strength.rules[2].met && strength.rules[3].met,
       },
-      // Only the server can know this, so it stays unmet until it accepts.
-      { label: "Not a password you have used here before", met: !reused && password.length >= 10 },
+      // Only the server can know this, so it remains neutral until submission.
+      { label: "Not a password you have used here before", met: false },
     ],
-    [password.length, reused, strength.rules],
+    [strength.rules],
+  );
+
+  useEffect(() => {
+    if (!email) router.replace("/(auth)/reset/request");
+  }, [email]);
+
+  useEffect(() => {
+    if (!error) {
+      shownErrorRef.current = null;
+      return;
+    }
+    if (shownErrorRef.current === error) return;
+
+    shownErrorRef.current = error;
+    if (/password.+(?:used|before)|choose a password/i.test(error)) {
+      setPasswordApiError(safeResetErrorMessage(error));
+    } else {
+      showSnackbar({ message: safeResetErrorMessage(error), type: "error" });
+    }
+    clearError();
+  }, [clearError, error, showSnackbar]);
+
+  const handleCodeChange = useCallback(
+    (value: string) => {
+      setCode(value);
+      if (codeTouched) setCodeError(validateResetConfirmation(value, password).code);
+    },
+    [codeTouched, password],
+  );
+
+  const handlePasswordChange = useCallback(
+    (value: string) => {
+      setPassword(value);
+      setPasswordApiError(null);
+      if (passwordTouched) setPasswordError(validateResetConfirmation(code, value).password);
+    },
+    [code, passwordTouched],
   );
 
   const submit = useCallback(async () => {
+    if (busy || submittingRef.current) return;
+
     clearError();
-    if (code.length !== CODE_LENGTH) {
+    setCodeTouched(true);
+    setPasswordTouched(true);
+    const validation = validateResetConfirmation(code, password);
+    setCodeError(validation.code);
+    setPasswordError(validation.password);
+
+    if (validation.code) {
       otpRef.current?.focus();
       return;
     }
-    if (strength.score < strength.rules.length) {
+    if (validation.password) {
       passwordRef.current?.focus();
       return;
     }
-    const ok = await resetPassword(email, code, password);
-    if (ok) {
-      router.replace("/(auth)/reset/done");
-      return;
+
+    submittingRef.current = true;
+    try {
+      const ok = await resetPassword(email, code, password);
+      if (ok) router.replace("/(auth)/reset/done");
+    } finally {
+      submittingRef.current = false;
     }
-    setReused(true);
-  }, [clearError, code, email, password, resetPassword, strength]);
+  }, [busy, clearError, code, email, password, resetPassword]);
 
   const resend = useCallback(async () => {
-    const challenge = await authApi
-      .resendCode(email, "reset_password")
-      .catch(() => null);
-    restart(challenge?.resendAfterSeconds ?? 30);
-    setCode("");
-    otpRef.current?.focus();
-  }, [email, restart]);
+    if (resending || !email) return;
+    setResending(true);
+    try {
+      const challenge = await authApi.resendCode(email, "reset_password");
+      restart(challenge.resendAfterSeconds);
+      setCode("");
+      setCodeError(null);
+      setCodeTouched(false);
+      otpRef.current?.focus();
+    } catch (err) {
+      showSnackbar({
+        message: safeResetErrorMessage(err instanceof Error ? err.message : ""),
+        type: "error",
+      });
+    } finally {
+      setResending(false);
+    }
+  }, [email, resending, restart, showSnackbar]);
+
+  if (!email) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
 
   return (
     <ScrollScreen
@@ -116,7 +188,7 @@ export default function ResetConfirmScreen(): React.ReactElement {
       <OtpInput
         ref={otpRef}
         value={code}
-        onChange={setCode}
+        onChange={handleCodeChange}
         length={CODE_LENGTH}
         cellHeight={controlHeight.otpCellSm}
         // No auto-submit here: unlike A8, the code is only half the form.
@@ -125,17 +197,23 @@ export default function ResetConfirmScreen(): React.ReactElement {
         testID="reset-otp"
       />
 
+      {codeError ? (
+        <Text variant="metaSm" color={colors.bad2} style={{ marginTop: 6 }}>
+          {codeError}
+        </Text>
+      ) : null}
+
       <PasswordField
         ref={passwordRef}
         isNew
         label="NEW PASSWORD"
         value={password}
-        onChangeText={(value) => {
-          setPassword(value);
-          // A rejection is about the old value, so a new one clears it.
-          if (reused) setReused(false);
+        onChangeText={handlePasswordChange}
+        onBlur={() => {
+          setPasswordTouched(true);
+          setPasswordError(validateResetConfirmation(code, password).password);
         }}
-        error={error && reused ? error : null}
+        error={passwordError ?? passwordApiError}
         containerStyle={{ marginTop: 22 }}
         testID="reset-password"
       />

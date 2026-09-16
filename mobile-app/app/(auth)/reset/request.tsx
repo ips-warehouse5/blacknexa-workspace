@@ -9,7 +9,7 @@
  * and branching here would leak exactly what the copy says it will not.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { colors, radius, screenPadding } from "@/constants/theme";
@@ -18,13 +18,17 @@ import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useAuth } from "@/providers/AuthProvider";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { useSnackbar } from "@/providers/SnackbarProvider";
+import { safeResetErrorMessage, validateResetRequest } from "@/lib/auth/reset-validation";
 
 export default function ResetRequestScreen(): React.ReactElement {
   const { forgotPassword, busy, error, clearError } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const submittingRef = useRef(false);
+  const shownErrorRef = useRef<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -35,36 +39,62 @@ export default function ResetRequestScreen(): React.ReactElement {
     }, [clearError]),
   );
 
+  useEffect(() => {
+    if (!error) {
+      shownErrorRef.current = null;
+      return;
+    }
+    if (shownErrorRef.current === error) return;
+
+    shownErrorRef.current = error;
+    showSnackbar({ message: safeResetErrorMessage(error), type: "error" });
+    clearError();
+  }, [clearError, error, showSnackbar]);
+
   const handleEmailChange = useCallback(
     (text: string) => {
       if (error) clearError();
-      if (problem) setProblem(null);
       setEmail(text);
+      if (emailTouched) setProblem(validateResetRequest(text).email);
     },
-    [clearError, error, problem],
+    [clearError, emailTouched, error],
   );
 
+  const handleEmailBlur = useCallback(() => {
+    setEmailTouched(true);
+    setProblem(validateResetRequest(email).email);
+  }, [email]);
+
   const submit = useCallback(async () => {
+    if (busy || submittingRef.current) return;
+
     clearError();
-    setProblem(null);
-    if (!EMAIL_PATTERN.test(email.trim())) {
-      setProblem(
-        email.trim().length === 0
-          ? "Enter your email address."
-          : "That does not look like an email address.",
-      );
+    setEmailTouched(true);
+    const validation = validateResetRequest(email);
+    setProblem(validation.email);
+    if (validation.email) {
       return;
     }
-    const result = await forgotPassword(email);
-    if (!result) return;
-    router.push({
-      pathname: "/(auth)/reset/confirm",
-      params: { email: email.trim().toLowerCase(), resendAfter: String(result.resendAfterSeconds) },
-    });
-  }, [clearError, email, forgotPassword]);
+
+    submittingRef.current = true;
+    try {
+      const result = await forgotPassword(validation.emailForSubmission!);
+      if (!result) return;
+      router.push({
+        pathname: "/(auth)/reset/confirm",
+        params: { email: validation.emailForSubmission!, resendAfter: String(result.resendAfterSeconds) },
+      });
+    } finally {
+      submittingRef.current = false;
+    }
+  }, [busy, clearError, email, forgotPassword]);
 
   return (
-    <ScrollScreen padding={screenPadding.detail} testID="reset-request">
+    <ScrollScreen
+      padding={screenPadding.detail}
+      contentStyle={{ flexGrow: 1 }}
+      testID="reset-request"
+    >
       <BackHeader title="Reset password" onBack={() => router.back()} padding={0} />
 
       <Text variant="displaySm" color={colors.t0} style={{ marginTop: 14, fontSize: 27 }}>
@@ -78,7 +108,8 @@ export default function ResetRequestScreen(): React.ReactElement {
         label="EMAIL"
         value={email}
         onChangeText={handleEmailChange}
-        error={problem ?? error}
+        onBlur={handleEmailBlur}
+        error={problem}
         placeholder="you@example.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -128,7 +159,12 @@ export default function ResetRequestScreen(): React.ReactElement {
         </Text>
       </View>
 
-      <Text variant="label" color={colors.t3} center style={{ marginTop: 28 }}>
+      <Text
+        variant="label"
+        color={colors.t3}
+        center
+        style={{ marginTop: "auto", paddingVertical: 28 }}
+      >
         Remembered it?{" "}
         <Text variant="label" color={colors.acc} onPress={() => router.back()}>
           Back to log in

@@ -51,11 +51,13 @@ import { processIncidentDispatch, type DispatchResult } from "@/constants/dispat
 import { CATEGORY_LABELS, formatRelative } from "@/mocks/incidents";
 import { useIncidents } from "@/providers/IncidentsProvider";
 import { useSettings } from "@/providers/SettingsProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 
 export default function IncidentDetailScreen(): React.ReactElement {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getById, toggleSupport, isSupported } = useIncidents();
   const { settings } = useSettings();
+  const { showSnackbar } = useSnackbar();
   const incident = id ? getById(id) : undefined;
 
   const [custodyEvents, setCustodyEvents] = useState<CustodyEvent[]>([]);
@@ -143,12 +145,11 @@ export default function IncidentDetailScreen(): React.ReactElement {
         setRootHash(log.rootHash);
       }
     }
-    Alert.alert(
-      "Verification submitted",
-      "Thank you. Verified community accounts strengthen chain-of-custody. A moderator will review within 24 hours.",
-      [{ text: "OK" }]
-    );
-  }, [incident, id]);
+    showSnackbar({
+      message: "Verification submitted. Thank you for strengthening chain-of-custody.",
+      type: "success",
+    });
+  }, [incident, id, showSnackbar]);
 
   const onFlag = useCallback(() => {
     if (!incident) return;
@@ -165,15 +166,15 @@ export default function IncidentDetailScreen(): React.ReactElement {
               Haptics.notificationAsync(
                 Haptics.NotificationFeedbackType.Warning
               ).catch(() => {});
-            Alert.alert(
-              "Report received",
-              "Thank you. Our moderation team will review shortly."
-            );
+            showSnackbar({
+              message: "Report received. Our moderation team will review shortly.",
+              type: "info",
+            });
           },
         },
       ]
     );
-  }, [incident]);
+  }, [incident, showSnackbar]);
 
   const onDispatch = useCallback((channel: DispatchChannel) => {
     setPendingChannel(channel);

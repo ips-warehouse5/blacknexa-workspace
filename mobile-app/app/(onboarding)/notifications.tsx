@@ -48,10 +48,15 @@ const KINDS = [
 ];
 
 export default function NotificationPrimingScreen(): React.ReactElement {
-  const { updateProfile } = useAuth();
+  const { completeOnboarding, updateProfile } = useAuth();
   const [busy, setBusy] = useState(false);
 
-  const next = useCallback(() => router.replace("/(onboarding)/tour"), []);
+  const next = useCallback(() => {
+    // TODO(Home Dashboard): Re-enable the first-time Guide Tour
+    // once the actual dashboard/list content is implemented.
+    completeOnboarding();
+    router.replace("/(tabs)");
+  }, [completeOnboarding]);
 
   const enable = useCallback(async () => {
     setBusy(true);
@@ -183,4 +188,3 @@ function BellGlyph(): React.ReactElement {
     </View>
   );
 }
-

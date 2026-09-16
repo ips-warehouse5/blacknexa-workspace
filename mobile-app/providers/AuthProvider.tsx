@@ -20,6 +20,8 @@
  */
 
 import createContextHook from "@nkzw/create-context-hook";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
@@ -34,6 +36,7 @@ import authApi, {
   type Visibility,
 } from "@/lib/api/auth";
 import { jwtDecode, JwtDecodeOptions } from "jwt-decode";
+import { LEGAL_VERSION } from "@/constants/legal-copy";
 
 /** How the gate should route. Kept explicit so no screen infers it from nulls. */
 export type AuthStatus =
@@ -44,8 +47,10 @@ export type AuthStatus =
   | "onboarding"
   | "signedIn";
 
+export type SignInMethod = "password" | "apple" | "google";
+
 /**
- * Sign-up draft, held across A6 → A9.
+ * Sign-up draft, held across the A6 → A8 registration flow.
  *
  * The password is kept in memory only, never persisted: it is needed until the
  * A8 code is accepted, and after that it has no reason to exist anywhere.
@@ -53,6 +58,7 @@ export type AuthStatus =
 export interface SignUpDraft {
   email: string;
   password: string;
+  agreedToTerms: boolean;
   /** Set once A8 succeeds, so A9 knows the account is real. */
   verified: boolean;
 }
@@ -63,17 +69,19 @@ interface AuthState {
   /** Last error from an explicit action, for a screen to display inline. */
   error: string | null;
   busy: boolean;
+  signInMethod: SignInMethod | null;
 
   signUpDraft: SignUpDraft | null;
-  beginSignUp: (email: string, password: string) => void;
+  beginSignUp: (email: string, password: string, agreedToTerms: boolean) => void;
   markVerified: () => void;
   clearSignUpDraft: () => void;
 
   register: (
     email: string,
     password: string,
+    agreedToTerms: boolean,
   ) => Promise<{ resendAfterSeconds: number } | null>;
-  verifyEmail: (code: string) => Promise<boolean>;
+  verifyEmail: (code: string) => Promise<"verified" | "verification_failed" | "consent_failed">;
   resendVerification: () => Promise<number | null>;
   login: (email: string, password: string) => Promise<boolean>;
   signInWithApple: () => Promise<boolean>;
@@ -140,6 +148,15 @@ interface AuthState {
  * only, which is safe here: A5 offers the Apple route on iOS alone.
  */
 const APPLE_NAME_KEY = "bn.apple_pending_name";
+const SIGN_IN_METHOD_KEY = "bn.sign_in_method";
+const LOCAL_USER_STORAGE_KEYS = [
+  "blacknexa.settings.v1",
+  "blacknexa.location.v1",
+  "blacknexa.user_incidents.v2",
+  "blacknexa.supported.v2",
+  "bn.report_draft.v1",
+  "bn.search_recents.v1",
+];
 
 interface PendingAppleName {
   /** Apple's stable user id, so a name is never applied to a different account. */
@@ -159,6 +176,32 @@ interface DecodedJwt {
   iss: string;
   nonce_supported: boolean;
   sub: string;
+}
+
+/**
+ * Google's id token, unlike Apple's, carries the person's name and picture
+ * directly in every token — not just on first authorisation. Decoded
+ * client-side purely to read a display label; the server independently
+ * re-verifies the token's signature and claims, so nothing here is trusted
+ * as-is.
+ */
+interface GoogleDecodedJwt {
+  email?: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+}
+
+function inferSignInMethod(user: UserProfile): SignInMethod | null {
+  const direct = user.signInProvider ?? user.authProvider ?? user.provider;
+  if (direct === "apple" || direct === "google" || direct === "password") {
+    return direct;
+  }
+  const linked = user.connectedProviders?.[0];
+  if (linked === "apple" || linked === "google") return linked;
+  if (user.hasPassword) return "password";
+  return null;
 }
 
 async function readPendingAppleName(): Promise<PendingAppleName | null> {
@@ -187,11 +230,38 @@ async function clearPendingAppleName(): Promise<void> {
   }
 }
 
+async function readStoredSignInMethod(): Promise<SignInMethod | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(SIGN_IN_METHOD_KEY);
+    return raw === "apple" || raw === "google" || raw === "password" ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeStoredSignInMethod(method: SignInMethod): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(SIGN_IN_METHOD_KEY, method);
+  } catch {
+    /* best effort */
+  }
+}
+
+async function clearStoredSignInMethod(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(SIGN_IN_METHOD_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+}
+
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
+  const qc = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>("restoring");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [signInMethod, setSignInMethod] = useState<SignInMethod | null>(null);
   const [signUpDraft, setSignUpDraft] = useState<SignUpDraft | null>(null);
   const [biometricsAvailable, setBiometricsAvailable] = useState(false);
   /**
@@ -203,6 +273,16 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const clearLocalUserData = useCallback(async () => {
+    await AsyncStorage.multiRemove(LOCAL_USER_STORAGE_KEYS).catch(() => {});
+    qc.removeQueries({ queryKey: ["settings"] });
+    qc.removeQueries({ queryKey: ["location_cached"] });
+    qc.removeQueries({ queryKey: ["feed"] });
+    qc.removeQueries({ queryKey: ["feed-facets"] });
+    qc.removeQueries({ queryKey: ["search"] });
+    qc.removeQueries({ queryKey: ["sessions"] });
+  }, [qc]);
+
   /** Translate a thrown error into the sentence a screen shows. */
   const capture = useCallback((err: unknown): null => {
     if (err instanceof ApiError) {
@@ -213,8 +293,11 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     return null;
   }, []);
 
-  const adopt = useCallback((result: AuthResult) => {
+  const adopt = useCallback((result: AuthResult, method?: SignInMethod) => {
+    const resolvedMethod = method ?? inferSignInMethod(result.user);
     setUser(result.user);
+    setSignInMethod(resolvedMethod);
+    if (resolvedMethod) void writeStoredSignInMethod(resolvedMethod);
     setError(null);
     // A fresh sign-in on an existing account skips onboarding; a brand-new
     // account is walked through A7 → A9 by the sign-up flow itself, which calls
@@ -233,7 +316,9 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         return;
       }
       const profile = await authApi.me();
+      const restoredMethod = inferSignInMethod(profile) ?? (await readStoredSignInMethod());
       setUser(profile);
+      setSignInMethod(restoredMethod);
       setOnboardingComplete(true);
       setStatus("signedIn");
     } catch (err) {
@@ -255,6 +340,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   useEffect(() => {
     return api.onSignOut(() => {
       setUser(null);
+      setSignInMethod(null);
+      void clearStoredSignInMethod();
       setOnboardingComplete(false);
       setStatus("signedOut");
       setError("You have been signed out. Please log in again.");
@@ -274,10 +361,11 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   // ── Sign-up draft (A6 → A9) ───────────────────────────────────────────────
 
-  const beginSignUp = useCallback((email: string, password: string) => {
+  const beginSignUp = useCallback((email: string, password: string, agreedToTerms: boolean) => {
     setSignUpDraft({
       email: email.trim().toLowerCase(),
       password,
+      agreedToTerms,
       verified: false,
     });
   }, []);
@@ -291,12 +379,12 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   // ── Flows ─────────────────────────────────────────────────────────────────
 
   const register = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, agreedToTerms: boolean) => {
       setBusy(true);
       setError(null);
       try {
         const challenge = await authApi.register(email, password);
-        beginSignUp(email, password);
+        beginSignUp(email, password, agreedToTerms);
         return { resendAfterSeconds: challenge.resendAfterSeconds };
       } catch (err) {
         return capture(err);
@@ -312,22 +400,33 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       const draft = signUpDraft;
       if (!draft) {
         setError("Start again — we lost track of which address to verify.");
-        return false;
+        return "verification_failed";
+      }
+      if (!draft.agreedToTerms) {
+        setError("Please agree to the Terms of Service and Privacy Policy.");
+        return "consent_failed";
       }
       setBusy(true);
       setError(null);
       try {
         const result = await authApi.verifyEmail(draft.email, code);
+        try {
+          await authApi.recordConsents(["tos", "privacy"], LEGAL_VERSION);
+        } catch (err) {
+          capture(err);
+          return "consent_failed";
+        }
         setUser(result.user);
+        setSignInMethod("password");
+        void writeStoredSignInMethod("password");
         markVerified();
-        // Not `signedIn` yet: A7 and A9 still have to run, and the gate uses this
-        // to keep the tab bar out of reach until they do.
+        // Registration is now A6 → A8; the existing onboarding stack follows.
         setStatus("onboarding");
         setOnboardingComplete(false);
-        return true;
+        return "verified";
       } catch (err) {
         capture(err);
-        return false;
+        return "verification_failed";
       } finally {
         setBusy(false);
       }
@@ -351,7 +450,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       setBusy(true);
       setError(null);
       try {
-        adopt(await authApi.login(email, password));
+        adopt(await authApi.login(email, password), "password");
         return true;
       } catch (err) {
         capture(err);
@@ -424,6 +523,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           fullName || undefined,
           (decoded as DecodedJwt)?.email,
         ),
+        "apple",
       );
       // Safe to drop only now: the server has it, and re-sending is idempotent
       // there — it fills `display_name` only when that field is still empty.
@@ -460,7 +560,22 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       setBusy(true);
       setError(null);
       try {
-        adopt(await authApi.socialLogin("google", identityToken));
+        // Unlike Apple, Google's token carries the name on every sign-in, not
+        // just the first — no pending-name persistence needed here.
+        const decoded = jwtDecode(identityToken) as GoogleDecodedJwt;
+        const fullName = [decoded.given_name, decoded.family_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        adopt(
+          await authApi.socialLogin(
+            "google",
+            identityToken,
+            fullName || decoded.name || undefined,
+            decoded.email,
+          ),
+          "google",
+        );
         return true;
       } catch (err) {
         capture(err);
@@ -493,7 +608,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       setBusy(true);
       setError(null);
       try {
-        adopt(await authApi.resetPassword(email, code, password));
+        adopt(await authApi.resetPassword(email, code, password), "password");
         return true;
       } catch (err) {
         capture(err);
@@ -507,11 +622,14 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   const signOut = useCallback(async () => {
     await authApi.logout();
+    await clearLocalUserData();
     setUser(null);
+    setSignInMethod(null);
+    void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
-  }, []);
+  }, [clearLocalUserData]);
 
   /**
    * Drop the local session without telling the server.
@@ -523,19 +641,25 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
    * decides which stack renders.
    */
   const forgetSession = useCallback(() => {
+    void clearLocalUserData();
     setUser(null);
+    setSignInMethod(null);
+    void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
-  }, []);
+  }, [clearLocalUserData]);
 
   const signOutEverywhere = useCallback(async () => {
     await authApi.logoutEverywhere();
+    await clearLocalUserData();
     setUser(null);
+    setSignInMethod(null);
+    void clearStoredSignInMethod();
     setSignUpDraft(null);
     setOnboardingComplete(false);
     setStatus("signedOut");
-  }, []);
+  }, [clearLocalUserData]);
 
   const updateProfile = useCallback(
     async (patch: Parameters<AuthState["updateProfile"]>[0]) => {
@@ -605,6 +729,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     user,
     error,
     busy,
+    signInMethod,
     signUpDraft,
     beginSignUp,
     markVerified,

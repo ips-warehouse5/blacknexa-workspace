@@ -74,7 +74,7 @@ export function Button({
     onPress?.();
   }, [inert, noHaptics, onPress]);
 
-  const surface = SURFACE[variant];
+  const surface = getSurface(variant);
   const resolvedHeight = height ?? surface.height;
 
   return (
@@ -119,72 +119,70 @@ export function Button({
   );
 }
 
-const SURFACE: Record<
-  ButtonVariant,
-  {
-    height: number;
-    radius: number;
-    background: string;
-    foreground: string;
-    borderWidth: number;
-    borderColor: string;
-    textVariant: "buttonPrimary" | "button" | "buttonSm";
-    ripple?: string;
-  }
-> = {
-  primary: {
-    height: controlHeight.button,
-    radius: radius.lg,
-    background: colors.acc,
-    foreground: colors.onAcc,
-    borderWidth: 0,
-    borderColor: "transparent",
-    textVariant: "buttonPrimary",
-    ripple: alpha(colors.onAcc, 0.18),
-  },
-  secondary: {
-    height: controlHeight.buttonSecondary,
-    radius: radius.md,
-    background: colors.s6,
-    foreground: colors.t0,
-    borderWidth: 0,
-    borderColor: "transparent",
-    textVariant: "buttonSm",
-    ripple: alpha(colors.t0, 0.08),
-  },
-  quiet: {
-    height: controlHeight.buttonQuiet,
-    radius: radius.md,
-    background: "transparent",
-    foreground: colors.t1,
-    borderWidth: 1,
-    borderColor: alpha(colors.t0, 0.16),
-    textVariant: "button",
-    ripple: alpha(colors.t0, 0.06),
-  },
-  /** C11's "Discard it" — a solid red, used only on a confirmed destruction. */
-  destructive: {
-    height: controlHeight.buttonSecondary,
-    radius: radius.lg,
-    background: colors.bad,
-    foreground: colors.onAcc,
-    borderWidth: 0,
-    borderColor: "transparent",
-    textVariant: "button",
-    ripple: alpha("#FFFFFF", 0.2),
-  },
-  /** D2's "Delete" — a tint, because it opens a confirmation rather than acting. */
-  destructiveTint: {
-    height: controlHeight.buttonQuiet,
-    radius: radius.md,
-    background: alpha(colors.bad, 0.12),
-    foreground: colors.bad2,
-    borderWidth: 0,
-    borderColor: "transparent",
-    textVariant: "buttonSm",
-    ripple: alpha(colors.bad, 0.14),
-  },
-};
+function getSurface(variant: ButtonVariant): {
+  height: number;
+  radius: number;
+  background: string;
+  foreground: string;
+  borderWidth: number;
+  borderColor: string;
+  textVariant: "buttonPrimary" | "button" | "buttonSm";
+  ripple?: string;
+} {
+  const surfaces = {
+    primary: {
+      height: controlHeight.button,
+      radius: radius.lg,
+      background: colors.acc,
+      foreground: colors.onAcc,
+      borderWidth: 0,
+      borderColor: "transparent",
+      textVariant: "buttonPrimary",
+      ripple: alpha(colors.onAcc, 0.18),
+    },
+    secondary: {
+      height: controlHeight.buttonSecondary,
+      radius: radius.md,
+      background: colors.s6,
+      foreground: colors.t0,
+      borderWidth: 0,
+      borderColor: "transparent",
+      textVariant: "buttonSm",
+      ripple: alpha(colors.t0, 0.08),
+    },
+    quiet: {
+      height: controlHeight.buttonQuiet,
+      radius: radius.md,
+      background: "transparent",
+      foreground: colors.t1,
+      borderWidth: 1,
+      borderColor: alpha(colors.t0, 0.16),
+      textVariant: "button",
+      ripple: alpha(colors.t0, 0.06),
+    },
+    destructive: {
+      height: controlHeight.buttonSecondary,
+      radius: radius.lg,
+      background: colors.bad,
+      foreground: colors.onAcc,
+      borderWidth: 0,
+      borderColor: "transparent",
+      textVariant: "button",
+      ripple: alpha("#FFFFFF", 0.2),
+    },
+    destructiveTint: {
+      height: controlHeight.buttonQuiet,
+      radius: radius.md,
+      background: alpha(colors.bad, 0.12),
+      foreground: colors.bad2,
+      borderWidth: 0,
+      borderColor: "transparent",
+      textVariant: "buttonSm",
+      ripple: alpha(colors.bad, 0.14),
+    },
+  } as const;
+  return surfaces[variant];
+}
 
 const styles = StyleSheet.create({
   base: {

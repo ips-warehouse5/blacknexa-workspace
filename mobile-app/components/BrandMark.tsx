@@ -39,7 +39,15 @@ export default function BrandMark({
     return (
       <View style={[styles.headerRow, style]} testID={testID}>
         {showIcon && (
-          <View style={styles.headerIcon}>
+          <View
+            style={[
+              styles.headerIcon,
+              {
+                backgroundColor: colors.s5,
+                borderColor: alpha(colors.acc, 0.3),
+              },
+            ]}
+          >
             <Shield size={14} color={colors.bg} fill={colors.acc} />
           </View>
         )}
@@ -65,7 +73,17 @@ export default function BrandMark({
   }
 
   return (
-    <View style={[styles.chip, style]} testID={testID}>
+    <View
+      style={[
+        styles.chip,
+        {
+          backgroundColor: colors.s5,
+          borderColor: alpha(colors.acc, 0.3),
+        },
+        style,
+      ]}
+      testID={testID}
+    >
       {showIcon && <Shield size={11} color={colors.acc} />}
       <Text variant="labelSm" color={colors.t0}>
         BlackNexa<Text variant="eyebrowSm" color={colors.acc}>™</Text>
@@ -79,9 +97,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: colors.s5,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: alpha(colors.acc, 0.3),
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: radius.xl,
@@ -96,11 +112,9 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 9,
-    backgroundColor: colors.s5,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: alpha(colors.acc, 0.3),
   },
   brandLine: { flexDirection: "row", alignItems: "flex-start", gap: 2 },
   tm: {

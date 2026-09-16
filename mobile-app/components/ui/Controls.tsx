@@ -134,7 +134,12 @@ export function SwitchRow({
       accessibilityState={{ checked: value }}
       accessibilityLabel={description ? `${title}. ${description}` : title}
       testID={testID}
-      style={({ pressed }) => [styles.switchRow, pressed && { opacity: 0.9 }, style]}
+      style={({ pressed }) => [
+        styles.switchRow,
+        { backgroundColor: colors.s3 },
+        pressed && { opacity: 0.9 },
+        style,
+      ]}
     >
       {icon ? <View style={styles.switchRowIcon}>{icon}</View> : null}
       <View style={styles.switchRowText}>
@@ -187,7 +192,9 @@ export function Checkbox({
       testID={testID}
       style={[
         styles.checkbox,
-        checked ? styles.checkboxOn : styles.checkboxOff,
+        checked
+          ? { backgroundColor: colors.acc }
+          : { borderWidth: 1.5, borderColor: colors.line },
         disabled && { opacity: 0.5 },
       ]}
     >
@@ -200,8 +207,8 @@ export function Checkbox({
 function TickGlyph(): React.ReactElement {
   return (
     <View style={styles.tick}>
-      <View style={styles.tickShort} />
-      <View style={styles.tickLong} />
+      <View style={[styles.tickShort, { backgroundColor: colors.bg }]} />
+      <View style={[styles.tickLong, { backgroundColor: colors.bg }]} />
     </View>
   );
 }
@@ -363,7 +370,7 @@ export function SegmentedControl<T extends string>({
   return (
     <View
       style={[
-        isTabs ? styles.segmentTray : styles.segmentRow,
+        isTabs ? [styles.segmentTray, { backgroundColor: colors.s3 }] : styles.segmentRow,
         isTabs && { padding: 3 },
         style,
       ]}
@@ -492,7 +499,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: colors.s3,
     borderRadius: radius.lg,
     paddingVertical: 14,
     paddingHorizontal: 15,
@@ -507,15 +513,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxOn: { backgroundColor: colors.acc },
-  checkboxOff: { borderWidth: 1.5, borderColor: colors.line },
   tick: { width: 13, height: 13, alignItems: "center", justifyContent: "center" },
   tickShort: {
     position: "absolute",
     width: 5,
     height: 2.2,
     borderRadius: 1.1,
-    backgroundColor: colors.bg,
     transform: [{ rotate: "45deg" }, { translateX: -3 }, { translateY: 2 }],
   },
   tickLong: {
@@ -523,7 +526,6 @@ const styles = StyleSheet.create({
     width: 9,
     height: 2.2,
     borderRadius: 1.1,
-    backgroundColor: colors.bg,
     transform: [{ rotate: "-45deg" }, { translateX: 1 }],
   },
 
@@ -541,7 +543,6 @@ const styles = StyleSheet.create({
   segmentRow: { flexDirection: "row", gap: 8 },
   segmentTray: {
     flexDirection: "row",
-    backgroundColor: colors.s3,
     borderRadius: 12,
   },
   segment: { flex: 1, alignItems: "center", justifyContent: "center" },
@@ -557,4 +558,6 @@ const styles = StyleSheet.create({
 });
 
 /** The in-card hairline the design uses between rows inside a control group. */
-export const controlHairline = alpha(colors.t0, 0.07);
+export function controlHairline(): string {
+  return alpha(colors.t0, 0.07);
+}

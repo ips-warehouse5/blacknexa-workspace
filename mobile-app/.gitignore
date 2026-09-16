@@ -32,15 +32,17 @@ bun.lock
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# Environment files — never push real env values or secrets. Only the
+# variable-names-only template (.env.example) is allowed into git.
+.env
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
 .vercel
 
 .rork
-.env
 core
 node_modules
 .expo

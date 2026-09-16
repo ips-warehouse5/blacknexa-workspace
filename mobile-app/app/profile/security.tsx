@@ -17,7 +17,6 @@ import { useQuery } from "@tanstack/react-query";
 import { alpha, colors, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
-import { SwitchRow } from "@/components/ui/Controls";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuth } from "@/providers/AuthProvider";
@@ -35,10 +34,9 @@ function whenSeen(iso: string): string {
 }
 
 export default function SecurityScreen(): React.ReactElement {
-  const { biometricsAvailable, signOutEverywhere } = useAuth();
+  const { signOutEverywhere } = useAuth();
   const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [biometricLock, setBiometricLock] = useState(biometricsAvailable);
 
   const sessions = useQuery({
     queryKey: ["sessions"],
@@ -64,18 +62,7 @@ export default function SecurityScreen(): React.ReactElement {
       <ScrollScreen padding={screenPadding.detail} testID="profile-security">
         <BackHeader title="Security" onBack={() => router.back()} padding={0} />
 
-        {biometricsAvailable ? (
-          <SwitchRow
-            title="Unlock with Face ID"
-            description="Asks for your face or fingerprint before opening your session and your vault."
-            value={biometricLock}
-            onValueChange={setBiometricLock}
-            style={{ marginTop: 20 }}
-            testID="biometric-lock"
-          />
-        ) : null}
-
-        <Text variant="fieldLabel" color={colors.t3} style={{ marginTop: 24 }}>
+        <Text variant="fieldLabel" color={colors.t3} style={{ marginTop: 20 }}>
           SIGNED-IN DEVICES
         </Text>
 

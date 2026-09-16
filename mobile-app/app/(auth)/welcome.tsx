@@ -9,6 +9,11 @@
  * reasonable-looking change that quietly turns a neutral choice into a
  * recommendation — so all four buttons are non-accent, and Apple's is dark only
  * because that is Apple's own required treatment.
+ *
+ * Also owns A4 (Location permission): shown as a `LocationPermissionModal`
+ * overlay on mount, not a screen navigated to. Welcome stays mounted and
+ * visible underneath the whole time — the modal is dismissed, never
+ * navigated away from.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -18,12 +23,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import * as Location from "expo-location";
 import Svg, { Path } from "react-native-svg";
 import { Mail } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, controlHeight, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
+import { LocationPermissionModal } from "@/components/ui/LocationPermissionModal";
 import { useAuth } from "@/providers/AuthProvider";
 
 // Required so the browser tab used for Google's OAuth prompt closes itself and
@@ -60,6 +67,44 @@ export default function WelcomeScreen(): React.ReactElement {
    * is ever called. Without it the button looks inert for several seconds.
    */
   const [googleBusy, setGoogleBusy] = useState(false);
+
+  /**
+   * A4 · Location permission, shown as a modal over this screen rather than
+   * a route Welcome navigates to. Starts hidden; the mount check below
+   * decides whether to show it, so a user who already granted permission in
+   * a previous session never sees it again.
+   */
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationAllowed, setLocationAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Location.getForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (cancelled) return;
+        if (status === "granted") {
+          setLocationAllowed(true);
+          return;
+        }
+        setShowLocationModal(true);
+      })
+      .catch(() => {
+        if (!cancelled) setShowLocationModal(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleLocationAllow = useCallback((granted: boolean) => {
+    setLocationAllowed(granted);
+    setShowLocationModal(false);
+  }, []);
+
+  const handleLocationDeny = useCallback(() => {
+    setLocationAllowed(false);
+    setShowLocationModal(false);
+  }, []);
 
   // `useIdTokenAuthRequest`, not `useAuthRequest`: on web it asks Google for the
   // id token directly, and on native it falls through to the PKCE code flow and
@@ -141,7 +186,7 @@ export default function WelcomeScreen(): React.ReactElement {
   }, [clearError, signInWithApple]);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {/* The 330px brand band, with the artboard's scrim resolving into the page. */}
       <View style={[styles.band, { height: 330 }]}>
         <LinearGradient colors={[colors.s6, colors.s4]} style={StyleSheet.absoluteFill} />
@@ -236,6 +281,12 @@ export default function WelcomeScreen(): React.ReactElement {
           By continuing you agree to the Terms of Service and Privacy Policy.
         </Text>
       </View>
+
+      <LocationPermissionModal
+        visible={showLocationModal}
+        onAllow={handleLocationAllow}
+        onDeny={handleLocationDeny}
+      />
     </View>
   );
 }
@@ -278,7 +329,7 @@ function MailMark(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1 },
   band: { position: "absolute", top: 0, left: 0, right: 0 },
   routes: { paddingHorizontal: screenPadding.hero, paddingTop: 34, gap: 10 },
 });

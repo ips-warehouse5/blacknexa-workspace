@@ -1,7 +1,8 @@
 /**
  * The tab bar, built to `TabBar.dc.html`.
  *
- * Five tabs — Home, News, [+], Vault, Support — at h 86, `s0` at 97%, a hairline
+ * Five tabs — Home, News, [+], Vault, Support — compacted for native safe areas,
+ * `s0` at 97%, a hairline
  * top border, and the centre button at 50 × 50 / r 17 in the accent, lifted 7px
  * with an accent shadow.
  *
@@ -16,14 +17,14 @@
 
 import React, { useCallback } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { Tabs, router } from "expo-router";
+import { Tabs } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 
-/** The artboard's bar height above the safe-area inset. */
-const BAR_HEIGHT = 86;
+/** Visual bar height above the safe-area inset. */
+const BAR_HEIGHT = 70;
 
 export default function TabLayout(): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -36,7 +37,7 @@ export default function TabLayout(): React.ReactElement {
         tabBarInactiveTintColor: colors.t4,
         tabBarStyle: {
           height: BAR_HEIGHT + insets.bottom,
-          paddingTop: 11,
+          paddingTop: 8,
           paddingBottom: insets.bottom,
           backgroundColor: colors.s0,
           borderTopWidth: StyleSheet.hairlineWidth,
@@ -50,7 +51,7 @@ export default function TabLayout(): React.ReactElement {
           fontSize: 10.5,
           letterSpacing: 0.1,
         },
-        tabBarItemStyle: { paddingTop: 0 },
+        tabBarItemStyle: { paddingTop: 0, paddingBottom: 4 },
       }}
     >
       <Tabs.Screen
@@ -78,9 +79,10 @@ export default function TabLayout(): React.ReactElement {
         name="new"
         options={{
           title: "",
-          tabBarButton: (props) => <CentreButton accessibilityState={props.accessibilityState} />,
+          tabBarButton: (props) => (
+            <CentreButton accessibilityState={props.accessibilityState} onPress={props.onPress} />
+          ),
         }}
-        listeners={{ tabPress: (event) => event.preventDefault() }}
       />
 
       <Tabs.Screen
@@ -102,18 +104,22 @@ export default function TabLayout(): React.ReactElement {
   );
 }
 
-/** The lifted accent square that opens the report wizard. */
+/** The lifted accent square for the centre tab. */
 function CentreButton({
   accessibilityState,
+  onPress,
 }: {
   accessibilityState?: { selected?: boolean };
+  onPress?: React.ComponentProps<typeof Pressable>["onPress"];
 }): React.ReactElement {
-  const open = useCallback(() => {
+  const open = useCallback((event: Parameters<NonNullable<typeof onPress>>[0]) => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
-    router.push("/report");
-  }, []);
+    onPress?.(event);
+    // TODO(Centre Slot): Re-enable the report-wizard action when report development resumes.
+    // router.push("/report");
+  }, [onPress]);
 
   return (
     <Pressable
@@ -123,9 +129,14 @@ function CentreButton({
       accessibilityState={accessibilityState}
       style={styles.centreSlot}
     >
-      <View style={styles.centreButton}>
-        <View style={styles.plusH} />
-        <View style={styles.plusV} />
+      <View
+        style={[
+          styles.centreButton,
+          { backgroundColor: colors.acc, shadowColor: colors.acc },
+        ]}
+      >
+        <View style={[styles.plusH, { backgroundColor: colors.onAcc }]} />
+        <View style={[styles.plusV, { backgroundColor: colors.onAcc }]} />
       </View>
     </Pressable>
   );
@@ -181,19 +192,17 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 17,
-    backgroundColor: colors.acc,
     alignItems: "center",
     justifyContent: "center",
-    // The artboard lifts the button 7px above the bar's content line.
-    marginTop: -7,
-    shadowColor: colors.acc,
+    // Lifted, but leaves a small gap below the tab bar hairline.
+    marginTop: 3,
     shadowOpacity: 0.28,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 7 },
     elevation: 6,
   },
-  plusH: { position: "absolute", width: 22, height: 2.1, borderRadius: 1, backgroundColor: colors.onAcc },
-  plusV: { position: "absolute", width: 2.1, height: 22, borderRadius: 1, backgroundColor: colors.onAcc },
+  plusH: { position: "absolute", width: 22, height: 2.1, borderRadius: 1 },
+  plusV: { position: "absolute", width: 2.1, height: 22, borderRadius: 1 },
 
   icon: { width: 22, height: 22, alignItems: "center", justifyContent: "center" },
 

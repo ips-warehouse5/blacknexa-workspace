@@ -37,6 +37,14 @@ export interface UserProfile {
   /** `advocate` unlocks Trusted Circle reading. Moderators are operator accounts. */
   role: "member" | "advocate";
   hasPassword: boolean;
+  /**
+   * Optional provider fields for deployments that expose linked identity data.
+   * Older API responses omit these, so callers must keep a fallback.
+   */
+  connectedProviders?: SocialProvider[];
+  signInProvider?: SocialProvider | "password";
+  authProvider?: SocialProvider | "password";
+  provider?: SocialProvider | "password";
   preferences: UserPreferences;
   createdAt: string;
 }
