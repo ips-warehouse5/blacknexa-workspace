@@ -138,6 +138,7 @@ const config: ExpoConfig = {
       },
     ],
     "expo-audio",
+    "expo-asset",
     "./plugins/withIPhoneOnlyDestinations",
   ],
   experiments: {

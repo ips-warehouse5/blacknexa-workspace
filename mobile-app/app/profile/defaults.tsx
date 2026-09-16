@@ -105,6 +105,21 @@ export default function DefaultsScreen(): React.ReactElement {
         style={{ marginTop: 22 }}
         testID="default-anonymous"
       />
+
+      {/* H8 also specifies this toggle, but no backend field backs it yet
+          (AppUser has no such column) — shown, not hidden, per the "cover
+          the UI even where the API isn't there yet" rule, but visibly
+          inert rather than pretending to save. */}
+      <View pointerEvents="none">
+        <SwitchRow
+          title="Let advocates contact me"
+          description="Not available yet."
+          value={false}
+          onValueChange={() => {}}
+          style={{ marginTop: 10, opacity: 0.5 }}
+          testID="default-advocate-contact"
+        />
+      </View>
     </ScrollScreen>
   );
 }

@@ -142,11 +142,17 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="search" options={{ animation: "fade" }} />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="profile/index" />
+      <Stack.Screen name="profile/settings" />
       <Stack.Screen name="profile/identity" />
       <Stack.Screen name="profile/defaults" />
       <Stack.Screen name="profile/notifications" />
       <Stack.Screen name="profile/security" />
       <Stack.Screen name="profile/account" />
+      <Stack.Screen name="profile/account-info" />
+      <Stack.Screen name="profile/change-password" />
+      <Stack.Screen name="profile/area" />
+      <Stack.Screen name="profile/help" />
+      <Stack.Screen name="profile/contact" />
       <Stack.Screen name="r/[ref]/index" />
       <Stack.Screen name="r/[ref]/owner" />
       <Stack.Screen name="r/[ref]/comments" />

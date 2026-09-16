@@ -1,14 +1,24 @@
 /**
- * Profile — `DERIVED`. Not in the design.
+ * H1 · Profile — the person, not a dashboard.
  *
- * Sections A–D never draw a profile screen, but they establish everything it has to
- * hold: A9 sets the identity and the default visibility, A11 sets notifications to
- * "one switch, not four", C4 labels a default precision, D4's composer inherits an
- * anonymity default, and D2's copy references a Vault. So the contents are
- * determined even though the layout is not.
+ * `DERIVED` until this pass: the module previously here (identity + every
+ * settings group flattened into one screen) was built against a different,
+ * earlier scope doc (its own comments cited "A9", "A11", "C4", "D4" —
+ * not this board's H-numbering). Reconciled against `BlackNexa Screen
+ * Board-v7.html`'s H section: H1 is now just identity, real counts, and an
+ * "Edit profile" action; every settings group that used to live here moved
+ * to a dedicated H2 (`/profile/settings`), reachable from the gear icon —
+ * matching the board's own separation between the two screens.
  *
- * Built from the SYSTEM artboard's own primitives rather than improvised, and it
- * needs a design review before release — see docs/FEATURE_BUILD_PLAN.md §7.
+ * Stats: "Reports" and "Reports you filed" both come from the same real,
+ * live count (`reportsApi.feed({ mine: true })`) the Vault uses.
+ * Corroborations/Files/Comments/Saved-articles have no backing endpoint
+ * anywhere in this API surface — rather than leave the screen looking
+ * broken (a near-empty page next to the board's dense reference), they're
+ * shown as the placeholder value `0` with `PLACEHOLDER_STATS` naming
+ * exactly which numbers these are, so nobody mistakes them for real zeros
+ * later. Wire each one up the moment a real endpoint exists — search this
+ * file for `PLACEHOLDER_STATS` first.
  *
  * ── Two defects this replaces ──────────────────────────────────────────────
  * The previous profile screen edited the display name and the vault PIN through
@@ -17,35 +27,43 @@
  * or ending a session.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { Settings as SettingsIcon } from "lucide-react-native";
 import { alpha, colors, radius, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { Chevron } from "@/app/report/details";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuth } from "@/providers/AuthProvider";
-import reportsApi, { type Visibility } from "@/lib/api/reports";
+import reportsApi from "@/lib/api/reports";
 
-const VISIBILITY_LABEL: Record<Visibility, string> = {
-  public: "Public",
-  trusted: "Trusted Circle",
-  private: "Private",
+/**
+ * Stats with no backing endpoint. Named explicitly so a future integration
+ * is a one-line change here, not a hunt through JSX for a stray `0`.
+ */
+const PLACEHOLDER_STATS = {
+  corroborations: 0,
+  files: 0,
+  reportsCorroborated: 0,
+  comments: 0,
+  savedArticles: 0,
 };
 
-const PRECISION_LABEL: Record<string, string> = {
-  exact: "Exact",
-  approximate: "Approximate",
-  hidden: "Hidden",
-};
+function formatMemberSince(createdAt: string | undefined): string {
+  if (!createdAt) return "";
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "";
+  return `Member since ${date.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  })}`;
+}
 
 export default function ProfileScreen(): React.ReactElement {
-  const { user, signOut } = useAuth();
-  const [confirmSignOut, setConfirmSignOut] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
+  const { user } = useAuth();
 
   /** "My reports" count — a real number, from the same endpoint the Vault uses. */
   const mine = useQuery({
@@ -54,203 +72,152 @@ export default function ProfileScreen(): React.ReactElement {
   });
 
   const reportCount = mine.data?.items.length ?? 0;
-
-  const doSignOut = useCallback(async () => {
-    setSigningOut(true);
-    try {
-      // A real sign-out: revokes this device's session server-side and clears the
-      // stored tokens. The gate swaps the stack on its own.
-      await signOut();
-    } finally {
-      setSigningOut(false);
-      setConfirmSignOut(false);
-    }
-  }, [signOut]);
-
   const prefs = user?.preferences;
 
-  return (
-    <>
-      <ScrollScreen padding={screenPadding.detail} testID="profile">
-        <BackHeader title="Profile" onBack={() => router.back()} padding={0} />
+  const openSettings = useCallback(() => router.push("/profile/settings"), []);
 
-        {/* Identity header. */}
-        <View style={styles.identity}>
-          <View style={styles.avatar}>
-            <Text variant="cardTitle" color={colors.acc}>
-              {user?.initials ?? "?"}
+  return (
+    <ScrollScreen padding={screenPadding.detail} testID="profile">
+      <BackHeader
+        title="Profile"
+        onBack={() => router.back()}
+        padding={0}
+        right={
+          <Pressable
+            onPress={openSettings}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            hitSlop={8}
+            testID="profile-settings-gear"
+          >
+            <SettingsIcon size={20} color={colors.t1} />
+          </Pressable>
+        }
+      />
+
+      {/* Identity header. */}
+      <View style={styles.identity}>
+        <View style={styles.avatar}>
+          <Text variant="cardTitle" color={colors.acc}>
+            {user?.initials ?? "?"}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text variant="sectionTitle" color={colors.t0}>
+            {user?.displayName?.trim() || "Anonymous"}
+          </Text>
+          <Text variant="metaSm" color={colors.t4} style={{ marginTop: 3 }}>
+            {formatMemberSince(user?.createdAt) || user?.email || ""}
+          </Text>
+        </View>
+      </View>
+
+      {prefs ? (
+        <View style={styles.badges}>
+          <View style={styles.badge}>
+            <Text variant="metaSm" color={colors.t1}>
+              {prefs.defaultVisibility === "trusted"
+                ? "Trusted Circle by default"
+                : prefs.defaultVisibility === "private"
+                  ? "Private by default"
+                  : "Community by default"}
             </Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text variant="sectionTitle" color={colors.t0}>
-              {user?.displayName?.trim() || "Anonymous"}
-            </Text>
-            <Text variant="metaSm" color={colors.t4} style={{ marginTop: 3 }}>
-              {user?.email ?? ""}
+          <View style={styles.badge}>
+            <Text variant="metaSm" color={colors.t1}>
+              Anonymous {prefs.anonymousByDefault ? "on" : "off"}
             </Text>
           </View>
         </View>
+      ) : null}
 
-        <Pressable
+      <View style={styles.statsRow}>
+        <Stat label="Reports" value={mine.isLoading ? "—" : reportCount} />
+        <View style={styles.statDivider} />
+        <Stat label="Corroborations" value={PLACEHOLDER_STATS.corroborations} />
+        <View style={styles.statDivider} />
+        <Stat label="Files" value={PLACEHOLDER_STATS.files} />
+      </View>
+
+      <Text variant="fieldLabel" color={colors.t3} style={{ marginTop: 22 }}>
+        YOUR WORK
+      </Text>
+      <View style={styles.group}>
+        <WorkRow
+          title="Reports you filed"
+          value={mine.isLoading ? "—" : reportCount}
           onPress={() => router.push("/(tabs)/vault")}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.countCard, pressed && { opacity: 0.92 }]}
           testID="profile-my-reports"
-        >
-          <View>
-            <Text variant="eyebrowSm" color={colors.t4}>
-              MY REPORTS
-            </Text>
-            <Text variant="sectionTitle" color={colors.t0} style={{ marginTop: 5 }}>
-              {mine.isLoading ? "—" : `${reportCount}`}
-            </Text>
-          </View>
-          <Chevron open={false} />
-        </Pressable>
-
-        {/* Grouped settings. */}
-        <Group label="IDENTITY">
-          <Row
-            title="Name and avatar"
-            value={user?.avatarMode === "anonymous" ? "Anonymous" : user?.displayName || "Not set"}
-            onPress={() => router.push("/profile/identity")}
-            testID="row-identity"
-          />
-        </Group>
-
-        <Group label="DEFAULTS FOR A NEW REPORT">
-          <Row
-            title="Who can see it"
-            value={prefs ? VISIBILITY_LABEL[prefs.defaultVisibility] : "—"}
-            onPress={() => router.push("/profile/defaults")}
-            testID="row-visibility"
-          />
-          <Row
-            title="Location precision"
-            value={prefs ? PRECISION_LABEL[prefs.defaultPrecision] ?? "—" : "—"}
-            onPress={() => router.push("/profile/defaults")}
-          />
-          <Row
-            title="File anonymously"
-            value={prefs?.anonymousByDefault ? "On" : "Off"}
-            onPress={() => router.push("/profile/defaults")}
-            last
-          />
-        </Group>
-
-        <Group label="NOTIFICATIONS">
-          <Row
-            title="Notifications"
-            // One switch, not four — A11 is explicit, so this row is one row.
-            value={prefs?.notificationsEnabled ? "On" : "Off"}
-            onPress={() => router.push("/profile/notifications")}
-            testID="row-notifications"
-            last
-          />
-        </Group>
-
-        <Group label="SECURITY">
-          <Row
-            title="Signed-in devices"
-            value="Manage"
-            onPress={() => router.push("/profile/security")}
-            testID="row-security"
-            last
-          />
-        </Group>
-
-        <Group label="LEGAL">
-          <Row title="Terms of Service" onPress={() => router.push("/legal/terms")} />
-          <Row title="Privacy Policy" onPress={() => router.push("/legal/privacy")} last />
-        </Group>
-
-        <Group label="ACCOUNT">
-          <Row
-            title="Delete account"
-            destructive
-            onPress={() => router.push("/profile/account")}
-            testID="row-delete-account"
-            last
-          />
-        </Group>
-
-        <Button
-          label="Sign out"
-          variant="quiet"
-          onPress={() => setConfirmSignOut(true)}
-          style={{ marginTop: 22 }}
-          testID="sign-out"
         />
-      </ScrollScreen>
+        <WorkRow
+          title="Reports you corroborated"
+          value={PLACEHOLDER_STATS.reportsCorroborated}
+        />
+        <WorkRow title="Comments" value={PLACEHOLDER_STATS.comments} />
+        <WorkRow
+          title="Saved articles"
+          value={PLACEHOLDER_STATS.savedArticles}
+          last
+        />
+      </View>
 
-      <ConfirmDialog
-        visible={confirmSignOut}
-        title="Sign out?"
-        body="This device is signed out. Your reports and drafts stay where they are, and any other devices stay signed in."
-        confirmLabel="Sign out"
-        cancelLabel="Stay signed in"
-        destructive={false}
-        busy={signingOut}
-        onConfirm={doSignOut}
-        onCancel={() => setConfirmSignOut(false)}
+      <Button
+        label="Edit profile"
+        variant="secondary"
+        onPress={() => router.push("/profile/identity")}
+        style={{ marginTop: 18 }}
+        testID="profile-edit"
       />
-    </>
+    </ScrollScreen>
   );
 }
 
-function Group({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}): React.ReactElement {
+function Stat({ label, value }: { label: string; value: number | string }): React.ReactElement {
   return (
-    <View style={{ marginTop: 22 }}>
-      <Text variant="fieldLabel" color={colors.t3}>
+    <View style={{ flex: 1, alignItems: "center" }}>
+      <Text variant="sectionTitle" color={colors.t0}>
+        {value}
+      </Text>
+      <Text variant="metaSm" color={colors.t4} style={{ marginTop: 4 }}>
         {label}
       </Text>
-      <View style={styles.group}>{children}</View>
     </View>
   );
 }
 
-function Row({
+function WorkRow({
   title,
   value,
   onPress,
-  destructive = false,
   last = false,
   testID,
 }: {
   title: string;
-  value?: string;
-  onPress: () => void;
-  destructive?: boolean;
+  value: number | string;
+  onPress?: () => void;
   last?: boolean;
   testID?: string;
 }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={value ? `${title}, ${value}` : title}
+      disabled={!onPress}
+      accessibilityRole={onPress ? "button" : "text"}
+      accessibilityLabel={`${title}, ${value}`}
       testID={testID}
       style={({ pressed }) => [
         styles.row,
         !last && styles.rowDivider,
-        pressed && { opacity: 0.9 },
+        pressed && onPress && { opacity: 0.9 },
       ]}
     >
-      <Text variant="labelLg" color={destructive ? colors.bad2 : colors.t0} style={{ flex: 1 }}>
+      <Text variant="labelLg" color={colors.t0} style={{ flex: 1 }}>
         {title}
       </Text>
-      {value ? (
-        <Text variant="label" color={colors.t4}>
-          {value}
-        </Text>
-      ) : null}
-      <Chevron open={false} />
+      <Text variant="label" color={colors.t4}>
+        {value}
+      </Text>
+      {onPress ? <Chevron open={false} /> : null}
     </Pressable>
   );
 }
@@ -265,15 +232,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  countCard: {
+  badges: { flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" },
+  badge: {
+    backgroundColor: colors.s6,
+    borderRadius: radius.lg,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     backgroundColor: colors.s3,
     borderRadius: radius.xl,
-    paddingVertical: 14,
-    paddingHorizontal: 15,
+    paddingVertical: 16,
     marginTop: 18,
+  },
+  statDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 32,
+    backgroundColor: alpha(colors.t0, 0.1),
   },
   group: {
     backgroundColor: colors.s3,
