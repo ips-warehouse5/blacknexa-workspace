@@ -18,7 +18,7 @@
  *     disabled.
  */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import Constants from "expo-constants";
@@ -27,6 +27,7 @@ import { colors, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { Group, Row, SwitchRow } from "@/components/ui/SettingsRow";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useSettings } from "@/providers/SettingsProvider";
@@ -39,12 +40,24 @@ const VISIBILITY_LABEL: Record<string, string> = {
 };
 
 export default function SettingsScreen(): React.ReactElement {
-  const { user, updateProfile, busy, biometricsAvailable } = useAuth();
+  const { user, signOut, updateProfile, busy, biometricsAvailable } = useAuth();
   const { settings, update } = useSettings();
   const { location } = useLocation();
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const prefs = user?.preferences;
   const appVersion = Constants.expoConfig?.version ?? "—";
+
+  const doSignOut = useCallback(async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setSigningOut(false);
+      setConfirmSignOut(false);
+    }
+  }, [signOut]);
 
   const toggleNotifications = useCallback(
     async (value: boolean) => {
@@ -68,8 +81,9 @@ export default function SettingsScreen(): React.ReactElement {
   );
 
   return (
-    <ScrollScreen padding={screenPadding.detail} testID="settings">
-      <BackHeader title="Settings" onBack={() => router.back()} padding={0} />
+    <>
+      <ScrollScreen padding={screenPadding.detail} bottomSpace={44} testID="settings">
+        <BackHeader title="Settings" onBack={() => router.back()} padding={0} />
 
       <Group label="YOU">
         <Row
@@ -146,20 +160,57 @@ export default function SettingsScreen(): React.ReactElement {
         <Row title="Privacy Policy" onPress={() => router.push("/legal/privacy")} last />
       </Group>
 
-      <View style={styles.footer}>
-        <Text variant="metaSm" color={colors.t4}>
-          BlackNexa {appVersion}
-        </Text>
-      </View>
-    </ScrollScreen>
+        <View style={styles.logoutWrap}>
+          <View style={styles.logoutGroup}>
+            <Row
+              title="Log out"
+              destructive
+              centered
+              showChevron={false}
+              onPress={() => setConfirmSignOut(true)}
+              testID="row-logout"
+              last
+            />
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text variant="metaSm" color={colors.t4}>
+            BlackNexa {appVersion}
+          </Text>
+        </View>
+      </ScrollScreen>
+
+      <ConfirmDialog
+        visible={confirmSignOut}
+        title="Log out of BlackNexa?"
+        body="Your reports and evidence stay in the Vault. You will need your password to get back in."
+        note="One draft has not been filed. It stays on this device and will be here when you return."
+        confirmLabel="Log out"
+        cancelLabel="Stay logged in"
+        destructive
+        safeActionPrimary
+        busy={signingOut}
+        onConfirm={doSignOut}
+        onCancel={() => setConfirmSignOut(false)}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  logoutWrap: {
+    marginTop: 22,
+  },
+  logoutGroup: {
+    backgroundColor: colors.s3,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 26,
-    marginBottom: 8,
+    marginBottom: 18,
   },
 });

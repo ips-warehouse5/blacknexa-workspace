@@ -1,7 +1,8 @@
 /**
  * The tab bar, built to `TabBar.dc.html`.
  *
- * Five tabs — Home, News, [+], Vault, Support — at h 86, `s0` at 97%, a hairline
+ * Five tabs — Home, News, [+], Vault, Support — compacted for native safe areas,
+ * `s0` at 97%, a hairline
  * top border, and the centre button at 50 × 50 / r 17 in the accent, lifted 7px
  * with an accent shadow.
  *
@@ -22,8 +23,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 
-/** The artboard's bar height above the safe-area inset. */
-const BAR_HEIGHT = 86;
+/** Visual bar height above the safe-area inset. */
+const BAR_HEIGHT = 70;
 
 export default function TabLayout(): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -36,7 +37,7 @@ export default function TabLayout(): React.ReactElement {
         tabBarInactiveTintColor: colors.t4,
         tabBarStyle: {
           height: BAR_HEIGHT + insets.bottom,
-          paddingTop: 11,
+          paddingTop: 8,
           paddingBottom: insets.bottom,
           backgroundColor: colors.s0,
           borderTopWidth: StyleSheet.hairlineWidth,
@@ -50,7 +51,7 @@ export default function TabLayout(): React.ReactElement {
           fontSize: 10.5,
           letterSpacing: 0.1,
         },
-        tabBarItemStyle: { paddingTop: 0 },
+        tabBarItemStyle: { paddingTop: 0, paddingBottom: 4 },
       }}
     >
       <Tabs.Screen
@@ -189,8 +190,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.acc,
     alignItems: "center",
     justifyContent: "center",
-    // The artboard lifts the button 7px above the bar's content line.
-    marginTop: -7,
+    // Lifted, but leaves a small gap below the tab bar hairline.
+    marginTop: 3,
     shadowColor: colors.acc,
     shadowOpacity: 0.28,
     shadowRadius: 18,
