@@ -23,38 +23,52 @@ import OtpInput, {
   type OtpInputHandle,
 } from "@/components/ui/OtpInput";
 import { useAuth } from "@/providers/AuthProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
+import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
+import { validateVerificationCode } from "@/lib/auth/signup-validation";
 
 const CODE_LENGTH = 6;
 
 export default function VerifyCodeScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ resendAfter?: string }>();
   const { signUpDraft, verifyEmail, resendVerification, busy, error, clearError } = useAuth();
+  const { showSnackbar } = useSnackbar();
 
   const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
   const otpRef = useRef<OtpInputHandle>(null);
+  const lastOutcomeRef = useRef<"verified" | "verification_failed" | "consent_failed" | null>(null);
   const { secondsRemaining, restart } = useCountdown(Number(params.resendAfter ?? 30));
 
   /**
-   * A wrong code shakes the row and clears it. Driven off the provider's error
-   * rather than the submit's return value, so an error surfaced by any path
-   * produces the same response.
+   * A wrong code shakes and clears only the OTP row. Consent persistence can
+   * fail after a valid code, so that error is shown without discarding the code.
    */
   useEffect(() => {
-    if (error && code.length === CODE_LENGTH) {
+    if (!error) return;
+    showSnackbar({ message: safeLoginErrorMessage(error), type: "error" });
+    if (lastOutcomeRef.current === "verification_failed" && code.length === CODE_LENGTH) {
       otpRef.current?.shake();
-      setCode("");
-      clearError();
     }
-  }, [clearError, code.length, error]);
+    clearError();
+  }, [clearError, code.length, error, showSnackbar]);
 
   const submit = useCallback(
     async (value: string) => {
-      if (value.length !== CODE_LENGTH || busy) return;
-      const ok = await verifyEmail(value);
-      if (ok) router.replace("/(auth)/sign-up/profile");
+      const validationError = validateVerificationCode(value);
+      setCodeError(validationError);
+      if (validationError || busy) return;
+      const outcome = await verifyEmail(value);
+      lastOutcomeRef.current = outcome;
+      if (outcome === "verified") router.replace("/(onboarding)/notifications");
     },
     [busy, verifyEmail],
   );
+
+  const handleCodeChange = useCallback((value: string) => {
+    setCode(value);
+    if (codeError) setCodeError(validateVerificationCode(value));
+  }, [codeError]);
 
   const resend = useCallback(async () => {
     const wait = await resendVerification();
@@ -90,7 +104,7 @@ export default function VerifyCodeScreen(): React.ReactElement {
       }
     >
       <BackHeader title="Create account" onBack={() => router.back()} padding={0} />
-      <StepHeader step={3} total={4} name="Verify" />
+      <StepHeader step={2} total={2} name="Verify" />
 
       <Text variant="displaySm" color={colors.t0} style={{ marginTop: 34, fontSize: 27 }}>
         Enter the six-digit code
@@ -102,12 +116,17 @@ export default function VerifyCodeScreen(): React.ReactElement {
       <OtpInput
         ref={otpRef}
         value={code}
-        onChange={setCode}
+        onChange={handleCodeChange}
         onComplete={submit}
         length={CODE_LENGTH}
         style={{ marginTop: 30 }}
         testID="verify-otp"
       />
+      {codeError ? (
+        <Text variant="metaSm" color={colors.bad2} style={{ marginTop: 6 }}>
+          {codeError}
+        </Text>
+      ) : null}
 
       {/* The artboard states the affordance rather than leaving it to be discovered. */}
       <View

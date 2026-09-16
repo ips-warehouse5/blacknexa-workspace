@@ -21,6 +21,7 @@ import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { CategoryDot } from "@/components/ui/Controls";
@@ -39,7 +40,7 @@ type Row =
 
 const STATUS_ORDER = ["submitted", "under_review", "verified", "dismissed"] as const;
 
-export default function VaultScreen(): React.ReactElement {
+function ExistingVaultScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   const mine = useQuery({
@@ -323,3 +324,8 @@ const styles = StyleSheet.create({
   },
   bar: { backgroundColor: colors.s5, borderRadius: 5 },
 });
+
+export default function VaultScreen(): React.ReactElement {
+  // TODO(Vault): Re-enable the Vault screen implementation when Vault development resumes.
+  return <ComingSoon />;
+}

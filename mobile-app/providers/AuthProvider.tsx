@@ -34,6 +34,7 @@ import authApi, {
   type Visibility,
 } from "@/lib/api/auth";
 import { jwtDecode, JwtDecodeOptions } from "jwt-decode";
+import { LEGAL_VERSION } from "@/constants/legal-copy";
 
 /** How the gate should route. Kept explicit so no screen infers it from nulls. */
 export type AuthStatus =
@@ -45,7 +46,7 @@ export type AuthStatus =
   | "signedIn";
 
 /**
- * Sign-up draft, held across A6 → A9.
+ * Sign-up draft, held across the A6 → A8 registration flow.
  *
  * The password is kept in memory only, never persisted: it is needed until the
  * A8 code is accepted, and after that it has no reason to exist anywhere.
@@ -53,6 +54,7 @@ export type AuthStatus =
 export interface SignUpDraft {
   email: string;
   password: string;
+  agreedToTerms: boolean;
   /** Set once A8 succeeds, so A9 knows the account is real. */
   verified: boolean;
 }
@@ -65,15 +67,16 @@ interface AuthState {
   busy: boolean;
 
   signUpDraft: SignUpDraft | null;
-  beginSignUp: (email: string, password: string) => void;
+  beginSignUp: (email: string, password: string, agreedToTerms: boolean) => void;
   markVerified: () => void;
   clearSignUpDraft: () => void;
 
   register: (
     email: string,
     password: string,
+    agreedToTerms: boolean,
   ) => Promise<{ resendAfterSeconds: number } | null>;
-  verifyEmail: (code: string) => Promise<boolean>;
+  verifyEmail: (code: string) => Promise<"verified" | "verification_failed" | "consent_failed">;
   resendVerification: () => Promise<number | null>;
   login: (email: string, password: string) => Promise<boolean>;
   signInWithApple: () => Promise<boolean>;
@@ -159,6 +162,21 @@ interface DecodedJwt {
   iss: string;
   nonce_supported: boolean;
   sub: string;
+}
+
+/**
+ * Google's id token, unlike Apple's, carries the person's name and picture
+ * directly in every token — not just on first authorisation. Decoded
+ * client-side purely to read a display label; the server independently
+ * re-verifies the token's signature and claims, so nothing here is trusted
+ * as-is.
+ */
+interface GoogleDecodedJwt {
+  email?: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
 }
 
 async function readPendingAppleName(): Promise<PendingAppleName | null> {
@@ -274,10 +292,11 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   // ── Sign-up draft (A6 → A9) ───────────────────────────────────────────────
 
-  const beginSignUp = useCallback((email: string, password: string) => {
+  const beginSignUp = useCallback((email: string, password: string, agreedToTerms: boolean) => {
     setSignUpDraft({
       email: email.trim().toLowerCase(),
       password,
+      agreedToTerms,
       verified: false,
     });
   }, []);
@@ -291,12 +310,12 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   // ── Flows ─────────────────────────────────────────────────────────────────
 
   const register = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, agreedToTerms: boolean) => {
       setBusy(true);
       setError(null);
       try {
         const challenge = await authApi.register(email, password);
-        beginSignUp(email, password);
+        beginSignUp(email, password, agreedToTerms);
         return { resendAfterSeconds: challenge.resendAfterSeconds };
       } catch (err) {
         return capture(err);
@@ -312,22 +331,31 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       const draft = signUpDraft;
       if (!draft) {
         setError("Start again — we lost track of which address to verify.");
-        return false;
+        return "verification_failed";
+      }
+      if (!draft.agreedToTerms) {
+        setError("Please agree to the Terms of Service and Privacy Policy.");
+        return "consent_failed";
       }
       setBusy(true);
       setError(null);
       try {
         const result = await authApi.verifyEmail(draft.email, code);
+        try {
+          await authApi.recordConsents(["tos", "privacy"], LEGAL_VERSION);
+        } catch (err) {
+          capture(err);
+          return "consent_failed";
+        }
         setUser(result.user);
         markVerified();
-        // Not `signedIn` yet: A7 and A9 still have to run, and the gate uses this
-        // to keep the tab bar out of reach until they do.
+        // Registration is now A6 → A8; the existing onboarding stack follows.
         setStatus("onboarding");
         setOnboardingComplete(false);
-        return true;
+        return "verified";
       } catch (err) {
         capture(err);
-        return false;
+        return "verification_failed";
       } finally {
         setBusy(false);
       }
@@ -460,7 +488,21 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       setBusy(true);
       setError(null);
       try {
-        adopt(await authApi.socialLogin("google", identityToken));
+        // Unlike Apple, Google's token carries the name on every sign-in, not
+        // just the first — no pending-name persistence needed here.
+        const decoded = jwtDecode(identityToken) as GoogleDecodedJwt;
+        const fullName = [decoded.given_name, decoded.family_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        adopt(
+          await authApi.socialLogin(
+            "google",
+            identityToken,
+            fullName || decoded.name || undefined,
+            decoded.email,
+          ),
+        );
         return true;
       } catch (err) {
         capture(err);

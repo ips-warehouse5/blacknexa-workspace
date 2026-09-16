@@ -10,7 +10,7 @@
  * flashes a loader."
  *
  * ── Locked to light ──────────────────────────────────────────────────────
- * `app.json` sets `userInterfaceStyle: "light"` because the design has no dark
+ * `app.config.ts` sets `userInterfaceStyle: "light"` because the design has no dark
  * variant of the signal theme. The status bar is therefore dark-on-light, and the
  * Android navigation bar is painted to match the app surface rather than left
  * black behind the design's translucent footers.
@@ -23,7 +23,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as NavigationBar from "expo-navigation-bar";
-import { INTRO_SEEN_KEY } from "@/app/(auth)/location";
+import { INTRO_SEEN_KEY } from "@/app/(auth)/intro";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";

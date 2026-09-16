@@ -9,7 +9,7 @@
  * v1 ships `signal` light only. The design has no dark variant of `signal` — its
  * only dark palette is `gold`, supplied at token level, and not one of the 51
  * artboards is drawn in it. So the app is locked to light (`userInterfaceStyle:
- * "light"` in app.json), and the extra palettes below exist so that shipping one
+ * "light"` in app.config.ts), and the extra palettes below exist so that shipping one
  * later is a token swap rather than a rewrite. Wiring a theme switcher into the
  * UI is deliberately out of scope until those screens are designed.
  *

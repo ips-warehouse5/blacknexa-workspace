@@ -18,6 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import ComingSoon from "@/components/ui/ComingSoon";
 import NewsCard from "@/components/NewsCard";
 import CivilRightsPremiumBanner from "@/components/CivilRightsPremiumBanner";
 import VoiceInputButton from "@/components/VoiceInputButton";
@@ -259,7 +260,7 @@ const SCOPES: { key: NewsScope; label: string }[] = [
   { key: "global", label: "Global" },
 ];
 
-export default function NewsScreen(): React.ReactElement {
+function ExistingNewsScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { feed, briefings, isLoading, isRefetching, refetch, generate, isGenerating, generateError, searchResults, runSearch, isSearching } = useNews();
   const {
@@ -1396,3 +1397,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+export default function NewsScreen(): React.ReactElement {
+  // TODO(News): Re-enable the News screen implementation when News development resumes.
+  return <ComingSoon />;
+}

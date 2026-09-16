@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import { alpha, colors, screenPadding } from "@/constants/theme";
+import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import { Chip } from "@/components/ui/Controls";
 import FeedCard, { CARD_GAP, cardHeight } from "@/components/report/FeedCard";
@@ -56,7 +57,7 @@ const SORT_SENTENCE: Record<NonNullable<FeedQuery["sort"]>, string> = {
   corroborated: "Most corroborated",
 };
 
-export default function FeedScreen(): React.ReactElement {
+function ExistingHomeScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -353,6 +354,57 @@ export default function FeedScreen(): React.ReactElement {
         }}
         onClose={() => setSortOpen(false)}
       />
+    </View>
+  );
+}
+
+export default function HomeScreen(): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => router.push("/profile")}
+          accessibilityRole="button"
+          accessibilityLabel="Your profile"
+          style={styles.avatar}
+          testID="feed-avatar"
+        >
+          <Text variant="labelSm" color={colors.acc}>
+            {user?.initials ?? "?"}
+          </Text>
+        </Pressable>
+
+        <Text variant="cardTitle" color={colors.t0} style={{ fontSize: 18 }}>
+          BlackNexa
+        </Text>
+
+        <View style={styles.headerActions}>
+          <Pressable
+            disabled
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Search reports is coming soon"
+            testID="feed-search"
+          >
+            <SearchGlyph />
+          </Pressable>
+          <Pressable
+            disabled
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications are coming soon"
+            testID="feed-notifications"
+          >
+            <BellGlyph withDot />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* TODO(Home): Re-enable the Home feed, filters, search, and notifications when Home development resumes. */}
+      <ComingSoon />
     </View>
   );
 }

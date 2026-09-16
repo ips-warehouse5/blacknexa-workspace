@@ -1,7 +1,7 @@
 /**
  * Restrict the iOS target's Supported Destinations to iPhone.
  *
- * `ios.supportsTablet: false` in app.json already sets `TARGETED_DEVICE_FAMILY = 1`,
+ * `ios.supportsTablet: false` in app.config.ts already sets `TARGETED_DEVICE_FAMILY = 1`,
  * which keeps iPad out. It does **not** remove the two "Designed for iPhone"
  * destinations, because those are governed by separate build settings that Xcode
  * treats as YES when they are absent — and `expo prebuild` does not write them.

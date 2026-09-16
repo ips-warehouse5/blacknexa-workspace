@@ -21,6 +21,7 @@
 
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { API_BASE_URL } from "@/lib/config/env";
 
 const ACCESS_KEY = "bn.access_token";
 const REFRESH_KEY = "bn.refresh_token";
@@ -65,24 +66,6 @@ const store = {
   },
 };
 
-/** Resolve the API origin. Priority: EXPO_PUBLIC_API_URL -> EXPO_PUBLIC_RORK_FUNCTIONS_URL -> EXPO_PUBLIC_TOOLKIT_URL. */
-function resolveBaseUrl(): string {
-  const configured =
-    process.env.EXPO_PUBLIC_API_URL ||
-    process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL ||
-    process.env.EXPO_PUBLIC_TOOLKIT_URL;
-  if (configured) return configured.replace(/\/+$/, "");
-  // A physical device cannot reach the host's localhost, so this default is only
-  // ever right in a simulator — hence the warning rather than a silent fallback.
-  if (__DEV__) {
-    console.warn(
-      "[api] Neither EXPO_PUBLIC_API_URL nor EXPO_PUBLIC_RORK_FUNCTIONS_URL is set — falling back to http://localhost:4000, which a physical device cannot reach.",
-    );
-  }
-  return "http://localhost:4000";
-}
-
-export const API_BASE_URL = resolveBaseUrl();
 const API_PREFIX = "/api/v1";
 
 // Printed once, because the per-request lines omit it to stay readable.

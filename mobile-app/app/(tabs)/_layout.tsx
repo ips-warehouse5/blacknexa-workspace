@@ -16,7 +16,7 @@
 
 import React, { useCallback } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { Tabs, router } from "expo-router";
+import { Tabs } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors } from "@/constants/theme";
@@ -78,9 +78,10 @@ export default function TabLayout(): React.ReactElement {
         name="new"
         options={{
           title: "",
-          tabBarButton: (props) => <CentreButton accessibilityState={props.accessibilityState} />,
+          tabBarButton: (props) => (
+            <CentreButton accessibilityState={props.accessibilityState} onPress={props.onPress} />
+          ),
         }}
-        listeners={{ tabPress: (event) => event.preventDefault() }}
       />
 
       <Tabs.Screen
@@ -102,18 +103,22 @@ export default function TabLayout(): React.ReactElement {
   );
 }
 
-/** The lifted accent square that opens the report wizard. */
+/** The lifted accent square for the centre tab. */
 function CentreButton({
   accessibilityState,
+  onPress,
 }: {
   accessibilityState?: { selected?: boolean };
+  onPress?: React.ComponentProps<typeof Pressable>["onPress"];
 }): React.ReactElement {
-  const open = useCallback(() => {
+  const open = useCallback((event: Parameters<NonNullable<typeof onPress>>[0]) => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
-    router.push("/report");
-  }, []);
+    onPress?.(event);
+    // TODO(Centre Slot): Re-enable the report-wizard action when report development resumes.
+    // router.push("/report");
+  }, [onPress]);
 
   return (
     <Pressable

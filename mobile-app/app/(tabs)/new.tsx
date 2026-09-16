@@ -1,18 +1,15 @@
 /**
  * Placeholder for the tab bar's centre slot.
  *
- * `Tabs` needs a registered route to lay out five slots, but this screen is never
- * shown: `tabBarButton` replaces the tab entirely and the `tabPress` listener
- * calls `preventDefault`, so the press opens the report wizard as a full-screen
- * modal instead — which is what A12 describes ("The centre button opens a report
- * over whatever you were doing").
- *
- * If this ever renders, the listener has been removed by mistake.
+ * The route keeps the fifth tab slot selectable while its report-wizard action is
+ * temporarily paused with the rest of the tab content.
  */
 
 import React from "react";
-import { Redirect } from "expo-router";
+import ComingSoon from "@/components/ui/ComingSoon";
 
 export default function CentreSlot(): React.ReactElement {
-  return <Redirect href="/report" />;
+  // TODO(Centre Slot): Re-enable the report-wizard action when report development resumes.
+  // return <Redirect href="/report" />;
+  return <ComingSoon />;
 }
