@@ -7,7 +7,18 @@ type Status = "idle" | "sending" | "success" | "error";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
-async function submitWaitlist(payload: { email: string; phone: string }): Promise<void> {
+// Digit count, not character count — E.164 numbers run 7–15 digits.
+const PHONE_DIGITS_MIN = 7;
+const PHONE_DIGITS_MAX = 13;
+// Character cap on the input itself: digits plus room for formatting like
+// "+", spaces, parentheses, and dashes (e.g. "+1 (555) 010-0199").
+const PHONE_INPUT_MIN_LENGTH = PHONE_DIGITS_MIN;
+const PHONE_INPUT_MAX_LENGTH = 13;
+
+async function submitWaitlist(payload: {
+  email: string;
+  phone: string;
+}): Promise<void> {
   const res = await fetch("/api/waitlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -15,7 +26,9 @@ async function submitWaitlist(payload: { email: string; phone: string }): Promis
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new Error(data?.error ?? "Something went wrong on our end — try again.");
+    throw new Error(
+      data?.error ?? "Something went wrong on our end — try again.",
+    );
   }
 }
 
@@ -31,6 +44,7 @@ export function WaitlistForm({
   const [showPhone, setShowPhone] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const isHero = variant === "hero";
   // The hero variant sits on the Hero section, which switches
@@ -48,28 +62,63 @@ export function WaitlistForm({
         borderColor: error ? "var(--bn-err)" : "var(--bn-border)",
         color: "var(--bn-text-primary)",
       };
+  const phoneInputStyle: React.CSSProperties = isHero
+    ? {
+        background: "rgb(var(--bn-feature-scrim) / 0.62)",
+        borderColor: phoneError
+          ? "var(--bn-err)"
+          : "var(--bn-feature-input-border)",
+        color: "var(--bn-feature-ink)",
+      }
+    : {
+        background: "var(--bn-surface)",
+        borderColor: phoneError ? "var(--bn-err)" : "var(--bn-border)",
+        color: "var(--bn-text-primary)",
+      };
 
   function validate(value: string) {
     if (!value.trim()) return "Enter an email address so we can reach you.";
-    if (!EMAIL_RE.test(value.trim())) return "That email address doesn't look right.";
+    if (!EMAIL_RE.test(value.trim()))
+      return "That email address doesn't look right.";
+    return "";
+  }
+
+  // Phone is optional, so an empty value is always valid. Once something is
+  // typed, just sanity-check the digit count (7–15, per the E.164 range) —
+  // formatting characters like spaces, dashes, and parentheses are allowed.
+  function validatePhone(value: string) {
+    if (!value.trim()) return "";
+    const digits = value.replace(/\D/g, "");
+    if (digits.length < PHONE_DIGITS_MIN)
+      return "That phone number looks too short — please check it.";
+    if (digits.length > PHONE_DIGITS_MAX)
+      return "That phone number looks too long — please check it.";
     return "";
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const validation = validate(email);
-    if (validation) {
+    const phoneValidation = validatePhone(phone);
+    if (validation || phoneValidation) {
       setError(validation);
+      setPhoneError(phoneValidation);
+      if (phoneValidation) setShowPhone(true);
       return;
     }
     setError("");
+    setPhoneError("");
     setStatus("sending");
     try {
       await submitWaitlist({ email, phone });
       setStatus("success");
     } catch (err) {
       setStatus("idle");
-      setError(err instanceof Error ? err.message : "Something went wrong — try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong — try again.",
+      );
     }
   }
 
@@ -85,15 +134,22 @@ export function WaitlistForm({
       >
         <h3
           className="font-serif text-[26px] font-semibold"
-          style={{ color: isHero ? "var(--bn-feature-ink)" : "var(--bn-text-primary)" }}
+          style={{
+            color: isHero ? "var(--bn-feature-ink)" : "var(--bn-text-primary)",
+          }}
         >
           You&rsquo;re on the list.
         </h3>
         <p
           className="mt-3 text-[15px] leading-[1.6]"
-          style={{ color: isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)" }}
+          style={{
+            color: isHero
+              ? "var(--bn-feature-ink2)"
+              : "var(--bn-text-secondary)",
+          }}
         >
-          We&rsquo;ll email you the moment BlackNexa hits the App Store and Google Play.
+          We&rsquo;ll email you the moment BlackNexa hits the App Store and
+          Google Play.
         </p>
       </div>
     );
@@ -133,7 +189,11 @@ export function WaitlistForm({
               className="block h-[15px] w-[15px] animate-[bn-spin_0.7s_linear_infinite] rounded-full border-2 border-current/30 border-t-current"
             />
           ) : null}
-          {status === "sending" ? "Securing…" : isHero ? "Secure Your Spot" : "Join the Global Movement"}
+          {status === "sending"
+            ? "Securing…"
+            : isHero
+              ? "Secure Your Spot"
+              : "Join the Global Movement"}
         </Button>
       </div>
 
@@ -148,7 +208,13 @@ export function WaitlistForm({
         id={`${idPrefix}-msg`}
         role="alert"
         className="mt-3.5 min-h-[1px] text-[13.5px] leading-[1.5]"
-        style={{ color: error ? "var(--bn-err)" : isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)" }}
+        style={{
+          color: error
+            ? "var(--bn-err)"
+            : isHero
+              ? "var(--bn-feature-ink2)"
+              : "var(--bn-text-secondary)",
+        }}
       >
         {error}
       </p>
@@ -158,7 +224,11 @@ export function WaitlistForm({
           <label
             htmlFor={`${idPrefix}-phone`}
             className="mb-[7px] block text-xs tracking-[0.1em]"
-            style={{ color: isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)" }}
+            style={{
+              color: isHero
+                ? "var(--bn-feature-ink2)"
+                : "var(--bn-text-secondary)",
+            }}
           >
             PHONE (OPTIONAL)
           </label>
@@ -167,12 +237,30 @@ export function WaitlistForm({
             type="tel"
             name="phone"
             autoComplete="tel"
+            minLength={PHONE_INPUT_MIN_LENGTH}
+            maxLength={PHONE_INPUT_MAX_LENGTH}
+            aria-invalid={!!phoneError}
+            aria-describedby={`${idPrefix}-phone-msg`}
             placeholder="(555) 010-0199"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              if (phoneError) setPhoneError("");
+            }}
+            onBlur={() => setPhoneError(validatePhone(phone))}
             className="w-full max-w-[320px] rounded-[3px] border px-4 py-[14px] text-[15px] focus:border-accent"
-            style={inputStyle}
+            style={phoneInputStyle}
           />
+          {phoneError ? (
+            <p
+              id={`${idPrefix}-phone-msg`}
+              role="alert"
+              className="mt-[7px] text-[13.5px] leading-[1.5]"
+              style={{ color: "var(--bn-err)" }}
+            >
+              {phoneError}
+            </p>
+          ) : null}
         </div>
       ) : (
         <button
@@ -180,8 +268,12 @@ export function WaitlistForm({
           onClick={() => setShowPhone(true)}
           className="mt-3 border-0 border-b bg-transparent p-0 text-[13.5px] hover:text-accent-text"
           style={{
-            color: isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)",
-            borderColor: isHero ? "var(--bn-feature-input-border)" : "var(--bn-border)",
+            color: isHero
+              ? "var(--bn-feature-ink2)"
+              : "var(--bn-text-secondary)",
+            borderColor: isHero
+              ? "var(--bn-feature-input-border)"
+              : "var(--bn-border)",
           }}
         >
           + Add a phone number for text alerts
@@ -190,9 +282,12 @@ export function WaitlistForm({
 
       <p
         className="mt-2 text-[13.5px] leading-[1.6]"
-        style={{ color: isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)" }}
+        style={{
+          color: isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)",
+        }}
       >
-        Instant push and email alert the moment we drop on the Apple App Store and Google Play. Zero spam.
+        Instant push and email alert the moment we drop on the Apple App Store
+        and Google Play. Zero spam.
       </p>
       <p className="mt-2 text-[12.5px] leading-[1.6] text-text-muted">
         By joining you agree to our{" "}

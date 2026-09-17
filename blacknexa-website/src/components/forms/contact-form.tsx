@@ -42,10 +42,13 @@ export function ContactForm() {
 
   function validate(): Errors {
     const next: Errors = {};
-    if (!name.trim()) next.name = "Tell us your name.";
-    if (!email.trim()) next.email = "We need an email to reply to.";
-    else if (!EMAIL_RE.test(email.trim())) next.email = "That email address doesn't look right.";
-    if (message.trim().length < CONTACT_MESSAGE_MIN) next.message = "A little more detail helps us route this.";
+    if (!name.trim()) next.name = "Please add your name";
+    if (!email.trim()) next.email = "Please add an email address";
+    else if (!EMAIL_RE.test(email.trim()))
+      next.email = "That email address doesn't look quite right — please double-check it.";
+    if (!message.trim()) next.message = "Please tell us what you need.";
+    else if (message.trim().length < CONTACT_MESSAGE_MIN)
+      next.message = `Just a little more detail, please — at least ${CONTACT_MESSAGE_MIN} characters helps us route this to the right person.`;
     return next;
   }
 
@@ -112,7 +115,8 @@ export function ContactForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={() => {
-            if (!name.trim()) setErrors((s) => ({ ...s, name: "Tell us your name." }));
+            if (!name.trim())
+              setErrors((s) => ({ ...s, name: "Please add your name so we know who we're talking to." }));
           }}
           className="w-full rounded-[3px] border bg-surface px-4 py-[15px] text-[15px] text-text-primary focus:border-accent"
           style={{ borderColor: fieldBorder("name") }}
@@ -131,7 +135,10 @@ export function ContactForm() {
           onChange={(e) => setEmail(e.target.value)}
           onBlur={() => {
             if (email.trim() && !EMAIL_RE.test(email.trim())) {
-              setErrors((s) => ({ ...s, email: "That email address doesn't look right." }));
+              setErrors((s) => ({
+                ...s,
+                email: "That email address doesn't look quite right — please double-check it.",
+              }));
             }
           }}
           className="w-full rounded-[3px] border bg-surface px-4 py-[15px] text-[15px] text-text-primary focus:border-accent"
@@ -161,7 +168,10 @@ export function ContactForm() {
           onChange={(e) => setMessage(e.target.value)}
           onBlur={() => {
             if (message.trim() && message.trim().length < CONTACT_MESSAGE_MIN) {
-              setErrors((s) => ({ ...s, message: "A little more detail helps us route this." }));
+              setErrors((s) => ({
+                ...s,
+                message: `Just a little more detail, please — at least ${CONTACT_MESSAGE_MIN} characters helps us route this to the right person.`,
+              }));
             }
           }}
           className="w-full resize-y rounded-[3px] border bg-surface px-4 py-[15px] text-[15px] leading-[1.6] text-text-primary focus:border-accent"

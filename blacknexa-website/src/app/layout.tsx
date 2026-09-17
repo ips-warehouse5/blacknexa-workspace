@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Spectral, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { FaviconSync } from "@/components/theme/favicon-sync";
 import { themeInitScript } from "@/lib/theme";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -85,6 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
+          <FaviconSync />
           <RevealInit />
           <Header />
           <main>{children}</main>
