@@ -23,7 +23,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AccessibilityInfo, Animated, BackHandler, Easing, Platform, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { Screen, StickyFooter } from "@/components/ui/Screen";
@@ -32,6 +32,7 @@ import { useReportDraft } from "@/providers/ReportDraftProvider";
 type RowState = "done" | "active" | "pending" | "failed";
 
 export default function SubmittingScreen(): React.ReactElement {
+  useThemeSync();
   const { attachments, allSealed, uploadingCount, fileReport, filing, fileError } =
     useReportDraft();
 

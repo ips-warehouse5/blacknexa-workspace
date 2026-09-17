@@ -17,7 +17,7 @@ import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
-import { alpha, colors, radius } from "@/constants/theme";
+import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { WizardShell, SectionLabel } from "@/components/report/WizardShell";
 import { MicGlyph } from "@/components/report/AudioRecorderRow";
@@ -61,6 +61,7 @@ function kindFor(mime: string, assetType?: string | null): EvidenceKind {
 }
 
 export default function EvidenceStep(): React.ReactElement {
+  useThemeSync();
   const { attachments, addAttachment, removeAttachment, retryAttachment, setStep, savedAt } =
     useReportDraft();
   const exit = useWizardExit();

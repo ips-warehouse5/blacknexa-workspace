@@ -16,7 +16,7 @@ import React, { useCallback, useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { Screen, BackHeader } from "@/components/ui/Screen";
@@ -57,6 +57,7 @@ function rowTime(iso: string): string {
 type Row = { kind: "header"; label: string } | { kind: "item"; value: NotificationView };
 
 export default function NotificationsScreen(): React.ReactElement {
+  useThemeSync();
   const queryClient = useQueryClient();
 
   const query = useInfiniteQuery({

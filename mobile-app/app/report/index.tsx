@@ -9,7 +9,7 @@
 import React, { useEffect } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
-import { colors } from "@/constants/theme";
+import { colors, useThemeSync } from "@/constants/theme";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 
 /** Wizard step index → route. */
@@ -24,6 +24,7 @@ const STEP_ROUTES = [
 ] as const;
 
 export default function ReportEntryScreen(): React.ReactElement {
+  useThemeSync();
   const { ready, step, hasContent } = useReportDraft();
 
   useEffect(() => {

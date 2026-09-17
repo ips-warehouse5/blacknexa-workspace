@@ -27,7 +27,7 @@ import * as Location from "expo-location";
 import Svg, { Path } from "react-native-svg";
 import { Mail } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, controlHeight, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, controlHeight, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { LocationPermissionModal } from "@/components/ui/LocationPermissionModal";
@@ -57,6 +57,7 @@ const GOOGLE_WEB_CLIENT_ID =
   "47943475561-flfnufkktbim5kdiqe06f53ts0gkbo4f.apps.googleusercontent.com";
 
 export default function WelcomeScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
@@ -164,7 +165,16 @@ export default function WelcomeScreen(): React.ReactElement {
       setGoogleBusy(false);
       return;
     }
-    void signInWithGoogleToken(idToken).finally(() => setGoogleBusy(false));
+    // Only clear the busy state on failure. On success, AuthGate's status
+    // effect (app/_layout.tsx) redirects to (tabs) on its next tick, but
+    // that's an effect flush — a later tick than this promise's own
+    // microtask. Clearing googleBusy here unconditionally let this screen
+    // repaint in its idle state (all buttons, no spinner) for one frame
+    // before the redirect landed. Staying busy until unmount removes that
+    // flash without touching AuthGate's timing at all.
+    void signInWithGoogleToken(idToken).then((ok) => {
+      if (!ok) setGoogleBusy(false);
+    });
   }, [googleResponse, signInWithGoogleToken]);
 
   const onGoogle = useCallback(async () => {

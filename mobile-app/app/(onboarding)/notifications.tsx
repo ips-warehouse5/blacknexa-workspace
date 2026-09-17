@@ -17,7 +17,7 @@ import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import * as Notifications from "expo-notifications";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button, { TextButton } from "@/components/ui/Button";
 import { Screen, StickyFooter } from "@/components/ui/Screen";
@@ -48,6 +48,7 @@ const KINDS = [
 ];
 
 export default function NotificationPrimingScreen(): React.ReactElement {
+  useThemeSync();
   const { completeOnboarding, updateProfile } = useAuth();
   const [busy, setBusy] = useState(false);
 

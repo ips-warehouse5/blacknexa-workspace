@@ -23,7 +23,7 @@ import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
-import { alpha, colors, screenPadding, type ThemeName } from "@/constants/theme";
+import { alpha, colors, screenPadding, type ThemeName, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { Group, Row, SwitchRow } from "@/components/ui/SettingsRow";
@@ -57,6 +57,7 @@ const APPEARANCE_OPTIONS: {
 ];
 
 export default function SettingsScreen(): React.ReactElement {
+  useThemeSync();
   const { user, signOut, updateProfile, busy, biometricsAvailable } = useAuth();
   const { settings, update } = useSettings();
   const { location } = useLocation();

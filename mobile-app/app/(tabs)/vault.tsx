@@ -20,7 +20,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-nat
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
@@ -326,6 +326,7 @@ const styles = StyleSheet.create({
 });
 
 export default function VaultScreen(): React.ReactElement {
+  useThemeSync();
   // TODO(Vault): Re-enable the Vault screen implementation when Vault development resumes.
   return <ComingSoon />;
 }

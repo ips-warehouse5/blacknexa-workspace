@@ -22,7 +22,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { alpha, colors, radius } from "@/constants/theme";
+import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { StatusPill } from "@/components/report/StatusPill";
 import { MicGlyph } from "@/components/report/AudioRecorderRow";
@@ -36,6 +36,7 @@ import reportsApi, {
 } from "@/lib/api/reports";
 
 export default function EvidenceLightbox(): React.ReactElement {
+  useThemeSync();
   const { ref, index } = useLocalSearchParams<{ ref: string; index: string }>();
   const insets = useSafeAreaInsets();
 

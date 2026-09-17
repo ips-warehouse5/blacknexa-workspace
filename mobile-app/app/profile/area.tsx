@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Check, ChevronRight, Crosshair, Search } from "lucide-react-native";
-import { alpha, colors, hairline, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, hairline, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useLocation, type UserLocation } from "@/providers/LocationProvider";
@@ -42,7 +42,8 @@ const RECENT_AREAS: AreaCandidate[] = [
 ];
 
 export default function AreaScreen(): React.ReactElement {
-  const { location, status, requestLocation, setLocation } = useLocation();
+  useThemeSync();
+  const { location, status, canAskAgain, requestLocation, openSettings, setLocation } = useLocation();
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -61,14 +62,22 @@ export default function AreaScreen(): React.ReactElement {
     );
   }, [query]);
 
+  // Once denied permanently, re-requesting just silently resolves to denied
+  // again — the only way to recover is the OS settings screen.
+  const deniedForever = status === "denied" && !canAskAgain;
+
   const refresh = useCallback(async () => {
+    if (deniedForever) {
+      await openSettings();
+      return;
+    }
     setBusy(true);
     try {
       await requestLocation();
     } finally {
       setBusy(false);
     }
-  }, [requestLocation]);
+  }, [deniedForever, openSettings, requestLocation]);
 
   const chooseArea = useCallback(
     async (area: AreaCandidate) => {
@@ -116,7 +125,7 @@ export default function AreaScreen(): React.ReactElement {
       <Pressable
         onPress={refresh}
         accessibilityRole="button"
-        accessibilityLabel="Use my current location"
+        accessibilityLabel={deniedForever ? "Open Settings to enable location" : "Use my current location"}
         style={({ pressed }) => [
           styles.locationAction,
           { backgroundColor: colors.s3 },
@@ -126,14 +135,16 @@ export default function AreaScreen(): React.ReactElement {
         <Crosshair size={20} color={colors.acc} />
         <View style={styles.rowCopy}>
           <Text variant="labelLg" color={colors.t0}>
-            Use my current location
+            {deniedForever ? "Open Settings to enable location" : "Use my current location"}
           </Text>
           <Text variant="bodySm" color={colors.t3} style={styles.rowDetail}>
             {busy || status === "requesting"
               ? "Locating this device..."
               : status === "granted"
                 ? "Location is on for this app"
-                : "Location is off for this app"}
+                : deniedForever
+                  ? "Location was denied — enable it in Settings"
+                  : "Location is off for this app"}
           </Text>
         </View>
       </Pressable>

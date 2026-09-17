@@ -17,10 +17,10 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 import type { TextInput } from "react-native";
 import { router } from "expo-router";
-import { colors, controlHeight, screenPadding } from "@/constants/theme";
+import { colors, controlHeight, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { PasswordField } from "@/components/ui/TextField";
@@ -47,6 +47,7 @@ import {
 const CODE_LENGTH = 6;
 
 export default function ChangePasswordScreen(): React.ReactElement {
+  useThemeSync();
   const { user, forgotPassword, resetPassword, busy, error, clearError } = useAuth();
   const { showSnackbar } = useSnackbar();
   const email = user?.email ?? "";
@@ -108,11 +109,14 @@ export default function ChangePasswordScreen(): React.ReactElement {
     }
     if (shownErrorRef.current === error) return;
     shownErrorRef.current = error;
+    const message = safeResetErrorMessage(error);
     if (/password.+(?:used|before)|choose a password/i.test(error)) {
-      setPasswordApiError(safeResetErrorMessage(error));
-    } else {
-      showSnackbar({ message: safeResetErrorMessage(error), type: "error" });
+      // Inline placement points at the exact field to fix; the snackbar
+      // guarantees the user actually sees it even if they've scrolled past
+      // the password field by the time the response comes back.
+      setPasswordApiError(message);
     }
+    showSnackbar({ message, type: "error" });
     clearError();
   }, [clearError, error, showSnackbar]);
 
@@ -152,6 +156,7 @@ export default function ChangePasswordScreen(): React.ReactElement {
       return;
     }
 
+    Keyboard.dismiss();
     submittingRef.current = true;
     try {
       const ok = await resetPassword(email, code, password);

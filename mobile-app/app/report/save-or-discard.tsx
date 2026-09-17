@@ -20,13 +20,14 @@ import React, { useCallback, useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, radius, scrim, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, scrim, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button, { TextButton } from "@/components/ui/Button";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { CATEGORY_META } from "@/lib/api/reports";
 
 export default function SaveOrDiscardScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { payload, attachments, completedSteps, step, saveNow, discard } = useReportDraft();
   const [confirming, setConfirming] = useState(false);

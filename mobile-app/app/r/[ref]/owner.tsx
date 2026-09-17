@@ -15,7 +15,7 @@ import React, { useCallback, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
@@ -39,6 +39,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function OwnerReportScreen(): React.ReactElement {
+  useThemeSync();
   const { ref } = useLocalSearchParams<{ ref: string }>();
   const queryClient = useQueryClient();
 

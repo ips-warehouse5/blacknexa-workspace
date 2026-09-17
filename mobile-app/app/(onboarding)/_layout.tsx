@@ -7,9 +7,10 @@
 
 import React from "react";
 import { Stack } from "expo-router";
-import { colors } from "@/constants/theme";
+import { colors, useThemeSync } from "@/constants/theme";
 
 export default function OnboardingLayout(): React.ReactElement {
+  useThemeSync();
   return (
     <Stack
       screenOptions={{

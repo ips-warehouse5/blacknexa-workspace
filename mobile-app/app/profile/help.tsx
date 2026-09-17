@@ -9,13 +9,14 @@ import {
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Search } from "lucide-react-native";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { FALLBACK_HELP_FAQ, helpApi, type HelpFaqItem } from "@/lib/api/help";
 
 export default function HelpScreen(): React.ReactElement {
+  useThemeSync();
   const faq = useQuery({
     queryKey: ["help-faq"],
     queryFn: helpApi.faq,

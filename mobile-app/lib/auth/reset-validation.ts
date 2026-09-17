@@ -22,7 +22,9 @@ function missingPasswordRules(password: string): string[] {
     password.length >= 10 ? null : "At least 10 characters",
     /[A-Z]/.test(password) ? null : "One capital letter",
     /\d/.test(password) ? null : "One number",
-    /[^A-Za-z0-9]/.test(password) ? null : "One symbol",
+    // Excludes whitespace: a space is not a symbol, and padding a password
+    // with spaces should not satisfy this rule.
+    /[^A-Za-z0-9\s]/.test(password) ? null : "One symbol",
   ].filter((rule): rule is string => Boolean(rule));
 }
 
@@ -43,9 +45,15 @@ export function validateResetConfirmation(
   password: string,
 ): ResetConfirmationValidation {
   const missing = missingPasswordRules(password);
+  const passwordError =
+    password.length === 0
+      ? "Please enter your new password."
+      : missing.length > 0
+        ? `Still needed: ${missing.join(", ").toLowerCase()}.`
+        : null;
   return {
     code: /^\d{6}$/.test(code) ? null : "Please enter the six-digit code.",
-    password: missing.length > 0 ? `Still needed: ${missing.join(", ").toLowerCase()}.` : null,
+    password: passwordError,
   };
 }
 

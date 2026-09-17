@@ -14,7 +14,7 @@ import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import * as Notifications from "expo-notifications";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { SwitchRow } from "@/components/ui/Controls";
@@ -50,6 +50,7 @@ const KINDS = [
 ];
 
 export default function NotificationSettingsScreen(): React.ReactElement {
+  useThemeSync();
   const { user, updateProfile, busy } = useAuth();
   const [enabled, setEnabled] = useState(user?.preferences.notificationsEnabled ?? true);
   const [notice, setNotice] = useState<string | null>(null);

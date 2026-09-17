@@ -26,8 +26,8 @@ import React, { useCallback, useMemo, useState } from "react";
 import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { Pencil, Check } from "lucide-react-native";
-import { colors, screenPadding } from "@/constants/theme";
+import { Pencil, Check, UserRound } from "lucide-react-native";
+import { colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import TextField from "@/components/ui/TextField";
 import { ScrollScreen } from "@/components/ui/Screen";
@@ -36,6 +36,7 @@ import { useSnackbar } from "@/providers/SnackbarProvider";
 import type { AvatarMode } from "@/lib/api/auth";
 
 export default function IdentityScreen(): React.ReactElement {
+  useThemeSync();
   const { user, updateProfile, busy } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
@@ -56,9 +57,17 @@ export default function IdentityScreen(): React.ReactElement {
   const publishedName = anonymous || !displayName.trim() ? "Anonymous" : displayName.trim();
 
   const save = useCallback(async () => {
-    const ok = await updateProfile({ displayName: displayName.trim(), avatarMode });
+    // avatarMode drives this screen's own preview, but the "Anonymous
+    // on/off" badge on the main profile screen reads the separate
+    // anonymousByDefault preference — without sending it here, toggling
+    // "Stay anonymous" changed nothing that screen could see.
+    const ok = await updateProfile({
+      displayName: displayName.trim(),
+      avatarMode,
+      anonymousByDefault: anonymous,
+    });
     if (ok) router.back();
-  }, [avatarMode, displayName, updateProfile]);
+  }, [anonymous, avatarMode, displayName, updateProfile]);
 
   const cancel = useCallback(() => router.back(), []);
 
@@ -99,9 +108,15 @@ export default function IdentityScreen(): React.ReactElement {
   }, [anonymous]);
 
   const openAvatarActions = useCallback(() => {
-    const options = ["Take Photo", "Choose from Library", "Remove Photo", "Cancel"];
-    const destructiveButtonIndex = 2;
-    const cancelButtonIndex = 3;
+    // "Remove Photo" only makes sense when there's a photo to remove — offering
+    // it unconditionally let someone with no photo set "remove" a photo that
+    // was never there.
+    const hasPhoto = avatarMode === "photo";
+    const options = hasPhoto
+      ? ["Take Photo", "Choose from Library", "Remove Photo", "Cancel"]
+      : ["Take Photo", "Choose from Library", "Cancel"];
+    const destructiveButtonIndex = hasPhoto ? 2 : undefined;
+    const cancelButtonIndex = hasPhoto ? 3 : 2;
 
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -109,7 +124,7 @@ export default function IdentityScreen(): React.ReactElement {
         (index) => {
           if (index === 0) void pickFrom("camera");
           else if (index === 1) void pickFrom("library");
-          else if (index === 2) removePhoto();
+          else if (hasPhoto && index === 2) removePhoto();
         },
       );
       return;
@@ -118,10 +133,12 @@ export default function IdentityScreen(): React.ReactElement {
     Alert.alert("Change photo", undefined, [
       { text: "Take Photo", onPress: () => void pickFrom("camera") },
       { text: "Choose from Library", onPress: () => void pickFrom("library") },
-      { text: "Remove Photo", style: "destructive", onPress: removePhoto },
+      ...(hasPhoto
+        ? [{ text: "Remove Photo", style: "destructive" as const, onPress: removePhoto }]
+        : []),
       { text: "Cancel", style: "cancel" },
     ]);
-  }, [pickFrom, removePhoto]);
+  }, [avatarMode, pickFrom, removePhoto]);
 
   const toggleAnonymous = useCallback(() => {
     setAvatarMode((current) =>
@@ -179,9 +196,11 @@ export default function IdentityScreen(): React.ReactElement {
                 style={{ width: 88, height: 88 }}
                 resizeMode="cover"
               />
+            ) : anonymous ? (
+              <UserRound size={38} color={colors.t3} />
             ) : (
               <Text variant="displaySm" color={colors.acc}>
-                {anonymous ? "?" : initials}
+                {initials}
               </Text>
             )}
           </View>
@@ -331,7 +350,9 @@ export default function IdentityScreen(): React.ReactElement {
             overflow: "hidden",
           }}
         >
-          {publishedName === "Anonymous" ? null : (
+          {publishedName === "Anonymous" ? (
+            <UserRound size={16} color={colors.t3} />
+          ) : (
             <Text variant="labelSm" color={colors.acc}>
               {initials}
             </Text>

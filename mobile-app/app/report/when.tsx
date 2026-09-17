@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { alpha, colors, radius } from "@/constants/theme";
+import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { Checkbox, SegmentedControl, SwitchRow } from "@/components/ui/Controls";
 import { WizardShell, cardHairline } from "@/components/report/WizardShell";
@@ -46,6 +46,7 @@ function startOfDayOffset(days: number): Date {
 }
 
 export default function WhenStep(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const exit = useWizardExit();

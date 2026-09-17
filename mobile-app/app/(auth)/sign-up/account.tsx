@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import type { TextInput } from "react-native";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { colors, screenPadding } from "@/constants/theme";
+import { colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField, { PasswordField } from "@/components/ui/TextField";
@@ -18,6 +18,7 @@ import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
 import { validateSignUpAccount } from "@/lib/auth/signup-validation";
 
 export default function SignUpAccountScreen(): React.ReactElement {
+  useThemeSync();
   const { register, busy, error, clearError, signUpDraft } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [email, setEmail] = useState(signUpDraft?.email ?? "");
@@ -26,7 +27,6 @@ export default function SignUpAccountScreen(): React.ReactElement {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
-  const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const scrollRef = useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const emailRef = useRef<TextInput>(null);
@@ -58,8 +58,10 @@ export default function SignUpAccountScreen(): React.ReactElement {
 
   const handleEmailChange = useCallback((value: string) => {
     setEmail(value);
-    if (emailTouched) setEmailError(validateSignUpAccount(value, password, agreedToTerms).email);
-  }, [agreedToTerms, emailTouched, password]);
+    // Email format is only checked on submit — clear a shown error as soon
+    // as the user starts correcting the field, but don't re-validate live.
+    if (emailError) setEmailError(null);
+  }, [emailError]);
 
   const handlePasswordChange = useCallback((value: string) => {
     setPassword(value);
@@ -135,10 +137,6 @@ export default function SignUpAccountScreen(): React.ReactElement {
         label="EMAIL"
         value={email}
         onChangeText={handleEmailChange}
-        onBlur={() => {
-          setEmailTouched(true);
-          setEmailError(validateSignUpAccount(email, password, agreedToTerms).email);
-        }}
         error={emailError}
         placeholder="you@example.com"
         keyboardType="email-address"

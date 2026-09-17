@@ -31,8 +31,8 @@ import React, { useCallback } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Settings as SettingsIcon } from "lucide-react-native";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { Settings as SettingsIcon, UserRound } from "lucide-react-native";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
@@ -63,6 +63,7 @@ function formatMemberSince(createdAt: string | undefined): string {
 }
 
 export default function ProfileScreen(): React.ReactElement {
+  useThemeSync();
   const { user } = useAuth();
 
   /** "My reports" count — a real number, from the same endpoint the Vault uses. */
@@ -73,6 +74,10 @@ export default function ProfileScreen(): React.ReactElement {
 
   const reportCount = mine.data?.items.length ?? 0;
   const prefs = user?.preferences;
+  // avatarMode, not preferences.anonymousByDefault, is this screen's source
+  // of truth for anonymous state — matches app/profile/identity.tsx, where
+  // the "Stay anonymous" toggle actually lives.
+  const isAnonymous = user?.avatarMode === "anonymous";
 
   const openSettings = useCallback(() => router.push("/profile/settings"), []);
 
@@ -98,13 +103,19 @@ export default function ProfileScreen(): React.ReactElement {
       {/* Identity header. */}
       <View style={styles.identity}>
         <View style={[styles.avatar, { backgroundColor: colors.s6 }]}>
-          <Text variant="cardTitle" color={colors.acc}>
-            {user?.initials ?? "?"}
-          </Text>
+          {isAnonymous ? (
+            <UserRound size={26} color={colors.t3} />
+          ) : (
+            <Text variant="cardTitle" color={colors.acc}>
+              {user?.initials ?? "?"}
+            </Text>
+          )}
         </View>
         <View style={{ flex: 1 }}>
           <Text variant="profileName" color={colors.t0}>
-            {user?.displayName?.trim() || "Anonymous"}
+            {isAnonymous || !user?.displayName?.trim()
+              ? "Anonymous"
+              : user.displayName.trim()}
           </Text>
           <Text variant="metaSm" color={colors.t4} style={{ marginTop: 3 }}>
             {formatMemberSince(user?.createdAt) || user?.email || ""}
@@ -125,7 +136,7 @@ export default function ProfileScreen(): React.ReactElement {
           </View>
           <View style={[styles.badge, { backgroundColor: colors.s5 }]}>
             <Text variant="metaSm" color={colors.t1}>
-              Anonymous {prefs.anonymousByDefault ? "on" : "off"}
+              Anonymous {isAnonymous ? "on" : "off"}
             </Text>
           </View>
         </View>

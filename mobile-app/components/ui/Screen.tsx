@@ -19,7 +19,7 @@
  * jumping when it settles.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -113,6 +113,15 @@ export function ScrollScreen({
 }: ScrollScreenProps): React.ReactElement {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, MIN_BOTTOM);
+  // `bottomOffset` only keeps a focused field clear of the keyboard itself —
+  // it doesn't know about the footer, which the KeyboardStickyView below
+  // renders on top of the keyboard with its own height. Without measuring
+  // that height and adding it in, a focused field near the bottom of the
+  // content (e.g. a password/code field directly above a footer button, as
+  // on the Delete Account screen) gets auto-scrolled to just clear the
+  // keyboard and then immediately re-covered by the footer sitting on top
+  // of it. 24 is the base clearance used even with no footer present.
+  const [footerHeight, setFooterHeight] = useState(0);
 
   return (
     <View
@@ -128,8 +137,7 @@ export function ScrollScreen({
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         showsVerticalScrollIndicator={false}
-        // Keeps a focused field clear of the keyboard rather than flush against it.
-        bottomOffset={24}
+        bottomOffset={footer ? footerHeight + 24 : 24}
       >
         {children}
       </KeyboardAwareScrollView>
@@ -137,6 +145,7 @@ export function ScrollScreen({
       {footer ? (
         <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
           <View
+            onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
             style={[
               styles.footer,
               {

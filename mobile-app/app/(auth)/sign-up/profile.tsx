@@ -13,7 +13,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { UserRound } from "lucide-react-native";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -50,6 +51,7 @@ const VISIBILITY_OPTIONS: {
 ];
 
 export default function SignUpProfileScreen(): React.ReactElement {
+  useThemeSync();
   const { user, updateProfile, recordConsents, completeOnboarding, busy, error } = useAuth();
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
@@ -142,9 +144,13 @@ export default function SignUpProfileScreen(): React.ReactElement {
               justifyContent: "center",
             }}
           >
-            <Text variant="cardTitle" color={colors.acc}>
-              {initials}
-            </Text>
+            {avatarMode === "anonymous" ? (
+              <UserRound size={26} color={colors.t3} />
+            ) : (
+              <Text variant="cardTitle" color={colors.acc}>
+                {initials}
+              </Text>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <ChipGroup<AvatarMode>
@@ -209,7 +215,9 @@ export default function SignUpProfileScreen(): React.ReactElement {
             justifyContent: "center",
           }}
         >
-          {publishedName === "Anonymous" ? null : (
+          {publishedName === "Anonymous" ? (
+            <UserRound size={16} color={colors.t3} />
+          ) : (
             <Text variant="labelSm" color={colors.acc}>
               {initials}
             </Text>

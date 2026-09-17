@@ -13,7 +13,7 @@
 import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
-import { alpha, colors, radius } from "@/constants/theme";
+import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot, Switch, SwitchRow } from "@/components/ui/Controls";
 import { StatusPill } from "@/components/report/StatusPill";
@@ -35,6 +35,7 @@ const VISIBILITY: { value: Visibility; title: string; consequence: string }[] = 
 ];
 
 export default function FlagsStep(): React.ReactElement {
+  useThemeSync();
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const { user } = useAuth();
   const exit = useWizardExit();

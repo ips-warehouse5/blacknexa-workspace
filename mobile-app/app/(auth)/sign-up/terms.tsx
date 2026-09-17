@@ -13,7 +13,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { Screen, BackHeader, StickyFooter } from "@/components/ui/Screen";
@@ -27,6 +27,7 @@ type Tab = "tos" | "privacy";
 const BOTTOM_SLACK = 24;
 
 export default function SignUpTermsScreen(): React.ReactElement {
+  useThemeSync();
   const params = useLocalSearchParams<{ resendAfter?: string }>();
   const [tab, setTab] = useState<Tab>("tos");
   const [readTos, setReadTos] = useState(false);

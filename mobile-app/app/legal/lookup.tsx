@@ -45,7 +45,7 @@ import {
 
 export default function LegalLookupScreen(): React.ReactElement {
   const { lookupJurisdiction, currentProfile } = useGeoLegal();
-  const { location, requestLocation } = useLocation();
+  const { location, status: locationStatus, canAskAgain, requestLocation, openSettings } = useLocation();
   const { settings } = useSettings();
 
   const [countryInput, setCountryInput] = useState<string>("US");
@@ -80,6 +80,12 @@ export default function LegalLookupScreen(): React.ReactElement {
   );
 
   const handleGpsLookup = useCallback(async () => {
+    // Once denied permanently, requesting again just silently resolves to
+    // denied with no OS prompt — only the settings screen can fix that.
+    if (locationStatus === "denied" && !canAskAgain) {
+      await openSettings();
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -106,7 +112,15 @@ export default function LegalLookupScreen(): React.ReactElement {
     } finally {
       setIsLoading(false);
     }
-  }, [lookupJurisdiction, requestLocation, location, settings.preferredLanguage]);
+  }, [
+    lookupJurisdiction,
+    requestLocation,
+    location,
+    locationStatus,
+    canAskAgain,
+    openSettings,
+    settings.preferredLanguage,
+  ]);
 
   return (
     <>
@@ -174,7 +188,9 @@ export default function LegalLookupScreen(): React.ReactElement {
               testID="legal-gps-btn"
             >
               <MapPin size={14} color={Colors.gold} />
-              <Text style={styles.gpsBtnText}>Use my location</Text>
+              <Text style={styles.gpsBtnText}>
+                {locationStatus === "denied" && !canAskAgain ? "Open Settings" : "Use my location"}
+              </Text>
             </Pressable>
           </View>
 

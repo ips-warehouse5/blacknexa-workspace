@@ -20,13 +20,14 @@ import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors } from "@/constants/theme";
+import { alpha, colors, useThemeSync } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 
 /** Visual bar height above the safe-area inset. */
 const BAR_HEIGHT = 70;
 
 export default function TabLayout(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
 
   return (

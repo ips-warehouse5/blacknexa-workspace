@@ -29,9 +29,9 @@
  */
 
 import React, { useCallback, useState } from "react";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 import { router } from "expo-router";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button, { TextButton } from "@/components/ui/Button";
 import TextField, { PasswordField } from "@/components/ui/TextField";
@@ -39,6 +39,7 @@ import OtpInput, { ResendTimer, useCountdown } from "@/components/ui/OtpInput";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { ConsequenceCard, SectionLabel } from "@/components/report/WizardShell";
 import { useAuth } from "@/providers/AuthProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 import authApi, { type DeletionReceipt } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 
@@ -47,7 +48,9 @@ type Disposition = "sever" | "erase";
 const CONFIRM_WORD = "DELETE";
 
 export default function DeleteAccountScreen(): React.ReactElement {
+  useThemeSync();
   const { user, forgetSession } = useAuth();
+  const { showSnackbar } = useSnackbar();
 
   /*
    * An account created through Apple or Google has no password to re-type, so it
@@ -59,6 +62,7 @@ export default function DeleteAccountScreen(): React.ReactElement {
 
   const [disposition, setDisposition] = useState<Disposition | null>(null);
   const [typed, setTyped] = useState("");
+  const [wordError, setWordError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -69,6 +73,7 @@ export default function DeleteAccountScreen(): React.ReactElement {
   const [receipt, setReceipt] = useState<DeletionReceipt | null>(null);
 
   const sendCode = useCallback(async () => {
+    Keyboard.dismiss();
     setSendingCode(true);
     setProblem(null);
     try {
@@ -76,28 +81,41 @@ export default function DeleteAccountScreen(): React.ReactElement {
       setCodeSent(true);
       restart(30);
     } catch (err) {
-      setProblem(err instanceof ApiError ? err.message : "We could not send that code.");
+      showSnackbar({
+        message: err instanceof ApiError ? err.message : "We could not send that code. Please try again.",
+        type: "error",
+      });
     } finally {
       setSendingCode(false);
     }
-  }, [restart]);
+  }, [restart, showSnackbar]);
 
   const submit = useCallback(async () => {
+    Keyboard.dismiss();
     setProblem(null);
+    setWordError(null);
 
     if (!disposition) {
-      setProblem("Choose what happens to the reports you filed.");
+      setProblem("Please choose what happens to the reports you filed.");
       return;
     }
-    if (typed.trim().toUpperCase() !== CONFIRM_WORD) {
-      setProblem(`Type ${CONFIRM_WORD} to confirm.`);
+    // Case-sensitive on purpose: the label asks for capital letters
+    // specifically, so lowercase or mixed-case input should not pass.
+    // Shown on the field itself (not the bottom banner) so the error sits
+    // next to the exact input it's about.
+    if (typed.trim() !== CONFIRM_WORD) {
+      setWordError(
+        typed.trim().length === 0
+          ? `Please type ${CONFIRM_WORD} in capital letters to confirm.`
+          : `That doesn't match. Please type ${CONFIRM_WORD} in capital letters to confirm.`,
+      );
       return;
     }
     if (usesCode ? code.length < 6 : password.length === 0) {
       setProblem(
         usesCode
-          ? "Enter the code we emailed you."
-          : "Enter your password to confirm it is you.",
+          ? "Please enter the six-digit code we emailed you."
+          : "Please enter your password to confirm it's you.",
       );
       return;
     }
@@ -111,18 +129,30 @@ export default function DeleteAccountScreen(): React.ReactElement {
       // Shown before the sign-out, so the receipt is not lost behind a redirect.
       setReceipt(result);
     } catch (err) {
-      setProblem(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong and nothing was deleted. Try again.",
-      );
+      showSnackbar({
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Something went wrong and nothing was deleted. Please try again.",
+        type: "error",
+      });
     } finally {
       setBusy(false);
     }
-  }, [disposition, typed, usesCode, code, password]);
+  }, [disposition, typed, usesCode, code, password, showSnackbar]);
+
+  const finishDeletion = useCallback(() => {
+    // forgetSession() clears auth state, but navigation from there depends
+    // on AuthGate's own effect reacting to that state change — an extra
+    // AsyncStorage read and a segment-string match away. Driving the
+    // destination directly here means "Close" always lands on Welcome, not
+    // whatever AuthGate happens to resolve to.
+    forgetSession();
+    router.replace("/(auth)/welcome");
+  }, [forgetSession]);
 
   if (receipt) {
-    return <DeletionReceiptScreen receipt={receipt} onDone={forgetSession} />;
+    return <DeletionReceiptScreen receipt={receipt} onDone={finishDeletion} />;
   }
 
   return (
@@ -193,6 +223,8 @@ export default function DeleteAccountScreen(): React.ReactElement {
         autoCorrect={false}
         placeholder={CONFIRM_WORD}
         height={50}
+        error={wordError}
+        hint={`Use capital letters, exactly as shown: ${CONFIRM_WORD}`}
         containerStyle={{ marginTop: 22 }}
         testID="delete-confirm-word"
       />

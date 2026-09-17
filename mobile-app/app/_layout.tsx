@@ -164,7 +164,10 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
       <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
       <Stack.Screen name="legal/lookup" options={{ headerShown: false }} />
-      <Stack.Screen name="legal/evidence-protection" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="legal/evidence-protection"
+        options={{ headerShown: false }}
+      />
       <Stack.Screen name="news/[id]" />
       <Stack.Screen name="incident/[id]" />
       <Stack.Screen
@@ -187,18 +190,32 @@ function ThemedAppShell(): React.ReactElement {
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
-    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark").catch(() => {});
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark").catch(
+      () => {},
+    );
   }, [isDark]);
 
   return (
-    <GestureHandlerRootView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-    >
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={isDark ? "light" : "dark"} />
       <LocationProvider>
         <IncidentsProvider>
           <NewsProvider>
             <GeoLegalProvider>
+              {/*
+                `colors` (constants/theme.ts) is a mutated shared object, not
+                reactive state — screens that read `colors.xxx` opt into being
+                told to re-render when it changes via `useThemeSync()` (called
+                once per screen). See that hook's doc comment for why: the
+                short version is that expo-router keeps prior screens mounted
+                underneath the active one, so a screen visited before a theme
+                toggle would otherwise stay stale until something else
+                happened to re-render it. An earlier version of this fix keyed
+                <AuthGate> by themeName to force a full remount instead — that
+                broke navigation state (a theme toggle would reset the whole
+                app back to its initial route), so it was replaced with the
+                per-screen subscription instead.
+              */}
               <AuthGate />
             </GeoLegalProvider>
           </NewsProvider>

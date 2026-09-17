@@ -18,7 +18,7 @@ import { Platform, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, StickyFooter } from "@/components/ui/Screen";
@@ -39,6 +39,7 @@ const STAGES = [
 ] as const;
 
 export default function ReceiptScreen(): React.ReactElement {
+  useThemeSync();
   const params = useLocalSearchParams<{ caseRef?: string; reportId?: string }>();
   const [report, setReport] = useState<ReportDetailView | null>(null);
   const [copied, setCopied] = useState(false);

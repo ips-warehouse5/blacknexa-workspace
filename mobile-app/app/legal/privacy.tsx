@@ -1,13 +1,14 @@
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { BackHeader, ScrollScreen } from "@/components/ui/Screen";
 import BrandMark from "@/components/BrandMark";
 import { PRIVACY } from "@/constants/legal";
 
 export default function PrivacyScreen(): React.ReactElement {
+  useThemeSync();
   return (
     <ScrollScreen
       padding={screenPadding.detail}

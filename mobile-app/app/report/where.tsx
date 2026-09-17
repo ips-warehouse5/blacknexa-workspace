@@ -18,10 +18,10 @@
  */
 
 import React, { useCallback, useState } from "react";
-import { View } from "react-native";
+import { Linking, View } from "react-native";
 import { router } from "expo-router";
 import * as Location from "expo-location";
-import { alpha, colors, radius } from "@/constants/theme";
+import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -64,6 +64,7 @@ function formatRadius(metres: number): string {
 }
 
 export default function WhereStep(): React.ReactElement {
+  useThemeSync();
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const { user } = useAuth();
   const exit = useWizardExit();
@@ -83,6 +84,10 @@ export default function WhereStep(): React.ReactElement {
   const [locating, setLocating] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Once denied permanently, requestForegroundPermissionsAsync() just
+  // resolves to denied again with no OS prompt — the only way to recover is
+  // sending the user to the OS settings screen.
+  const [locationDeniedForever, setLocationDeniedForever] = useState(false);
   /**
    * Radius of the last device fix, in metres, or null when the coordinates did
    * not come from the device — a typed address is geocoded and carries no
@@ -117,6 +122,10 @@ export default function WhereStep(): React.ReactElement {
   }, []);
 
   const useMyLocation = useCallback(async () => {
+    if (locationDeniedForever) {
+      await Linking.openSettings();
+      return;
+    }
     setLocating(true);
     setNotice(null);
     setProblem(null);
@@ -124,10 +133,16 @@ export default function WhereStep(): React.ReactElement {
       // C4: "We ask you here first. The system prompt only appears after you tap."
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) {
-        setNotice("Location is off. Type an address instead, or choose Hidden.");
+        setLocationDeniedForever(!permission.canAskAgain);
+        setNotice(
+          permission.canAskAgain
+            ? "Location is off. Type an address instead, or choose Hidden."
+            : "Location was denied. Open Settings to enable it, type an address instead, or choose Hidden.",
+        );
         setMode("type");
         return;
       }
+      setLocationDeniedForever(false);
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
@@ -192,7 +207,7 @@ export default function WhereStep(): React.ReactElement {
     >
       <View style={{ flexDirection: "row", gap: 9 }}>
         <Button
-          label="Use my location"
+          label={locationDeniedForever ? "Open Settings" : "Use my location"}
           variant={mode === "locate" ? "secondary" : "quiet"}
           height={48}
           loading={locating}

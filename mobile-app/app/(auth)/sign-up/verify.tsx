@@ -12,7 +12,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { colors, screenPadding } from "@/constants/theme";
+import { colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
@@ -30,6 +30,7 @@ import { validateVerificationCode } from "@/lib/auth/signup-validation";
 const CODE_LENGTH = 6;
 
 export default function VerifyCodeScreen(): React.ReactElement {
+  useThemeSync();
   const params = useLocalSearchParams<{ resendAfter?: string }>();
   const { signUpDraft, verifyEmail, resendVerification, busy, error, clearError } = useAuth();
   const { showSnackbar } = useSnackbar();
@@ -39,6 +40,22 @@ export default function VerifyCodeScreen(): React.ReactElement {
   const otpRef = useRef<OtpInputHandle>(null);
   const lastOutcomeRef = useRef<"verified" | "verification_failed" | "consent_failed" | null>(null);
   const { secondsRemaining, restart } = useCountdown(Number(params.resendAfter ?? 30));
+
+  /**
+   * The backend deliberately never reveals whether an email was already
+   * registered (see user_auth.service.ts's register()) — signing up with an
+   * existing verified email returns the same generic success and sends no
+   * code, so someone in that situation would otherwise wait here forever
+   * with no explanation. This can't say "that email already has an
+   * account" without undoing the backend's anti-enumeration protection, so
+   * it offers login as a possibility rather than a fact, after long enough
+   * that a real code should have arrived by now.
+   */
+  const [showLoginHint, setShowLoginHint] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShowLoginHint(true), 45_000);
+    return () => clearTimeout(timer);
+  }, []);
 
   /**
    * A wrong code shakes and clears only the OTP row. Consent persistence can
@@ -151,6 +168,26 @@ export default function VerifyCodeScreen(): React.ReactElement {
         onResend={resend}
         testID="verify-resend"
       />
+
+      {showLoginHint ? (
+        <Text
+          variant="bodyXs"
+          color={colors.t3}
+          center
+          style={{ marginTop: 18 }}
+          testID="verify-login-hint"
+        >
+          {"Still nothing? If you already have an account, "}
+          <Text
+            variant="bodyXs"
+            color={colors.acc}
+            onPress={() => router.replace("/(auth)/log-in")}
+          >
+            try logging in
+          </Text>
+          {" instead."}
+        </Text>
+      ) : null}
     </ScrollScreen>
   );
 }
