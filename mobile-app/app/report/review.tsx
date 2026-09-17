@@ -15,7 +15,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
-import { colors, radius } from "@/constants/theme";
+import { colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot, CheckboxRow } from "@/components/ui/Controls";
 import { WizardShell, cardHairline } from "@/components/report/WizardShell";
@@ -36,6 +36,7 @@ const VISIBILITY_LABEL: Record<Visibility, string> = {
 };
 
 export default function ReviewStep(): React.ReactElement {
+  useThemeSync();
   const { payload, attachments, savedAt, setStep, allSealed, uploadingCount } = useReportDraft();
   const exit = useWizardExit();
 

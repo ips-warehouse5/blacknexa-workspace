@@ -29,7 +29,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
-import { alpha, colors, screenPadding } from "@/constants/theme";
+import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import { Chip } from "@/components/ui/Controls";
@@ -367,6 +367,7 @@ function ExistingHomeScreen(): React.ReactElement {
 }
 
 export default function HomeScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 

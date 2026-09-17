@@ -18,7 +18,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -28,6 +28,7 @@ import reportsApi, { type ReportOwnerView } from "@/lib/api/reports";
 const TITLE_MAX = 70;
 
 export default function EditReportScreen(): React.ReactElement {
+  useThemeSync();
   const { ref } = useLocalSearchParams<{ ref: string }>();
   const queryClient = useQueryClient();
 

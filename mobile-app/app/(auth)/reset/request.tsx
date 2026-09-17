@@ -12,7 +12,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { colors, radius, screenPadding } from "@/constants/theme";
+import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -22,11 +22,11 @@ import { useSnackbar } from "@/providers/SnackbarProvider";
 import { safeResetErrorMessage, validateResetRequest } from "@/lib/auth/reset-validation";
 
 export default function ResetRequestScreen(): React.ReactElement {
+  useThemeSync();
   const { forgotPassword, busy, error, clearError } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
-  const [emailTouched, setEmailTouched] = useState(false);
   const submittingRef = useRef(false);
   const shownErrorRef = useRef<string | null>(null);
 
@@ -55,21 +55,17 @@ export default function ResetRequestScreen(): React.ReactElement {
     (text: string) => {
       if (error) clearError();
       setEmail(text);
-      if (emailTouched) setProblem(validateResetRequest(text).email);
+      // Email format is only checked on submit — clear a shown error as soon
+      // as the user starts correcting the field, but don't re-validate live.
+      if (problem) setProblem(null);
     },
-    [clearError, emailTouched, error],
+    [clearError, error, problem],
   );
-
-  const handleEmailBlur = useCallback(() => {
-    setEmailTouched(true);
-    setProblem(validateResetRequest(email).email);
-  }, [email]);
 
   const submit = useCallback(async () => {
     if (busy || submittingRef.current) return;
 
     clearError();
-    setEmailTouched(true);
     const validation = validateResetRequest(email);
     setProblem(validation.email);
     if (validation.email) {
@@ -108,7 +104,6 @@ export default function ResetRequestScreen(): React.ReactElement {
         label="EMAIL"
         value={email}
         onChangeText={handleEmailChange}
-        onBlur={handleEmailBlur}
         error={problem}
         placeholder="you@example.com"
         keyboardType="email-address"

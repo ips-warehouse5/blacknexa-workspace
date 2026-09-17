@@ -36,7 +36,13 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: "com.blacknexa.app",
-    googleServicesFile: "./firebase/GoogleService-Info.plist",
+    // firebase/*.plist is gitignored, so EAS Build (which only sees
+    // git-tracked files) can't find it. GOOGLE_SERVICE_INFO_PLIST is an
+    // EAS file-type env var that resolves to a local path at build time;
+    // local builds fall back to the file on disk.
+    googleServicesFile:
+      process.env.GOOGLE_SERVICE_INFO_PLIST ??
+      "./firebase/GoogleService-Info.plist",
     // Declared here because `ios/` is gitignored and regenerated: without
     // it, `expo prebuild --clean` produces a project with an empty
     // DEVELOPMENT_TEAM and the next device build fails to sign until
@@ -68,7 +74,12 @@ const config: ExpoConfig = {
       backgroundColor: "#FFFFFF",
     },
     package: "com.blacknexa.app",
-    googleServicesFile: "./firebase/google-services.json",
+    // firebase/*.json is gitignored, so EAS Build (which only sees
+    // git-tracked files) can't find it. GOOGLE_SERVICES_JSON is an EAS
+    // file-type env var that resolves to a local path at build time;
+    // local builds fall back to the file on disk.
+    googleServicesFile:
+      process.env.GOOGLE_SERVICES_JSON ?? "./firebase/google-services.json",
     config: {
       googleMaps: {
         apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY,
@@ -108,6 +119,24 @@ const config: ExpoConfig = {
     "expo-apple-authentication",
     "expo-local-authentication",
     [
+      "expo-build-properties",
+      {
+        // Only affects the "release" build variant (build.gradle only reads
+        // these two properties inside its `release { ... }` block) — debug
+        // builds are untouched, so this doesn't slow down local dev/testing.
+        // Cut the release APK from ~128MB to ~45MB in testing. Architecture
+        // is deliberately NOT restricted here — an AAB (bundleRelease, what
+        // EAS production and Play Store both use) needs every ABI included
+        // so Play Store can deliver the right one per device; only a
+        // directly-shared testing APK should use
+        // `-PreactNativeArchitectures=arm64-v8a` as a one-off build flag.
+        android: {
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+        },
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",
@@ -140,6 +169,8 @@ const config: ExpoConfig = {
     "expo-audio",
     "expo-asset",
     "./plugins/withIPhoneOnlyDestinations",
+    "./plugins/withAndroidMailtoQuery",
+    "./plugins/withAndroidReleaseSigning",
   ],
   experiments: {
     typedRoutes: true,

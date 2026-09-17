@@ -36,7 +36,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check } from "lucide-react-native";
-import { alpha, colors } from "@/constants/theme";
+import { alpha, colors, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 
@@ -118,6 +118,7 @@ function useScreenSize(): { width: number; height: number } {
 }
 
 export default function IntroScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { height: screenHeight } = useScreenSize();

@@ -18,7 +18,7 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useAuth } from "@/providers/AuthProvider";
@@ -42,6 +42,7 @@ function whenSeen(iso: string): string {
 }
 
 export default function AccountInfoScreen(): React.ReactElement {
+  useThemeSync();
   const { user, signInMethod } = useAuth();
   const sessions = useQuery({
     queryKey: ["sessions"],

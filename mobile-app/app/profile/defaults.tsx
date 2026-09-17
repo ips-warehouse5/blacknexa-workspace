@@ -10,7 +10,7 @@ import React, { useCallback, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Check, Globe2, Lock } from "lucide-react-native";
 import { router } from "expo-router";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { Switch } from "@/components/ui/Controls";
@@ -26,6 +26,7 @@ const PRECISION: { value: LocationPrecision; label: string }[] = [
 ];
 
 export default function DefaultsScreen(): React.ReactElement {
+  useThemeSync();
   const { user, updateProfile } = useAuth();
   const prefs = user?.preferences;
 

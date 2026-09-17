@@ -12,7 +12,7 @@
 import React, { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
-import { colors } from "@/constants/theme";
+import { colors, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot } from "@/components/ui/Controls";
 import { WizardShell } from "@/components/report/WizardShell";
@@ -21,6 +21,7 @@ import { CATEGORY_META, CATEGORY_ORDER, type ReportCategory } from "@/lib/api/re
 import { useWizardExit } from "@/components/report/useWizardExit";
 
 export default function CategoryStep(): React.ReactElement {
+  useThemeSync();
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const [problem, setProblem] = useState<string | null>(null);
   const exit = useWizardExit();

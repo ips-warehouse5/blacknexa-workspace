@@ -17,7 +17,7 @@ import { Linking, Pressable, StyleSheet, TextInput, View } from "react-native";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { ChevronDown } from "lucide-react-native";
 import { router } from "expo-router";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
@@ -39,15 +39,19 @@ const SUBJECTS = [
 ] as const;
 
 export default function ContactScreen(): React.ReactElement {
+  useThemeSync();
   const { user } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [message, setMessage] = useState("");
-  const [subject, setSubject] = useState<(typeof SUBJECTS)[number]>(SUBJECTS[0]);
+  const [subject, setSubject] = useState<(typeof SUBJECTS)[number]>(
+    SUBJECTS[0],
+  );
   const [subjectsOpen, setSubjectsOpen] = useState(false);
   const [attachDiagnostics, setAttachDiagnostics] = useState(true);
   const [opening, setOpening] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
-  const scrollRef = useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
+  const scrollRef =
+    useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const messageRef = useRef<TextInput>(null);
   const messageY = useRef(0);
 
@@ -55,13 +59,21 @@ export default function ContactScreen(): React.ReactElement {
     const trimmed = message.trim();
     if (!trimmed) {
       setMessageError("Tell us what happened before sending.");
-      scrollRef.current?.scrollTo({ y: Math.max(0, messageY.current - 24), animated: true });
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, messageY.current - 24),
+        animated: true,
+      });
       messageRef.current?.focus();
       return;
     }
     if (trimmed.length < MIN_MESSAGE) {
-      setMessageError(`Write at least ${MIN_MESSAGE} characters so support has enough context.`);
-      scrollRef.current?.scrollTo({ y: Math.max(0, messageY.current - 24), animated: true });
+      setMessageError(
+        `Write at least ${MIN_MESSAGE} characters so support has enough context.`,
+      );
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, messageY.current - 24),
+        animated: true,
+      });
       messageRef.current?.focus();
       return;
     }
@@ -110,11 +122,15 @@ export default function ContactScreen(): React.ReactElement {
         />
       }
     >
-      <BackHeader title="Contact support" onBack={() => router.back()} padding={0} />
+      <BackHeader
+        title="Contact support"
+        onBack={() => router.back()}
+        padding={0}
+      />
 
       <Text variant="bodySm" color={colors.t2} style={styles.intro}>
-        Tell us what happened. Nothing from your reports or your Vault is attached
-        unless you tick the box.
+        Tell us what happened. Nothing from your reports or your Vault is
+        attached unless you tick the box.
       </Text>
 
       <Text variant="fieldLabel" color={colors.t3} style={styles.fieldLabel}>
@@ -143,7 +159,9 @@ export default function ContactScreen(): React.ReactElement {
           <ChevronDown
             size={18}
             color={colors.t3}
-            style={{ transform: [{ rotate: subjectsOpen ? "180deg" : "0deg" }] }}
+            style={{
+              transform: [{ rotate: subjectsOpen ? "180deg" : "0deg" }],
+            }}
           />
         </Pressable>
         {subjectsOpen ? (
@@ -177,7 +195,10 @@ export default function ContactScreen(): React.ReactElement {
                     pressed && { opacity: 0.88 },
                   ]}
                 >
-                  <Text variant="label" color={selected ? colors.acc : colors.t1}>
+                  <Text
+                    variant="label"
+                    color={selected ? colors.acc : colors.t1}
+                  >
                     {option}
                   </Text>
                 </Pressable>
@@ -221,13 +242,20 @@ export default function ContactScreen(): React.ReactElement {
         onPress={() => setAttachDiagnostics((value) => !value)}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: attachDiagnostics }}
-        style={({ pressed }) => [styles.diagnosticsRow, pressed && { opacity: 0.9 }]}
+        style={({ pressed }) => [
+          styles.diagnosticsRow,
+          pressed && { opacity: 0.9 },
+        ]}
       >
         <View pointerEvents="none">
-          <Checkbox checked={attachDiagnostics} onToggle={() => setAttachDiagnostics((value) => !value)} />
+          <Checkbox
+            checked={attachDiagnostics}
+            onToggle={() => setAttachDiagnostics((value) => !value)}
+          />
         </View>
         <Text variant="bodyXs" color={colors.t2} style={styles.diagnosticsText}>
-          Attach diagnostics — app version, device and error logs. No report content, ever.
+          Attach diagnostics — app version, device and error logs. No report
+          content, ever.
         </Text>
       </Pressable>
     </ScrollScreen>

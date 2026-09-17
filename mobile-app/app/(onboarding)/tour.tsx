@@ -16,7 +16,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, radius, scrim } from "@/constants/theme";
+import { alpha, colors, radius, scrim, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/providers/AuthProvider";
@@ -52,6 +52,7 @@ const STEPS: Step[] = [
 ];
 
 export default function TourScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { completeOnboarding } = useAuth();
   const [index, setIndex] = useState(0);

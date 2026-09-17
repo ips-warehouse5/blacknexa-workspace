@@ -27,7 +27,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -40,6 +40,7 @@ import reportsApi, { relativeTime, type CommentView } from "@/lib/api/reports";
 type Sort = "top" | "new";
 
 export default function CommentsScreen(): React.ReactElement {
+  useThemeSync();
   const { ref } = useLocalSearchParams<{ ref: string }>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();

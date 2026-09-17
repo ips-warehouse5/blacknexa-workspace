@@ -1,3 +1,5 @@
+import { useEffect, useReducer } from "react";
+
 /**
  * Design tokens, lifted verbatim from the design's `:root` block and its SYSTEM
  * artboard (`BlackNexa Screens.dc.html`).
@@ -243,10 +245,55 @@ export const DEFAULT_THEME: ThemeName = "signal";
 /** Direct access for modules that run outside the React tree. */
 export const colors: ThemeColors = { ...signal };
 
+/**
+ * Subscribers notified after `colors` is mutated by `setActiveTheme`.
+ *
+ * `colors` is a mutated singleton, not React state — screens that read
+ * `colors.xxx` directly have no built-in way to know it changed. expo-router's
+ * Stack keeps prior screens mounted (not unmounted) when navigating back, so a
+ * screen visited before a theme toggle would otherwise keep showing whatever
+ * `colors.xxx` values were baked into its last render until something else
+ * happened to re-render it — which is what "theme doesn't apply after Back"
+ * was. `useThemeSync` (below) is how a screen opts into being told to
+ * re-render when that happens, without the whole app remounting.
+ *
+ * `setActiveTheme` is called directly in app/_layout.tsx's ThemedAppShell
+ * render body (not an effect), so `colors` is already correct by the time
+ * ThemedAppShell's own children render — no flash of the old theme. But that
+ * means notifying listeners synchronously would call another component's
+ * setState (a subscriber's forced re-render) while ThemedAppShell is still
+ * mid-render, which React forbids ("Cannot update a component while
+ * rendering a different component"). Deferring the notification to a
+ * microtask keeps the synchronous, no-flash mutation of `colors` itself,
+ * while pushing the *side effect* of telling other mounted screens to
+ * re-render to just after the current render/commit finishes.
+ */
+const themeListeners = new Set<() => void>();
+
 export function setActiveTheme(theme: ThemeName): ThemeColors {
   const next = THEMES[theme] ?? signal;
   Object.assign(colors, next);
+  queueMicrotask(() => {
+    themeListeners.forEach((listener) => listener());
+  });
   return colors;
+}
+
+/**
+ * Call once per screen component (anywhere in its body) to make it re-render
+ * whenever the active theme changes — including while the screen is mounted
+ * but not focused, e.g. sitting under the current screen in the back stack.
+ * Doesn't change how `colors` is read; existing `colors.xxx` usage is
+ * unaffected, this only makes the component notice when to re-read it.
+ */
+export function useThemeSync(): void {
+  const [, forceRender] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    themeListeners.add(forceRender);
+    return () => {
+      themeListeners.delete(forceRender);
+    };
+  }, []);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

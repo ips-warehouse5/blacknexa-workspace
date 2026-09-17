@@ -5,7 +5,7 @@ import { Keyboard, Pressable, View } from "react-native";
 import type { TextInput } from "react-native";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { router, useFocusEffect } from "expo-router";
-import { alpha, colors, screenPadding } from "@/constants/theme";
+import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField, { PasswordField } from "@/components/ui/TextField";
@@ -16,13 +16,13 @@ import { useSnackbar } from "@/providers/SnackbarProvider";
 import { safeLoginErrorMessage, validateLoginForm } from "@/lib/auth/login-validation";
 
 export default function LogInScreen(): React.ReactElement {
+  useThemeSync();
   const { login, busy, error, clearError } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -60,9 +60,12 @@ export default function LogInScreen(): React.ReactElement {
     (text: string) => {
       if (error) clearError();
       setEmail(text);
-      if (emailTouched) setEmailError(validateLoginForm(text, password).email);
+      // Email format is only checked on submit (see `submit` below), not while
+      // typing — but once an error is showing, clear it as soon as the user
+      // starts correcting the field rather than leaving a stale message up.
+      if (emailError) setEmailError(null);
     },
-    [clearError, emailTouched, error, password],
+    [clearError, emailError, error],
   );
 
   const handlePasswordChange = useCallback(
@@ -74,11 +77,6 @@ export default function LogInScreen(): React.ReactElement {
     [clearError, email, error, passwordTouched],
   );
 
-  const handleEmailBlur = useCallback(() => {
-    setEmailTouched(true);
-    setEmailError(validateLoginForm(email, password).email);
-  }, [email, password]);
-
   const handlePasswordBlur = useCallback(() => {
     setPasswordTouched(true);
     setPasswordError(validateLoginForm(email, password).password);
@@ -88,7 +86,6 @@ export default function LogInScreen(): React.ReactElement {
     if (busy || submittingRef.current) return;
 
     clearError();
-    setEmailTouched(true);
     setPasswordTouched(true);
     const validation = validateLoginForm(email, password);
     setEmailError(validation.email);
@@ -149,7 +146,6 @@ export default function LogInScreen(): React.ReactElement {
           label="EMAIL"
           value={email}
           onChangeText={handleEmailChange}
-          onBlur={handleEmailBlur}
           error={emailError}
           placeholder="you@example.com"
           keyboardType="email-address"

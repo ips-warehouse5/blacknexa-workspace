@@ -24,7 +24,7 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -51,6 +51,7 @@ const MATCH_LABEL: Record<MatchedField, string> = {
 };
 
 export default function SearchScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
 

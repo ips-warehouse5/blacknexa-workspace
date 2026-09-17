@@ -2,10 +2,11 @@ import React from "react";
 import { Link, Stack } from "expo-router";
 import { Compass } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
-import { alpha, colors, radius } from "@/constants/theme";
+import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 
 export default function NotFoundScreen(): React.ReactElement {
+  useThemeSync();
   return (
     <>
       <Stack.Screen options={{ title: "Not found" }} />

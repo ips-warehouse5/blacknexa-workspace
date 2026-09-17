@@ -1,11 +1,12 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { colors, radius } from "@/constants/theme";
+import { colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { safeBack } from "@/utils/navigation";
 
 export default function ModalScreen(): React.ReactElement {
+  useThemeSync();
   return (
     <View style={styles.root}>
       <View style={styles.titleRow}>

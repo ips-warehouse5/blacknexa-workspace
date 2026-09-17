@@ -24,6 +24,8 @@ import * as Location from "expo-location";
 import { alpha, colors, radius } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 
+import { MapPin } from "lucide-react-native";
+
 export interface LocationPermissionModalProps {
   visible: boolean;
   /** Called after the native prompt resolves, with whether it was granted. */
@@ -73,8 +75,13 @@ export function LocationPermissionModal({
 
         <View style={styles.dialogWrap} pointerEvents="box-none">
           <View style={styles.dialog} accessibilityViewIsModal accessibilityRole="alert">
-            <View style={styles.mark}>
-              <PinGlyph />
+            <View style={styles.markContainer}>
+              <View style={styles.radarOuterRing} />
+              <View style={styles.radarMiddleRing} />
+              <View style={styles.mark}>
+                <MapPin size={24} color={colors.acc} strokeWidth={2.2} />
+                <View style={styles.pinGlowDot} />
+              </View>
             </View>
 
             <Text variant="sectionTitle" color={colors.t0} center style={styles.title}>
@@ -129,42 +136,6 @@ export function LocationPermissionModal({
   );
 }
 
-/** The 22px map pin from the artboard. */
-function PinGlyph(): React.ReactElement {
-  return (
-    <View style={{ width: 22, height: 22, alignItems: "center" }}>
-      <View
-        style={{
-          width: 16,
-          height: 16,
-          borderRadius: 8,
-          borderWidth: 1.7,
-          borderColor: colors.acc,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          bottom: 1,
-          width: 2,
-          height: 7,
-          backgroundColor: colors.acc,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          top: 5.5,
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: colors.acc,
-        }}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
 
@@ -181,20 +152,52 @@ const styles = StyleSheet.create({
   dialog: {
     backgroundColor: colors.s2,
     borderRadius: radius.dialog,
-    paddingTop: 24,
+    paddingTop: 26,
     paddingHorizontal: 22,
   },
-  mark: {
+  markContainer: {
     alignSelf: "center",
-    width: 46,
-    height: 46,
-    borderRadius: radius.lg,
-    backgroundColor: alpha(colors.acc, 0.13),
+    width: 68,
+    height: 68,
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { marginTop: 15 },
-  body: { marginTop: 9, lineHeight: 20 },
+  radarOuterRing: {
+    position: "absolute",
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: alpha(colors.acc, 0.05),
+    borderWidth: 1,
+    borderColor: alpha(colors.acc, 0.12),
+  },
+  radarMiddleRing: {
+    position: "absolute",
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: alpha(colors.acc, 0.08),
+  },
+  mark: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: alpha(colors.acc, 0.16),
+    borderWidth: 1,
+    borderColor: alpha(colors.acc, 0.28),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pinGlowDot: {
+    position: "absolute",
+    top: 13,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.acc,
+  },
+  title: { marginTop: 14 },
+  body: { marginTop: 8, lineHeight: 20 },
 
   divider: {
     height: 1,

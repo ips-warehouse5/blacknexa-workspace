@@ -10,6 +10,9 @@
       "env": {
         "NODE_ENV": "development",
         "EXPO_PUBLIC_APP_ENV": "development"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -17,6 +20,9 @@
       "env": {
         "NODE_ENV": "development",
         "EXPO_PUBLIC_APP_ENV": "development"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
@@ -24,6 +30,9 @@
       "env": {
         "NODE_ENV": "production",
         "EXPO_PUBLIC_APP_ENV": "production"
+      },
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   },

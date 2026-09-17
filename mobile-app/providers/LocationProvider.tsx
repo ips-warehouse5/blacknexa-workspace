@@ -72,13 +72,18 @@ async function persistLocation(loc: UserLocation): Promise<void> {
 
 /**
  * Request foreground location permission and capture a one-shot fix with
- * reverse geocoding. Returns null if the user denies or the device can't
- * provide a fix. Accuracy is set to ~1km so it's battery-friendly and
- * privacy-safe — we only need city/region-level granularity for news.
+ * reverse geocoding. Returns a null location if the user denies or the
+ * device can't provide a fix, alongside `canAskAgain` — once that's false
+ * (permanently denied, e.g. Android's "Deny & don't ask again" or an iOS
+ * denial), calling `requestForegroundPermissionsAsync()` again silently
+ * resolves to denied with no OS prompt; the only way to recover is sending
+ * the user to the OS settings screen (see `openSettings` below). Accuracy is
+ * set to ~1km so it's battery-friendly and privacy-safe — we only need
+ * city/region-level granularity for news.
  */
-async function captureLocation(): Promise<UserLocation | null> {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== "granted") return null;
+async function captureLocation(): Promise<{ location: UserLocation | null; canAskAgain: boolean }> {
+  const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+  if (status !== "granted") return { location: null, canAskAgain };
 
   const pos = await Location.getCurrentPositionAsync({
     accuracy: Location.Accuracy.Low,
@@ -123,7 +128,7 @@ async function captureLocation(): Promise<UserLocation | null> {
     capturedAt: new Date().toISOString(),
   };
   await persistLocation(loc);
-  return loc;
+  return { location: loc, canAskAgain: true };
 }
 
 /**
@@ -161,6 +166,12 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
   const [status, setStatus] = useState<LocationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [nearbyEnabled, setNearbyEnabled] = useState<boolean>(false);
+  // Whether requesting permission again could still show the OS prompt.
+  // Starts true (optimistic — most users haven't been asked yet); becomes
+  // false once a request comes back permanently denied, which is the signal
+  // consumers need to show an "Open Settings" CTA instead of a useless
+  // "Enable Location" button that re-requests and silently fails again.
+  const [canAskAgain, setCanAskAgain] = useState<boolean>(true);
 
   // Hydrate from AsyncStorage on mount so we have a location immediately.
   const cacheQuery = useQuery<UserLocation | null, Error>({
@@ -188,20 +199,29 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     setStatus("requesting");
     setError(null);
     try {
-      const { status: existing } =
+      const { status: existing, canAskAgain: existingCanAskAgain } =
         await Location.getForegroundPermissionsAsync();
-      if (existing === "denied") {
+      if (existing === "denied" && !existingCanAskAgain) {
+        // Permanently denied — requestForegroundPermissionsAsync() would
+        // just resolve to "denied" again with no OS prompt, so don't call it.
         setStatus("denied");
-        setError("Location permission was denied.");
+        setCanAskAgain(false);
+        setError("Location permission was denied. Enable it in Settings to continue.");
         return;
       }
-      const loc = await captureLocation();
+      const { location: loc, canAskAgain: resultCanAskAgain } = await captureLocation();
       if (loc) {
         await cacheQuery.refetch();
         setStatus("granted");
+        setCanAskAgain(true);
       } else {
         setStatus("denied");
-        setError("Location permission was denied.");
+        setCanAskAgain(resultCanAskAgain);
+        setError(
+          resultCanAskAgain
+            ? "Location permission was denied."
+            : "Location permission was denied. Enable it in Settings to continue.",
+        );
       }
     } catch (e) {
       setStatus("unavailable");
@@ -277,6 +297,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
     location,
     status,
     error,
+    canAskAgain,
     requestLocation,
     setLocation,
     openSettings,

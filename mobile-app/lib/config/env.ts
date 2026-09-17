@@ -12,7 +12,16 @@
 
 export type AppEnv = "development" | "production";
 
-function normalizeUrl(url: string): string {
+function normalizeUrl(name: string, url: string): string {
+  // A typo like "KEY==https://..." in a .env file parses as the value
+  // "=https://..." — a syntactically-invalid URL that `fetch` rejects at
+  // call time with a generic, misleading "offline" error. Catching it here
+  // instead fails loudly at startup with the actual cause.
+  try {
+    new URL(url);
+  } catch {
+    throw new Error(`[env] "${name}" is not a valid URL: "${url}". Check .env.${APP_ENV} for a typo.`);
+  }
   return url.replace(/\/+$/, "");
 }
 
@@ -43,6 +52,7 @@ function requireEnv(name: string, value: string | undefined): string {
  * the wrong backend.
  */
 export const API_BASE_URL = normalizeUrl(
+  "EXPO_PUBLIC_API_BASE_URL",
   requireEnv("EXPO_PUBLIC_API_BASE_URL", process.env.EXPO_PUBLIC_API_BASE_URL),
 );
 
@@ -52,5 +62,5 @@ export const API_BASE_URL = normalizeUrl(
  * backend deployment (the common case) only needs one URL configured.
  */
 export const RORK_FUNCTIONS_URL = process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL
-  ? normalizeUrl(process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL)
+  ? normalizeUrl("EXPO_PUBLIC_RORK_FUNCTIONS_URL", process.env.EXPO_PUBLIC_RORK_FUNCTIONS_URL)
   : API_BASE_URL;

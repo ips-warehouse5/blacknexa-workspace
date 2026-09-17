@@ -14,12 +14,13 @@ import React, { useEffect } from "react";
 import { Platform, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { alpha, colors, screenPadding } from "@/constants/theme";
+import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { Screen, StickyFooter } from "@/components/ui/Screen";
 
 export default function ResetDoneScreen(): React.ReactElement {
+  useThemeSync();
   useEffect(() => {
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

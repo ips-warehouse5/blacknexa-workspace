@@ -14,7 +14,7 @@ import React, { useCallback, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { alpha, colors, radius, screenPadding } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
@@ -34,6 +34,7 @@ function whenSeen(iso: string): string {
 }
 
 export default function SecurityScreen(): React.ReactElement {
+  useThemeSync();
   const { signOutEverywhere } = useAuth();
   const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState(false);

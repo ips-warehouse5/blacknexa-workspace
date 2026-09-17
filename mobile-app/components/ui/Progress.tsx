@@ -123,7 +123,9 @@ export function evaluatePassword(password: string): {
     { label: "At least 10 characters", met: password.length >= 10 },
     { label: "One capital letter", met: /[A-Z]/.test(password) },
     { label: "One number", met: /\d/.test(password) },
-    { label: "One symbol", met: /[^A-Za-z0-9]/.test(password) },
+    // Excludes whitespace: a space is not a symbol, and padding a password
+    // with spaces should not satisfy this rule.
+    { label: "One symbol", met: /[^A-Za-z0-9\s]/.test(password) },
   ];
 
   const score = rules.filter((rule) => rule.met).length;

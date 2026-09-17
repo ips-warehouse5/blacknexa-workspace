@@ -13,10 +13,11 @@
 
 import React from "react";
 import { Stack } from "expo-router";
-import { colors } from "@/constants/theme";
+import { colors, useThemeSync } from "@/constants/theme";
 import { ReportDraftProvider } from "@/providers/ReportDraftProvider";
 
 export default function ReportWizardLayout(): React.ReactElement {
+  useThemeSync();
   return (
     <ReportDraftProvider>
       <Stack

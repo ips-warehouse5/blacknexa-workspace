@@ -15,7 +15,7 @@ import { Pressable, View } from "react-native";
 import type { TextInput } from "react-native";
 import { router } from "expo-router";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { colors, radius } from "@/constants/theme";
+import { colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import TextField from "@/components/ui/TextField";
 import { WizardShell, SectionLabel, cardHairline } from "@/components/report/WizardShell";
@@ -35,6 +35,7 @@ const PROMPTS = [
 ];
 
 export default function DetailsStep(): React.ReactElement {
+  useThemeSync();
   const { payload, patch, setStep, savedAt } = useReportDraft();
   const exit = useWizardExit();
 
