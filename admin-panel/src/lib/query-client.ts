@@ -62,6 +62,12 @@ export const queryKeys = {
     detail: (id: string) => ["contact", "detail", id] as const,
     summary: ["contact", "summary"] as const,
   },
+  faq: {
+    all: ["faq"] as const,
+    list: (params: unknown) => ["faq", "list", params] as const,
+    summary: ["faq", "summary"] as const,
+    categories: ["faq", "categories"] as const,
+  },
 } as const;
 
 export default queryClient;

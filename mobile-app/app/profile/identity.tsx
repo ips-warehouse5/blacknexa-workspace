@@ -13,13 +13,15 @@
  * column): on means `"anonymous"`; off means `"photo"` if a photo is set,
  * else `"initials"`.
  *
- * No avatar-upload endpoint exists anywhere in the backend (checked:
- * `avatar_key` is declared on the model but never written by any route,
- * and `avatarUrl` is hardcoded `null` in every profile response). Camera
- * and library selection still work — real permission requests, real
- * picker — but the result previews locally for this session only, with an
- * explicit note that saving a photo isn't available yet, rather than
- * silently pretending `updateProfile` persisted it.
+ * The photo is uploaded the moment it is picked, not on Save: presign →
+ * direct PUT to storage → commit. Two reasons for not deferring it to the
+ * Save button. A multi-megabyte upload behind a button that also closes
+ * the screen gives the person nothing to look at and no way to retry; and
+ * `updateProfile` is a JSON PATCH, so the bytes were never going to travel
+ * with it anyway. The local preview shows immediately and is replaced by
+ * the server's `avatarUrl` once commit returns.
+ *
+ * Save therefore carries only the text fields and the avatar mode.
  */
 
 import React, { useCallback, useMemo, useState } from "react";
@@ -35,13 +37,51 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
 import type { AvatarMode } from "@/lib/api/auth";
 
+/**
+ * What the picker returns, mapped to a type the server will sign for.
+ *
+ * `ImagePicker` reports a `mimeType` on most assets but not all — an older
+ * Android gallery can return none. The extension is the fallback, and JPEG is
+ * the last resort because that is what the picker produces when it re-encodes.
+ */
+function mimeFor(asset: { mimeType?: string | null; uri: string }): string {
+  const reported = asset.mimeType?.toLowerCase();
+  if (reported && ALLOWED_MIMES.includes(reported)) return reported;
+  const extension = asset.uri.split(".").pop()?.toLowerCase() ?? "";
+  if (extension === "png") return "image/png";
+  if (extension === "webp") return "image/webp";
+  if (extension === "heic") return "image/heic";
+  if (extension === "heif") return "image/heif";
+  return "image/jpeg";
+}
+
+/** Mirrors the server's accepted set — see `userAuth.avatarPresign`. */
+const ALLOWED_MIMES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
+
 export default function IdentityScreen(): React.ReactElement {
   useThemeSync();
-  const { user, updateProfile, busy } = useAuth();
+  const { user, updateProfile, uploadAvatar, removeAvatar, busy } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [avatarMode, setAvatarMode] = useState<AvatarMode>(user?.avatarMode ?? "initials");
+  /**
+   * The just-picked local file, shown until commit returns.
+   *
+   * Cleared on success so the tile falls through to the server's `avatarUrl` —
+   * keeping the local URI would leave the screen rendering a cache path that
+   * stops resolving once the app is reinstalled.
+   */
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  /** The server's photo, or the local one while it is still on its way up. */
+  const photoUri = previewUri ?? user?.avatarUrl ?? null;
 
   const anonymous = avatarMode === "anonymous";
 
@@ -91,27 +131,52 @@ export default function IdentityScreen(): React.ReactElement {
         source === "camera"
           ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.85 })
           : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
-      if (result.canceled || !result.assets[0]) return;
-      setPreviewUri(result.assets[0].uri);
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset) return;
+
+      // Show it straight away. The upload takes as long as it takes, and an
+      // avatar tile that stays on the old image until commit returns reads as
+      // the picker having failed.
+      setPreviewUri(asset.uri);
       setAvatarMode("photo");
-      showSnackbar({
-        message: "Previewing only — saving a profile photo isn't available yet.",
-        type: "info",
-      });
+      setUploading(true);
+      try {
+        const ok = await uploadAvatar(asset.uri, mimeFor(asset));
+        if (ok) {
+          // Fall through to the server's URL — see `previewUri` above.
+          setPreviewUri(null);
+          showSnackbar({ message: "Profile photo updated.", type: "success" });
+        } else {
+          // Put the tile back the way it was; the provider has already surfaced
+          // the reason, and leaving a preview of a photo that was never stored
+          // would be a quiet lie.
+          setPreviewUri(null);
+          setAvatarMode(user?.avatarMode ?? "initials");
+        }
+      } finally {
+        setUploading(false);
+      }
     },
-    [showSnackbar],
+    [showSnackbar, uploadAvatar, user?.avatarMode],
   );
 
-  const removePhoto = useCallback(() => {
+  const removePhoto = useCallback(async () => {
     setPreviewUri(null);
     setAvatarMode(anonymous ? "anonymous" : "initials");
-  }, [anonymous]);
+    // Only a round trip when there is something on the server to remove. A
+    // photo picked and then removed before it finished uploading has no key
+    // to delete.
+    if (user?.avatarUrl) await removeAvatar();
+  }, [anonymous, removeAvatar, user?.avatarUrl]);
 
   const openAvatarActions = useCallback(() => {
     // "Remove Photo" only makes sense when there's a photo to remove — offering
     // it unconditionally let someone with no photo set "remove" a photo that
     // was never there.
-    const hasPhoto = avatarMode === "photo";
+    // Based on whether a photo actually exists, not on the mode: someone with a
+    // stored photo who has switched to anonymous still has one to remove.
+    const hasPhoto = Boolean(photoUri);
     const options = hasPhoto
       ? ["Take Photo", "Choose from Library", "Remove Photo", "Cancel"]
       : ["Take Photo", "Choose from Library", "Cancel"];
@@ -124,7 +189,7 @@ export default function IdentityScreen(): React.ReactElement {
         (index) => {
           if (index === 0) void pickFrom("camera");
           else if (index === 1) void pickFrom("library");
-          else if (hasPhoto && index === 2) removePhoto();
+          else if (hasPhoto && index === 2) void removePhoto();
         },
       );
       return;
@@ -134,17 +199,17 @@ export default function IdentityScreen(): React.ReactElement {
       { text: "Take Photo", onPress: () => void pickFrom("camera") },
       { text: "Choose from Library", onPress: () => void pickFrom("library") },
       ...(hasPhoto
-        ? [{ text: "Remove Photo", style: "destructive" as const, onPress: removePhoto }]
+        ? [{ text: "Remove Photo", style: "destructive" as const, onPress: () => void removePhoto() }]
         : []),
       { text: "Cancel", style: "cancel" },
     ]);
-  }, [avatarMode, pickFrom, removePhoto]);
+  }, [photoUri, pickFrom, removePhoto]);
 
   const toggleAnonymous = useCallback(() => {
     setAvatarMode((current) =>
-      current === "anonymous" ? (previewUri ? "photo" : "initials") : "anonymous",
+      current === "anonymous" ? (photoUri ? "photo" : "initials") : "anonymous",
     );
-  }, [previewUri]);
+  }, [photoUri]);
 
   return (
     <ScrollScreen padding={screenPadding.detail} testID="profile-identity">
@@ -167,12 +232,12 @@ export default function IdentityScreen(): React.ReactElement {
         </Text>
         <Pressable
           onPress={save}
-          disabled={busy}
+          disabled={busy || uploading}
           accessibilityRole="button"
           testID="identity-save"
         >
-          <Text variant="label" color={busy ? colors.t4 : colors.acc}>
-            {busy ? "Saving…" : "Save"}
+          <Text variant="label" color={busy || uploading ? colors.t4 : colors.acc}>
+            {uploading ? "Uploading…" : busy ? "Saving…" : "Save"}
           </Text>
         </Pressable>
       </View>
@@ -190,10 +255,10 @@ export default function IdentityScreen(): React.ReactElement {
               overflow: "hidden",
             }}
           >
-            {previewUri && avatarMode === "photo" ? (
+            {photoUri && avatarMode === "photo" ? (
               <Image
-                source={{ uri: previewUri }}
-                style={{ width: 88, height: 88 }}
+                source={{ uri: photoUri }}
+                style={{ width: 88, height: 88, opacity: uploading ? 0.5 : 1 }}
                 resizeMode="cover"
               />
             ) : anonymous ? (
@@ -206,8 +271,10 @@ export default function IdentityScreen(): React.ReactElement {
           </View>
           <Pressable
             onPress={openAvatarActions}
+            disabled={uploading}
             accessibilityRole="button"
             accessibilityLabel="Change photo"
+            accessibilityState={{ disabled: uploading, busy: uploading }}
             testID="identity-avatar-edit"
             style={{
               position: "absolute",
@@ -352,6 +419,12 @@ export default function IdentityScreen(): React.ReactElement {
         >
           {publishedName === "Anonymous" ? (
             <UserRound size={16} color={colors.t3} />
+          ) : photoUri && avatarMode === "photo" ? (
+            <Image
+              source={{ uri: photoUri }}
+              style={{ width: 32, height: 32 }}
+              resizeMode="cover"
+            />
           ) : (
             <Text variant="labelSm" color={colors.acc}>
               {initials}

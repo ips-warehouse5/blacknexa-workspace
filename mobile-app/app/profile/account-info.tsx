@@ -9,9 +9,10 @@
  * connected to. Prefer server-sent provider metadata, then the method captured
  * by AuthProvider during the successful sign-in.
  *
- * "Password — last changed" has no timestamp field on the backend
- * (`AppUser` has no `password_changed_at`), so only the action is shown,
- * not a fabricated date.
+ * "Password — last changed" reads `passwordChangedAt` from the profile.
+ * It stays null for an account that has never had a password and for one
+ * created before the column existed, and the row falls back to the action
+ * alone in that case rather than fabricating a date from `createdAt`.
  */
 
 import React from "react";
@@ -29,6 +30,24 @@ const SIGN_IN_LABEL = {
   google: "Google",
   password: "Password",
 } as const;
+
+/**
+ * "Last changed 4 March 2026".
+ *
+ * Absolute rather than relative: a password change is a security event someone
+ * may be trying to match against something they remember happening on a
+ * particular day, and "7 months ago" is useless for that.
+ */
+function whenChanged(iso: string | null): string | null {
+  if (!iso) return null;
+  const value = Date.parse(iso);
+  if (!Number.isFinite(value)) return null;
+  return `Last changed ${new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })}`;
+}
 
 function whenSeen(iso: string): string {
   const value = Date.parse(iso);
@@ -60,7 +79,7 @@ export default function AccountInfoScreen(): React.ReactElement {
         {user?.hasPassword ? (
           <AccountRow
             title="Password"
-            detail="Last changed date unavailable"
+            detail={whenChanged(user.passwordChangedAt ?? null) ?? "Tap to change"}
             onPress={() => router.push("/profile/change-password")}
             testID="row-change-password"
           />
@@ -101,9 +120,15 @@ export default function AccountInfoScreen(): React.ReactElement {
       </AccountGroup>
 
       <View style={{ marginTop: 14 }}>
-        <Text variant="metaSm" color={colors.t4}>
-          Signing out of another device is not available from this screen yet.
-        </Text>
+        <Pressable
+          onPress={() => router.push("/profile/security")}
+          accessibilityRole="button"
+          testID="row-manage-devices"
+        >
+          <Text variant="metaSm" color={colors.acc}>
+            Manage signed-in devices
+          </Text>
+        </Pressable>
       </View>
     </ScrollScreen>
   );

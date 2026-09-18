@@ -1,7 +1,14 @@
-import { faqs } from "@/data/faq";
+import { getFaqs } from "@/data/faq";
 import { FaqAccordion } from "./faq-accordion";
 
-export function FaqSection() {
+/**
+ * Async Server Component: the answers come from the platform API, so an editor
+ * changes them in the console rather than in a deploy. `getFaqs` falls back to
+ * the bundled copy on any failure, so this never renders an empty section.
+ */
+export async function FaqSection() {
+  const faqs = await getFaqs();
+
   return (
     <section id="faq" className="bg-surface-elevated px-7 py-[clamp(52px,5.6vw,80px)]">
       <div className="mx-auto flex max-w-[1080px] flex-wrap items-start gap-[clamp(26px,3vw,44px)]">

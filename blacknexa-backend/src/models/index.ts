@@ -31,6 +31,7 @@ import {
 } from "@/models/enterprise_article.model";
 import PersistenceSnapshotModel from "@/models/persistence_snapshot.model";
 import ContactInquiry from "@/models/contact_inquiry.model";
+import { Faq, FaqCategory } from "@/models/faq.model";
 import AdminUser from "@/models/admin_user.model";
 import AdminCredential from "@/models/admin_credential.model";
 import {
@@ -292,6 +293,8 @@ export const models = {
   AdminUser,
   AdminCredential,
   ContactInquiry,
+  FaqCategory,
+  Faq,
   AppUser,
   UserSession,
   UserIdentity,
@@ -362,6 +365,8 @@ export {
   AdminUser,
   AdminCredential,
   ContactInquiry,
+  FaqCategory,
+  Faq,
   AppUser,
   UserSession,
   UserIdentity,

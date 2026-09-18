@@ -1,11 +1,36 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+/**
+ * Profile → Your area.
+ *
+ * The screen used to offer live GPS and two hardcoded "recent" cities, with a
+ * search box that filtered those two and nothing else. It now searches real
+ * places through `GET /locations/search` and saves the choice to the account
+ * via `PATCH /users/me/area`, so the area survives a reinstall and follows the
+ * member to a second device instead of living only in device state.
+ *
+ * Both writes still happen: `setLocation` keeps the device provider in step for
+ * everything already reading it, and `saveArea` is what makes the choice
+ * durable. If the network write fails the local one stands — the screen stays
+ * usable and the next successful save reconciles it.
+ */
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Check, ChevronRight, Crosshair, Search } from "lucide-react-native";
 import { alpha, colors, hairline, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useLocation, type UserLocation } from "@/providers/LocationProvider";
+import { useAuth } from "@/providers/AuthProvider";
+import locationsApi, { type LocationSearchResult } from "@/lib/api/locations";
+
+/**
+ * How long the field stays quiet before a search goes out.
+ *
+ * Long enough that typing "Atlanta" is one request rather than seven, short
+ * enough that the list still feels like it is following along.
+ */
+const SEARCH_DEBOUNCE_MS = 320;
 
 type AreaCandidate = {
   label: string;
@@ -18,7 +43,13 @@ type AreaCandidate = {
   lng: number;
 };
 
-const RECENT_AREAS: AreaCandidate[] = [
+/**
+ * Shown when the field is empty and the member has no saved area yet.
+ *
+ * Kept as a starting point rather than a real "recents" list — the app stores no
+ * search history, and inventing one would mean persisting what people looked up.
+ */
+const SUGGESTED_AREAS: AreaCandidate[] = [
   {
     label: "Brooklyn, NY",
     detail: "48 organisations",
@@ -44,23 +75,72 @@ const RECENT_AREAS: AreaCandidate[] = [
 export default function AreaScreen(): React.ReactElement {
   useThemeSync();
   const { location, status, canAskAgain, requestLocation, openSettings, setLocation } = useLocation();
+  const { user, saveArea } = useAuth();
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
+  const [results, setResults] = useState<LocationSearchResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  /**
+   * Guards against an out-of-order response overwriting a newer one.
+   *
+   * Typing "Atlanta" then "Austin" can land Atlanta's slower reply last, which
+   * would leave the list showing results for a query the field no longer holds.
+   */
+  const latestQuery = useRef("");
 
-  const currentLabel = location?.city && location.region
-    ? `${location.city}, ${location.region}`
-    : location?.label || "Not set";
+  /**
+   * The saved area wins over the device's position.
+   *
+   * Someone who deliberately set their area to Atlanta while travelling should
+   * keep seeing Atlanta, not wherever the phone woke up.
+   */
+  const currentLabel =
+    user?.area?.label ||
+    (location?.city && location.region
+      ? `${location.city}, ${location.region}`
+      : location?.label) ||
+    "Not set";
 
-  const recentAreas = useMemo(() => {
-    const search = query.trim().toLowerCase();
-    if (!search) return RECENT_AREAS;
+  const trimmedQuery = query.trim();
+  const searchMode = trimmedQuery.length >= 2;
 
-    return RECENT_AREAS.filter((area) =>
-      [area.label, area.city, area.region].some((part) =>
-        part.toLowerCase().includes(search),
-      ),
-    );
-  }, [query]);
+  useEffect(() => {
+    if (!searchMode) {
+      setResults(null);
+      setSearching(false);
+      return;
+    }
+    latestQuery.current = trimmedQuery;
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      const hits = await locationsApi.search(trimmedQuery);
+      // Ignore a reply for a query the field has already moved past.
+      if (latestQuery.current !== trimmedQuery) return;
+      setResults(hits);
+      setSearching(false);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchMode, trimmedQuery]);
+
+  /** What the list renders: live hits while searching, suggestions otherwise. */
+  const rows = useMemo<AreaCandidate[]>(() => {
+    if (!searchMode) return SUGGESTED_AREAS;
+    return (results ?? []).map((hit) => {
+      // The server sends one composed label; split it back into the parts
+      // `UserLocation` wants rather than asking the API for a second shape.
+      const [city, region = "", country = ""] = hit.label.split(",").map((p) => p.trim());
+      return {
+        label: hit.label,
+        detail: "Tap to set as your area",
+        city,
+        region,
+        country,
+        countryCode: "",
+        lat: hit.lat,
+        lng: hit.lng,
+      };
+    });
+  }, [results, searchMode]);
 
   // Once denied permanently, re-requesting just silently resolves to denied
   // again — the only way to recover is the OS settings screen.
@@ -88,14 +168,18 @@ export default function AreaScreen(): React.ReactElement {
         region: area.region,
         country: area.country,
         countryCode: area.countryCode,
-        label: `${area.city}, ${area.region}, ${area.country}`,
+        label: [area.city, area.region, area.country].filter(Boolean).join(", "),
         capturedAt: new Date().toISOString(),
       };
 
+      // Local first, so the screen updates even if the round trip is slow or
+      // fails; the account write is what makes the choice outlive this install.
       await setLocation(next);
+      await saveArea({ label: area.label, lat: area.lat, lng: area.lng });
       setQuery("");
+      setResults(null);
     },
-    [setLocation],
+    [saveArea, setLocation],
   );
 
   return (
@@ -158,35 +242,41 @@ export default function AreaScreen(): React.ReactElement {
             {currentLabel}
           </Text>
           <Text variant="bodySm" color={colors.t3} style={styles.rowDetail}>
-            {location
-              ? "31 organisations · 14 local stories"
-              : "Use current location or pick a recent area"}
+            {user?.area
+              ? "Saved to your account"
+              : location
+                ? "From this device — search to save one to your account"
+                : "Use current location or search for a city"}
           </Text>
         </View>
-        {location ? <Check size={18} color={colors.acc} /> : null}
+        {user?.area || location ? <Check size={18} color={colors.acc} /> : null}
       </View>
 
-      <Text variant="eyebrow" color={colors.t3} style={styles.sectionTitle}>
-        RECENT
-      </Text>
+      <View style={styles.listHeader}>
+        <Text variant="eyebrow" color={colors.t3}>
+          {searchMode ? "RESULTS" : "SUGGESTED"}
+        </Text>
+        {searching ? <ActivityIndicator size="small" color={colors.t3} /> : null}
+      </View>
       <View style={styles.recentGroup}>
-        {recentAreas.length > 0 ? (
-          recentAreas.map((area, index) => {
-            const selected =
-              Boolean(location) &&
-              location?.city === area.city &&
-              location?.region === area.region;
+        {rows.length > 0 ? (
+          rows.map((area, index) => {
+            const selected = user?.area
+              ? user.area.label === area.label
+              : Boolean(location) &&
+                location?.city === area.city &&
+                location?.region === area.region;
 
             return (
               <Pressable
-                key={area.label}
+                key={`${area.label}-${area.lat},${area.lng}`}
                 onPress={() => chooseArea(area)}
                 accessibilityRole="button"
                 accessibilityLabel={`Set area to ${area.label}`}
                 style={({ pressed }) => [
                   styles.recentRow,
                   { backgroundColor: colors.s0 },
-                  index < recentAreas.length - 1
+                  index < rows.length - 1
                     ? {
                         borderBottomWidth: StyleSheet.hairlineWidth,
                         borderBottomColor: alpha(colors.t0, hairline.row),
@@ -214,7 +304,9 @@ export default function AreaScreen(): React.ReactElement {
         ) : (
           <View style={[styles.emptyCard, { backgroundColor: colors.s3 }]}>
             <Text variant="bodySm" color={colors.t3}>
-              No saved areas match that search.
+              {searching
+                ? "Searching…"
+                : "No places match that search. Check the spelling, or try the city without the state."}
             </Text>
           </View>
         )}
@@ -262,6 +354,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: 18,
     marginBottom: 9,
+  },
+  listHeader: {
+    marginTop: 18,
+    marginBottom: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   currentCard: {
     minHeight: 64,

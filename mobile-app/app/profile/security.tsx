@@ -8,10 +8,15 @@
  *
  * `user_sessions` makes it nearly free — the rows already exist to enforce the
  * reset behaviour, so listing them costs one endpoint.
+ *
+ * Each row can now be revoked on its own. The list was read-only until the
+ * endpoint existed, which left "sign out everywhere" as the only remedy for a
+ * single lost phone — an instrument blunt enough that it also signs you out of
+ * the device in your hand.
  */
 
 import React, { useCallback, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
@@ -20,7 +25,8 @@ import Button from "@/components/ui/Button";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuth } from "@/providers/AuthProvider";
-import authApi from "@/lib/api/auth";
+import { useSnackbar } from "@/providers/SnackbarProvider";
+import authApi, { type SessionSummary } from "@/lib/api/auth";
 
 function whenSeen(iso: string): string {
   const value = Date.parse(iso);
@@ -35,14 +41,47 @@ function whenSeen(iso: string): string {
 
 export default function SecurityScreen(): React.ReactElement {
   useThemeSync();
-  const { signOutEverywhere } = useAuth();
+  const { signOutEverywhere, signOut } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const [confirmAll, setConfirmAll] = useState(false);
+  const [pendingRevoke, setPendingRevoke] = useState<SessionSummary | null>(null);
   const [busy, setBusy] = useState(false);
+  /** The row being revoked, so only that one shows a spinner. */
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const sessions = useQuery({
     queryKey: ["sessions"],
     queryFn: () => authApi.sessions(),
   });
+
+  const revoke = useCallback(async () => {
+    const target = pendingRevoke;
+    if (!target) return;
+    setRevokingId(target.id);
+    try {
+      await authApi.revokeSession(target.id);
+      /*
+       * Revoking the device you are holding is allowed — the row is labelled
+       * "This device", so it is a deliberate act, not a slip. But the tokens in
+       * memory are dead the moment the server writes `revoked_at`, so the app
+       * has to stop pretending otherwise and drop to the signed-out state.
+       */
+      if (target.current) {
+        await signOut();
+        return;
+      }
+      await sessions.refetch();
+      showSnackbar({ message: `${target.deviceLabel} has been signed out.`, type: "success" });
+    } catch {
+      showSnackbar({
+        message: "That device could not be signed out. Try again.",
+        type: "error",
+      });
+    } finally {
+      setRevokingId(null);
+      setPendingRevoke(null);
+    }
+  }, [pendingRevoke, sessions, showSnackbar, signOut]);
 
   const signOutAll = useCallback(async () => {
     setBusy(true);
@@ -101,6 +140,22 @@ export default function SecurityScreen(): React.ReactElement {
                     {[session.platform, whenSeen(session.lastSeenAt)].filter(Boolean).join(" · ")}
                   </Text>
                 </View>
+                {revokingId === session.id ? (
+                  <ActivityIndicator size="small" color={colors.t3} />
+                ) : (
+                  <Pressable
+                    onPress={() => setPendingRevoke(session)}
+                    disabled={Boolean(revokingId)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sign out ${session.deviceLabel}`}
+                    testID={`revoke-session-${session.id}`}
+                  >
+                    <Text variant="label" color={colors.bad2}>
+                      Sign out
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             ))}
           </View>
@@ -117,9 +172,25 @@ export default function SecurityScreen(): React.ReactElement {
         <Text variant="metaSm" color={colors.t4} style={{ marginTop: 10, lineHeight: 17 }}>
           Ends every session, including this one. Use this if a device has been lost
           or is no longer yours. Changing your password does the same thing, but
-          keeps the device you change it on.
+          keeps the device you change it on. To end just one, use Sign out on that
+          device&rsquo;s row.
         </Text>
       </ScrollScreen>
+
+      <ConfirmDialog
+        visible={Boolean(pendingRevoke)}
+        title={pendingRevoke?.current ? "Sign out this device?" : "Sign out that device?"}
+        body={
+          pendingRevoke?.current
+            ? `${pendingRevoke.deviceLabel} is the device you are using. Signing it out returns you to the login screen. Your reports and drafts are untouched.`
+            : `${pendingRevoke?.deviceLabel ?? "That device"} will be signed out and stops receiving notifications. Your reports and drafts are untouched.`
+        }
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        busy={Boolean(revokingId)}
+        onConfirm={revoke}
+        onCancel={() => setPendingRevoke(null)}
+      />
 
       <ConfirmDialog
         visible={confirmAll}

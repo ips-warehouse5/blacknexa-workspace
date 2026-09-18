@@ -38,13 +38,21 @@ const EMAIL = Joi.string()
     "string.empty": "Enter your email address.",
   });
 
-/** The four requirement rows on screens A6 and A14, in one place. */
+/**
+ * The four requirement rows on screens A6 and A14, in one place.
+ *
+ * The symbol class excludes whitespace deliberately. `/[^A-Za-z0-9]/` matches a
+ * plain space, so "Passwordd1 " satisfied all four rules and registered — the
+ * server, which is the authoritative validator, accepted a password the rule text
+ * says it should not. `\s` is excluded here to match the client checks in
+ * `lib/auth/signup-validation.ts` and `lib/auth/reset-validation.ts`.
+ */
 const PASSWORD = Joi.string()
   .min(10)
   .max(200)
   .pattern(/[A-Z]/, "capital")
   .pattern(/\d/, "number")
-  .pattern(/[^A-Za-z0-9]/, "symbol")
+  .pattern(/[^A-Za-z0-9\s]/, "symbol")
   .required()
   .messages({
     "any.required": "Choose a password.",
@@ -66,6 +74,23 @@ const OTP_CODE = Joi.string()
     "string.pattern.base": "That code should be six digits.",
   });
 
+/**
+ * The name collected on sign-up step 1.
+ *
+ * First name is required and last name is not, which is the tester's request and
+ * also the only safe reading of a global user base — plenty of people have one
+ * name, and refusing them a sign-up over a second field is not a validation win.
+ */
+const FIRST_NAME = Joi.string().trim().min(1).max(80).required().messages({
+  "any.required": "Enter your first name.",
+  "string.empty": "Enter your first name.",
+  "string.max": "That first name is too long.",
+});
+
+const LAST_NAME = Joi.string().trim().max(80).allow("").optional().messages({
+  "string.max": "That last name is too long.",
+});
+
 /** Optional device context for the session list in Profile → Security. */
 const DEVICE = {
   deviceLabel: Joi.string().trim().max(120).allow("").optional(),
@@ -77,6 +102,8 @@ export const userAuthSchemas: SchemaRegistry = {
     body: Joi.object({
       email: EMAIL,
       password: PASSWORD,
+      firstName: FIRST_NAME,
+      lastName: LAST_NAME,
       ...DEVICE,
     }),
   },
@@ -152,6 +179,10 @@ export const userAuthSchemas: SchemaRegistry = {
       // A9's display name. Empty is legitimate — it means "publish as Anonymous",
       // which the avatar mode expresses separately.
       displayName: Joi.string().trim().max(120).allow("").optional(),
+      // Correctable after sign-up. Unlike registration the first name is
+      // optional *here* — a PATCH names only the fields it changes.
+      firstName: Joi.string().trim().max(80).optional(),
+      lastName: Joi.string().trim().max(80).allow("").optional(),
       avatarMode: Joi.string()
         .valid(...ALL_AVATAR_MODES)
         .optional(),
@@ -178,6 +209,89 @@ export const userAuthSchemas: SchemaRegistry = {
         .unique()
         .required(),
       version: Joi.number().integer().min(1).required(),
+    }),
+  },
+
+  /**
+   * `DELETE /users/me/sessions/:id` — revoke one device.
+   *
+   * Only the id is validated here; that the session belongs to the caller is a
+   * question about data, not shape, so the service answers it.
+   */
+  "userAuth.sessionId": {
+    params: Joi.object({
+      id: Joi.string().uuid().required().messages({
+        "string.guid": "That is not a device we recognise.",
+      }),
+    }),
+  },
+
+  /**
+   * `PATCH /users/me/area`.
+   *
+   * The coordinates are bounded rather than merely numeric. That catches a
+   * longitude landing in the latitude field for most of the world — anything
+   * past ±90 is refused outright — but it is worth being honest about the
+   * limit: a swap where both values happen to fall inside ±90 passes, because
+   * the pair is then genuinely a point on Earth and no schema can know it is
+   * not the one that was meant. The bound is a cheap filter, not a proof.
+   */
+  "userAuth.updateArea": {
+    body: Joi.object({
+      label: Joi.string().trim().min(1).max(160).required().messages({
+        "any.required": "Choose an area.",
+        "string.empty": "Choose an area.",
+      }),
+      lat: Joi.number().min(-90).max(90).required().messages({
+        "number.min": "That latitude is not on Earth.",
+        "number.max": "That latitude is not on Earth.",
+      }),
+      lng: Joi.number().min(-180).max(180).required().messages({
+        "number.min": "That longitude is not on Earth.",
+        "number.max": "That longitude is not on Earth.",
+      }),
+    }),
+  },
+
+  /**
+   * `POST /users/me/avatar/presign`.
+   *
+   * The accepted types are the ones a phone camera and library actually produce.
+   * The service re-checks this before signing — a schema is the first gate, not
+   * the only one.
+   */
+  "userAuth.avatarPresign": {
+    body: Joi.object({
+      mime: Joi.string()
+        .trim()
+        .lowercase()
+        .valid("image/jpeg", "image/png", "image/webp", "image/heic", "image/heif")
+        .required()
+        .messages({
+          "any.only": "That kind of file cannot be a profile photo.",
+          "any.required": "Tell us what kind of image this is.",
+        }),
+    }),
+  },
+
+  /**
+   * `POST /users/me/avatar/commit`.
+   *
+   * The key is bounded and character-restricted here, but the check that
+   * actually matters is in the service: the key must sit under *this* member's
+   * avatar prefix, or one member could adopt another's upload by guessing.
+   */
+  "userAuth.avatarCommit": {
+    body: Joi.object({
+      storageKey: Joi.string()
+        .trim()
+        .max(512)
+        .pattern(/^[A-Za-z0-9/_.-]+$/)
+        .required()
+        .messages({
+          "string.pattern.base": "That upload reference is not valid.",
+          "any.required": "That upload reference is not valid.",
+        }),
     }),
   },
 

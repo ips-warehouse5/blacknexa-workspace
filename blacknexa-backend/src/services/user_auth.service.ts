@@ -42,6 +42,7 @@ import {
 } from "@/models/app_user.model";
 import mailerService from "@/services/mailer.service";
 import socialIdentityService from "@/services/social_identity.service";
+import avatarService from "@/services/avatar.service";
 import { AuthError } from "@/services/auth.service";
 import type {
   AccessTokenPayload,
@@ -53,7 +54,9 @@ import type {
   OtpPurpose,
   SessionSummary,
   SocialProvider,
+  UpdateAreaDto,
   UpdateProfileDto,
+  UserArea,
   UserAuthResult,
   UserPreferences,
   UserProfile,
@@ -178,22 +181,54 @@ class UserAuthService {
     };
   }
 
+  /** The saved area, or null while the member has not chosen one. */
+  private areaFor(user: AppUser): UserArea | null {
+    if (!user.area_label || user.area_lat === null || user.area_lng === null) return null;
+    return { label: user.area_label, lat: user.area_lat, lng: user.area_lng };
+  }
+
+  /**
+   * Resolve what the client should render as the avatar.
+   *
+   * An uploaded photo always wins over a provider's: someone who took the
+   * trouble to set one has said what they want, and a later Google sign-in
+   * should not overwrite that.
+   *
+   * The raw storage key never ships — it is exchanged for a short-lived
+   * presigned URL here. A provider URL is passed through as-is because it is
+   * already a public URL on the provider's CDN and we have nothing to sign.
+   */
+  private async avatarUrlFor(user: AppUser): Promise<string | null> {
+    if (user.avatar_key) {
+      const url = await avatarService.readUrl(user.avatar_key);
+      if (url) return url;
+    }
+    return user.avatar_external_url ?? null;
+  }
+
   /**
    * Public projection. `password_hash` is excluded by the model's default scope,
    * and no internal column is added back here.
+   *
+   * Async because resolving `avatarUrl` means signing a URL. Every caller was
+   * already inside an async method, so this costs nothing at the call sites and
+   * keeps the storage key from having to leak out for the controller to resolve.
    */
-  toProfile(user: AppUser): UserProfile {
+  async toProfile(user: AppUser): Promise<UserProfile> {
     return {
       id: user.id,
       email: user.email,
       emailVerified: Boolean(user.email_verified_at),
       displayName: user.display_name,
+      firstName: user.first_name ?? null,
+      lastName: user.last_name ?? null,
       avatarMode: user.avatar_mode,
-      // Presigned on demand by the media layer; the raw storage key never ships.
-      avatarUrl: null,
+      avatarUrl: await this.avatarUrlFor(user),
       initials: this.initialsFor(user),
       role: user.role,
       hasPassword: Boolean(user.password_hash),
+      passwordChangedAt: user.password_changed_at ?? null,
+      area: this.areaFor(user),
       preferences: this.preferencesFor(user),
       createdAt: (user.get("created_on") as Date | undefined)?.toISOString() ?? "",
     };
@@ -301,7 +336,12 @@ class UserAuthService {
    * telling the caller "that email is taken" is exactly the disclosure A10 and
    * A13 are written to avoid.
    */
-  async register(email: string, password: string): Promise<void> {
+  async register(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName?: string,
+  ): Promise<void> {
     const normalized = email.trim().toLowerCase();
     const existing = await this.findWithSecret(normalized);
 
@@ -312,12 +352,39 @@ class UserAuthService {
       return;
     }
 
+    const first = firstName.trim().slice(0, 80);
+    const last = (lastName ?? "").trim().slice(0, 80);
+    /*
+     * `display_name` is seeded from the account name, then belongs to the member.
+     *
+     * The two are separate fields on purpose — the display name is what a report
+     * or comment publishes under, and someone may well want to post as "J.T."
+     * while the account stays in their legal name. Seeding it means a member who
+     * skips the A9 profile step still publishes under something recognisable
+     * instead of "Anonymous"; the A9 step and Edit profile both overwrite it
+     * freely afterwards, and nothing here ever writes it back.
+     */
+    const seededDisplayName = [first, last].filter(Boolean).join(" ").slice(0, 120);
+
     if (existing) {
-      // Unverified: adopt the new password and re-send.
+      // Unverified: adopt the new password and re-send. The names are adopted
+      // too — this is the same person filling the form in again, and the second
+      // attempt is the one they meant.
       existing.password_hash = password;
+      existing.first_name = first;
+      existing.last_name = last || null;
+      existing.password_changed_at = nowIso();
+      if (!existing.display_name) existing.display_name = seededDisplayName;
       await existing.save();
     } else {
-      await AppUser.create({ email: normalized, password_hash: password });
+      await AppUser.create({
+        email: normalized,
+        password_hash: password,
+        first_name: first,
+        last_name: last || null,
+        display_name: seededDisplayName,
+        password_changed_at: nowIso(),
+      });
     }
 
     await this.issueOtp(normalized, "verify_email");
@@ -350,7 +417,7 @@ class UserAuthService {
     }
 
     const tokens = await this.openSession(user, device);
-    return { user: this.toProfile(user), tokens };
+    return { user: await this.toProfile(user), tokens };
   }
 
   /** Screens A8 / A14. Re-send a code, subject to the cooldown. */
@@ -405,7 +472,7 @@ class UserAuthService {
 
     await user.update({ last_login_at: nowIso() });
     const tokens = await this.openSession(user, device);
-    return { user: this.toProfile(user), tokens };
+    return { user: await this.toProfile(user), tokens };
   }
 
   /**
@@ -447,11 +514,18 @@ class UserAuthService {
           400,
         );
       }
+      const providedName = (fullName ?? "").trim();
+      // Split on the last space: "Mary Jane Watson" is far more likely to be a
+      // two-word first name than a two-word surname, and the provider gives us
+      // one string rather than the two fields the sign-up form collects.
+      const splitAt = providedName.lastIndexOf(" ");
       user = await AppUser.create({
         email: identity.email,
         // Provider-verified, so no A8 round trip.
         email_verified_at: nowIso(),
-        display_name: (fullName ?? "").trim().slice(0, 120),
+        display_name: providedName.slice(0, 120),
+        first_name: (splitAt > 0 ? providedName.slice(0, splitAt) : providedName).slice(0, 80) || null,
+        last_name: splitAt > 0 ? providedName.slice(splitAt + 1).slice(0, 80) : null,
       });
     }
 
@@ -491,6 +565,25 @@ class UserAuthService {
     if (!user.display_name && fullName) {
       await user.update({ display_name: fullName.trim().slice(0, 120) });
     }
+    /*
+     * Google publishes a profile picture in every id token, so this runs on each
+     * sign-in rather than only at account creation — a member who changes their
+     * Google photo sees the new one here without having to do anything.
+     *
+     * Kept out of `avatar_key`, which addresses an object in our own bucket and
+     * is handed to the presigner. Writing an `https://lh3.googleusercontent.com`
+     * URL there would produce a signed URL for a key that does not exist. The
+     * two columns stay separate and `avatarUrlFor` prefers an uploaded photo, so
+     * setting one in the app is never undone by the next Google sign-in.
+     */
+    if (identity.picture && identity.picture !== user.avatar_external_url) {
+      await user.update({ avatar_external_url: identity.picture });
+    }
+    // A provider photo is only worth showing if the member has not opted into
+    // initials or anonymity — `avatar_mode` is their choice, not the provider's.
+    if (identity.picture && user.avatar_mode === "initials" && !user.avatar_key) {
+      await user.update({ avatar_mode: "photo" });
+    }
 
     if (!linked) {
       await UserIdentity.create({
@@ -516,7 +609,7 @@ class UserAuthService {
 
     await user.update({ last_login_at: nowIso() });
     const tokens = await this.openSession(user, device);
-    return { user: this.toProfile(user), tokens };
+    return { user: await this.toProfile(user), tokens };
   }
 
   // ── Refresh, logout ───────────────────────────────────────────────────────
@@ -549,7 +642,7 @@ class UserAuthService {
     await session.update({ refresh_jti: nextJti, last_seen_at: nowIso() });
 
     return {
-      user: this.toProfile(user),
+      user: await this.toProfile(user),
       tokens: {
         accessToken: this.signAccessToken(user, session.id),
         refreshToken: this.signRefreshToken(user.id, nextJti),
@@ -577,6 +670,34 @@ class UserAuthService {
       { where },
     );
     return count;
+  }
+
+  /**
+   * Revoke one device — Profile → Security.
+   *
+   * Scoped to the caller's own rows in the `where` clause rather than by loading
+   * the row and comparing afterwards: the query then cannot match someone else's
+   * session at all, so there is no window in which a mistaken edit turns this
+   * into a way to sign out an arbitrary account.
+   *
+   * An already-revoked row is treated as absent, so a double tap answers 404
+   * rather than reporting a second successful revocation.
+   *
+   * Revoking the *current* device is allowed. It is an odd thing to do, but the
+   * list marks which row is this device and refusing would be a surprise; the
+   * access token stops working within its own lifetime because `sid` travels in
+   * it, and the refresh token is dead immediately.
+   */
+  async revokeSession(userId: string, sessionId: string): Promise<void> {
+    const session = await UserSession.findOne({
+      where: { id: sessionId, user_id: userId, revoked_at: null },
+    });
+    if (!session) throw new AuthError("That device is not signed in.", 404);
+
+    // The push token goes with it, or the revoked device keeps receiving
+    // notifications for an account it can no longer open.
+    await session.update({ revoked_at: nowIso(), push_token: null });
+    logger.info("[user-auth] session revoked", { userId, sessionId });
   }
 
   /** Profile → Security. `current` marks the session making the request. */
@@ -669,6 +790,11 @@ class UserAuthService {
     }
 
     user.password_hash = password;
+    // The Account screen's "Last changed" reads this. Stamped here as well as at
+    // registration because a reset *is* a password change — and the in-app
+    // change-password flow routes through this same method, so both are covered
+    // by one write.
+    user.password_changed_at = nowIso();
     // A reset proves control of the mailbox, so it also verifies the address.
     if (!user.email_verified_at) user.email_verified_at = nowIso();
     await user.save();
@@ -681,7 +807,7 @@ class UserAuthService {
     const revoked = await this.revokeAllSessions(user.id, decoded?.sid);
     logger.info("[user-auth] password reset", { userId: user.id, sessionsRevoked: revoked });
 
-    return { user: this.toProfile(user), tokens };
+    return { user: await this.toProfile(user), tokens };
   }
 
   // ── Profile ───────────────────────────────────────────────────────────────
@@ -700,6 +826,14 @@ class UserAuthService {
     if (patch.displayName !== undefined) {
       updates.display_name = patch.displayName.trim().slice(0, 120);
     }
+    // Correctable after sign-up, and deliberately one-way: changing the account
+    // name never rewrites `display_name`, which the member owns once it is set.
+    if (patch.firstName !== undefined) {
+      updates.first_name = patch.firstName.trim().slice(0, 80) || null;
+    }
+    if (patch.lastName !== undefined) {
+      updates.last_name = patch.lastName.trim().slice(0, 80) || null;
+    }
     if (patch.avatarMode !== undefined) updates.avatar_mode = patch.avatarMode as AvatarMode;
     if (patch.anonymousByDefault !== undefined) {
       updates.anonymous_by_default = patch.anonymousByDefault;
@@ -716,6 +850,79 @@ class UserAuthService {
     if (patch.language !== undefined) updates.language = patch.language;
 
     if (Object.keys(updates).length > 0) await user.update(updates);
+    return this.toProfile(user);
+  }
+
+  /**
+   * Profile → Your area.
+   *
+   * Stored on the account rather than only on the device: the area decides what
+   * "Local" means for news and which organisations surface first, and that should
+   * survive a reinstall rather than reverting to whatever GPS reports next.
+   *
+   * Reports already filed keep the area they were filed with — nothing here
+   * touches them, which is what the screen's footnote promises.
+   */
+  async updateArea(userId: string, area: UpdateAreaDto): Promise<UserProfile> {
+    const user = await AppUser.scope("withSecret").findByPk(userId);
+    if (!user) throw new AuthError("Account not found.", 404);
+
+    await user.update({
+      area_label: area.label.trim().slice(0, 160),
+      area_lat: area.lat,
+      area_lng: area.lng,
+    });
+    return this.toProfile(user);
+  }
+
+  /**
+   * Adopt an uploaded avatar — step two of the upload, after `avatarService`
+   * has confirmed the object is really there.
+   *
+   * The previous photo is deleted rather than left behind. It is unreachable
+   * from any profile the moment this returns, and a member who changes their
+   * photo has not asked us to keep the old one.
+   *
+   * `avatar_mode` is moved to `photo` only when the member is on `initials`.
+   * Someone who chose `anonymous` has made a privacy decision that uploading a
+   * photo does not reverse — the photo is stored, and stays unused until they
+   * turn anonymity off.
+   */
+  async setAvatar(userId: string, storageKey: string): Promise<UserProfile> {
+    const user = await AppUser.scope("withSecret").findByPk(userId);
+    if (!user) throw new AuthError("Account not found.", 404);
+
+    const previous = user.avatar_key;
+    await user.update({
+      avatar_key: storageKey,
+      ...(user.avatar_mode === "initials" ? { avatar_mode: "photo" as AvatarMode } : {}),
+    });
+    if (previous && previous !== storageKey) await avatarService.discard(previous);
+
+    return this.toProfile(user);
+  }
+
+  /**
+   * Remove the uploaded photo.
+   *
+   * Falls back to initials rather than to a provider picture: "Remove Photo" in
+   * the action sheet means the photo is gone, and silently revealing the Google
+   * avatar underneath would read as the removal having failed. The provider URL
+   * stays in its column — it is re-adopted only if the member sets the mode back
+   * themselves.
+   */
+  async clearAvatar(userId: string): Promise<UserProfile> {
+    const user = await AppUser.scope("withSecret").findByPk(userId);
+    if (!user) throw new AuthError("Account not found.", 404);
+
+    const previous = user.avatar_key;
+    await user.update({
+      avatar_key: null,
+      avatar_external_url: null,
+      ...(user.avatar_mode === "photo" ? { avatar_mode: "initials" as AvatarMode } : {}),
+    });
+    if (previous) await avatarService.discard(previous);
+
     return this.toProfile(user);
   }
 

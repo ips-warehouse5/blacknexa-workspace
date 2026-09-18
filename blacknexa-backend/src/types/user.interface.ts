@@ -75,12 +75,28 @@ export interface UserPreferences {
   language: string;
 }
 
+/** The area a member saved in Profile → Your area. */
+export interface UserArea {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 /** Public (secret-free) member representation. */
 export interface UserProfile {
   id: string;
   email: string;
   emailVerified: boolean;
   displayName: string;
+  /**
+   * Account name, separate from `displayName`.
+   *
+   * `displayName` is seeded from these at registration and then belongs to the
+   * member — editing one never rewrites the other. Null on accounts created
+   * before the fields existed, and on social sign-ins that shared no name.
+   */
+  firstName: string | null;
+  lastName: string | null;
   avatarMode: AvatarMode;
   avatarUrl: string | null;
   /** Derived from the display name; rendered in the A9/D1 avatar tile. */
@@ -88,6 +104,14 @@ export interface UserProfile {
   role: UserRole;
   /** True once a password exists — false for an Apple/Google-only account. */
   hasPassword: boolean;
+  /**
+   * When the password was last set. Null for an account that has never had one,
+   * and for accounts predating the column — the Account screen prints a date
+   * only when this is present rather than guessing from `createdAt`.
+   */
+  passwordChangedAt: string | null;
+  /** Null until the member picks an area. */
+  area: UserArea | null;
   preferences: UserPreferences;
   createdAt: string;
 }
@@ -137,6 +161,9 @@ export interface OtpChallengeResult {
 export interface RegisterDto {
   email: string;
   password: string;
+  /** Required at sign-up. Seeds `displayName` when the member sets none. */
+  firstName: string;
+  lastName?: string;
   deviceLabel?: string;
   platform?: string;
 }
@@ -184,6 +211,9 @@ export interface ResetPasswordDto {
 
 export interface UpdateProfileDto {
   displayName?: string;
+  /** Correctable after sign-up — a name mistyped there is otherwise permanent. */
+  firstName?: string;
+  lastName?: string;
   avatarMode?: AvatarMode;
   anonymousByDefault?: boolean;
   defaultVisibility?: Visibility;
@@ -201,4 +231,37 @@ export interface RegisterDeviceDto {
   pushToken: string;
   platform?: string;
   deviceLabel?: string;
+}
+
+/** `PATCH /users/me/area` — the area chosen in Profile → Your area. */
+export interface UpdateAreaDto {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+/** `POST /users/me/avatar/presign` — step one of the avatar upload. */
+export interface PresignAvatarDto {
+  mime: string;
+}
+
+/** `POST /users/me/avatar/commit` — step two, naming the object just uploaded. */
+export interface CommitAvatarDto {
+  storageKey: string;
+}
+
+/** What `presign` hands back so the client can PUT the bytes itself. */
+export interface AvatarPresignResult {
+  uploadUrl: string;
+  storageKey: string;
+  /** Echoed so the PUT sets exactly what the signature covers. */
+  headers: Record<string, string>;
+}
+
+/** One hit from `GET /locations/search`. */
+export interface LocationSearchResult {
+  label: string;
+  lat: number;
+  lng: number;
+  placeId: string;
 }

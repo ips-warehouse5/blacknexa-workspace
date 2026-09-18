@@ -26,17 +26,41 @@ export interface UserPreferences {
   language: string;
 }
 
+/** The area saved in Profile → Your area. Null until the member picks one. */
+export interface UserArea {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   emailVerified: boolean;
   displayName: string;
+  /**
+   * Account name, collected at sign-up. Separate from `displayName`, which is
+   * what a report or comment publishes under — `displayName` is seeded from
+   * these once and then belongs to the member.
+   *
+   * Null on accounts created before the fields existed and on social sign-ins
+   * that shared no name, so every read needs a fallback.
+   */
+  firstName: string | null;
+  lastName: string | null;
   avatarMode: AvatarMode;
   avatarUrl: string | null;
   initials: string;
   /** `advocate` unlocks Trusted Circle reading. Moderators are operator accounts. */
   role: "member" | "advocate";
   hasPassword: boolean;
+  /**
+   * When the password was last set, ISO-8601. Null for an account that has never
+   * had one and for accounts predating the field — the Account screen prints a
+   * date only when this is present rather than inventing one.
+   */
+  passwordChangedAt: string | null;
+  area: UserArea | null;
   /**
    * Optional provider fields for deployments that expose linked identity data.
    * Older API responses omit these, so callers must keep a fallback.
@@ -125,11 +149,22 @@ export interface DeletionReceipt {
 }
 
 export const authApi = {
-  /** A6 → A8. Resolves even for an address that already has an account. */
-  register(email: string, password: string): Promise<OtpChallenge> {
+  /**
+   * A6 → A8. Resolves even for an address that already has an account.
+   *
+   * `firstName` is required by the server; `lastName` is not. A blank last name
+   * is sent as an empty string rather than omitted, which the schema allows —
+   * one-name members are a real case, not a validation failure.
+   */
+  register(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName?: string,
+  ): Promise<OtpChallenge> {
     return api.post<OtpChallenge>(
       "/auth/register",
-      { email, password, ...deviceContext() },
+      { email, password, firstName, lastName: lastName ?? "", ...deviceContext() },
       { anonymous: true },
     );
   },
@@ -226,6 +261,8 @@ export const authApi = {
   /** A9 and Profile → Defaults. */
   updateProfile(patch: {
     displayName?: string;
+    firstName?: string;
+    lastName?: string;
     avatarMode?: AvatarMode;
     anonymousByDefault?: boolean;
     defaultVisibility?: Visibility;
@@ -238,6 +275,45 @@ export const authApi = {
 
   sessions(): Promise<SessionSummary[]> {
     return api.get<SessionSummary[]>("/users/me/sessions");
+  },
+
+  /**
+   * Revoke one device — Profile → Security.
+   *
+   * Scoped server-side to the caller's own sessions, so an id that is not theirs
+   * answers 404 rather than signing someone else out.
+   */
+  revokeSession(sessionId: string): Promise<{ revoked: boolean }> {
+    return api.delete<{ revoked: boolean }>(`/users/me/sessions/${sessionId}`);
+  },
+
+  /** Profile → Your area. Returns the whole profile so the caller can replace it. */
+  updateArea(area: { label: string; lat: number; lng: number }): Promise<UserProfile> {
+    return api.patch<UserProfile>("/users/me/area", area);
+  },
+
+  /**
+   * Step 1 of the avatar upload — ask for somewhere to PUT the bytes.
+   *
+   * Nothing is written to the account here, so abandoning the picker after this
+   * point leaves the profile untouched.
+   */
+  avatarPresign(mime: string): Promise<{
+    uploadUrl: string;
+    storageKey: string;
+    headers: Record<string, string>;
+  }> {
+    return api.post("/users/me/avatar/presign", { mime });
+  },
+
+  /** Step 2 — the bytes are up; adopt the key. Returns the refreshed profile. */
+  avatarCommit(storageKey: string): Promise<UserProfile> {
+    return api.post<UserProfile>("/users/me/avatar/commit", { storageKey });
+  },
+
+  /** The action sheet's "Remove Photo". */
+  avatarRemove(): Promise<UserProfile> {
+    return api.delete<UserProfile>("/users/me/avatar");
   },
 
   /** A7. One record per acceptance, per document. */

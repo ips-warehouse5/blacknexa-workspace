@@ -73,6 +73,21 @@ export interface VerifiedIdentity {
    * arrives looks identical to a typo, and this app gates sign-up on that code.
    */
   isPrivateEmail: boolean;
+  /**
+   * The provider's profile picture URL, taken from the **verified** claims.
+   *
+   * Google puts `picture` in every id token. Apple never does — it has no
+   * equivalent claim — so this is always null for Apple.
+   *
+   * Read here rather than from the request body on purpose. The app decodes the
+   * same token client-side to show a name while the round trip completes, and it
+   * would be easy to let it post the picture URL alongside. But that value would
+   * be attacker-controlled: anyone could sign in and set their avatar to any URL
+   * on the internet, which is a stored-content problem the moment it is rendered
+   * for other members. Taking it from the signature-checked claims costs nothing
+   * and closes that off.
+   */
+  picture: string | null;
 }
 
 class SocialIdentityService {
@@ -207,6 +222,21 @@ class SocialIdentityService {
     return Boolean(email?.endsWith("@privaterelay.appleid.com"));
   }
 
+  /**
+   * The provider's profile picture, if it published one.
+   *
+   * Restricted to `https` because the value ends up in an `<Image src>` on the
+   * client, and an `http://` avatar would be blocked by App Transport Security on
+   * iOS anyway — better to store nothing than a URL that renders as a broken tile.
+   * Length-bounded to the column width so a pathological claim cannot fail the
+   * write after a successful sign-in.
+   */
+  private pictureUrl(claims: Record<string, unknown>): string | null {
+    const raw = typeof claims.picture === "string" ? claims.picture.trim() : "";
+    if (!raw || raw.length > 1024) return null;
+    return raw.startsWith("https://") ? raw : null;
+  }
+
   /** Verify an identity token and reduce it to a subject plus a verified email. */
   async verify(provider: SocialProvider, identityToken: string): Promise<VerifiedIdentity> {
     if (provider === "apple") {
@@ -226,7 +256,13 @@ class SocialIdentityService {
       const subject = typeof claims.sub === "string" ? claims.sub : "";
       if (!subject) throw new AuthError("That sign-in did not identify an account.", 400);
       const email = this.verifiedEmail(claims);
-      return { subject, email, isPrivateEmail: this.isPrivateEmail(claims, email) };
+      return {
+        subject,
+        email,
+        isPrivateEmail: this.isPrivateEmail(claims, email),
+        // Apple has no picture claim, at all — not "sometimes absent".
+        picture: null,
+      };
     }
 
     if (!env.social.googleEnabled) {
@@ -241,7 +277,12 @@ class SocialIdentityService {
     const subject = typeof claims.sub === "string" ? claims.sub : "";
     if (!subject) throw new AuthError("That sign-in did not identify an account.", 400);
     // Google has no equivalent of Hide My Email; the address is the real one.
-    return { subject, email: this.verifiedEmail(claims), isPrivateEmail: false };
+    return {
+      subject,
+      email: this.verifiedEmail(claims),
+      isPrivateEmail: false,
+      picture: this.pictureUrl(claims),
+    };
   }
 }
 

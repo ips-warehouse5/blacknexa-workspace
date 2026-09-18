@@ -17,15 +17,18 @@ import crypto from "crypto";
 import type { Request, Response } from "express";
 import env from "@/config/env.config";
 import userAuthService from "@/services/user_auth.service";
+import avatarService from "@/services/avatar.service";
 import accountDeletionService, {
   type Disposition,
 } from "@/services/account_deletion.service";
 import { responseData } from "@/utils/response.util";
 import responseMessage from "@/utils/response_message.util";
-import { validatedBody } from "@/middlewares/validate.middleware";
+import { validatedBody, validatedParams } from "@/middlewares/validate.middleware";
 import type {
+  CommitAvatarDto,
   ForgotPasswordDto,
   LoginDto,
+  PresignAvatarDto,
   OtpChallengeResult,
   RecordConsentDto,
   RegisterDeviceDto,
@@ -33,6 +36,7 @@ import type {
   ResendCodeDto,
   ResetPasswordDto,
   SocialLoginDto,
+  UpdateAreaDto,
   UpdateProfileDto,
   VerifyEmailDto,
 } from "@/types/user.interface";
@@ -72,7 +76,12 @@ class UserAuthController {
    */
   async register(req: Request, res: Response): Promise<void> {
     const body = validatedBody<RegisterDto>(req);
-    await userAuthService.register(body.email, body.password);
+    await userAuthService.register(
+      body.email,
+      body.password,
+      body.firstName,
+      body.lastName,
+    );
 
     responseData({
       res,
@@ -259,6 +268,84 @@ class UserAuthController {
       res,
       message: responseMessage("success", "list", "Session"),
       result: sessions,
+    });
+  }
+
+  /**
+   * `DELETE /api/v1/users/me/sessions/:id` — revoke one device.
+   *
+   * The session list showed devices read-only until now, which left "sign out
+   * everywhere" as the only remedy for a single lost phone — a blunt instrument
+   * that also signs the member out of the device in their hand.
+   */
+  async revokeSession(req: Request, res: Response): Promise<void> {
+    const { id } = validatedParams<{ id: string }>(req);
+    await userAuthService.revokeSession(req.user!.id, id);
+
+    responseData({
+      res,
+      message: "That device has been signed out.",
+      result: { revoked: true },
+    });
+  }
+
+  /** `PATCH /api/v1/users/me/area` — Profile → Your area. */
+  async updateArea(req: Request, res: Response): Promise<void> {
+    const body = validatedBody<UpdateAreaDto>(req);
+    const profile = await userAuthService.updateArea(req.user!.id, body);
+
+    responseData({
+      res,
+      message: responseMessage("success", "update", "Area"),
+      result: profile,
+    });
+  }
+
+  /**
+   * `POST /api/v1/users/me/avatar/presign` — step one of the photo upload.
+   *
+   * Nothing is written to the account here. A presign that is never followed by
+   * a commit leaves an unreferenced object and an unchanged profile, which is the
+   * right outcome for a member who backs out of the picker.
+   */
+  async avatarPresign(req: Request, res: Response): Promise<void> {
+    const body = validatedBody<PresignAvatarDto>(req);
+    const result = await avatarService.presign(req.user!.id, body.mime);
+
+    responseData({
+      res,
+      message: "Upload the photo to this address, then commit it.",
+      result,
+    });
+  }
+
+  /**
+   * `POST /api/v1/users/me/avatar/commit` — step two.
+   *
+   * Returns the full profile rather than just the URL, so the client replaces
+   * its user object from one response instead of patching a field and hoping the
+   * rest is still current.
+   */
+  async avatarCommit(req: Request, res: Response): Promise<void> {
+    const body = validatedBody<CommitAvatarDto>(req);
+    const storageKey = await avatarService.commit(req.user!.id, body.storageKey);
+    const profile = await userAuthService.setAvatar(req.user!.id, storageKey);
+
+    responseData({
+      res,
+      message: responseMessage("success", "update", "Profile photo"),
+      result: profile,
+    });
+  }
+
+  /** `DELETE /api/v1/users/me/avatar` — the action sheet's "Remove Photo". */
+  async avatarRemove(req: Request, res: Response): Promise<void> {
+    const profile = await userAuthService.clearAvatar(req.user!.id);
+
+    responseData({
+      res,
+      message: responseMessage("success", "delete", "Profile photo"),
+      result: profile,
     });
   }
 
