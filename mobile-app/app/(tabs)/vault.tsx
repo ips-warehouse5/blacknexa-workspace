@@ -22,6 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
+import TabHeader from "@/components/TabHeader";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { CategoryDot } from "@/components/ui/Controls";
@@ -327,6 +328,12 @@ const styles = StyleSheet.create({
 
 export default function VaultScreen(): React.ReactElement {
   useThemeSync();
+  const insets = useSafeAreaInsets();
   // TODO(Vault): Re-enable the Vault screen implementation when Vault development resumes.
-  return <ComingSoon />;
+  return (
+    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.bg }}>
+      <TabHeader />
+      <ComingSoon />
+    </View>
+  );
 }

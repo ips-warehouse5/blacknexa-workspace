@@ -212,7 +212,7 @@ export default function WelcomeScreen(): React.ReactElement {
             so it becomes inset-relative here. */}
         <View style={{ paddingHorizontal: 26, paddingTop: 120 }}>
           <Text variant="displayLg" color={colors.t0}>
-            Welcome to BlackNexa
+            Welcome to BlackNexa™
           </Text>
           <Text variant="bodyLg" color={colors.t2} style={{ marginTop: 12, maxWidth: 320 }}>
             Document what happened, keep it safe, and find people who can help.

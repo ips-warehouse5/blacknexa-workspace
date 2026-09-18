@@ -33,6 +33,7 @@ import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import { Chip } from "@/components/ui/Controls";
+import TabHeader from "@/components/TabHeader";
 import FeedCard, { CARD_GAP, cardHeight } from "@/components/report/FeedCard";
 import { FeedSkeleton, FeedEmpty, FeedError } from "@/components/report/FeedStates";
 import FiltersSheet from "@/components/sheets/FiltersSheet";
@@ -193,7 +194,7 @@ function ExistingHomeScreen(): React.ReactElement {
         </Pressable>
 
         <Text variant="cardTitle" color={colors.t0} style={{ fontSize: 18 }}>
-          BlackNexa
+          BlackNexa™
         </Text>
 
         <View style={styles.headerActions}>
@@ -369,48 +370,10 @@ function ExistingHomeScreen(): React.ReactElement {
 export default function HomeScreen(): React.ReactElement {
   useThemeSync();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
 
   return (
     <View style={[styles.root, { paddingTop: insets.top, backgroundColor: colors.bg }]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.push("/profile")}
-          accessibilityRole="button"
-          accessibilityLabel="Your profile"
-          style={[styles.avatar, { backgroundColor: colors.s6 }]}
-          testID="feed-avatar"
-        >
-          <Text variant="labelSm" color={colors.acc}>
-            {user?.initials ?? "?"}
-          </Text>
-        </Pressable>
-
-        <Text variant="cardTitle" color={colors.t0} style={{ fontSize: 18 }}>
-          BlackNexa
-        </Text>
-
-        <View style={styles.headerActions}>
-          <Pressable
-            disabled
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Search reports is coming soon"
-            testID="feed-search"
-          >
-            <SearchGlyph />
-          </Pressable>
-          <Pressable
-            disabled
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications are coming soon"
-            testID="feed-notifications"
-          >
-            <BellGlyph withDot />
-          </Pressable>
-        </View>
-      </View>
+      <TabHeader />
 
       {/* TODO(Home): Re-enable the Home feed, filters, search, and notifications when Home development resumes. */}
       <ComingSoon />
@@ -462,6 +425,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
 

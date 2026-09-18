@@ -22,9 +22,11 @@ import { WizardShell, SectionLabel, cardHairline } from "@/components/report/Wiz
 import { AudioRecorderRow } from "@/components/report/AudioRecorderRow";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
+import { REPORT_BODY_MIN } from "@/lib/api/reports";
 
 /** C2's counter reads `44/70`, so the cap is 70. */
 const TITLE_MAX = 70;
+const BODY_MIN_ERROR = `Write at least ${REPORT_BODY_MIN} characters about what happened.`;
 
 /** The four prompts behind "Not sure where to start?". */
 const PROMPTS = [
@@ -74,6 +76,12 @@ export default function DetailsStep(): React.ReactElement {
       bodyRef.current?.focus();
       return;
     }
+    if (body.trim().length < REPORT_BODY_MIN) {
+      setBodyError(BODY_MIN_ERROR);
+      scrollRef.current?.scrollTo({ y: Math.max(0, offsets.current.body - 24), animated: true });
+      bodyRef.current?.focus();
+      return;
+    }
 
     commit(title, body);
     setStep(3);
@@ -119,6 +127,7 @@ export default function DetailsStep(): React.ReactElement {
         value={body}
         onChangeText={(value) => {
           setBody(value);
+          if (bodyError && value.trim().length >= REPORT_BODY_MIN) setBodyError(null);
           commit(title, value);
         }}
         error={bodyError}

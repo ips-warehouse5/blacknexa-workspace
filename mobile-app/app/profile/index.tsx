@@ -28,7 +28,7 @@
  */
 
 import React, { useCallback } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Settings as SettingsIcon, UserRound } from "lucide-react-native";
@@ -80,6 +80,15 @@ export default function ProfileScreen(): React.ReactElement {
   const isAnonymous = user?.avatarMode === "anonymous";
 
   const openSettings = useCallback(() => router.push("/profile/settings"), []);
+  const openIdentity = useCallback(() => router.push("/profile/identity"), []);
+
+  // avatarMode is the sole gate on showing the photo: "anonymous" hides it
+  // even when the API still returns a valid avatarUrl (the server keeps the
+  // key so a later mode switch back to "photo" doesn't need a re-upload).
+  // Any other mode ("photo" or "initials") both displays it when present
+  // and lets it be edited — matches app/profile/identity.tsx, where the
+  // edit actually happens.
+  const showAvatarImage = !isAnonymous && Boolean(user?.avatarUrl);
 
   return (
     <ScrollScreen padding={screenPadding.detail} testID="profile">
@@ -102,15 +111,28 @@ export default function ProfileScreen(): React.ReactElement {
 
       {/* Identity header. */}
       <View style={styles.identity}>
-        <View style={[styles.avatar, { backgroundColor: colors.s6 }]}>
+        <Pressable
+          onPress={isAnonymous ? undefined : openIdentity}
+          disabled={isAnonymous}
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile photo"
+          testID="profile-avatar"
+          style={[styles.avatar, { backgroundColor: colors.s6 }]}
+        >
           {isAnonymous ? (
             <UserRound size={26} color={colors.t3} />
+          ) : showAvatarImage ? (
+            <Image
+              source={{ uri: user?.avatarUrl ?? undefined }}
+              style={{ width: 62, height: 62 }}
+              resizeMode="cover"
+            />
           ) : (
             <Text variant="cardTitle" color={colors.acc}>
               {user?.initials ?? "?"}
             </Text>
           )}
-        </View>
+        </Pressable>
         <View style={{ flex: 1 }}>
           <Text variant="profileName" color={colors.t0}>
             {isAnonymous || !user?.displayName?.trim()
@@ -244,6 +266,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   badges: { flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" },
   badge: {

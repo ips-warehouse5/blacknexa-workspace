@@ -19,7 +19,13 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
+import {
+  alpha,
+  colors,
+  radius,
+  screenPadding,
+  useThemeSync,
+} from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useAuth } from "@/providers/AuthProvider";
@@ -57,7 +63,10 @@ function whenSeen(iso: string): string {
   if (minutes < 60) return `${minutes} minutes ago`;
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours} hours ago`;
-  return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 export default function AccountInfoScreen(): React.ReactElement {
@@ -79,7 +88,9 @@ export default function AccountInfoScreen(): React.ReactElement {
         {user?.hasPassword ? (
           <AccountRow
             title="Password"
-            detail={whenChanged(user.passwordChangedAt ?? null) ?? "Tap to change"}
+            detail={
+              whenChanged(user.passwordChangedAt ?? null) ?? "Tap to change"
+            }
             onPress={() => router.push("/profile/change-password")}
             testID="row-change-password"
           />
@@ -90,7 +101,12 @@ export default function AccountInfoScreen(): React.ReactElement {
             disabled
           />
         )}
-        <AccountRow title="Connected sign-in" detail={connectedSignIn} disabled last />
+        <AccountRow
+          title="Connected sign-in"
+          detail={connectedSignIn}
+          disabled
+          last
+        />
       </AccountGroup>
 
       <AccountGroup label="DEVICES">
@@ -105,7 +121,11 @@ export default function AccountInfoScreen(): React.ReactElement {
             />
           ))
         ) : (
-          <AccountRow title="No other devices" detail="This device is the only active session." disabled />
+          <AccountRow
+            title="No other devices"
+            detail="This device is the only active session."
+            disabled
+          />
         )}
       </AccountGroup>
 
@@ -118,18 +138,6 @@ export default function AccountInfoScreen(): React.ReactElement {
           last
         />
       </AccountGroup>
-
-      <View style={{ marginTop: 14 }}>
-        <Pressable
-          onPress={() => router.push("/profile/security")}
-          accessibilityRole="button"
-          testID="row-manage-devices"
-        >
-          <Text variant="metaSm" color={colors.acc}>
-            Manage signed-in devices
-          </Text>
-        </Pressable>
-      </View>
     </ScrollScreen>
   );
 }
@@ -138,7 +146,11 @@ function getConnectedSignInLabel(
   user: ReturnType<typeof useAuth>["user"],
   signInMethod: ReturnType<typeof useAuth>["signInMethod"],
 ): string {
-  const direct = user?.signInProvider ?? user?.authProvider ?? user?.provider ?? signInMethod;
+  const direct =
+    user?.signInProvider ??
+    user?.authProvider ??
+    user?.provider ??
+    signInMethod;
   if (direct && direct in SIGN_IN_LABEL) {
     return SIGN_IN_LABEL[direct as keyof typeof SIGN_IN_LABEL];
   }
@@ -163,7 +175,9 @@ function AccountGroup({
       <Text variant="fieldLabel" color={colors.t3}>
         {label}
       </Text>
-      <View style={[styles.group, { backgroundColor: colors.s3 }]}>{children}</View>
+      <View style={[styles.group, { backgroundColor: colors.s3 }]}>
+        {children}
+      </View>
     </View>
   );
 }
@@ -209,7 +223,12 @@ function AccountRow({
           {title}
         </Text>
         {detail ? (
-          <Text variant="metaSm" color={colors.t4} numberOfLines={1} style={{ marginTop: 3 }}>
+          <Text
+            variant="metaSm"
+            color={colors.t4}
+            numberOfLines={1}
+            style={{ marginTop: 3 }}
+          >
             {detail}
           </Text>
         ) : null}
@@ -226,7 +245,12 @@ function DeviceRow({
   session: SessionSummary;
   last: boolean;
 }): React.ReactElement {
-  const detail = [session.current ? "Active now" : `Last used ${whenSeen(session.lastSeenAt)}`, session.platform]
+  const detail = [
+    session.current
+      ? "Active now"
+      : `Last used ${whenSeen(session.lastSeenAt)}`,
+    session.platform,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -242,7 +266,9 @@ function DeviceRow({
     >
       <View style={styles.rowText}>
         <Text variant="label" color={colors.t0}>
-          {session.current ? `${session.deviceLabel} · this device` : session.deviceLabel}
+          {session.current
+            ? `${session.deviceLabel} · this device`
+            : session.deviceLabel}
         </Text>
         <Text
           variant="metaSm"
@@ -254,9 +280,17 @@ function DeviceRow({
         </Text>
       </View>
       {!session.current ? (
-        <Text variant="metaSm" color={colors.bad2}>
-          Manage
-        </Text>
+        <Pressable
+          onPress={() => router.push("/profile/security")}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Manage ${session.deviceLabel}`}
+          testID={`manage-device-${session.id}`}
+        >
+          <Text variant="metaSm" color={colors.bad2}>
+            Manage
+          </Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -266,8 +300,18 @@ function DeviceSkeleton(): React.ReactElement {
   return (
     <View style={styles.row}>
       <View style={styles.rowText}>
-        <View style={[styles.bar, { width: 120, height: 13, backgroundColor: colors.s5 }]} />
-        <View style={[styles.bar, { width: 88, height: 11, marginTop: 8, backgroundColor: colors.s5 }]} />
+        <View
+          style={[
+            styles.bar,
+            { width: 120, height: 13, backgroundColor: colors.s5 },
+          ]}
+        />
+        <View
+          style={[
+            styles.bar,
+            { width: 88, height: 11, marginTop: 8, backgroundColor: colors.s5 },
+          ]}
+        />
       </View>
     </View>
   );

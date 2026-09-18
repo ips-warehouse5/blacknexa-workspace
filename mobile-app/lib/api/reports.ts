@@ -213,6 +213,8 @@ export interface DraftPayload {
   urgent?: boolean;
 }
 
+export const REPORT_BODY_MIN = 10;
+
 export interface DraftSummary {
   id: string;
   step: number;

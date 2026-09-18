@@ -11,7 +11,12 @@ import Button from "@/components/ui/Button";
 import TextField, { PasswordField } from "@/components/ui/TextField";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { Checkbox } from "@/components/ui/Controls";
-import { StepHeader, StrengthMeter, RequirementList, evaluatePassword } from "@/components/ui/Progress";
+import {
+  StepHeader,
+  StrengthMeter,
+  RequirementList,
+  evaluatePassword,
+} from "@/components/ui/Progress";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
 import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
@@ -25,13 +30,17 @@ export default function SignUpAccountScreen(): React.ReactElement {
   const [lastName, setLastName] = useState(signUpDraft?.lastName ?? "");
   const [email, setEmail] = useState(signUpDraft?.email ?? "");
   const [password, setPassword] = useState(signUpDraft?.password ?? "");
-  const [agreedToTerms, setAgreedToTerms] = useState(signUpDraft?.agreedToTerms ?? false);
+  const [agreedToTerms, setAgreedToTerms] = useState(
+    signUpDraft?.agreedToTerms ?? false,
+  );
   const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
-  const scrollRef = useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
+  const scrollRef =
+    useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const firstNameRef = useRef<TextInput>(null);
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
@@ -41,10 +50,12 @@ export default function SignUpAccountScreen(): React.ReactElement {
   const shownErrorRef = useRef<string | null>(null);
   const strength = evaluatePassword(password);
 
-  useFocusEffect(useCallback(() => {
-    clearError();
-    return clearError;
-  }, [clearError]));
+  useFocusEffect(
+    useCallback(() => {
+      clearError();
+      return clearError;
+    }, [clearError]),
+  );
 
   useEffect(() => {
     if (!error) {
@@ -61,35 +72,69 @@ export default function SignUpAccountScreen(): React.ReactElement {
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });
   }, []);
 
-  const handleEmailChange = useCallback((value: string) => {
-    setEmail(value);
-    // Email format is only checked on submit — clear a shown error as soon
-    // as the user starts correcting the field, but don't re-validate live.
-    if (emailError) setEmailError(null);
-  }, [emailError]);
+  const handleEmailChange = useCallback(
+    (value: string) => {
+      setEmail(value);
+      // Mirrors the password field: once the field has been left at least
+      // once (`emailTouched`), keep re-checking on every keystroke so a fix
+      // clears the error immediately rather than leaving it stuck until the
+      // next blur or a submit attempt.
+      if (emailTouched) {
+        setEmailError(
+          validateSignUpAccount(value, password, agreedToTerms, firstName, lastName).email,
+        );
+      } else if (emailError) {
+        setEmailError(null);
+      }
+    },
+    [agreedToTerms, emailError, emailTouched, firstName, lastName, password],
+  );
 
-  const handleFirstNameChange = useCallback((value: string) => {
-    setFirstName(value);
-    // Same rule as email: clear a shown error while it is being corrected,
-    // rather than re-validating on every keystroke.
-    if (firstNameError) setFirstNameError(null);
-  }, [firstNameError]);
+  const handleFirstNameChange = useCallback(
+    (value: string) => {
+      setFirstName(value);
+      // Same rule as email: clear a shown error while it is being corrected,
+      // rather than re-validating on every keystroke.
+      if (firstNameError) setFirstNameError(null);
+    },
+    [firstNameError],
+  );
 
-  const handlePasswordChange = useCallback((value: string) => {
-    setPassword(value);
-    if (passwordTouched) setPasswordError(validateSignUpAccount(email, value, agreedToTerms, firstName, lastName).password);
-  }, [agreedToTerms, email, passwordTouched]);
+  const handlePasswordChange = useCallback(
+    (value: string) => {
+      setPassword(value);
+      if (passwordTouched)
+        setPasswordError(
+          validateSignUpAccount(
+            email,
+            value,
+            agreedToTerms,
+            firstName,
+            lastName,
+          ).password,
+        );
+    },
+    [agreedToTerms, email, passwordTouched],
+  );
 
   const toggleConsent = useCallback(() => {
     const next = !agreedToTerms;
     setAgreedToTerms(next);
-    setConsentError(validateSignUpAccount(email, password, next, firstName, lastName).consent);
+    setConsentError(
+      validateSignUpAccount(email, password, next, firstName, lastName).consent,
+    );
   }, [agreedToTerms, email, password]);
 
   const submit = useCallback(async () => {
     if (busy || submittingRef.current) return;
     clearError();
-    const validation = validateSignUpAccount(email, password, agreedToTerms, firstName, lastName);
+    const validation = validateSignUpAccount(
+      email,
+      password,
+      agreedToTerms,
+      firstName,
+      lastName,
+    );
     setFirstNameError(validation.firstName);
     setEmailError(validation.email);
     setPasswordError(validation.password);
@@ -135,7 +180,17 @@ export default function SignUpAccountScreen(): React.ReactElement {
     } finally {
       submittingRef.current = false;
     }
-  }, [agreedToTerms, busy, clearError, email, firstName, lastName, password, register, scrollTo]);
+  }, [
+    agreedToTerms,
+    busy,
+    clearError,
+    email,
+    firstName,
+    lastName,
+    password,
+    register,
+    scrollTo,
+  ]);
 
   return (
     <ScrollScreen
@@ -148,105 +203,186 @@ export default function SignUpAccountScreen(): React.ReactElement {
       testID="signup-account"
       footer={
         <View style={{ flexDirection: "row", gap: 10 }}>
-          <Button label="Back" variant="quiet" block={false} height={52} style={{ width: 96 }} onPress={() => router.back()} />
-          <Button label="Continue" onPress={submit} loading={busy} style={{ flex: 1 }} testID="signup-account-continue" />
+          <Button
+            label="Back"
+            variant="quiet"
+            block={false}
+            height={52}
+            style={{ width: 96 }}
+            onPress={() => router.back()}
+          />
+          <Button
+            label="Continue"
+            onPress={submit}
+            loading={busy}
+            style={{ flex: 1 }}
+            testID="signup-account-continue"
+          />
         </View>
       }
     >
       <View style={{ flex: 1 }}>
-        <BackHeader title="Create account" onBack={() => router.back()} padding={0} />
+        <BackHeader
+          title="Create account"
+          onBack={() => router.back()}
+          padding={0}
+        />
         <StepHeader step={1} total={2} name="Account" />
-        <Text variant="displayXs" color={colors.t0} style={{ marginTop: 26 }}>Set up your login</Text>
+        <Text variant="displayXs" color={colors.t0} style={{ marginTop: 26 }}>
+          Set up your login
+        </Text>
 
         <TextField
-        ref={firstNameRef}
-        label="FIRST NAME"
-        value={firstName}
-        onChangeText={handleFirstNameChange}
-        error={firstNameError}
-        placeholder="Your first name"
-        autoCapitalize="words"
-        autoComplete="given-name"
-        textContentType="givenName"
-        returnKeyType="next"
-        blurOnSubmit={false}
-        onSubmitEditing={() => lastNameRef.current?.focus()}
-        onLayoutY={(y) => { offsets.current.firstName = y; }}
-        containerStyle={{ marginTop: 24 }}
-        testID="signup-first-name"
+          ref={firstNameRef}
+          label="FIRST NAME"
+          value={firstName}
+          onChangeText={handleFirstNameChange}
+          error={firstNameError}
+          placeholder="Your first name"
+          autoCapitalize="words"
+          autoComplete="given-name"
+          textContentType="givenName"
+          returnKeyType="next"
+          blurOnSubmit={false}
+          onSubmitEditing={() => lastNameRef.current?.focus()}
+          onLayoutY={(y) => {
+            offsets.current.firstName = y;
+          }}
+          containerStyle={{ marginTop: 24 }}
+          testID="signup-first-name"
         />
 
         {/* Optional — plenty of people have one name, and the server agrees. */}
         <TextField
-        ref={lastNameRef}
-        label="LAST NAME (OPTIONAL)"
-        value={lastName}
-        onChangeText={setLastName}
-        placeholder="Your last name"
-        autoCapitalize="words"
-        autoComplete="family-name"
-        textContentType="familyName"
-        returnKeyType="next"
-        blurOnSubmit={false}
-        onSubmitEditing={() => emailRef.current?.focus()}
-        containerStyle={{ marginTop: 18 }}
-        testID="signup-last-name"
+          ref={lastNameRef}
+          label="LAST NAME"
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder="Your last name"
+          autoCapitalize="words"
+          autoComplete="family-name"
+          textContentType="familyName"
+          returnKeyType="next"
+          blurOnSubmit={false}
+          onSubmitEditing={() => emailRef.current?.focus()}
+          containerStyle={{ marginTop: 18 }}
+          testID="signup-last-name"
         />
 
         <TextField
-        ref={emailRef}
-        label="EMAIL"
-        value={email}
-        onChangeText={handleEmailChange}
-        error={emailError}
-        placeholder="you@example.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="email"
-        textContentType="emailAddress"
-        returnKeyType="next"
-        blurOnSubmit={false}
-        onSubmitEditing={() => passwordRef.current?.focus()}
-        onLayoutY={(y) => { offsets.current.email = y; }}
-        containerStyle={{ marginTop: 18 }}
-        testID="signup-email"
+          ref={emailRef}
+          label="EMAIL"
+          value={email}
+          onChangeText={handleEmailChange}
+          onBlur={() => {
+            setEmailTouched(true);
+            setEmailError(
+              validateSignUpAccount(email, password, agreedToTerms, firstName, lastName).email,
+            );
+          }}
+          error={emailError}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          blurOnSubmit={false}
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          onLayoutY={(y) => {
+            offsets.current.email = y;
+          }}
+          containerStyle={{ marginTop: 18 }}
+          testID="signup-email"
         />
 
         <PasswordField
-        ref={passwordRef}
-        isNew
-        label="PASSWORD"
-        value={password}
-        onChangeText={handlePasswordChange}
-        onBlur={() => {
-          setPasswordTouched(true);
-          setPasswordError(validateSignUpAccount(email, password, agreedToTerms, firstName, lastName).password);
-        }}
-        error={passwordError}
-        placeholder="Create a password"
-        returnKeyType="go"
-        onSubmitEditing={submit}
-        onLayoutY={(y) => { offsets.current.password = y; }}
-        containerStyle={{ marginTop: 18 }}
-        testID="signup-password"
+          ref={passwordRef}
+          isNew
+          label="PASSWORD"
+          value={password}
+          onChangeText={handlePasswordChange}
+          onBlur={() => {
+            setPasswordTouched(true);
+            setPasswordError(
+              validateSignUpAccount(
+                email,
+                password,
+                agreedToTerms,
+                firstName,
+                lastName,
+              ).password,
+            );
+          }}
+          error={passwordError}
+          placeholder="Create a password"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+          onLayoutY={(y) => {
+            offsets.current.password = y;
+          }}
+          containerStyle={{ marginTop: 18 }}
+          testID="signup-password"
         />
 
-        {password.length > 0 ? <StrengthMeter score={strength.score} label={strength.label} color={strength.color} style={{ marginTop: 11 }} /> : null}
-        <RequirementList rules={strength.rules} style={{ marginTop: 18 }} testID="signup-requirements" />
+        {password.length > 0 ? (
+          <StrengthMeter
+            score={strength.score}
+            label={strength.label}
+            color={strength.color}
+            style={{ marginTop: 11 }}
+          />
+        ) : null}
+        <RequirementList
+          rules={strength.rules}
+          style={{ marginTop: 18 }}
+          testID="signup-requirements"
+        />
 
         <View style={{ marginTop: "auto", paddingTop: 22 }}>
-          <View onLayout={(event) => { offsets.current.consent = event.nativeEvent.layout.y; }} style={{ flexDirection: "row", alignItems: "flex-start", gap: 11, paddingBottom: 8 }}>
-            <Checkbox checked={agreedToTerms} onToggle={toggleConsent} accessibilityLabel="Agree to the Terms of Service and Privacy Policy" testID="signup-consent" />
+          <View
+            onLayout={(event) => {
+              offsets.current.consent = event.nativeEvent.layout.y;
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: 11,
+              paddingBottom: 8,
+            }}
+          >
+            <Checkbox
+              checked={agreedToTerms}
+              onToggle={toggleConsent}
+              accessibilityLabel="Agree to the Terms of Service and Privacy Policy"
+              testID="signup-consent"
+            />
             <Text variant="bodyXs" color={colors.t2} style={{ flex: 1 }}>
-              I agree to the {" "}
-              <Text variant="bodyXs" color={colors.acc} onPress={() => router.push("/legal/terms")}>Terms of Service</Text>
-              {" "}and {" "}
-              <Text variant="bodyXs" color={colors.acc} onPress={() => router.push("/legal/privacy")}>Privacy Policy</Text>
+              I agree to the{" "}
+              <Text
+                variant="bodyXs"
+                color={colors.acc}
+                onPress={() => router.push("/legal/terms")}
+              >
+                Terms of Service
+              </Text>{" "}
+              and{" "}
+              <Text
+                variant="bodyXs"
+                color={colors.acc}
+                onPress={() => router.push("/legal/privacy")}
+              >
+                Privacy Policy
+              </Text>
               {", and I understand how my evidence is stored."}
             </Text>
           </View>
-          {consentError ? <Text variant="metaSm" color={colors.bad2} style={{ marginTop: 6 }}>{consentError}</Text> : null}
+          {consentError ? (
+            <Text variant="metaSm" color={colors.bad2} style={{ marginTop: 6 }}>
+              {consentError}
+            </Text>
+          ) : null}
         </View>
       </View>
     </ScrollScreen>
