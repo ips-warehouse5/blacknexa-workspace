@@ -21,6 +21,7 @@
     "db:seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed_admin.ts",
     "db:seed:faqs": "ts-node -r tsconfig-paths/register src/scripts/seed_faqs.ts",
     "db:migrate:roles": "ts-node -r tsconfig-paths/register src/scripts/migrate_admin_roles.ts",
+    "db:migrate:profile-faq": "ts-node -r tsconfig-paths/register src/scripts/migrate_profile_and_faq.ts",
     "db:snapshot": "ts-node -r tsconfig-paths/register src/scripts/snapshot.ts",
     "smoke:auth": "bash scripts/smoke_auth.sh",
     "smoke:reports": "bash scripts/smoke_reports.sh",
