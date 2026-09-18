@@ -52,6 +52,10 @@ export const PERMISSIONS = [
   "contact.manage",
   "contact.delete",
 
+  "faq.view",
+  "faq.manage",
+  "faq.delete",
+
   "audit.view",
 
   // Operational surface — not represented in the console.
@@ -79,6 +83,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
     "staff.view", "staff.create", "staff.edit", "staff.role", "staff.reset",
     "staff.toggle", "staff.delete",
     "contact.view", "contact.manage", "contact.delete",
+    "faq.view", "faq.manage", "faq.delete",
     "audit.view",
     "platform.content", "platform.operate", "platform.restore",
   ],
@@ -87,6 +92,9 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
     "incidents.view", "incidents.verify", "incidents.dismiss", "incidents.notes",
     "moderation.view", "moderation.decide", "moderation.ban", "moderation.keywords",
     "contact.view", "contact.manage",
+    // Publishing an answer the whole user base reads is editorial work a
+    // moderator does; deleting one is not, so `faq.delete` stays with superadmin.
+    "faq.view", "faq.manage",
   ],
   /*
    * Advocate and Support Staff were once identical sets kept apart only by
@@ -98,6 +106,9 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
   staff: [
     "users.view", "incidents.view", "incidents.notes",
     "contact.view", "contact.manage",
+    // Read-only: support staff answer questions using the FAQ, they do not
+    // decide what it says.
+    "faq.view",
   ],
 };
 

@@ -150,6 +150,62 @@ userRouter.get(
   asyncHandler((req, res) => userAuthController.listSessions(req, res)),
 );
 
+/**
+ * Revoke one device.
+ *
+ * `writeLimiter`, not `authLimiter`: the caller is already authenticated and the
+ * service scopes the delete to their own rows, so there is nothing here to
+ * brute-force — and someone dealing with a stolen phone should not be throttled
+ * into failure while doing it.
+ */
+userRouter.delete(
+  "/me/sessions/:id",
+  userAuthGuard,
+  writeLimiter,
+  validate("userAuth.sessionId"),
+  asyncHandler((req, res) => userAuthController.revokeSession(req, res)),
+);
+
+/** Profile → Your area. */
+userRouter.patch(
+  "/me/area",
+  userAuthGuard,
+  writeLimiter,
+  validate("userAuth.updateArea"),
+  asyncHandler((req, res) => userAuthController.updateArea(req, res)),
+);
+
+/*
+ * ── Profile photo ─────────────────────────────────────────────────────────
+ *
+ * presign → direct PUT to storage → commit, the same shape as evidence upload.
+ * The bytes never pass through this process; only the two ends of the exchange
+ * do. See `avatar.service.ts` for what commit verifies and why it verifies less
+ * than evidence does.
+ */
+userRouter.post(
+  "/me/avatar/presign",
+  userAuthGuard,
+  writeLimiter,
+  validate("userAuth.avatarPresign"),
+  asyncHandler((req, res) => userAuthController.avatarPresign(req, res)),
+);
+
+userRouter.post(
+  "/me/avatar/commit",
+  userAuthGuard,
+  writeLimiter,
+  validate("userAuth.avatarCommit"),
+  asyncHandler((req, res) => userAuthController.avatarCommit(req, res)),
+);
+
+userRouter.delete(
+  "/me/avatar",
+  userAuthGuard,
+  writeLimiter,
+  asyncHandler((req, res) => userAuthController.avatarRemove(req, res)),
+);
+
 userRouter.post(
   "/me/consents",
   userAuthGuard,

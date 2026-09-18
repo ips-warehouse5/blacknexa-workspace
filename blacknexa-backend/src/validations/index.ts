@@ -23,6 +23,8 @@ import { userAuthSchemas } from "@/validations/user_auth.validation";
 import { reportSchemas } from "@/validations/report.validation";
 import { moderationSchemas } from "@/validations/moderation.validation";
 import { contactSchemas } from "@/validations/contact.validation";
+import { locationSchemas } from "@/validations/location.validation";
+import { faqSchemas } from "@/validations/faq.validation";
 
 export type ValidationTarget = "body" | "query" | "params";
 
@@ -40,6 +42,8 @@ const registry: SchemaRegistry = {
   ...reportSchemas,
   ...moderationSchemas,
   ...contactSchemas,
+  ...locationSchemas,
+  ...faqSchemas,
 };
 
 /** Look up a schema set by name. */

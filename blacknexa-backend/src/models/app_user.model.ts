@@ -59,11 +59,55 @@ export class AppUser extends Model<
   /** bcrypt hash. Null for an account created through Apple or Google only. */
   declare password_hash: CreationOptional<string | null>;
   declare display_name: CreationOptional<string>;
+  /**
+   * Legal/account name, collected at sign-up. Distinct from `display_name`,
+   * which is the handle a report or comment is published under.
+   *
+   * Nullable because every account created before this column existed has no
+   * value for it, and an Apple/Google sign-in may never supply one. Registration
+   * requires a first name at the schema; the column cannot.
+   */
+  declare first_name: CreationOptional<string | null>;
+  declare last_name: CreationOptional<string | null>;
   declare avatar_mode: CreationOptional<AvatarMode>;
   /** Storage key for an uploaded avatar, never a URL. */
   declare avatar_key: CreationOptional<string | null>;
+  /**
+   * A provider-hosted picture URL (Google's `picture` claim), kept apart from
+   * `avatar_key` on purpose.
+   *
+   * `avatar_key` addresses an object in our own bucket and is handed to the
+   * presigner; an `https://lh3.googleusercontent.com/...` value in that column
+   * would be signed as though it were a key and produce a dead link. Two columns
+   * means each holds one kind of thing, and an uploaded avatar simply wins over
+   * the provider's — see `avatarUrlFor` in `user_auth.service.ts`.
+   */
+  declare avatar_external_url: CreationOptional<string | null>;
   declare role: CreationOptional<UserRole>;
   declare status: CreationOptional<UserStatus>;
+  /**
+   * When the password was last created or changed — registration, reset, or a
+   * change from Profile → Account.
+   *
+   * Null means "never set a password here", which is the true state for an
+   * Apple/Google-only account and for any account that predates this column. The
+   * Account screen prints the date when it exists and stays silent when it does
+   * not, rather than inventing one from `created_on`.
+   */
+  declare password_changed_at: CreationOptional<string | null>;
+
+  // ── Saved area (Profile → Your area) ─────────────────────────────────────
+
+  /**
+   * The area the member chose, as opposed to wherever the device happens to be.
+   *
+   * Stored on the account rather than only on the device because it decides what
+   * "Local" means for news and which organisations surface first — answers that
+   * should survive a reinstall and follow the person to a second device.
+   */
+  declare area_label: CreationOptional<string | null>;
+  declare area_lat: CreationOptional<number | null>;
+  declare area_lng: CreationOptional<number | null>;
 
   // ── Preferences (screens A9, A11, C4, C6) ────────────────────────────────
   declare anonymous_by_default: CreationOptional<boolean>;
@@ -111,6 +155,16 @@ AppUser.init(
       allowNull: false,
       defaultValue: "",
     },
+    first_name: {
+      type: DataTypes.STRING(80),
+      allowNull: true,
+      defaultValue: null,
+    },
+    last_name: {
+      type: DataTypes.STRING(80),
+      allowNull: true,
+      defaultValue: null,
+    },
     avatar_mode: {
       type: DataTypes.STRING(16),
       allowNull: false,
@@ -118,6 +172,31 @@ AppUser.init(
     },
     avatar_key: {
       type: DataTypes.STRING(512),
+      allowNull: true,
+      defaultValue: null,
+    },
+    avatar_external_url: {
+      type: DataTypes.STRING(1024),
+      allowNull: true,
+      defaultValue: null,
+    },
+    password_changed_at: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+      defaultValue: null,
+    },
+    area_label: {
+      type: DataTypes.STRING(160),
+      allowNull: true,
+      defaultValue: null,
+    },
+    area_lat: {
+      type: DataTypes.DOUBLE,
+      allowNull: true,
+      defaultValue: null,
+    },
+    area_lng: {
+      type: DataTypes.DOUBLE,
       allowNull: true,
       defaultValue: null,
     },

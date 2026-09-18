@@ -23,6 +23,8 @@ import reportRoutes, {
 } from "@/routes/report.route";
 import moderationRoutes from "@/routes/moderation.route";
 import contactRoutes, { adminContactRouter } from "@/routes/contact.route";
+import helpRoutes, { adminFaqRouter } from "@/routes/faq.route";
+import locationRoutes from "@/routes/location.route";
 import reportShareController from "@/controllers/report_share.controller";
 import seoController from "@/controllers/seo.controller";
 import newsService from "@/services/news.service";
@@ -126,10 +128,18 @@ export const ROUTE_MANIFEST: string[] = [
   "GET    /api/v1/auth/me",
   "PATCH  /api/v1/users/me",
   "GET    /api/v1/users/me/sessions",
+  "DELETE /api/v1/users/me/sessions/:id",
+  "PATCH  /api/v1/users/me/area",
+  "POST   /api/v1/users/me/avatar/presign",
+  "POST   /api/v1/users/me/avatar/commit",
+  "DELETE /api/v1/users/me/avatar",
   "POST   /api/v1/users/me/consents",
   "POST   /api/v1/users/me/devices",
   "POST   /api/v1/users/me/deletion-code",
   "DELETE /api/v1/users/me",
+  // Help & place search (Profile → Help, Profile → Your area)
+  "GET    /api/v1/help/faq?surface=app|website",
+  "GET    /api/v1/locations/search?q=",
   // Reports (design sections B, C, D)
   "POST   /api/v1/reports/drafts",
   "GET    /api/v1/reports/drafts",
@@ -193,6 +203,14 @@ export const ROUTE_MANIFEST: string[] = [
   "GET    /api/v1/admin/contact/:id (contact.view)",
   "PATCH  /api/v1/admin/contact/:id (contact.manage)",
   "DELETE /api/v1/admin/contact/:id (contact.delete)",
+  // FAQs — one store behind the app's Help screen and the website's FAQ section
+  "GET    /api/v1/admin/faqs?page=&limit=&search=&status=&categoryId=&surface= (faq.view)",
+  "GET    /api/v1/admin/faqs/summary (faq.view)",
+  "GET    /api/v1/admin/faqs/categories (faq.view)",
+  "GET    /api/v1/admin/faqs/:id (faq.view)",
+  "POST   /api/v1/admin/faqs (faq.manage)",
+  "PATCH  /api/v1/admin/faqs/:id (faq.manage)",
+  "DELETE /api/v1/admin/faqs/:id (faq.delete)",
 ];
 
 export function mountRoutes(app: Express): void {
@@ -250,6 +268,9 @@ export function mountRoutes(app: Express): void {
   api.use("/admin/auth", adminRoutes);
   api.use("/admin/staff", staffRouter);
   api.use("/admin/moderation", moderationRoutes);
+  api.use("/help", helpRoutes);
+  api.use("/admin/faqs", adminFaqRouter);
+  api.use("/locations", locationRoutes);
   api.use("/contact", contactRoutes);
   api.use("/admin/contact", adminContactRouter);
 

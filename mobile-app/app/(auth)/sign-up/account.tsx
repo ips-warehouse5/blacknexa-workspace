@@ -21,17 +21,22 @@ export default function SignUpAccountScreen(): React.ReactElement {
   useThemeSync();
   const { register, busy, error, clearError, signUpDraft } = useAuth();
   const { showSnackbar } = useSnackbar();
+  const [firstName, setFirstName] = useState(signUpDraft?.firstName ?? "");
+  const [lastName, setLastName] = useState(signUpDraft?.lastName ?? "");
   const [email, setEmail] = useState(signUpDraft?.email ?? "");
   const [password, setPassword] = useState(signUpDraft?.password ?? "");
   const [agreedToTerms, setAgreedToTerms] = useState(signUpDraft?.agreedToTerms ?? false);
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const scrollRef = useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
+  const firstNameRef = useRef<TextInput>(null);
+  const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
-  const offsets = useRef({ email: 0, password: 0, consent: 0 });
+  const offsets = useRef({ firstName: 0, email: 0, password: 0, consent: 0 });
   const submittingRef = useRef(false);
   const shownErrorRef = useRef<string | null>(null);
   const strength = evaluatePassword(password);
@@ -63,25 +68,40 @@ export default function SignUpAccountScreen(): React.ReactElement {
     if (emailError) setEmailError(null);
   }, [emailError]);
 
+  const handleFirstNameChange = useCallback((value: string) => {
+    setFirstName(value);
+    // Same rule as email: clear a shown error while it is being corrected,
+    // rather than re-validating on every keystroke.
+    if (firstNameError) setFirstNameError(null);
+  }, [firstNameError]);
+
   const handlePasswordChange = useCallback((value: string) => {
     setPassword(value);
-    if (passwordTouched) setPasswordError(validateSignUpAccount(email, value, agreedToTerms).password);
+    if (passwordTouched) setPasswordError(validateSignUpAccount(email, value, agreedToTerms, firstName, lastName).password);
   }, [agreedToTerms, email, passwordTouched]);
 
   const toggleConsent = useCallback(() => {
     const next = !agreedToTerms;
     setAgreedToTerms(next);
-    setConsentError(validateSignUpAccount(email, password, next).consent);
+    setConsentError(validateSignUpAccount(email, password, next, firstName, lastName).consent);
   }, [agreedToTerms, email, password]);
 
   const submit = useCallback(async () => {
     if (busy || submittingRef.current) return;
     clearError();
-    const validation = validateSignUpAccount(email, password, agreedToTerms);
+    const validation = validateSignUpAccount(email, password, agreedToTerms, firstName, lastName);
+    setFirstNameError(validation.firstName);
     setEmailError(validation.email);
     setPasswordError(validation.password);
     setConsentError(validation.consent);
 
+    // First, because it is now the first field on the screen — A6's rule is to
+    // scroll to the *first* problem, not to whichever one is checked first.
+    if (validation.firstName) {
+      scrollTo(offsets.current.firstName);
+      firstNameRef.current?.focus();
+      return;
+    }
     if (validation.email) {
       scrollTo(offsets.current.email);
       emailRef.current?.focus();
@@ -99,7 +119,13 @@ export default function SignUpAccountScreen(): React.ReactElement {
 
     submittingRef.current = true;
     try {
-      const result = await register(validation.emailForSubmission!, password, agreedToTerms);
+      const result = await register(
+        validation.emailForSubmission!,
+        password,
+        validation.firstNameForSubmission!,
+        validation.lastNameForSubmission,
+        agreedToTerms,
+      );
       if (result) {
         router.push({
           pathname: "/(auth)/sign-up/verify",
@@ -109,7 +135,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
     } finally {
       submittingRef.current = false;
     }
-  }, [agreedToTerms, busy, clearError, email, password, register, scrollTo]);
+  }, [agreedToTerms, busy, clearError, email, firstName, lastName, password, register, scrollTo]);
 
   return (
     <ScrollScreen
@@ -133,6 +159,41 @@ export default function SignUpAccountScreen(): React.ReactElement {
         <Text variant="displayXs" color={colors.t0} style={{ marginTop: 26 }}>Set up your login</Text>
 
         <TextField
+        ref={firstNameRef}
+        label="FIRST NAME"
+        value={firstName}
+        onChangeText={handleFirstNameChange}
+        error={firstNameError}
+        placeholder="Your first name"
+        autoCapitalize="words"
+        autoComplete="given-name"
+        textContentType="givenName"
+        returnKeyType="next"
+        blurOnSubmit={false}
+        onSubmitEditing={() => lastNameRef.current?.focus()}
+        onLayoutY={(y) => { offsets.current.firstName = y; }}
+        containerStyle={{ marginTop: 24 }}
+        testID="signup-first-name"
+        />
+
+        {/* Optional — plenty of people have one name, and the server agrees. */}
+        <TextField
+        ref={lastNameRef}
+        label="LAST NAME (OPTIONAL)"
+        value={lastName}
+        onChangeText={setLastName}
+        placeholder="Your last name"
+        autoCapitalize="words"
+        autoComplete="family-name"
+        textContentType="familyName"
+        returnKeyType="next"
+        blurOnSubmit={false}
+        onSubmitEditing={() => emailRef.current?.focus()}
+        containerStyle={{ marginTop: 18 }}
+        testID="signup-last-name"
+        />
+
+        <TextField
         ref={emailRef}
         label="EMAIL"
         value={email}
@@ -148,7 +209,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
         blurOnSubmit={false}
         onSubmitEditing={() => passwordRef.current?.focus()}
         onLayoutY={(y) => { offsets.current.email = y; }}
-        containerStyle={{ marginTop: 24 }}
+        containerStyle={{ marginTop: 18 }}
         testID="signup-email"
         />
 
@@ -160,7 +221,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
         onChangeText={handlePasswordChange}
         onBlur={() => {
           setPasswordTouched(true);
-          setPasswordError(validateSignUpAccount(email, password, agreedToTerms).password);
+          setPasswordError(validateSignUpAccount(email, password, agreedToTerms, firstName, lastName).password);
         }}
         error={passwordError}
         placeholder="Create a password"

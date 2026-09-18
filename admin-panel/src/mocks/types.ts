@@ -197,15 +197,6 @@ export interface EducationalArticle {
   updated: string;
 }
 
-export interface FaqItem {
-  id: string;
-  question: string;
-  answer: string;
-  category: string;
-  status: string;
-  updated: string;
-}
-
 export interface LegalDocumentSection {
   heading: string;
   body: string;

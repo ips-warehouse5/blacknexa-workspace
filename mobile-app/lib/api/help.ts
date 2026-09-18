@@ -1,3 +1,13 @@
+/**
+ * Help & FAQ content.
+ *
+ * Served by `GET /api/v1/help/faq`, which reads the FAQ table an editor manages
+ * in the admin console. The copy below is the offline fallback — see
+ * `helpApi.faq`.
+ */
+
+import api from "@/lib/api/client";
+
 export interface HelpFaqCategory {
   id: string;
   label: string;
@@ -97,9 +107,34 @@ export const FALLBACK_HELP_FAQ: HelpFaqPayload = {
 };
 
 export const helpApi = {
+  /**
+   * Help content, from the server.
+   *
+   * `FALLBACK_HELP_FAQ` above is kept rather than deleted now that the endpoint
+   * exists. The Help screen is where someone goes when something is already
+   * wrong — offline, or locked out — and an empty Help screen at that moment is
+   * the worst possible time to have nothing to say.
+   *
+   * The server's copy is now editable from the admin console and is the source
+   * of truth, so this bundled set is a floor rather than a mirror: it is the
+   * content that shipped with this build, and it goes out of date the moment an
+   * editor publishes a change. That is the right trade for a fallback — stale
+   * answers beat none — but it is why the live payload always wins when one
+   * arrives.
+   *
+   * A malformed payload falls back too: a response that parsed but has no items
+   * would render an empty accordion, which looks like a bug rather than a
+   * degraded state.
+   */
   async faq(): Promise<HelpFaqPayload> {
-    // The backend FAQ endpoint is not available yet. Keeping this behind an API
-    // function lets the screen stay data-driven when the endpoint is connected.
-    return FALLBACK_HELP_FAQ;
+    try {
+      const payload = await api.get<HelpFaqPayload>("/help/faq", { anonymous: true });
+      if (!payload?.items?.length || !payload?.categories?.length) {
+        return FALLBACK_HELP_FAQ;
+      }
+      return payload;
+    } catch {
+      return FALLBACK_HELP_FAQ;
+    }
   },
 };

@@ -28,6 +28,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import api, { ApiError } from "@/lib/api/client";
+import { putFile } from "@/lib/evidence-upload";
 import authApi, {
   type AuthResult,
   type AvatarMode,
@@ -58,6 +59,9 @@ export type SignInMethod = "password" | "apple" | "google";
 export interface SignUpDraft {
   email: string;
   password: string;
+  /** Collected on A6 alongside the credentials. Last name may be blank. */
+  firstName: string;
+  lastName: string;
   agreedToTerms: boolean;
   /** Set once A8 succeeds, so A9 knows the account is real. */
   verified: boolean;
@@ -72,13 +76,21 @@ interface AuthState {
   signInMethod: SignInMethod | null;
 
   signUpDraft: SignUpDraft | null;
-  beginSignUp: (email: string, password: string, agreedToTerms: boolean) => void;
+  beginSignUp: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    agreedToTerms: boolean,
+  ) => void;
   markVerified: () => void;
   clearSignUpDraft: () => void;
 
   register: (
     email: string,
     password: string,
+    firstName: string,
+    lastName: string,
     agreedToTerms: boolean,
   ) => Promise<{ resendAfterSeconds: number } | null>;
   verifyEmail: (code: string) => Promise<"verified" | "verification_failed" | "consent_failed">;
@@ -109,6 +121,8 @@ interface AuthState {
 
   updateProfile: (patch: {
     displayName?: string;
+    firstName?: string;
+    lastName?: string;
     avatarMode?: AvatarMode;
     anonymousByDefault?: boolean;
     defaultVisibility?: Visibility;
@@ -116,6 +130,16 @@ interface AuthState {
     notificationsEnabled?: boolean;
     language?: string;
   }) => Promise<boolean>;
+  /**
+   * Upload a profile photo picked on the device: presign → PUT → commit.
+   *
+   * Takes a local file URI and its MIME type. Resolves true once the server has
+   * adopted the key and the local user object carries the new `avatarUrl`.
+   */
+  uploadAvatar: (uri: string, mime: string) => Promise<boolean>;
+  removeAvatar: () => Promise<boolean>;
+  /** Profile → Your area. */
+  saveArea: (area: { label: string; lat: number; lng: number }) => Promise<boolean>;
   recordConsents: (version: number) => Promise<boolean>;
   /** Marks account setup complete so the gate stops routing to onboarding. */
   completeOnboarding: () => void;
@@ -361,14 +385,25 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   // ── Sign-up draft (A6 → A9) ───────────────────────────────────────────────
 
-  const beginSignUp = useCallback((email: string, password: string, agreedToTerms: boolean) => {
-    setSignUpDraft({
-      email: email.trim().toLowerCase(),
-      password,
-      agreedToTerms,
-      verified: false,
-    });
-  }, []);
+  const beginSignUp = useCallback(
+    (
+      email: string,
+      password: string,
+      firstName: string,
+      lastName: string,
+      agreedToTerms: boolean,
+    ) => {
+      setSignUpDraft({
+        email: email.trim().toLowerCase(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        agreedToTerms,
+        verified: false,
+      });
+    },
+    [],
+  );
 
   const markVerified = useCallback(() => {
     setSignUpDraft((draft) => (draft ? { ...draft, verified: true } : draft));
@@ -379,12 +414,18 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   // ── Flows ─────────────────────────────────────────────────────────────────
 
   const register = useCallback(
-    async (email: string, password: string, agreedToTerms: boolean) => {
+    async (
+      email: string,
+      password: string,
+      firstName: string,
+      lastName: string,
+      agreedToTerms: boolean,
+    ) => {
       setBusy(true);
       setError(null);
       try {
-        const challenge = await authApi.register(email, password);
-        beginSignUp(email, password, agreedToTerms);
+        const challenge = await authApi.register(email, password, firstName, lastName);
+        beginSignUp(email, password, firstName, lastName, agreedToTerms);
         return { resendAfterSeconds: challenge.resendAfterSeconds };
       } catch (err) {
         return capture(err);
@@ -562,6 +603,12 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       try {
         // Unlike Apple, Google's token carries the name on every sign-in, not
         // just the first — no pending-name persistence needed here.
+        //
+        // `decoded.picture` is deliberately NOT sent. The server reads the same
+        // claim out of the token after verifying its signature, and writes it to
+        // the account itself — so the avatar arrives without this client ever
+        // being trusted for it. Posting it from here would let anyone with a
+        // valid Google account point their avatar at any URL on the internet.
         const decoded = jwtDecode(identityToken) as GoogleDecodedJwt;
         const fullName = [decoded.given_name, decoded.family_name]
           .filter(Boolean)
@@ -678,6 +725,71 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     [capture],
   );
 
+  /**
+   * presign → PUT → commit.
+   *
+   * The PUT goes straight to storage, so the bytes never pass through our API.
+   * A failed PUT stops the sequence before commit, which leaves the account
+   * untouched — the alternative, committing a key whose upload failed, would
+   * point the profile at nothing.
+   *
+   * `putFile` is reused from the evidence upload path; it is the same operation
+   * and there is no reason for a second one.
+   */
+  const uploadAvatar = useCallback(
+    async (uri: string, mime: string) => {
+      setBusy(true);
+      setError(null);
+      try {
+        const slot = await authApi.avatarPresign(mime);
+        const uploaded = await putFile(slot.uploadUrl, uri, slot.headers);
+        if (!uploaded) {
+          setError("That photo could not be uploaded. Check your connection and try again.");
+          return false;
+        }
+        setUser(await authApi.avatarCommit(slot.storageKey));
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [capture],
+  );
+
+  const removeAvatar = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setUser(await authApi.avatarRemove());
+      return true;
+    } catch (err) {
+      capture(err);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [capture]);
+
+  const saveArea = useCallback(
+    async (area: { label: string; lat: number; lng: number }) => {
+      setBusy(true);
+      setError(null);
+      try {
+        setUser(await authApi.updateArea(area));
+        return true;
+      } catch (err) {
+        capture(err);
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [capture],
+  );
+
   const recordConsents = useCallback(
     async (version: number) => {
       try {
@@ -746,6 +858,9 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     signOutEverywhere,
     forgetSession,
     updateProfile,
+    uploadAvatar,
+    removeAvatar,
+    saveArea,
     recordConsents,
     completeOnboarding,
     biometricsAvailable,
