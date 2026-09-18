@@ -14,13 +14,14 @@
  * to shared tokens and system bars before the signed-in stacks render.
  */
 
-import React, { useEffect, useState } from "react";
-import { Platform, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AppState, Image, Platform, Pressable, StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as NavigationBar from "expo-navigation-bar";
+import * as LocalAuthentication from "expo-local-authentication";
 import { INTRO_SEEN_KEY } from "@/app/(auth)/intro";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -49,6 +50,7 @@ import { NewsProvider } from "@/providers/NewsProvider";
 import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
 import { SnackbarProvider, SnackbarHost } from "@/providers/SnackbarProvider";
 import { colors, setActiveTheme } from "@/constants/theme";
+import Text from "@/components/ui/Text";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -65,10 +67,78 @@ const queryClient = new QueryClient({
  * stack rather than leaving a dead screen mounted.
  */
 function AuthGate(): React.ReactElement | null {
-  const { status } = useAuth();
+  const { status, biometricsAvailability } = useAuth();
+  const { settings, isLoading: settingsLoading } = useSettings();
   const segments = useSegments();
   const router = useRouter();
   const [routeSettled, setRouteSettled] = useState(false);
+  const [biometricUnlocked, setBiometricUnlocked] = useState(false);
+  const [biometricPrompting, setBiometricPrompting] = useState(false);
+  const [appIsActive, setAppIsActive] = useState(
+    AppState.currentState === "active",
+  );
+  const promptInFlight = useRef(false);
+  const previousStatus = useRef(status);
+  const biometricLockEnabled =
+    status === "signedIn" &&
+    !settingsLoading &&
+    settings.biometrics &&
+    biometricsAvailability.available;
+
+  const promptForBiometricUnlock = useCallback(async () => {
+    if (!biometricLockEnabled || promptInFlight.current) return;
+    promptInFlight.current = true;
+    setBiometricPrompting(true);
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Unlock BlackNexa",
+        fallbackLabel: "Use passcode",
+        disableDeviceFallback: false,
+      });
+      if (result.success) setBiometricUnlocked(true);
+    } finally {
+      promptInFlight.current = false;
+      setBiometricPrompting(false);
+    }
+  }, [biometricLockEnabled]);
+
+  useEffect(() => {
+    if (!biometricLockEnabled) {
+      setBiometricUnlocked(true);
+      previousStatus.current = status;
+      return;
+    }
+
+    // Ask on cold launch/session restore, not during a fresh login from Welcome.
+    if (previousStatus.current === "restoring") {
+      setBiometricUnlocked(false);
+    } else {
+      setBiometricUnlocked(true);
+    }
+    previousStatus.current = status;
+  }, [biometricLockEnabled, status]);
+
+  useEffect(() => {
+    if (!appIsActive || !biometricLockEnabled || biometricUnlocked) return;
+    void promptForBiometricUnlock();
+  }, [
+    appIsActive,
+    biometricLockEnabled,
+    biometricUnlocked,
+    promptForBiometricUnlock,
+  ]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      const active = state === "active";
+      setAppIsActive(active);
+      if (!biometricLockEnabled) return;
+      if (!active) {
+        setBiometricUnlocked(false);
+      }
+    });
+    return () => sub.remove();
+  }, [biometricLockEnabled]);
 
   useEffect(() => {
     if (status === "restoring") {
@@ -79,7 +149,9 @@ function AuthGate(): React.ReactElement | null {
     const firstSegment = segments[0] as string | undefined;
     const inAuthGroup = firstSegment === "(auth)";
     const inOnboardingGroup = firstSegment === "(onboarding)";
+    const inOAuthRedirect = firstSegment === "oauthredirect";
     const isPublicRoute =
+      inOAuthRedirect ||
       firstSegment === "legal" ||
       firstSegment === "news" ||
       firstSegment === "incident" ||
@@ -106,7 +178,10 @@ function AuthGate(): React.ReactElement | null {
     ) {
       setRouteSettled(false);
       router.replace("/(onboarding)/notifications");
-    } else if (status === "signedIn" && (inAuthGroup || inOnboardingGroup)) {
+    } else if (
+      status === "signedIn" &&
+      (inAuthGroup || inOnboardingGroup || inOAuthRedirect)
+    ) {
       setRouteSettled(false);
       router.replace("/(tabs)");
     } else {
@@ -124,6 +199,15 @@ function AuthGate(): React.ReactElement | null {
 
   if (status === "restoring") return null;
 
+  if (biometricLockEnabled && !biometricUnlocked) {
+    return (
+      <BiometricLockScreen
+        busy={biometricPrompting}
+        onUnlock={promptForBiometricUnlock}
+      />
+    );
+  }
+
   return (
     <View style={{ flex: 1, opacity: routeSettled ? 1 : 0 }}>
       <Stack
@@ -138,6 +222,7 @@ function AuthGate(): React.ReactElement | null {
         <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
         <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+        <Stack.Screen name="oauthredirect" options={{ animation: "fade" }} />
 
       {/* Reachable from the signed-in stack. */}
       <Stack.Screen name="search" options={{ animation: "fade" }} />
@@ -180,6 +265,36 @@ function AuthGate(): React.ReactElement | null {
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
         <Stack.Screen name="+not-found" />
       </Stack>
+    </View>
+  );
+}
+
+function BiometricLockScreen({
+  busy,
+  onUnlock,
+}: {
+  busy: boolean;
+  onUnlock: () => void;
+}): React.ReactElement {
+  return (
+    <View style={styles.lockRoot}>
+      <Image
+        source={require("@/assets/images/splash-icon.png")}
+        resizeMode="contain"
+        style={styles.splashIcon}
+      />
+      {!busy ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onUnlock}
+          style={styles.unlockFallback}
+          testID="biometric-unlock-button"
+        >
+          <Text variant="buttonSm" color={colors.t3}>
+            Unlock
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -263,3 +378,25 @@ export default function RootLayout(): React.ReactElement | null {
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  lockRoot: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  splashIcon: {
+    height: 200,
+    width: 200,
+  },
+  unlockFallback: {
+    bottom: 42,
+    minHeight: 44,
+    minWidth: 96,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+  },
+});

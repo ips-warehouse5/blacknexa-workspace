@@ -23,7 +23,7 @@ import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
@@ -49,6 +49,14 @@ export type AuthStatus =
   | "signedIn";
 
 export type SignInMethod = "password" | "apple" | "google";
+
+export interface BiometricsAvailability {
+  checked: boolean;
+  available: boolean;
+  hasHardware: boolean;
+  enrolled: boolean;
+  supportedTypes: LocalAuthentication.AuthenticationType[];
+}
 
 /**
  * Sign-up draft, held across the A6 → A8 registration flow.
@@ -145,6 +153,7 @@ interface AuthState {
   completeOnboarding: () => void;
 
   biometricsAvailable: boolean;
+  biometricsAvailability: BiometricsAvailability;
   unlockWithBiometrics: () => Promise<boolean>;
   clearError: () => void;
 }
@@ -288,6 +297,14 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const [signInMethod, setSignInMethod] = useState<SignInMethod | null>(null);
   const [signUpDraft, setSignUpDraft] = useState<SignUpDraft | null>(null);
   const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  const [biometricsAvailability, setBiometricsAvailability] =
+    useState<BiometricsAvailability>({
+      checked: false,
+      available: false,
+      hasHardware: false,
+      enrolled: false,
+      supportedTypes: [],
+    });
   /**
    * A9 sets this once the profile step is done. Held locally because the server
    * has no "onboarded" flag — a display name is a weak proxy, and someone who
@@ -372,16 +389,54 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     });
   }, []);
 
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    void (async () => {
-      const [hasHardware, isEnrolled] = await Promise.all([
+  const refreshBiometricsAvailability = useCallback(async () => {
+    if (Platform.OS === "web") {
+      setBiometricsAvailability({
+        checked: true,
+        available: false,
+        hasHardware: false,
+        enrolled: false,
+        supportedTypes: [],
+      });
+      setBiometricsAvailable(false);
+      return;
+    }
+
+    try {
+      const [hasHardware, enrolled, supportedTypes] = await Promise.all([
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync(),
+        LocalAuthentication.supportedAuthenticationTypesAsync(),
       ]);
-      setBiometricsAvailable(hasHardware && isEnrolled);
-    })();
+      const available = hasHardware && enrolled && supportedTypes.length > 0;
+      setBiometricsAvailability({
+        checked: true,
+        available,
+        hasHardware,
+        enrolled,
+        supportedTypes,
+      });
+      setBiometricsAvailable(available);
+    } catch {
+      setBiometricsAvailability({
+        checked: true,
+        available: false,
+        hasHardware: false,
+        enrolled: false,
+        supportedTypes: [],
+      });
+      setBiometricsAvailable(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshBiometricsAvailability();
+
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refreshBiometricsAvailability();
+    });
+    return () => sub.remove();
+  }, [refreshBiometricsAvailability]);
 
   // ── Sign-up draft (A6 → A9) ───────────────────────────────────────────────
 
@@ -864,6 +919,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     recordConsents,
     completeOnboarding,
     biometricsAvailable,
+    biometricsAvailability,
     unlockWithBiometrics,
     clearError,
   };

@@ -23,6 +23,7 @@ import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
+import * as LocalAuthentication from "expo-local-authentication";
 import { alpha, colors, screenPadding, type ThemeName, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
@@ -58,7 +59,13 @@ const APPEARANCE_OPTIONS: {
 
 export default function SettingsScreen(): React.ReactElement {
   useThemeSync();
-  const { user, signOut, updateProfile, busy, biometricsAvailable } = useAuth();
+  const {
+    user,
+    signOut,
+    updateProfile,
+    busy,
+    biometricsAvailability,
+  } = useAuth();
   const { settings, update } = useSettings();
   const { location } = useLocation();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
@@ -66,6 +73,11 @@ export default function SettingsScreen(): React.ReactElement {
 
   const prefs = user?.preferences;
   const appVersion = Constants.expoConfig?.version ?? "—";
+  const biometricsAvailable = biometricsAvailability.available;
+  const biometricsChecking = !biometricsAvailability.checked;
+  const biometricLabel = getBiometricLabel(
+    biometricsAvailability.supportedTypes,
+  );
 
   const doSignOut = useCallback(async () => {
     setSigningOut(true);
@@ -96,6 +108,35 @@ export default function SettingsScreen(): React.ReactElement {
       await updateProfile({ notificationsEnabled: value });
     },
     [updateProfile],
+  );
+
+  const toggleBiometrics = useCallback(
+    async (next: boolean) => {
+      if (!next) {
+        await update("biometrics", false);
+        return;
+      }
+
+      if (!biometricsAvailability.available) {
+        Alert.alert(
+          `${biometricLabel} is unavailable`,
+          biometricsAvailability.hasHardware
+            ? `Set up ${biometricLabel} in your device settings first.`
+            : `This device does not support ${biometricLabel}.`,
+        );
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: `Enable ${biometricLabel}`,
+        fallbackLabel: "Use passcode",
+        disableDeviceFallback: false,
+      });
+
+      if (!result.success) return;
+      await update("biometrics", true);
+    },
+    [biometricLabel, biometricsAvailability, update],
   );
 
   return (
@@ -151,15 +192,13 @@ export default function SettingsScreen(): React.ReactElement {
 
       <Group label="PROTECTION">
         <SwitchRow
-          title="Unlock with Face ID"
+          title={`Unlock with ${biometricLabel}`}
           description={
-            biometricsAvailable
-              ? "Also used instead of the log-in password."
-              : "Not available on this device."
+            getBiometricsDescription(biometricsAvailability, biometricLabel)
           }
           value={settings.biometrics && biometricsAvailable}
-          disabled={!biometricsAvailable}
-          onValueChange={(next) => update("biometrics", next)}
+          disabled={biometricsChecking || !biometricsAvailable}
+          onValueChange={toggleBiometrics}
           testID="row-biometrics"
           last
         />
@@ -222,6 +261,37 @@ export default function SettingsScreen(): React.ReactElement {
       />
     </>
   );
+}
+
+function getBiometricLabel(
+  supportedTypes: LocalAuthentication.AuthenticationType[],
+): string {
+  if (
+    supportedTypes.includes(
+      LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
+    )
+  ) {
+    return "Face ID";
+  }
+  if (
+    supportedTypes.includes(
+      LocalAuthentication.AuthenticationType.FINGERPRINT,
+    )
+  ) {
+    return "biometrics";
+  }
+  return "Face ID";
+}
+
+function getBiometricsDescription(
+  availability: ReturnType<typeof useAuth>["biometricsAvailability"],
+  label: string,
+): string {
+  if (!availability.checked) return "Checking device support...";
+  if (!availability.hasHardware) return `${label} is not supported on this device.`;
+  if (!availability.enrolled) return `Set up ${label} in device settings first.`;
+  if (!availability.available) return `${label} is unavailable right now.`;
+  return "Also used instead of the log-in password.";
 }
 
 function ThemeOptionRow({

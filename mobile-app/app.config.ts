@@ -188,6 +188,7 @@ const config: ExpoConfig = {
     "expo-asset",
     "./plugins/withIPhoneOnlyDestinations",
     "./plugins/withAndroidMailtoQuery",
+    "./plugins/withAndroidSingleTaskMainActivity",
     "./plugins/withAndroidReleaseSigning",
   ],
   experiments: {

@@ -102,18 +102,23 @@ export function SwitchRow({
 }): React.ReactElement {
   return (
     <View
+      accessibilityState={{ disabled }}
       style={[
         styles.row,
         !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: alpha(colors.t0, 0.07) },
-        disabled && { opacity: 0.5 },
+        disabled && styles.disabledRow,
       ]}
     >
       <View style={{ flex: 1 }}>
-        <Text variant="labelLg" color={colors.t0}>
+        <Text variant="labelLg" color={disabled ? colors.t4 : colors.t0}>
           {title}
         </Text>
         {description ? (
-          <Text variant="bodyXs" color={colors.t3} style={{ marginTop: 3 }}>
+          <Text
+            variant="bodyXs"
+            color={disabled ? colors.t5 : colors.t3}
+            style={{ marginTop: 3 }}
+          >
             {description}
           </Text>
         ) : null}
@@ -122,8 +127,11 @@ export function SwitchRow({
         value={value}
         onValueChange={onValueChange}
         disabled={disabled || !onValueChange}
-        trackColor={{ false: alpha(colors.t0, 0.14), true: colors.acc }}
-        thumbColor={colors.bg}
+        trackColor={{
+          false: disabled ? alpha(colors.t0, 0.08) : alpha(colors.t0, 0.14),
+          true: disabled ? alpha(colors.t0, 0.12) : colors.acc,
+        }}
+        thumbColor={disabled ? colors.s7 : colors.bg}
         testID={testID}
       />
     </View>
@@ -161,6 +169,9 @@ const styles = StyleSheet.create({
   centeredTitle: {
     flex: 0,
     textAlign: "center",
+  },
+  disabledRow: {
+    backgroundColor: alpha(colors.t0, 0.015),
   },
   chevronBox: {
     width: 14,

@@ -47,7 +47,7 @@ export type Settings = {
 const SETTINGS_KEY = "blacknexa.settings.v1";
 
 const DEFAULTS: Settings = {
-  biometrics: true,
+  biometrics: false,
   redactGps: true,
   notifs: true,
   anonymousByDefault: false,
