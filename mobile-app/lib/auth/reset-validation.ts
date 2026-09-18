@@ -18,8 +18,9 @@ function isValidEmail(email: string): boolean {
 }
 
 function missingPasswordRules(password: string): string[] {
+  const nonWhitespaceLength = password.replace(/\s/g, "").length;
   return [
-    password.length >= 10 ? null : "At least 10 characters",
+    nonWhitespaceLength >= 10 ? null : "At least 10 characters",
     /[A-Z]/.test(password) ? null : "One capital letter",
     /\d/.test(password) ? null : "One number",
     // Excludes whitespace: a space is not a symbol, and padding a password

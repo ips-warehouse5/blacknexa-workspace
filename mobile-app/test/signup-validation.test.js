@@ -25,6 +25,12 @@ describe("validateSignUpAccount", () => {
     ).toContain("at least 10 characters");
   });
 
+  test("does not count spaces toward the password length rule", () => {
+    expect(
+      validateSignUpAccount("member@example.com", "         A1!", true, "Ada").password,
+    ).toContain("at least 10 characters");
+  });
+
   test("requires consent", () => {
     expect(
       validateSignUpAccount("member@example.com", "StrongPass1!", false, "Ada").consent,

@@ -119,8 +119,9 @@ export function evaluatePassword(password: string): {
   label: string;
   color: string;
 } {
+  const nonWhitespaceLength = password.replace(/\s/g, "").length;
   const rules: PasswordRule[] = [
-    { label: "At least 10 characters", met: password.length >= 10 },
+    { label: "At least 10 characters", met: nonWhitespaceLength >= 10 },
     { label: "One capital letter", met: /[A-Z]/.test(password) },
     { label: "One number", met: /\d/.test(password) },
     // Excludes whitespace: a space is not a symbol, and padding a password

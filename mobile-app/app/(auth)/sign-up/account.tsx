@@ -1,7 +1,7 @@
 /** A6 · Create account, step 1 of 2 — Account. */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import type { TextInput } from "react-native";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -70,6 +70,10 @@ export default function SignUpAccountScreen(): React.ReactElement {
 
   const scrollTo = useCallback((y: number) => {
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 100000, animated: true });
   }, []);
 
   const handleEmailChange = useCallback(
@@ -158,7 +162,8 @@ export default function SignUpAccountScreen(): React.ReactElement {
       return;
     }
     if (validation.consent) {
-      scrollTo(offsets.current.consent);
+      Keyboard.dismiss();
+      scrollToBottom();
       return;
     }
 
@@ -190,6 +195,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
     password,
     register,
     scrollTo,
+    scrollToBottom,
   ]);
 
   return (

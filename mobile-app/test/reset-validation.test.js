@@ -40,6 +40,12 @@ describe("validateResetConfirmation", () => {
     );
   });
 
+  test("does not count spaces toward the password length rule", () => {
+    expect(validateResetConfirmation("123456", "         A1!").password).toContain(
+      "at least 10 characters",
+    );
+  });
+
   test("accepts a complete code and valid new password", () => {
     expect(validateResetConfirmation("123456", "StrongPass1!")).toEqual({
       code: null,
