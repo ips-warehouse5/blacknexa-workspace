@@ -17,7 +17,10 @@ export function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
   const borderColor = onDark ? "rgba(255,255,255,0.16)" : "var(--bn-border)";
 
   return (
-    <div className="flex items-center gap-1 rounded-full border p-[3px]" style={{ borderColor }}>
+    <div
+      className="flex w-fit flex-none items-center gap-1 self-start rounded-full border p-[3px]"
+      style={{ borderColor }}
+    >
       <button
         type="button"
         onClick={() => setTheme("light")}

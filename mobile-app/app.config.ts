@@ -1,5 +1,21 @@
 import type { ExpoConfig } from "expo/config";
 
+// Single source of truth for the human-facing semantic version shown in
+// both the Play Store and App Store listings — bump this here only, for
+// every release, and both platforms stay in step.
+//
+// Android's versionCode and iOS's buildNumber below are local fallbacks
+// only: eas.json sets `cli.appVersionSource: "remote"`, so EAS Build
+// tracks each platform's build number remotely and increments it
+// independently per platform (`autoIncrement: true` on the `production`
+// profile) regardless of what's written here. These values only take
+// effect for non-EAS flows (`expo prebuild`, `expo run:android/ios`) and
+// should track the last value EAS reports via
+// `eas build:version:get --platform <android|ios>`.
+const APP_VERSION = "1.0.0";
+const ANDROID_VERSION_CODE = 5;
+const IOS_BUILD_NUMBER = "1";
+
 // Converted from app.json so the Google Maps keys can be read from the
 // environment instead of being hardcoded per-platform literals. Everything
 // else here is unchanged, static config carried over verbatim.
@@ -10,7 +26,7 @@ const config: ExpoConfig = {
   // the logged-in personal account (mitdips) and every command fails the
   // slug/projectId check.
   owner: "newsmovesmarketsforex-llc",
-  version: "1.0.0",
+  version: APP_VERSION,
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   // Single string on purpose. This was briefly an array to register Google's
@@ -36,6 +52,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: "com.blacknexa.app",
+    buildNumber: IOS_BUILD_NUMBER,
     // firebase/*.plist is gitignored, so EAS Build (which only sees
     // git-tracked files) can't find it. GOOGLE_SERVICE_INFO_PLIST is an
     // EAS file-type env var that resolves to a local path at build time;
@@ -74,6 +91,7 @@ const config: ExpoConfig = {
       backgroundColor: "#FFFFFF",
     },
     package: "com.blacknexa.app",
+    versionCode: ANDROID_VERSION_CODE,
     // firebase/*.json is gitignored, so EAS Build (which only sees
     // git-tracked files) can't find it. GOOGLE_SERVICES_JSON is an EAS
     // file-type env var that resolves to a local path at build time;

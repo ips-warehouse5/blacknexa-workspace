@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import type { ThemeName } from "@/lib/theme";
 
@@ -29,24 +29,71 @@ function faviconDataUri(theme: ThemeName): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
+/**
+ * Colors every icon link currently in <head> — Next's own file-convention
+ * ones (icon.svg, favicon.ico) included — for `theme`. Creates one only if
+ * none exist yet.
+ *
+ * Only ever mutates `href`/`type` on existing nodes, never removes or
+ * replaces one. Next's own file-convention icons are nodes React/Next's
+ * head management still considers mounted; detaching them with `remove()`
+ * leaves that bookkeeping pointing at a node with no parent, and the next
+ * time React reconciles that tree (e.g. on a client-side route change) it
+ * throws trying to detach it a second time ("Cannot read properties of
+ * null (reading 'removeChild')") — confirmed by testing this the
+ * destructive way first. Changing attributes on a node without touching
+ * its identity is invisible to that bookkeeping and safe.
+ */
+function applyFavicon(theme: ThemeName): void {
+  const href = faviconDataUri(theme);
+  const links = document.querySelectorAll<HTMLLinkElement>(
+    "link[rel='icon'], link[rel='shortcut icon']",
+  );
+
+  if (links.length === 0) {
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/svg+xml";
+    link.href = href;
+    document.head.appendChild(link);
+    return;
+  }
+
+  links.forEach((link) => {
+    link.type = "image/svg+xml";
+    link.href = href;
+  });
+}
+
 export function FaviconSync() {
   const { theme } = useTheme();
+  // Read inside the observer callback below, which is created once per
+  // theme change but must always act on the *current* theme — a stale
+  // closure over `theme` would re-apply whatever color was active when the
+  // observer was attached, not the one active when Next inserts a new tag.
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
 
   useEffect(() => {
-    const href = faviconDataUri(theme);
-    const existing = document.querySelectorAll<HTMLLinkElement>("link[rel='icon']");
-    if (existing.length === 0) {
-      const link = document.createElement("link");
-      link.rel = "icon";
-      link.type = "image/svg+xml";
-      link.href = href;
-      document.head.appendChild(link);
-      return;
-    }
-    existing.forEach((link) => {
-      link.type = "image/svg+xml";
-      link.href = href;
+    applyFavicon(theme);
+
+    // Next.js can insert its own file-convention icon links into <head>
+    // after this effect has already run once — observed happening on
+    // client-side navigations between routes. A freshly inserted node
+    // still carries its original static color, so it needs correcting the
+    // moment it appears rather than waiting for the next theme change.
+    const observer = new MutationObserver((mutations) => {
+      const sawNewIconLink = mutations.some((mutation) =>
+        Array.from(mutation.addedNodes).some(
+          (node) =>
+            node instanceof HTMLLinkElement &&
+            (node.rel === "icon" || node.rel === "shortcut icon"),
+        ),
+      );
+      if (sawNewIconLink) applyFavicon(themeRef.current);
     });
+    observer.observe(document.head, { childList: true });
+    return () => observer.disconnect();
   }, [theme]);
 
   return null;

@@ -122,6 +122,7 @@ export function ScrollScreen({
   // keyboard and then immediately re-covered by the footer sitting on top
   // of it. 24 is the base clearance used even with no footer present.
   const [footerHeight, setFooterHeight] = useState(0);
+  const contentBottomPadding = bottomSpace + (footer ? footerHeight : 0);
 
   return (
     <View
@@ -132,7 +133,7 @@ export function ScrollScreen({
         ref={scrollRef}
         style={styles.flex}
         contentContainerStyle={[
-          { paddingHorizontal: padding, paddingBottom: bottomSpace },
+          { paddingHorizontal: padding, paddingBottom: contentBottomPadding },
           contentStyle,
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}

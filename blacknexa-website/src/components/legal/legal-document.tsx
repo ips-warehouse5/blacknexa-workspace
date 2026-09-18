@@ -18,10 +18,10 @@ export function LegalDocument({
         </h1>
         <p className="mt-[18px] text-sm text-text-muted">Last updated {updated}</p>
 
-        <div className="mt-[clamp(44px,5vw,70px)] flex flex-wrap-reverse gap-[clamp(32px,4vw,64px)]">
+        <div className="mt-[clamp(44px,5vw,70px)] flex flex-wrap gap-[clamp(32px,4vw,64px)]">
           <nav
             aria-label="Contents"
-            className="sticky top-[112px] min-w-[min(100%,230px)] flex-[0_1_248px] self-start"
+            className="sticky top-[112px] hidden min-w-[min(100%,230px)] flex-[0_1_248px] self-start md:block"
           >
             <p className="mb-4 text-[11px] font-semibold tracking-[0.16em] text-text-muted">
               CONTENTS

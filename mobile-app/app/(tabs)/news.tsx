@@ -18,7 +18,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { colors as themeColors, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
+import TabHeader from "@/components/TabHeader";
 import NewsCard from "@/components/NewsCard";
 import CivilRightsPremiumBanner from "@/components/CivilRightsPremiumBanner";
 import VoiceInputButton from "@/components/VoiceInputButton";
@@ -1399,6 +1401,13 @@ const styles = StyleSheet.create({
 });
 
 export default function NewsScreen(): React.ReactElement {
+  useThemeSync();
+  const insets = useSafeAreaInsets();
   // TODO(News): Re-enable the News screen implementation when News development resumes.
-  return <ComingSoon />;
+  return (
+    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: themeColors.bg }}>
+      <TabHeader />
+      <ComingSoon />
+    </View>
+  );
 }

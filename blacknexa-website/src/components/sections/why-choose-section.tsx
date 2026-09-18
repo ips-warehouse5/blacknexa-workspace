@@ -3,11 +3,14 @@ import { whyChoose } from "@/data/features";
 
 export function WhyChooseSection() {
   return (
-    <section aria-label="Why choose BlackNexa" className="px-7 py-[clamp(52px,5.6vw,80px)]">
+    <section
+      aria-label="Why choose BlackNexa"
+      className="px-7 py-[clamp(52px,5.6vw,80px)]"
+    >
       <div className="mx-auto max-w-[1080px]">
         <SectionHeading
           eyebrow="WHY CHOOSE BLACKNEXA"
-          title="Five things no other platform puts together."
+          title="Five things no other platform puts together"
           maxWidth="660px"
         />
         <div className="mt-[clamp(28px,3.2vw,40px)] flex flex-col">

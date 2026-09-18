@@ -12,15 +12,14 @@ import {
   Linking,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   AtSign,
   BadgeCheck,
   Check,
   Copy,
-  Facebook,
   Hash,
   Link as LinkIcon,
-  Linkedin,
   Loader2,
   LogOut,
   Mail,
@@ -29,8 +28,6 @@ import {
   Send,
   Share2,
   Sparkles,
-  Twitter,
-  Youtube,
 } from "lucide-react-native";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
@@ -57,7 +54,7 @@ const PLATFORMS: ShareTarget[] = [
     id: "x",
     label: "X",
     color: "#000000",
-    icon: <Twitter size={22} color="#FFFFFF" />,
+    icon: <FontAwesome name="twitter" size={20} color="#FFFFFF" />,
     buildUrl: (_t, u) =>
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(_t)}&url=${encodeURIComponent(u)}`,
   },
@@ -65,7 +62,7 @@ const PLATFORMS: ShareTarget[] = [
     id: "facebook",
     label: "Facebook",
     color: "#1877F2",
-    icon: <Facebook size={22} color="#FFFFFF" />,
+    icon: <FontAwesome name="facebook" size={20} color="#FFFFFF" />,
     buildUrl: (_t, u) =>
       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}`,
   },
@@ -80,7 +77,7 @@ const PLATFORMS: ShareTarget[] = [
     id: "linkedin",
     label: "LinkedIn",
     color: "#0A66C2",
-    icon: <Linkedin size={22} color="#FFFFFF" />,
+    icon: <FontAwesome name="linkedin" size={20} color="#FFFFFF" />,
     buildUrl: (_t, u) =>
       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(u)}`,
   },
@@ -127,7 +124,7 @@ const PLATFORMS: ShareTarget[] = [
     id: "youtube",
     label: "YouTube",
     color: "#FF0000",
-    icon: <Youtube size={22} color="#FFFFFF" />,
+    icon: <FontAwesome name="youtube-play" size={20} color="#FFFFFF" />,
     buildUrl: (t, u) =>
       `https://www.youtube.com/share?q=${encodeURIComponent(`${t} ${u}`)}`,
   },

@@ -24,6 +24,7 @@ import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
 import {
   CATEGORY_META,
+  REPORT_BODY_MIN,
   absoluteTime,
   formatBytes,
   type Visibility,
@@ -34,6 +35,7 @@ const VISIBILITY_LABEL: Record<Visibility, string> = {
   trusted: "Trusted Circle",
   private: "Private",
 };
+const BODY_MIN_ERROR = `Add at least ${REPORT_BODY_MIN} characters to what happened before filing.`;
 
 export default function ReviewStep(): React.ReactElement {
   useThemeSync();
@@ -65,6 +67,10 @@ export default function ReviewStep(): React.ReactElement {
       setProblem("Confirm the report is true to the best of your knowledge.");
       return;
     }
+    if ((payload.body?.trim().length ?? 0) < REPORT_BODY_MIN) {
+      setProblem(BODY_MIN_ERROR);
+      return;
+    }
     // C8's checklist seals before it files, so a still-uploading file means the
     // wizard got ahead of itself. Said plainly rather than as a generic error.
     if (!allSealed) {
@@ -77,7 +83,7 @@ export default function ReviewStep(): React.ReactElement {
     }
 
     router.push("/report/submitting");
-  }, [allSealed, attested, uploadingCount]);
+  }, [allSealed, attested, payload.body, uploadingCount]);
 
   const flags = useMemo(() => {
     const parts: string[] = [];
@@ -118,7 +124,7 @@ export default function ReviewStep(): React.ReactElement {
         </ReviewRow>
 
         <ReviewRow label="DETAILS" onEdit={() => edit(2, "/report/details")} testID="review-details">
-          {payload.title?.trim() ? (
+          {payload.title?.trim() && (payload.body?.trim().length ?? 0) >= REPORT_BODY_MIN ? (
             <>
               <Text variant="label" color={colors.t0} style={{ fontSize: 13.5, lineHeight: 18 }}>
                 {payload.title}

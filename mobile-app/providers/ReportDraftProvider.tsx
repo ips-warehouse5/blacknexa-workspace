@@ -18,7 +18,11 @@ import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import reportsApi, { type DraftPayload, type EvidenceKind } from "@/lib/api/reports";
+import reportsApi, {
+  REPORT_BODY_MIN,
+  type DraftPayload,
+  type EvidenceKind,
+} from "@/lib/api/reports";
 import { ApiError } from "@/lib/api/client";
 import { hashFile, makeThumbnail, putFile } from "@/lib/evidence-upload";
 
@@ -96,7 +100,7 @@ function stepIsComplete(step: number, payload: DraftPayload): boolean {
     case 1:
       return Boolean(payload.category);
     case 2:
-      return Boolean(payload.title?.trim() && payload.body?.trim());
+      return Boolean(payload.title?.trim() && (payload.body?.trim().length ?? 0) >= REPORT_BODY_MIN);
     case 3:
       return Boolean(payload.occurredAt);
     case 4:

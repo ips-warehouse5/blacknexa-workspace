@@ -26,7 +26,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { colors as themeColors, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
+import TabHeader from "@/components/TabHeader";
 import BrandMark from "@/components/BrandMark";
 import {
   EMERGENCY_PROTOCOLS,
@@ -754,6 +756,13 @@ const styles = StyleSheet.create({
 });
 
 export default function SupportScreen(): React.ReactElement {
+  useThemeSync();
+  const insets = useSafeAreaInsets();
   // TODO(Support): Re-enable the Support screen implementation when Support development resumes.
-  return <ComingSoon />;
+  return (
+    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: themeColors.bg }}>
+      <TabHeader />
+      <ComingSoon />
+    </View>
+  );
 }

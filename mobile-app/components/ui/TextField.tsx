@@ -17,7 +17,7 @@
  * measure at submit time, keeps that instant.
  */
 
-import React, { forwardRef, useCallback, useState } from "react";
+import React, { forwardRef, useCallback, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -78,6 +78,22 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
    * keystroke.
    */
   const [dirtySinceError, setDirtySinceError] = useState(false);
+  /**
+   * Un-suppresses on the next render whenever the caller hands down a new
+   * `error` value — including a fresh non-null one from a re-validated blur
+   * or a second submit attempt. Without this, `dirtySinceError` only ever
+   * turns true and never back: a field that has shown one error and then
+   * been edited once could never show an error again for the rest of its
+   * mounted life, no matter how many later validation failures the caller
+   * reported. Comparing against a ref (not an effect) resets it in the same
+   * render/commit as the prop change, so there is no flash of the stale,
+   * suppressed state first.
+   */
+  const lastErrorRef = useRef(error);
+  if (error !== lastErrorRef.current) {
+    lastErrorRef.current = error;
+    if (dirtySinceError) setDirtySinceError(false);
+  }
   const visibleError = error && !dirtySinceError ? error : null;
 
   const handleChange = useCallback(

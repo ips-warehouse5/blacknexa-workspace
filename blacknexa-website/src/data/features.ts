@@ -32,7 +32,7 @@ export const coreValues: { label: string; icon: IconName }[] = [
 export const services: { title: string; body: string; icon: IconName }[] = [
   {
     title: "Global Community Feed",
-    body: "A worldwide social feed anchored in love and respect, with zero tolerance for vulgar language or unGodly principles.",
+    body: "A worldwide social feed anchored in love and respect, with zero tolerance for vulgar language or ungoldy principles.",
     icon: "feed",
   },
   {
@@ -99,7 +99,7 @@ export const whyChoose: { n: string; title: string; body: string }[] = [
   {
     n: "01",
     title: "God-centered by design",
-    body: "Not a marketing line. Zero tolerance for vulgar language or unGodly principles, and a community held to the greatest commandment: love your neighbor.",
+    body: "Not a marketing line. Zero tolerance for vulgar language or ungoldy principles, and a community held to the greatest commandment: love your neighbor.",
   },
   {
     n: "02",
@@ -232,7 +232,7 @@ export const featureBlocks: {
     title: "The Global Community Feed & Social Network",
     sub: "Like Facebook or X — built differently.",
     body: [
-      "Think of BlackNexa as our own dedicated social media platform, featuring a vibrant, worldwide community feed. But this space is built differently-anchored entirely in love, respect, and God's word. There is zero tolerance for vulgar language or unGodly principles here; everyone treats one another just as they want to be treated, fulfilling the greatest commandment to “Love our neighbor.”",
+      "Think of BlackNexa as our own dedicated social media platform, featuring a vibrant, worldwide community feed. But this space is built differently-anchored entirely in love, respect, and God's word. There is zero tolerance for vulgar language or ungoldy principles here; everyone treats one another just as they want to be treated, fulfilling the greatest commandment to “Love our neighbor.”",
       "Just like Facebook or X, you can connect, network, share ideas, and grow together across borders. From discussing economic development, business ventures, job creation, and how to walk in an abundant life, to sharing what's happening right now from Atlanta, GA all the way to Johannesburg, South Africa-our global community comes together to build true, lasting power. (And this is only the beginning-more groundbreaking features are rolling out as our global family scales!)",
     ],
     caption: "Scrolling the worldwide feed, from Atlanta to Johannesburg.",

@@ -9,7 +9,7 @@ export function ReferralSection() {
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading
           eyebrow="REFERRAL PROGRAM"
-          title="Bring your people. Build the movement faster."
+          title="Bring your people. Build the movement faster"
           description="A community millions strong is built one invitation at a time. Share your link, and every person who joins through it moves both of you up the early-access list."
           maxWidth="660px"
         />

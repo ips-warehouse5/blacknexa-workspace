@@ -26,16 +26,22 @@ export default function HelpScreen(): React.ReactElement {
 
   const data = faq.data ?? FALLBACK_HELP_FAQ;
   const [query, setQuery] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState(
-    data.categories[0]?.id ?? "",
-  );
+  // Null until the person taps a tab — not defaulted at mount, because the
+  // first render only has `placeholderData` (FALLBACK_HELP_FAQ) to go on,
+  // whose first category is "filing". Freezing that choice into state would
+  // stick even after the real payload loads with "general" first, since
+  // "filing" is still a valid id there too. Left null, `selectedCategory`
+  // below always falls through to the *current* data's first category until
+  // an explicit tap overrides it.
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [openItemId, setOpenItemId] = useState<string | null>(
     data.items.find((item) => item.startHere)?.id ?? data.items[0]?.id ?? null,
   );
 
-  const selectedCategory = data.categories.some((item) => item.id === selectedCategoryId)
-    ? selectedCategoryId
-    : data.categories[0]?.id ?? "";
+  const selectedCategory =
+    selectedCategoryId && data.categories.some((item) => item.id === selectedCategoryId)
+      ? selectedCategoryId
+      : data.categories[0]?.id ?? "";
 
   const visibleItems = useMemo(() => {
     const search = query.trim().toLowerCase();

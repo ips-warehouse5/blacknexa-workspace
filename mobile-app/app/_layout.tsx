@@ -15,7 +15,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -68,10 +68,13 @@ function AuthGate(): React.ReactElement | null {
   const { status } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const [initialRouteReady, setInitialRouteReady] = useState(false);
+  const [routeSettled, setRouteSettled] = useState(false);
 
   useEffect(() => {
-    if (status === "restoring") return;
+    if (status === "restoring") {
+      setRouteSettled(false);
+      return;
+    }
 
     const firstSegment = segments[0] as string | undefined;
     const inAuthGroup = firstSegment === "(auth)";
@@ -84,6 +87,7 @@ function AuthGate(): React.ReactElement | null {
       firstSegment === "modal";
 
     if (status === "signedOut" && !inAuthGroup && !isPublicRoute) {
+      setRouteSettled(false);
       AsyncStorage.getItem(INTRO_SEEN_KEY)
         .then((seen) => {
           if (seen === "true") {
@@ -91,50 +95,49 @@ function AuthGate(): React.ReactElement | null {
           } else {
             router.replace("/(auth)/intro");
           }
-          setInitialRouteReady(true);
         })
         .catch(() => {
           router.replace("/(auth)/intro");
-          setInitialRouteReady(true);
         });
     } else if (
       status === "onboarding" &&
       !inOnboardingGroup &&
       !isPublicRoute
     ) {
+      setRouteSettled(false);
       router.replace("/(onboarding)/notifications");
-      setInitialRouteReady(true);
     } else if (status === "signedIn" && (inAuthGroup || inOnboardingGroup)) {
+      setRouteSettled(false);
       router.replace("/(tabs)");
-      setInitialRouteReady(true);
     } else {
-      setInitialRouteReady(true);
+      setRouteSettled(true);
     }
   }, [status, segments, router]);
 
   useEffect(() => {
     // Only release the splash screen once auth status AND initial target route are ready,
     // so no intermediate screen or tab bar ever flashes.
-    if (status !== "restoring" && initialRouteReady) {
+    if (status !== "restoring" && routeSettled) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [status, initialRouteReady]);
+  }, [status, routeSettled]);
 
-  if (status === "restoring" || !initialRouteReady) return null;
+  if (status === "restoring") return null;
 
   return (
-    <Stack
-      initialRouteName={status === "signedIn" ? "(tabs)" : "(auth)"}
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.bg },
-        // The design's own transition: screens in a flow slide, nothing fades.
-        animation: "slide_from_right",
-      }}
-    >
-      <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-      <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
-      <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+    <View style={{ flex: 1, opacity: routeSettled ? 1 : 0 }}>
+      <Stack
+        initialRouteName={status === "signedIn" ? "(tabs)" : "(auth)"}
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.bg },
+          // The design's own transition: screens in a flow slide, nothing fades.
+          animation: "slide_from_right",
+        }}
+      >
+        <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+        <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
 
       {/* Reachable from the signed-in stack. */}
       <Stack.Screen name="search" options={{ animation: "fade" }} />
@@ -175,8 +178,9 @@ function AuthGate(): React.ReactElement | null {
         options={{ presentation: "fullScreenModal", gestureEnabled: false }}
       />
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </View>
   );
 }
 
