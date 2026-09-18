@@ -4,11 +4,14 @@ import { impactPoints, impactStats } from "@/data/features";
 
 export function ImpactSection() {
   return (
-    <section aria-label="Community impact" className="px-7 py-[clamp(52px,5.6vw,80px)]">
+    <section
+      aria-label="Community impact"
+      className="px-7 py-[clamp(52px,5.6vw,80px)]"
+    >
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading
           eyebrow="COMMUNITY IMPACT"
-          title="One record is a story. Thousands are evidence."
+          title="One record is a story. Thousands are evidence"
           description="A single incident can be dismissed as an isolated case. When a community documents together, on the record and in one place, a pattern becomes impossible to wave away."
           maxWidth="680px"
         />
@@ -38,12 +41,15 @@ export function ImpactSection() {
                 <p className="mt-3 text-[11px] font-semibold tracking-[0.14em] text-accent-text">
                   {k.label}
                 </p>
-                <p className="mt-2 text-[13.5px] leading-[1.55] text-text-secondary">{k.note}</p>
+                <p className="mt-2 text-[13.5px] leading-[1.55] text-text-secondary">
+                  {k.note}
+                </p>
               </div>
             ))}
           </div>
           <p className="mt-[26px] border-t border-border pt-5 text-[13px] leading-[1.6] text-text-muted">
-            Live figures publish at launch. We will not show a number we cannot evidence.
+            Live figures publish at launch. We will not show a number we cannot
+            evidence.
           </p>
         </div>
       </div>

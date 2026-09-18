@@ -57,11 +57,14 @@ export function MobileMenu() {
         onClick={() => setOpen(true)}
         aria-label="Open menu"
         aria-expanded={open}
-        className="grid h-10 w-[42px] place-items-center gap-1 rounded-[3px] border border-border bg-transparent"
+        className="grid h-11 w-11 flex-none place-items-center rounded-[3px] border border-border bg-transparent"
         style={{ color: "var(--bn-header-ink)" }}
       >
-        <span className="block h-[1.5px] w-[17px]" style={{ background: "currentColor" }} />
-        <span className="block h-[1.5px] w-[17px]" style={{ background: "currentColor" }} />
+        <span className="flex flex-col gap-[5px]">
+          <span className="block h-[2px] w-[19px] rounded-full" style={{ background: "currentColor" }} />
+          <span className="block h-[2px] w-[19px] rounded-full" style={{ background: "currentColor" }} />
+          <span className="block h-[2px] w-[19px] rounded-full" style={{ background: "currentColor" }} />
+        </span>
       </button>
 
       {open ? (

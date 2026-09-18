@@ -11,7 +11,8 @@ export function FinalCtaSection() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "radial-gradient(72% 120% at 50% 0%, var(--bn-accent-soft) 0%, rgba(0,0,0,0) 68%)",
+          background:
+            "radial-gradient(72% 120% at 50% 0%, var(--bn-accent-soft) 0%, rgba(0,0,0,0) 68%)",
         }}
       />
       <div className="bn-reveal relative mx-auto max-w-[860px] text-center">
@@ -28,11 +29,13 @@ export function FinalCtaSection() {
           className="mx-auto mt-7 max-w-[66ch] text-pretty text-[clamp(1rem,1.3vw,1.16rem)] leading-[1.75]"
           style={{ color: "var(--bn-hero-secondary-text)" }}
         >
-          BlackNexa is a movement of truth, power, and divine purpose. We are equipping the next
-          generation of Black and Brown and Underserved and Disenfranchise Communities to be
-          rooted in Gods Holy word, educated, business-savvy, and anchored in faith to level the
-          playing field once and for all-ensuring that we prosper, walk according to His purpose,
-          and let our voices be heard without ever being suppressed by discriminatory practices.
+          BlackNexa is a movement of truth, power, and divine purpose. We are
+          equipping the next generation of Black and Brown and Underserved and
+          Disenfranchise Communities to be rooted in Gods Holy word, educated,
+          business-savvy, and anchored in faith to level the playing field once
+          and for all-ensuring that we prosper, walk according to His purpose,
+          and let our voices be heard without ever being suppressed by
+          discriminatory practices.
         </p>
         <p className="mx-auto mt-[22px] max-w-[66ch] font-serif text-[clamp(1.15rem,1.7vw,1.45rem)] leading-[1.5] text-accent">
           Welcome to BlackNexa. To God be the Glory!
@@ -48,14 +51,20 @@ export function FinalCtaSection() {
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <span
               className="flex items-center gap-2.5 rounded-[5px] border px-[18px] py-2.5 text-[13.5px] opacity-55"
-              style={{ borderColor: "rgba(255,255,255,0.16)", color: "var(--bn-hero-text)" }}
+              style={{
+                borderColor: "rgba(255,255,255,0.16)",
+                color: "var(--bn-hero-text)",
+              }}
             >
               <AppleLogo width={16} height={19} />
               App Store
             </span>
             <span
               className="flex items-center gap-2.5 rounded-[5px] border px-[18px] py-2.5 text-[13.5px] opacity-55"
-              style={{ borderColor: "rgba(255,255,255,0.16)", color: "var(--bn-hero-text)" }}
+              style={{
+                borderColor: "rgba(255,255,255,0.16)",
+                color: "var(--bn-hero-text)",
+              }}
             >
               <GooglePlayLogo width={16} height={18} />
               Google Play

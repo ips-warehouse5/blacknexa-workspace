@@ -25,11 +25,20 @@
  */
 
 import React, { useCallback, useMemo, useState } from "react";
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-native";
+import {
+  ActionSheetIOS,
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pencil, Check, UserRound } from "lucide-react-native";
-import { colors, screenPadding, useThemeSync } from "@/constants/theme";
+import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import TextField from "@/components/ui/TextField";
 import { ScrollScreen } from "@/components/ui/Screen";
@@ -66,6 +75,7 @@ const ALLOWED_MIMES = [
 
 export default function IdentityScreen(): React.ReactElement {
   useThemeSync();
+  const insets = useSafeAreaInsets();
   const { user, updateProfile, uploadAvatar, removeAvatar, busy, error, clearError } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
@@ -79,7 +89,7 @@ export default function IdentityScreen(): React.ReactElement {
    */
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadedPhotoInSession, setUploadedPhotoInSession] = useState(false);
+  const [androidPhotoSheetVisible, setAndroidPhotoSheetVisible] = useState(false);
 
   /** The server's photo, or the local one while it is still on its way up. */
   const photoUri = previewUri ?? user?.avatarUrl ?? null;
@@ -147,7 +157,6 @@ export default function IdentityScreen(): React.ReactElement {
         if (ok) {
           // Fall through to the server's URL — see `previewUri` above.
           setPreviewUri(null);
-          setUploadedPhotoInSession(true);
           showSnackbar({ message: "Profile photo updated.", type: "success" });
         } else {
           // Put the tile back the way it was. `uploadAvatar` sets `error` on
@@ -171,7 +180,6 @@ export default function IdentityScreen(): React.ReactElement {
 
   const removePhoto = useCallback(async () => {
     setPreviewUri(null);
-    setUploadedPhotoInSession(false);
     setAvatarMode(anonymous ? "anonymous" : "initials");
     // Only a round trip when there is something on the server to remove. A
     // photo picked and then removed before it finished uploading has no key
@@ -187,41 +195,44 @@ export default function IdentityScreen(): React.ReactElement {
         type: "error",
       });
       clearError();
+      return;
     }
+    showSnackbar({ message: "Profile photo removed.", type: "success" });
   }, [anonymous, clearError, error, removeAvatar, showSnackbar, user?.avatarMode, user?.avatarUrl]);
 
   const openAvatarActions = useCallback(() => {
-    // "Remove Photo" only applies to a BlackNexa-uploaded avatar. A fresh
-    // Google account may show the provider picture as `avatarUrl`, but there is
-    // no app photo to remove yet, so the sheet should offer Cancel instead.
-    const canRemovePhoto = Boolean(previewUri || uploadedPhotoInSession);
-    const options = canRemovePhoto
-      ? ["Take Photo", "Choose from Library", "Remove Photo", "Cancel"]
-      : ["Take Photo", "Choose from Library", "Cancel"];
-    const destructiveButtonIndex = canRemovePhoto ? 2 : undefined;
-    const cancelButtonIndex = canRemovePhoto ? 3 : 2;
-
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex, cancelButtonIndex },
+        {
+          options: ["Take Photo", "Choose from Library", "Remove Photo", "Cancel"],
+          destructiveButtonIndex: 2,
+          cancelButtonIndex: 3,
+        },
         (index) => {
           if (index === 0) void pickFrom("camera");
           else if (index === 1) void pickFrom("library");
-          else if (canRemovePhoto && index === 2) void removePhoto();
+          else if (index === 2) void removePhoto();
         },
       );
       return;
     }
 
-    Alert.alert("Change photo", undefined, [
-      { text: "Take Photo", onPress: () => void pickFrom("camera") },
-      { text: "Choose from Library", onPress: () => void pickFrom("library") },
-      ...(canRemovePhoto
-        ? [{ text: "Remove Photo", style: "destructive" as const, onPress: () => void removePhoto() }]
-        : []),
-      { text: "Cancel", style: "cancel" },
-    ]);
-  }, [pickFrom, previewUri, removePhoto, uploadedPhotoInSession]);
+    setAndroidPhotoSheetVisible(true);
+  }, [pickFrom, removePhoto]);
+
+  const closeAndroidPhotoSheet = useCallback(() => {
+    setAndroidPhotoSheetVisible(false);
+  }, []);
+
+  const runAndroidPhotoAction = useCallback(
+    (action: "camera" | "library" | "remove") => {
+      closeAndroidPhotoSheet();
+      if (action === "camera") void pickFrom("camera");
+      else if (action === "library") void pickFrom("library");
+      else void removePhoto();
+    },
+    [closeAndroidPhotoSheet, pickFrom, removePhoto],
+  );
 
   const toggleAnonymous = useCallback(() => {
     setAvatarMode((current) =>
@@ -296,7 +307,7 @@ export default function IdentityScreen(): React.ReactElement {
               onPress={openAvatarActions}
               disabled={uploading}
               accessibilityRole="button"
-              accessibilityLabel="Change photo"
+              accessibilityLabel="Profile Photo"
               accessibilityState={{ disabled: uploading, busy: uploading }}
               testID="identity-avatar-edit"
               style={{
@@ -469,6 +480,95 @@ export default function IdentityScreen(): React.ReactElement {
         Changing this affects new reports and comments. Anything already published
         keeps the name it was published under.
       </Text>
+
+      <Modal
+        visible={androidPhotoSheetVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeAndroidPhotoSheet}
+      >
+        <Pressable
+          style={[
+            styles.sheetBackdrop,
+            { paddingBottom: Math.max(insets.bottom + 18, 56) },
+          ]}
+          onPress={closeAndroidPhotoSheet}
+          accessibilityRole="button"
+          accessibilityLabel="Close change photo options"
+        >
+          <Pressable style={styles.photoSheet} onPress={(event) => event.stopPropagation()}>
+            <Text variant="cardTitleSm" color={colors.t0}>
+              Profile Photo
+            </Text>
+            <View style={styles.sheetActions}>
+              <PhotoSheetAction label="Cancel" onPress={closeAndroidPhotoSheet} />
+              <PhotoSheetAction
+                label="Remove Photo"
+                tone="destructive"
+                onPress={() => runAndroidPhotoAction("remove")}
+              />
+              <PhotoSheetAction
+                label="Choose from Library"
+                onPress={() => runAndroidPhotoAction("library")}
+              />
+              <PhotoSheetAction
+                label="Take Photo"
+                onPress={() => runAndroidPhotoAction("camera")}
+              />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollScreen>
   );
 }
+
+function PhotoSheetAction({
+  label,
+  onPress,
+  tone = "default",
+}: {
+  label: string;
+  onPress: () => void;
+  tone?: "default" | "destructive";
+}): React.ReactElement {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.sheetAction, pressed && { opacity: 0.72 }]}
+    >
+      <Text variant="button" color={tone === "destructive" ? colors.bad2 : colors.acc}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingHorizontal: 28,
+    backgroundColor: alpha("#000000", 0.56),
+  },
+  photoSheet: {
+    minHeight: 250,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bg,
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 14,
+  },
+  sheetActions: {
+    flex: 1,
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 30,
+  },
+  sheetAction: {
+    minHeight: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+});

@@ -28,7 +28,7 @@ export function PromoSection() {
             className="text-balance font-serif text-[clamp(1.95rem,4vw,3.05rem)] font-semibold leading-[1.08] tracking-[-0.015em]"
             style={{ color: "var(--bn-hero-text)" }}
           >
-            See BlackNexa in ninety seconds.
+            See BlackNexa in ninety seconds
           </h2>
         </div>
         <div className="mt-[clamp(24px,2.8vw,36px)]">
