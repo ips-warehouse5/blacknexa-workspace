@@ -9,7 +9,7 @@ export const proofStats: { label: string; value: string; note: string }[] = [
   {
     label: "EVIDENCE",
     value: "Geo-stamped",
-    note: "exact location, date and time captured as you record",
+    note: "exact location, date, and time captured as you record",
   },
   {
     label: "STORAGE",
@@ -19,7 +19,7 @@ export const proofStats: { label: string; value: string; note: string }[] = [
   {
     label: "DISPATCH",
     value: "Global routing",
-    note: "local, state, national and international authorities",
+    note: "local, state, national, and international authorities",
   },
 ];
 
@@ -37,17 +37,17 @@ export const services: { title: string; body: string; icon: IconName }[] = [
   },
   {
     title: "AI News Engine",
-    body: "Verified daily news on Black business, technology, economic power and faith, syndicated globally.",
+    body: "Verified daily news on Black business, technology, economic power, and faith, syndicated globally.",
     icon: "news",
   },
   {
     title: "Geo-Stamp Incident Reporting",
-    body: "Record what is happening and capture the exact location, date and time as it happens.",
+    body: "Record what is happening and capture the exact location, date, and time as it happens.",
     icon: "geo",
   },
   {
     title: "Secure Evidence Vault",
-    body: "Heavily encrypted storage where every record, date and location is locked down.",
+    body: "Heavily encrypted storage where every record, date, and location is locked down.",
     icon: "vault",
   },
   {
@@ -66,12 +66,12 @@ export const benefits: { n: string; title: string; body: string }[] = [
   {
     n: "01",
     title: "You are never powerless",
-    body: "Discrimination, bias or misconduct can be documented on the spot, wherever it happens, in a peaceful and Godly manner.",
+    body: "Discrimination, bias, or misconduct can be documented on the spot, wherever it happens, in a peaceful and Godly manner.",
   },
   {
     n: "02",
     title: "Evidence that holds up",
-    body: "Coordinates, date and time are captured at the moment of recording and sealed, so the record cannot be quietly altered later.",
+    body: "Coordinates, date, and time are captured at the moment of recording and sealed, so the record cannot be quietly altered later.",
   },
   {
     n: "03",
@@ -86,7 +86,7 @@ export const benefits: { n: string; title: string; body: string }[] = [
   {
     n: "05",
     title: "A community without the noise",
-    body: "Connect, network and build across borders in a space governed by love, respect and God's word.",
+    body: "Connect, network, and build across borders in a space governed by love, respect, and God's word.",
   },
   {
     n: "06",
@@ -114,12 +114,12 @@ export const whyChoose: { n: string; title: string; body: string }[] = [
   {
     n: "04",
     title: "Built for global reach",
-    body: "Automated AI geographic research connects users anywhere in the world with the local, state, national and international authorities qualified to act.",
+    body: "Automated AI geographic research connects users anywhere in the world with the local, state, national, and international authorities qualified to act.",
   },
   {
     n: "05",
     title: "Documentation and dispatch together",
-    body: "Recording, geo-stamping, encrypted vaulting and agency routing in one app, rather than four services that do not talk to each other.",
+    body: "Recording, geo-stamping, encrypted vaulting, and agency routing in one app, rather than four services that do not talk to each other.",
   },
 ];
 
@@ -150,7 +150,7 @@ export const securityPoints: { title: string; body: string; icon: IconName }[] =
 export const impactPoints: { title: string; body: string; icon: IconName }[] = [
   {
     title: "Patterns become visible",
-    body: "Individual reports in one place reveal the repeat offenders, the repeat locations and the repeat excuses.",
+    body: "Individual reports in one place reveal the repeat offenders, the repeat locations, and the repeat excuses.",
     icon: "rise",
   },
   {
@@ -274,7 +274,7 @@ export const newsCategories: { title: string; body: string; icon: IconName }[] =
     },
     {
       title: "Civic Engagement & Global Progress",
-      body: "What it takes to build, protect and scale worldwide.",
+      body: "What it takes to build, protect, and scale worldwide.",
       icon: "civic",
     },
   ];

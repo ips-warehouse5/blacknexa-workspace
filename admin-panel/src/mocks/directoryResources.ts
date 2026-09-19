@@ -61,7 +61,7 @@ export const directoryResources: DirectoryResource[] = [
       "free support",
     ],
     description:
-      "24/7, free and confidential support for people in distress, prevention and crisis resources for you or your loved ones. Call or text 988 directly.",
+      "24/7, free, and confidential support for people in distress, prevention, and crisis resources for you or your loved ones. Call or text 988 directly.",
     createdDate: "Aug 17, 2026",
     author: "Health Operations",
   },

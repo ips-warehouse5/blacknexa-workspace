@@ -3,7 +3,7 @@ import { LegalDocument } from "@/components/legal/legal-document";
 import { legalUpdated, termsSections } from "@/data/legal";
 import { siteConfig } from "@/data/site";
 
-const description = "The terms governing use of the BlackNexa platform, app and website.";
+const description = "The terms governing use of the BlackNexa platform, app, and website.";
 
 export const metadata: Metadata = {
   title: "Terms of Service",

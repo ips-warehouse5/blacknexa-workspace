@@ -181,13 +181,13 @@ export const termsSections: LegalSection[] = [
     n: "5",
     id: "t-content",
     title: "Your content",
-    body: ["Your records are yours. You grant us the limited licence needed to store, seal and route them as you direct."],
+    body: ["Your records are yours. You grant us the limited licence needed to store, seal, and route them as you direct."],
   },
   {
     n: "6",
     id: "t-ip",
     title: "Our intellectual property",
-    body: ["The BlackNexa name, mark and software are protected. Nothing here transfers ownership of them to you."],
+    body: ["The BlackNexa name, mark, and software are protected. Nothing here transfers ownership of them to you."],
   },
   {
     n: "7",

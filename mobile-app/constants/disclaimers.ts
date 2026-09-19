@@ -69,7 +69,7 @@ export const DISCLAIMERS: Record<DisclaimerType, Disclaimer> = {
     title: "Agency Dispatch Consent",
     requiresAcknowledgment: true,
     body: [
-      "By opting in to agency dispatch, you authorize BlackNexa(TM) to route your encrypted evidence package to relevant government agencies (HUD, EEOC, DOJ, CFPB, State AGs, Civil Rights Commissions) and international oversight bodies.",
+      "By opting in to agency dispatch, you authorize BlackNexa(TM) to route your encrypted evidence package to relevant government agencies (HUD, EEOC, DOJ, CFPB, State AGs, Civil Rights Commissions), and international oversight bodies.",
       "",
       "You understand that:",
       "- Agencies have independent investigative discretion.",

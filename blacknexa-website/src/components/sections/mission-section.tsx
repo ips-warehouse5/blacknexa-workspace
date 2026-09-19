@@ -10,7 +10,7 @@ export function MissionSection() {
         </div>
         <div className="min-w-[min(100%,300px)] max-w-[66ch] flex-[1_1_520px]">
           <p className="text-pretty font-serif text-[clamp(1.4rem,2.6vw,2.15rem)] font-medium leading-[1.34] tracking-[-0.01em] text-text-primary">
-            To equip Black, Brown, underserved and disenfranchised communities with God-centered
+            To equip Black, Brown, underserved, and disenfranchised communities with God-centered
             technology that documents the truth, protects the evidence, and carries a verified
             voice to the people with the authority to act on it.
           </p>

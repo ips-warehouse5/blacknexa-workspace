@@ -1,13 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 56">
   <!--
     Same shield mark used everywhere else in the app (see
-    src/components/ui/logo.tsx). This static file is only the fallback
-    shown before src/components/theme/favicon-sync.tsx's effect runs
-    (or if JS is disabled) — it can't see this site's own theme toggle
-    (data-theme attribute + localStorage; see theme-provider.tsx), so
-    it's colored Warm Gold to match DEFAULT_THEME in src/lib/theme.ts
-    rather than guessing from the OS color-scheme preference, which
-    can disagree with the site's manually-selected theme.
+    src/components/ui/logo.tsx). The favicon stays Warm Gold in every
+    site theme and does not follow the page accent color.
   -->
   <path
     d="M24 2.6 44.2 9.4V28.2C44.2 41 35.4 50.2 24 53.8 12.6 50.2 3.8 41 3.8 28.2V9.4Z"

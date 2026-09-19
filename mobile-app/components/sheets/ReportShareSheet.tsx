@@ -112,7 +112,7 @@ export function ReportShareSheet({
                 What a recipient sees
               </Text>
               <Text variant="bodyXs" color={colors.t2} style={{ marginTop: 4, lineHeight: 19 }}>
-                The report, its evidence and its comments — the same public page you
+                The report, its evidence, and its comments — the same public page you
                 are reading. They do not see your name, the exact location, or that
                 you shared it.
               </Text>

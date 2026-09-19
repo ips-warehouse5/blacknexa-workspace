@@ -668,7 +668,7 @@ export const MOCK_RESOURCES: Resource[] = [
   {
     id: "r47",
     name: "SAMHSA National Helpline",
-    description: "Free, confidential treatment referral and information for mental health and substance use.",
+    description: "Free, confidential treatment referral, and information for mental health and substance use.",
     category: "hotline",
     reach: "National",
     verified: true,

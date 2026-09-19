@@ -199,8 +199,8 @@ export default function OwnerReportScreen(): React.ReactElement {
           </Text>
           <Text variant="bodyXs" color={colors.t2} style={{ marginTop: 6, lineHeight: 19 }}>
             {report.canDispatch
-              ? "Because this report is verified, you can dispatch it to press, an agency, an international body or the legal network. You name the recipients and consent before anything leaves."
-              : "Once a moderator verifies this report, you can dispatch it to press, an agency, an international body or the legal network. Nothing leaves without your consent."}
+              ? "Because this report is verified, you can dispatch it to press, an agency, an international body, or the legal network. You name the recipients and consent before anything leaves."
+              : "Once a moderator verifies this report, you can dispatch it to press, an agency, an international body, or the legal network. Nothing leaves without your consent."}
           </Text>
           <Button
             label="Start a dispatch"

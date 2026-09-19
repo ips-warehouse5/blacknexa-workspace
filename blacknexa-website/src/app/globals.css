@@ -113,30 +113,12 @@ body {
 }
 
 /*
-  .bn-reveal elements are visible by default: nothing here hides them.
-  RevealInit (see reveal-init.tsx) only ever toggles the
-  .bn-reveal-pending class below at runtime — content must never depend
-  on JS to become visible in the first place, only to animate in when
-  JS is available.
-
-  This is a class, not an inline style, on purpose: these elements can
-  also carry their own React-managed `style` prop (e.g. the Hero phone
-  mockup's `flexShrink`), and RevealInit writing directly to the same
-  `style` attribute React controls is exactly what caused a spurious
-  "hydrated but attributes didn't match" warning on every page — React's
-  reconciler noticed the DOM's `style` no longer matched what the
-  component's own props said it should be. `classList` doesn't have
-  that problem: it's a separate attribute React isn't tracking a
-  conflicting value for on these elements.
+  .bn-reveal elements stay visible by default. RevealInit uses the Web
+  Animations API, so it can animate below-fold content without mutating
+  React-owned attributes during hydration.
 */
 .bn-reveal {
   transition: opacity .75s ease, transform .75s cubic-bezier(.2, .7, .2, 1);
-}
-
-.bn-reveal.bn-reveal-pending {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

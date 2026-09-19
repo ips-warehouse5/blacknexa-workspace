@@ -189,7 +189,7 @@ export const newsStories: NewsStory[] = [
       "Kingston Creative Hub Expands Caribbean Intellectual Property & Music Registry",
     summary:
       "Jamaican creative advocates establish automated digital provenance tracking for reggae, dancehall, and visual artists across the global market.",
-    body: "The Ministry of Culture, Gender, Entertainment and Sport in Kingston launched an open digital catalog aimed at protecting the copyrights of independent Caribbean songwriters and digital creators. The registry leverages cryptographically signed timestamps to safeguard musical works against unauthorized commercial exploitation and non-consensual AI model training. International streaming aggregators have agreed to integrate direct licensing protocols with the new database starting in late autumn.",
+    body: "The Ministry of Culture, Gender, Entertainment, and Sport in Kingston launched an open digital catalog aimed at protecting the copyrights of independent Caribbean songwriters and digital creators. The registry leverages cryptographically signed timestamps to safeguard musical works against unauthorized commercial exploitation and non-consensual AI model training. International streaming aggregators have agreed to integrate direct licensing protocols with the new database starting in late autumn.",
     category: "Arts & Culture",
     scope: "Diaspora",
     location: "Kingston, Jamaica",

@@ -30,7 +30,7 @@ export function FinalCtaSection() {
           style={{ color: "var(--bn-hero-secondary-text)" }}
         >
           BlackNexa is a movement of truth, power, and divine purpose. We are
-          equipping the next generation of Black and Brown and Underserved and
+          equipping the next generation of Black, Brown, Underserved, and
           Disenfranchise Communities to be rooted in Gods Holy word, educated,
           business-savvy, and anchored in faith to level the playing field once
           and for all-ensuring that we prosper, walk according to His purpose,

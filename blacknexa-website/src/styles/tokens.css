@@ -142,7 +142,7 @@
   /*
    * Signal Blue as a FILL is fine, but as text it scores only 3.93:1 on
    * white. This darker blue reaches 5.65:1 while reading as the same
-   * colour, so eyebrows, numerals and icon strokes use it instead.
+   * colour, so eyebrows, numerals, and icon strokes use it instead.
    * Accent fills (buttons, borders, the NEXA wordmark) keep --bn-accent.
    */
   --bn-accent-text: #0062d6;

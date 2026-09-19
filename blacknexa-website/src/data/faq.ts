@@ -34,7 +34,7 @@ export const FALLBACK_FAQS: FaqItem[] = [
   },
   {
     q: "Does filing a report guarantee an investigation?",
-    a: "No. BlackNexa is a technology and software platform provider, not a government agency, law firm or legal referral service. We document, secure and route your report; all intake and investigative decisions remain strictly under the independent authority of the respective government bodies and oversight entities.",
+    a: "No. BlackNexa is a technology and software platform provider, not a government agency, law firm, or legal referral service. We document, secure, and route your report; all intake and investigative decisions remain strictly under the independent authority of the respective government bodies and oversight entities.",
   },
   {
     q: "How is my evidence protected?",
@@ -46,11 +46,11 @@ export const FALLBACK_FAQS: FaqItem[] = [
   },
   {
     q: "Which countries does it work in?",
-    a: "Automated AI geographic research connects users anywhere in the world with the local, state, national and international oversight authorities relevant to their incident, so it works domestically and internationally.",
+    a: "Automated AI geographic research connects users anywhere in the world with the local, state, national, and international oversight authorities relevant to their incident, so it works domestically and internationally.",
   },
   {
     q: "How is the news verified?",
-    a: "Every story is backed by three to five factual sources and reviewed daily by our editorial team, focused on Black business, technology, economic power and faith-based content.",
+    a: "Every story is backed by three to five factual sources and reviewed daily by our editorial team, focused on Black business, technology, economic power, and faith-based content.",
   },
   {
     q: "How do I reach you about partnership or press?",

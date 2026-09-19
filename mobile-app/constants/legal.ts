@@ -40,11 +40,11 @@ export const TERMS: { title: string; updated: string; sections: LegalSection[]; 
     },
     {
       heading: "5. Your content",
-      body: "Your records are yours. You grant us the limited licence needed to store, seal and route them as you direct.",
+      body: "Your records are yours. You grant us the limited licence needed to store, seal, and route them as you direct.",
     },
     {
       heading: "6. Our intellectual property",
-      body: "The BlackNexa name, mark and software are protected. Nothing here transfers ownership of them to you.",
+      body: "The BlackNexa name, mark, and software are protected. Nothing here transfers ownership of them to you.",
     },
     {
       heading: "7. Disclaimers and limits of liability",

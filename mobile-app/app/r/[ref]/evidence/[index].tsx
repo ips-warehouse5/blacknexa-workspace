@@ -163,7 +163,7 @@ export default function EvidenceLightbox(): React.ReactElement {
               </View>
             ) : (
               <Text variant="metaSm" color={colors.t4} style={{ marginTop: 5 }}>
-                Tap for captured, sealed and integrity
+                Tap for captured, sealed, and integrity
               </Text>
             )}
           </>

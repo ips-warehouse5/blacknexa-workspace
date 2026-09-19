@@ -45,7 +45,7 @@ export function Hero() {
             className="mt-[30px] max-w-[60ch] text-[clamp(1.02rem,1.35vw,1.22rem)] leading-[1.62]"
             style={{ color: "var(--bn-feature-ink2)" }}
           >
-            Document what happened the moment it happens — GPS, time and evidence sealed. Route
+            Document what happened the moment it happens — GPS, time, and evidence sealed. Route
             your report to the agencies that should answer for it. And read news that&rsquo;s
             actually verified. Built for Black and Brown communities worldwide.
           </p>

@@ -29,7 +29,7 @@ export function AboutSection() {
           <p className="text-pretty text-[clamp(0.98rem,1.1vw,1.06rem)] leading-[1.72] text-text-secondary">
             Welcome to BlackNexa™-a breakthrough, grassroots movement and
             trademark-pending mobile platform built specifically for the rising
-            generation of Black and brown and underserved communities. This
+            generation of Black, brown, and underserved communities. This
             isn&rsquo;t just an app; it is a digital sanctuary, a powerful
             shield, and a global megaphone for those ready to make a real
             change, walk in goodness, and rise above the noise. Rooted deeply in

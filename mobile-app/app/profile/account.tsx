@@ -184,7 +184,7 @@ export default function DeleteAccountScreen(): React.ReactElement {
           This cannot be undone
         </Text>
         <Text variant="bodyXs" color={colors.t2} style={{ marginTop: 5, lineHeight: 19 }}>
-          {`Your account (${user?.email ?? ""}), your drafts, your comments and your saved settings are deleted. Every device is signed out.`}
+          {`Your account (${user?.email ?? ""}), your drafts, your comments, and your saved settings are deleted. Every device is signed out.`}
         </Text>
       </View>
 

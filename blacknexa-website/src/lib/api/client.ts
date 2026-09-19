@@ -91,7 +91,7 @@ export interface RequestOptions {
  *
  * Every failure path — unconfigured, unreachable, non-2xx, a 2xx carrying
  * `success: 0` — raises `ApiError`, so a caller has one thing to catch instead
- * of a status check, a network check and an envelope check.
+ * of a status check, a network check, and an envelope check.
  */
 export async function apiRequest<T>({
   path,

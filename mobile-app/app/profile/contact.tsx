@@ -254,7 +254,7 @@ export default function ContactScreen(): React.ReactElement {
           />
         </View>
         <Text variant="bodyXs" color={colors.t2} style={styles.diagnosticsText}>
-          Attach diagnostics — app version, device and error logs. No report
+          Attach diagnostics — app version, device, and error logs. No report
           content, ever.
         </Text>
       </Pressable>

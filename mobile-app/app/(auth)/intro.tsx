@@ -61,7 +61,7 @@ const SLIDES: Slide[] = [
   {
     eyebrow: "Preserve",
     headline: "Sealed the moment it arrives.",
-    body: "Photos, video and audio are sealed on upload, so a later change would show.",
+    body: "Photos, video, and audio are sealed on upload, so a later change would show.",
     proof: [
       "Every file is sealed and timestamped",
       "Only you and a moderator can open it",
@@ -71,7 +71,7 @@ const SLIDES: Slide[] = [
   {
     eyebrow: "Connect",
     headline: "Help that has already been checked.",
-    body: "180 legal, health and crisis organisations, each one confirmed by a person.",
+    body: "180 legal, health, and crisis organisations, each one confirmed by a person.",
     proof: [
       "Every organisation is checked and dated",
       "Crisis lines work with no signal",

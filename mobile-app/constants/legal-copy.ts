@@ -24,12 +24,12 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     heading: "1. What this app does",
     body:
-      "BlackNexa helps people document, discuss and learn from experiences of discrimination, profiling and civil-rights incidents. You can file a report, preserve evidence, reach community resources and connect with trusted advocates.",
+      "BlackNexa helps people document, discuss, and learn from experiences of discrimination, profiling, and civil-rights incidents. You can file a report, preserve evidence, reach community resources, and connect with trusted advocates.",
   },
   {
     heading: "2. Your responsibilities",
     body:
-      "Be honest and truthful. Do not post content that is illegal, violent or defamatory, or that puts another person at risk. Do not share someone else's private information without their consent.",
+      "Be honest and truthful. Do not post content that is illegal, violent, or defamatory, or that puts another person at risk. Do not share someone else's private information without their consent.",
   },
   {
     heading: "3. Evidence integrity",
@@ -39,7 +39,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     heading: "4. What we do not do",
     body:
-      "We are not a law firm and we do not give legal advice. Nothing you file is sent to any outside organisation unless you choose to dispatch it. We never contact an employer, a landlord or a police department on your behalf.",
+      "We are not a law firm and we do not give legal advice. Nothing you file is sent to any outside organisation unless you choose to dispatch it. We never contact an employer, a landlord, or a police department on your behalf.",
   },
   {
     heading: "5. Moderation",
@@ -62,7 +62,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     heading: "1. What we collect",
     body:
-      "Your email address, the display name you choose, and what you put in a report. Nothing else is required. We do not collect contacts, advertising identifiers or browsing history.",
+      "Your email address, the display name you choose, and what you put in a report. Nothing else is required. We do not collect contacts, advertising identifiers, or browsing history.",
   },
   {
     heading: "2. Filing anonymously",
@@ -77,7 +77,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     heading: "4. Evidence",
     body:
-      "Photos, video, audio and documents are stored encrypted. Location and camera metadata are stripped before the file is stored. Access is granted through short-lived links, never a public address.",
+      "Photos, video, audio, and documents are stored encrypted. Location and camera metadata are stripped before the file is stored. Access is granted through short-lived links, never a public address.",
   },
   {
     heading: "5. Who can see a report",
