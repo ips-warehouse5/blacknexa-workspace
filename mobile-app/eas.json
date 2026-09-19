@@ -9,6 +9,7 @@
       "distribution": "internal",
       "env": {
         "NODE_ENV": "development",
+        "EXPO_PUBLIC_APP_VARIANT": "development",
         "EXPO_PUBLIC_APP_ENV": "development"
       },
       "android": {
@@ -19,6 +20,7 @@
       "distribution": "internal",
       "env": {
         "NODE_ENV": "development",
+        "EXPO_PUBLIC_APP_VARIANT": "preview",
         "EXPO_PUBLIC_APP_ENV": "development"
       },
       "android": {
@@ -29,6 +31,7 @@
       "autoIncrement": true,
       "env": {
         "NODE_ENV": "production",
+        "EXPO_PUBLIC_APP_VARIANT": "production",
         "EXPO_PUBLIC_APP_ENV": "production"
       },
       "android": {

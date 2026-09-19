@@ -15,12 +15,36 @@ import type { ExpoConfig } from "expo/config";
 const APP_VERSION = "1.0.0";
 const ANDROID_VERSION_CODE = 5;
 const IOS_BUILD_NUMBER = "1";
+type AppVariant = "development" | "preview" | "production";
+
+function readAppVariant(): AppVariant {
+  const raw =
+    process.env.EXPO_PUBLIC_APP_VARIANT ??
+    process.env.EAS_BUILD_PROFILE ??
+    process.env.EXPO_PUBLIC_APP_ENV;
+
+  if (raw === "development" || raw === "preview" || raw === "production") return raw;
+  return process.env.NODE_ENV === "production" ? "production" : "development";
+}
+
+const APP_VARIANT = readAppVariant();
+const IS_PRODUCTION = APP_VARIANT === "production";
+const DISPLAY_NAME = IS_PRODUCTION
+  ? "BlackNexa"
+  : APP_VARIANT === "preview"
+    ? "BlackNexa Preview"
+    : "BlackNexa Dev";
+const URL_SCHEME = IS_PRODUCTION
+  ? "blacknexa"
+  : APP_VARIANT === "preview"
+    ? "blacknexa-preview"
+    : "blacknexa-dev";
 
 // Converted from app.json so the Google Maps keys can be read from the
 // environment instead of being hardcoded per-platform literals. Everything
 // else here is unchanged, static config carried over verbatim.
 const config: ExpoConfig = {
-  name: "BlackNexa",
+  name: DISPLAY_NAME,
   slug: "blacknexa",
   // The EAS account that owns this project. Without it the CLI defaults to
   // the logged-in personal account (mitdips) and every command fails the
@@ -36,7 +60,7 @@ const config: ExpoConfig = {
   // per-platform instead: `android.intentFilters` below, and nothing on iOS
   // because Expo already registers the bundle identifier as a scheme
   // automatically.
-  scheme: "blacknexa",
+  scheme: URL_SCHEME,
   userInterfaceStyle: "light",
   newArchEnabled: true,
   // Legacy key, kept deliberately: it is the only splash Expo Go reads,
@@ -152,6 +176,9 @@ const config: ExpoConfig = {
           enableMinifyInReleaseBuilds: true,
           enableShrinkResourcesInReleaseBuilds: true,
         },
+        ios: {
+          deploymentTarget: "17.0",
+        },
       },
     ],
     [
@@ -186,6 +213,8 @@ const config: ExpoConfig = {
     ],
     "expo-audio",
     "expo-asset",
+    "./plugins/withIosSceneLifecycle",
+    "./plugins/withIosUserScriptSandboxingDisabled",
     "./plugins/withIPhoneOnlyDestinations",
     "./plugins/withAndroidMailtoQuery",
     "./plugins/withAndroidSingleTaskMainActivity",
@@ -195,6 +224,7 @@ const config: ExpoConfig = {
     typedRoutes: true,
   },
   extra: {
+    appVariant: APP_VARIANT,
     eas: {
       projectId: "e4f7a30d-28d3-4317-95e9-b05ac9a3f254",
     },
