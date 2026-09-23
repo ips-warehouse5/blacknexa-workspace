@@ -35,6 +35,10 @@ import { LocationPermissionModal } from "@/components/ui/LocationPermissionModal
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
 import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
+import {
+  hasSeenLocationPrompt,
+  markLocationPromptSeen,
+} from "@/lib/location-permission-memory";
 
 // Required so the browser tab used for Google's OAuth prompt closes itself and
 // hands the result back to the app; without this the flow can hang after login.
@@ -88,11 +92,15 @@ export default function WelcomeScreen(): React.ReactElement {
 
   useEffect(() => {
     let cancelled = false;
-    Location.getForegroundPermissionsAsync()
-      .then(({ status }) => {
+    Promise.all([Location.getForegroundPermissionsAsync(), hasSeenLocationPrompt()])
+      .then(([{ status }, promptSeen]) => {
         if (cancelled) return;
         if (status === "granted") {
           setLocationAllowed(true);
+          return;
+        }
+        if (promptSeen) {
+          setLocationAllowed(false);
           return;
         }
         setShowLocationModal(true);
@@ -106,11 +114,13 @@ export default function WelcomeScreen(): React.ReactElement {
   }, []);
 
   const handleLocationAllow = useCallback((granted: boolean) => {
+    void markLocationPromptSeen();
     setLocationAllowed(granted);
     setShowLocationModal(false);
   }, []);
 
   const handleLocationDeny = useCallback(() => {
+    void markLocationPromptSeen();
     setLocationAllowed(false);
     setShowLocationModal(false);
   }, []);
@@ -254,7 +264,7 @@ export default function WelcomeScreen(): React.ReactElement {
             variant="displayLg"
             color={colors.t0}
             center={isTablet}
-            style={isTablet ? styles.titleTablet : undefined}
+            style={[styles.title, isTablet && styles.titleTablet]}
           >
             Welcome to BlackNexa™
           </Text>
@@ -395,7 +405,13 @@ const styles = StyleSheet.create({
   },
   heroCopy: { paddingHorizontal: 26, paddingTop: 120 },
   heroCopyTablet: { paddingHorizontal: screenPadding.tablet, paddingTop: 0 },
-  titleTablet: { fontSize: 54, lineHeight: 62 },
+  title: {
+    lineHeight: 43,
+    paddingTop: 3,
+    paddingBottom: 3,
+    includeFontPadding: false,
+  },
+  titleTablet: { fontSize: 54, lineHeight: 66, paddingTop: 4, paddingBottom: 4 },
   subtitle: { marginTop: 12, maxWidth: 320 },
   subtitleTablet: { maxWidth: 500, alignSelf: "center", marginTop: 16 },
   routes: { paddingHorizontal: screenPadding.hero, paddingTop: 34, gap: 10 },

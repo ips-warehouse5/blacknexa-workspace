@@ -23,6 +23,7 @@ import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from "react-nat
 import * as Location from "expo-location";
 import { alpha, colors, radius } from "@/constants/theme";
 import Text from "@/components/ui/Text";
+import { markLocationPromptSeen } from "@/lib/location-permission-memory";
 
 import { MapPin } from "lucide-react-native";
 
@@ -51,6 +52,7 @@ export function LocationPermissionModal({
     setBusy(true);
     let granted = false;
     try {
+      await markLocationPromptSeen();
       const result = await Location.requestForegroundPermissionsAsync();
       granted = result.status === "granted";
     } catch {
@@ -65,6 +67,7 @@ export function LocationPermissionModal({
   /** "Don't allow" — resolves immediately, never touching the native API. */
   const dontAllow = useCallback(() => {
     if (busy) return;
+    void markLocationPromptSeen();
     onDeny();
   }, [busy, onDeny]);
 

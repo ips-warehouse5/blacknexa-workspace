@@ -153,13 +153,16 @@ export const OtpInput = React.forwardRef<OtpInputHandle, OtpInputProps>(function
               key={index}
               style={[
                 styles.cell,
-                { height: cellHeight },
-                isActive && styles.cellActive,
+                {
+                  height: cellHeight,
+                  backgroundColor: isActive ? colors.s2 : colors.s3,
+                  borderColor: isActive ? colors.acc : "transparent",
+                },
               ]}
             >
               {char ? (
                 <RNText
-                  style={styles.digit}
+                  style={[styles.digit, { color: colors.t0 }]}
                   maxFontSizeMultiplier={1.2}
                   allowFontScaling
                   numberOfLines={1}
@@ -167,7 +170,15 @@ export const OtpInput = React.forwardRef<OtpInputHandle, OtpInputProps>(function
                   {char}
                 </RNText>
               ) : isActive ? (
-                <Animated.View style={[styles.caret, { opacity: caret }]} />
+                <Animated.View
+                  style={[
+                    styles.caret,
+                    {
+                      opacity: caret,
+                      backgroundColor: colors.acc,
+                    },
+                  ]}
+                />
               ) : null}
             </View>
           );
@@ -193,6 +204,7 @@ export const OtpInput = React.forwardRef<OtpInputHandle, OtpInputProps>(function
         autoComplete={Platform.OS === "android" ? "sms-otp" : "one-time-code"}
         maxLength={length}
         caretHidden
+        selectionColor={colors.acc}
         accessibilityLabel={`Verification code, ${length} digits`}
         style={styles.hiddenInput}
       />
@@ -205,26 +217,20 @@ const styles = StyleSheet.create({
   cell: {
     flex: 1,
     borderRadius: radius.md,
-    backgroundColor: colors.s3,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
     // Transparent at rest so the focused border does not change the cell size.
     borderColor: "transparent",
   },
-  cellActive: {
-    backgroundColor: colors.s2,
-    borderColor: colors.acc,
-  },
   digit: {
     ...T.otp,
-    color: colors.t0,
     height: 36,
     lineHeight: 36,
     textAlign: "center",
     includeFontPadding: false,
   },
-  caret: { width: 2, height: 28, backgroundColor: colors.acc, borderRadius: 1 },
+  caret: { width: 2, height: 28, borderRadius: 1 },
   hiddenInput: {
     position: "absolute",
     top: 0,

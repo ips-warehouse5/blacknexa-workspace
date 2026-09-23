@@ -9,11 +9,12 @@ import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField, { PasswordField } from "@/components/ui/TextField";
-import { ScrollScreen } from "@/components/ui/Screen";
+import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { ShieldMark } from "@/app/(auth)/intro";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
 import { safeLoginErrorMessage, validateLoginForm } from "@/lib/auth/login-validation";
+import { safeBack } from "@/utils/navigation";
 
 export default function LogInScreen(): React.ReactElement {
   useThemeSync();
@@ -112,6 +113,10 @@ export default function LogInScreen(): React.ReactElement {
     }
   }, [busy, clearError, email, login, password, scrollTo]);
 
+  const handleBack = useCallback(() => {
+    safeBack("/(auth)/welcome");
+  }, []);
+
   return (
     <ScrollScreen
       padding={screenPadding.hero}
@@ -130,14 +135,20 @@ export default function LogInScreen(): React.ReactElement {
         </Text>
       }
     >
+      <BackHeader
+        title="Log in"
+        onBack={handleBack}
+        padding={0}
+      />
+
       <Pressable onPress={Keyboard.dismiss} accessible={false}>
-        <View style={{ alignItems: "center", marginTop: 56 }}>
+        <View style={{ alignItems: "center", marginTop: 24 }}>
           <View style={styles.mark}>
             <ShieldMark size={23} />
           </View>
         </View>
 
-        <Text variant="displaySm" color={colors.t0} center style={{ marginTop: 22 }}>
+        <Text variant="displaySm" color={colors.t0} center style={{ marginTop: 20 }}>
           Welcome back
         </Text>
 

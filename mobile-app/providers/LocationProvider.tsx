@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Location from "expo-location";
 import type { NewsArticle } from "@/mocks/news";
 import { RORK_FUNCTIONS_URL } from "@/lib/config/env";
+import { markLocationPromptSeen } from "@/lib/location-permission-memory";
 
 /**
  * UserLocation — a one-shot geographical fix plus reverse-geocoded place
@@ -81,6 +82,7 @@ async function persistLocation(loc: UserLocation): Promise<void> {
  * set to ~100m for city/region-level granularity for news.
  */
 async function captureLocation(): Promise<{ location: UserLocation | null; canAskAgain: boolean }> {
+  await markLocationPromptSeen();
   const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
   if (status !== "granted") return { location: null, canAskAgain };
 

@@ -32,6 +32,7 @@ import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
 import { useAuth } from "@/providers/AuthProvider";
 import type { LocationPrecision } from "@/lib/api/reports";
+import { markLocationPromptSeen } from "@/lib/location-permission-memory";
 
 /** What each precision publishes, in the words C4 prints. */
 const PRECISION_COPY: Record<LocationPrecision, { label: string; detail: string }> = {
@@ -131,6 +132,7 @@ export default function WhereStep(): React.ReactElement {
     setProblem(null);
     try {
       // C4: "We ask you here first. The system prompt only appears after you tap."
+      await markLocationPromptSeen();
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) {
         setLocationDeniedForever(!permission.canAskAgain);

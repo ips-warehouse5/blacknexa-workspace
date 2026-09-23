@@ -50,7 +50,7 @@ type LocalNewsBlockProps = {
   isLocalRefetching: boolean;
   nearbyEnabled: boolean;
   nearbyCount: number;
-  onRequestLocation: () => Promise<void>;
+  onRequestLocation: () => Promise<unknown>;
   onOpenSettings: () => Promise<void>;
   onRefreshLocal: () => void;
   onToggleNearby: () => void;

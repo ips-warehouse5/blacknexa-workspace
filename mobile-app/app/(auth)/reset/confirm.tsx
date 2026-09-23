@@ -71,7 +71,7 @@ export default function ResetConfirmScreen(): React.ReactElement {
 
   const strength = evaluatePassword(password);
 
-  /** A6's four rules plus A14's history rule. */
+  /** A6's client-checkable rules. Password history is verified by the server. */
   const rules = useMemo<PasswordRule[]>(
     () => [
       { label: "At least 10 characters", met: strength.rules[0].met },
@@ -79,8 +79,6 @@ export default function ResetConfirmScreen(): React.ReactElement {
         label: "One capital letter, one number, one symbol",
         met: strength.rules[1].met && strength.rules[2].met && strength.rules[3].met,
       },
-      // Only the server can know this, so it remains neutral until submission.
-      { label: "Not a password you have used here before", met: false },
     ],
     [strength.rules],
   );
@@ -243,6 +241,10 @@ export default function ResetConfirmScreen(): React.ReactElement {
       ) : null}
 
       <RequirementList rules={rules} style={{ marginTop: 16 }} />
+
+      <Text variant="bodyXs" color={colors.t3} style={{ marginTop: 12, lineHeight: 19 }}>
+        We will also check that this is not a password you have used here before.
+      </Text>
 
       <View style={{ marginTop: 22 }}>
         <ResendTimer secondsRemaining={secondsRemaining} onResend={resend} />
