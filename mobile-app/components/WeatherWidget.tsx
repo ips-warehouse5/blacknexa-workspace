@@ -6,9 +6,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Cloud, Droplets, Loader2, MapPin, RefreshCw, Wind } from "lucide-react-native";
 import React, { useCallback } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View , Platform } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 import Colors from "@/constants/colors";
 import { useLocation } from "@/providers/LocationProvider";
 

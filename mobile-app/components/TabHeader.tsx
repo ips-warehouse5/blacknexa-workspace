@@ -14,22 +14,25 @@
  */
 
 import React from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { UserRound } from "lucide-react-native";
-import { colors } from "@/constants/theme";
+import { colors, layout, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function TabHeader(): React.ReactElement {
   const { user } = useAuth();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= layout.tabletBreakpoint;
   // "anonymous" hides the photo outright, even when `avatarUrl` is a valid
   // URL — matches app/profile/index.tsx, the source of truth for this rule.
   const isAnonymous = user?.avatarMode === "anonymous";
   const showAvatarImage = !isAnonymous && Boolean(user?.avatarUrl);
 
   return (
-    <View style={styles.header}>
+    <View style={styles.headerOuter}>
+      <View style={[styles.header, isTablet && styles.headerTablet]}>
       <Pressable
         onPress={() => router.push("/profile")}
         accessibilityRole="button"
@@ -77,6 +80,7 @@ export default function TabHeader(): React.ReactElement {
         </Pressable>
       </View>
     </View>
+    </View>
   );
 }
 
@@ -113,13 +117,23 @@ function BellGlyph({ withDot }: { withDot?: boolean }): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
+  headerOuter: {
+    width: "100%",
+    paddingHorizontal: screenPadding.feed,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 18,
+    width: "100%",
+    alignSelf: "center",
     paddingTop: 2,
     paddingBottom: 12,
+  },
+  headerTablet: {
+    maxWidth: layout.feedMaxWidth,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   avatar: {
     width: 34,

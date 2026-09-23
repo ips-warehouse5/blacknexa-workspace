@@ -23,6 +23,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text as RNText,
   TextInput,
   View,
   type StyleProp,
@@ -157,9 +158,14 @@ export const OtpInput = React.forwardRef<OtpInputHandle, OtpInputProps>(function
               ]}
             >
               {char ? (
-                <Text style={[T.otp, { color: colors.t0 }]} maxFontSizeMultiplier={1.2}>
+                <RNText
+                  style={styles.digit}
+                  maxFontSizeMultiplier={1.2}
+                  allowFontScaling
+                  numberOfLines={1}
+                >
                   {char}
-                </Text>
+                </RNText>
               ) : isActive ? (
                 <Animated.View style={[styles.caret, { opacity: caret }]} />
               ) : null}
@@ -209,6 +215,14 @@ const styles = StyleSheet.create({
   cellActive: {
     backgroundColor: colors.s2,
     borderColor: colors.acc,
+  },
+  digit: {
+    ...T.otp,
+    color: colors.t0,
+    height: 36,
+    lineHeight: 36,
+    textAlign: "center",
+    includeFontPadding: false,
   },
   caret: { width: 2, height: 28, backgroundColor: colors.acc, borderRadius: 1 },
   hiddenInput: {

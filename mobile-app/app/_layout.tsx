@@ -79,6 +79,22 @@ function AuthGate(): React.ReactElement | null {
   );
   const promptInFlight = useRef(false);
   const previousStatus = useRef(status);
+  const firstSegment = segments[0] as string | undefined;
+  const inAuthGroup = firstSegment === "(auth)";
+  const inOnboardingGroup = firstSegment === "(onboarding)";
+  const inOAuthRedirect = firstSegment === "oauthredirect";
+  const isPublicRoute =
+    inOAuthRedirect ||
+    firstSegment === "legal" ||
+    firstSegment === "news" ||
+    firstSegment === "incident" ||
+    firstSegment === "r" ||
+    firstSegment === "modal";
+  const routeNeedsRedirect =
+    (status === "signedOut" && !inAuthGroup && !isPublicRoute) ||
+    (status === "onboarding" && !inOnboardingGroup && !isPublicRoute) ||
+    (status === "signedIn" && (inAuthGroup || inOnboardingGroup || inOAuthRedirect));
+  const canShowCurrentRoute = routeSettled && !routeNeedsRedirect;
   const biometricLockEnabled =
     status === "signedIn" &&
     !settingsLoading &&
@@ -146,18 +162,6 @@ function AuthGate(): React.ReactElement | null {
       return;
     }
 
-    const firstSegment = segments[0] as string | undefined;
-    const inAuthGroup = firstSegment === "(auth)";
-    const inOnboardingGroup = firstSegment === "(onboarding)";
-    const inOAuthRedirect = firstSegment === "oauthredirect";
-    const isPublicRoute =
-      inOAuthRedirect ||
-      firstSegment === "legal" ||
-      firstSegment === "news" ||
-      firstSegment === "incident" ||
-      firstSegment === "r" ||
-      firstSegment === "modal";
-
     if (status === "signedOut" && !inAuthGroup && !isPublicRoute) {
       setRouteSettled(false);
       AsyncStorage.getItem(INTRO_SEEN_KEY)
@@ -187,15 +191,22 @@ function AuthGate(): React.ReactElement | null {
     } else {
       setRouteSettled(true);
     }
-  }, [status, segments, router]);
+  }, [
+    inAuthGroup,
+    inOAuthRedirect,
+    inOnboardingGroup,
+    isPublicRoute,
+    router,
+    status,
+  ]);
 
   useEffect(() => {
     // Only release the splash screen once auth status AND initial target route are ready,
     // so no intermediate screen or tab bar ever flashes.
-    if (status !== "restoring" && routeSettled) {
+    if (status !== "restoring" && canShowCurrentRoute) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [status, routeSettled]);
+  }, [status, canShowCurrentRoute]);
 
   if (status === "restoring") return null;
 
@@ -209,7 +220,7 @@ function AuthGate(): React.ReactElement | null {
   }
 
   return (
-    <View style={{ flex: 1, opacity: routeSettled ? 1 : 0 }}>
+    <View style={{ flex: 1, opacity: canShowCurrentRoute ? 1 : 0 }}>
       <Stack
         initialRouteName={status === "signedIn" ? "(tabs)" : "(auth)"}
         screenOptions={{
@@ -316,7 +327,13 @@ function ThemedAppShell(): React.ReactElement {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      {Platform.OS === "android" ? (
+        <StatusBar
+          style={isDark ? "light" : "dark"}
+          backgroundColor={colors.bg}
+          translucent={false}
+        />
+      ) : null}
       <LocationProvider>
         <IncidentsProvider>
           <NewsProvider>

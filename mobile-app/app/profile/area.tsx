@@ -80,6 +80,7 @@ export default function AreaScreen(): React.ReactElement {
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<LocationSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [freshLocation, setFreshLocation] = useState<UserLocation | null>(null);
   /**
    * Guards against an out-of-order response overwriting a newer one.
    *
@@ -89,12 +90,14 @@ export default function AreaScreen(): React.ReactElement {
   const latestQuery = useRef("");
 
   /**
-   * The saved area wins over the device's position.
-   *
-   * Someone who deliberately set their area to Atlanta while travelling should
-   * keep seeing Atlanta, not wherever the phone woke up.
+   * The saved area wins over the device's position on initial load.
+   * However, when the user explicitly taps "Use my current location", the
+   * newly captured device location takes precedence and is saved to the account.
    */
   const currentLabel =
+    (freshLocation?.city && freshLocation.region
+      ? `${freshLocation.city}, ${freshLocation.region}`
+      : freshLocation?.label) ||
     user?.area?.label ||
     (location?.city && location.region
       ? `${location.city}, ${location.region}`
@@ -153,14 +156,28 @@ export default function AreaScreen(): React.ReactElement {
     }
     setBusy(true);
     try {
-      await requestLocation();
+      const nextLocation = await requestLocation();
+      if (nextLocation) {
+        setFreshLocation(nextLocation);
+        await setLocation(nextLocation);
+        const areaLabel =
+          (nextLocation.city && nextLocation.region
+            ? `${nextLocation.city}, ${nextLocation.region}`
+            : nextLocation.label) || "Current location";
+        await saveArea({
+          label: areaLabel,
+          lat: nextLocation.lat,
+          lng: nextLocation.lng,
+        });
+      }
     } finally {
       setBusy(false);
     }
-  }, [deniedForever, openSettings, requestLocation]);
+  }, [deniedForever, openSettings, requestLocation, saveArea, setLocation]);
 
   const chooseArea = useCallback(
     async (area: AreaCandidate) => {
+      setFreshLocation(null);
       const next: UserLocation = {
         lat: area.lat,
         lng: area.lng,
@@ -242,14 +259,14 @@ export default function AreaScreen(): React.ReactElement {
             {currentLabel}
           </Text>
           <Text variant="bodySm" color={colors.t3} style={styles.rowDetail}>
-            {user?.area
+            {user?.area || freshLocation
               ? "Saved to your account"
               : location
                 ? "From this device — search to save one to your account"
                 : "Use current location or search for a city"}
           </Text>
         </View>
-        {user?.area || location ? <Check size={18} color={colors.acc} /> : null}
+        {user?.area || freshLocation || location ? <Check size={18} color={colors.acc} /> : null}
       </View>
 
       <View style={styles.listHeader}>
@@ -261,11 +278,14 @@ export default function AreaScreen(): React.ReactElement {
       <View style={styles.recentGroup}>
         {rows.length > 0 ? (
           rows.map((area, index) => {
-            const selected = user?.area
-              ? user.area.label === area.label
-              : Boolean(location) &&
-                location?.city === area.city &&
-                location?.region === area.region;
+            const selected =
+              area.label === currentLabel ||
+              (!freshLocation &&
+                (user?.area
+                  ? user.area.label === area.label
+                  : Boolean(location) &&
+                    location?.city === area.city &&
+                    location?.region === area.region));
 
             return (
               <Pressable

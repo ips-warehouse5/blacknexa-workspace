@@ -26,9 +26,8 @@
  */
 
 import React, { useCallback, useMemo } from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View , Platform } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 import { alpha, colors, radius } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot } from "@/components/ui/Controls";

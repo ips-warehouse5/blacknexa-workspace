@@ -338,6 +338,14 @@ export const screenPadding = {
   detail: 20,
   /** A4, A5, A10, A11 hero screens. */
   hero: 24,
+  /** iPad and other expanded-width layouts. */
+  tablet: 32,
+} as const;
+
+export const layout = {
+  tabletBreakpoint: 768,
+  readableMaxWidth: 680,
+  feedMaxWidth: 920,
 } as const;
 
 export const radius = {

@@ -1,13 +1,11 @@
 /**
- * Restrict the iOS target's Supported Destinations to iPhone.
+ * Restrict the iOS target's Supported Destinations to iPhone and iPad.
  *
- * `ios.supportsTablet: false` in app.config.ts already sets `TARGETED_DEVICE_FAMILY = 1`,
- * which keeps iPad out. It does **not** remove the two "Designed for iPhone"
- * destinations, because those are governed by separate build settings that Xcode
- * treats as YES when they are absent — and `expo prebuild` does not write them.
- * The result is a target that reports it runs on Mac and Apple Vision, which shows
- * up in Supported Destinations and, left alone, makes the app offerable on those
- * stores.
+ * `ios.supportsTablet: true` in app.config.ts sets `TARGETED_DEVICE_FAMILY = 1,2`,
+ * which enables iPhone and iPad. It does **not** remove the two "Designed for
+ * iPhone/iPad" destinations, because those are governed by separate build settings
+ * that Xcode treats as YES when they are absent — and `expo prebuild` does not
+ * write them. Left alone, the app can also show Mac and Apple Vision destinations.
  *
  * This has to be a config plugin rather than a change in Xcode: `ios/` is
  * gitignored and regenerated, so anything set through the Xcode UI is discarded by

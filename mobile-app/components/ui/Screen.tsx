@@ -24,6 +24,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -32,11 +33,24 @@ import {
   KeyboardAwareScrollView,
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
-import { alpha, colors, screenPadding } from "@/constants/theme";
+import { alpha, colors, layout, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 
 /** Minimum bottom padding when the device has no home indicator. */
 const MIN_BOTTOM = 12;
+
+function resolveResponsiveFrame(
+  width: number,
+  padding: number,
+  maxWidth?: number | "none",
+): { horizontalPadding: number; contentMaxWidth: number | undefined } {
+  const isTablet = width >= layout.tabletBreakpoint;
+  return {
+    horizontalPadding: isTablet ? Math.max(padding, screenPadding.tablet) : padding,
+    contentMaxWidth:
+      maxWidth === "none" ? undefined : maxWidth ?? (isTablet ? layout.readableMaxWidth : undefined),
+  };
+}
 
 export interface ScreenProps {
   children: React.ReactNode;
@@ -45,7 +59,10 @@ export interface ScreenProps {
   /** Pad for the status bar. Off when the screen paints its own full-bleed art. */
   topInset?: boolean;
   background?: string;
+  /** Use "none" for full-width tool surfaces; default constrains iPad content. */
+  maxWidth?: number | "none";
   style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
@@ -55,10 +72,14 @@ export function Screen({
   padding = screenPadding.detail,
   topInset = true,
   background = colors.bg,
+  maxWidth,
   style,
+  contentStyle,
   testID,
 }: ScreenProps): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { horizontalPadding, contentMaxWidth } = resolveResponsiveFrame(width, padding, maxWidth);
   return (
     <View
       testID={testID}
@@ -67,12 +88,22 @@ export function Screen({
         {
           backgroundColor: background,
           paddingTop: topInset ? insets.top : 0,
-          paddingHorizontal: padding,
         },
         style,
       ]}
     >
-      {children}
+      <View
+        style={[
+          styles.contentFrame,
+          {
+            maxWidth: contentMaxWidth,
+            paddingHorizontal: horizontalPadding,
+          },
+          contentStyle,
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 }
@@ -84,7 +115,6 @@ export interface ScrollScreenProps extends ScreenProps {
   footer?: React.ReactNode;
   /** Draw a hairline above the footer, as C1–C7 and D1 do. */
   footerBorder?: boolean;
-  contentStyle?: StyleProp<ViewStyle>;
   keyboardShouldPersistTaps?: "always" | "never" | "handled";
   /** Ref for programmatic scrolling — used by scroll-to-first-error. */
   scrollRef?: React.Ref<React.ComponentRef<typeof KeyboardAwareScrollView>>;
@@ -105,6 +135,7 @@ export function ScrollScreen({
   bottomSpace = 24,
   footer,
   footerBorder = false,
+  maxWidth,
   style,
   contentStyle,
   keyboardShouldPersistTaps = "handled",
@@ -112,6 +143,8 @@ export function ScrollScreen({
   testID,
 }: ScrollScreenProps): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { horizontalPadding, contentMaxWidth } = resolveResponsiveFrame(width, padding, maxWidth);
   const bottomPad = Math.max(insets.bottom, MIN_BOTTOM);
   // `bottomOffset` only keeps a focused field clear of the keyboard itself —
   // it doesn't know about the footer, which the KeyboardStickyView below
@@ -133,7 +166,13 @@ export function ScrollScreen({
         ref={scrollRef}
         style={styles.flex}
         contentContainerStyle={[
-          { paddingHorizontal: padding, paddingBottom: contentBottomPadding },
+          {
+            width: "100%",
+            maxWidth: contentMaxWidth,
+            alignSelf: "center",
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: contentBottomPadding,
+          },
           contentStyle,
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
@@ -151,14 +190,23 @@ export function ScrollScreen({
               styles.footer,
               {
                 backgroundColor: colors.s0,
-                paddingHorizontal: padding,
                 paddingBottom: bottomPad,
                 borderTopWidth: footerBorder ? StyleSheet.hairlineWidth : 0,
                 borderTopColor: alpha(colors.t0, 0.07),
               },
             ]}
           >
-            {footer}
+            <View
+              style={[
+                styles.footerFrame,
+                {
+                  maxWidth: contentMaxWidth,
+                  paddingHorizontal: horizontalPadding,
+                },
+              ]}
+            >
+              {footer}
+            </View>
           </View>
         </KeyboardStickyView>
       ) : null}
@@ -184,6 +232,8 @@ export function StickyFooter({
   style?: StyleProp<ViewStyle>;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { horizontalPadding, contentMaxWidth } = resolveResponsiveFrame(width, padding);
   return (
     <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
       <View
@@ -191,7 +241,6 @@ export function StickyFooter({
             styles.footer,
             {
               backgroundColor: colors.s0,
-              paddingHorizontal: padding,
             paddingBottom: Math.max(insets.bottom, MIN_BOTTOM),
             borderTopWidth: border ? StyleSheet.hairlineWidth : 0,
             borderTopColor: alpha(colors.t0, 0.07),
@@ -199,7 +248,17 @@ export function StickyFooter({
           style,
         ]}
       >
-        {children}
+        <View
+          style={[
+            styles.footerFrame,
+            {
+              maxWidth: contentMaxWidth,
+              paddingHorizontal: horizontalPadding,
+            },
+          ]}
+        >
+          {children}
+        </View>
       </View>
     </KeyboardStickyView>
   );
@@ -271,7 +330,9 @@ export function BackButton({ onPress }: { onPress: () => void }): React.ReactEle
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
+  contentFrame: { flex: 1, width: "100%", alignSelf: "center" },
   footer: { paddingTop: 12 },
+  footerFrame: { width: "100%", alignSelf: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",

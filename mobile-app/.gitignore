@@ -36,6 +36,7 @@ bun.lock
 # variable-names-only template (.env.example) is allowed into git.
 .env
 .env.*
+.env.preview
 !.env.example
 
 # typescript

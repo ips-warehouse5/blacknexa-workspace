@@ -15,10 +15,9 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Modal, Pressable, Share, StyleSheet, View } from "react-native";
+import { Modal, Pressable, Share, StyleSheet, View , Platform } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, radius, scrim, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";

@@ -40,6 +40,14 @@ import {
 
 const CODE_LENGTH = 6;
 
+function isCodeApiError(message: string): boolean {
+  return /\b(?:code|otp|verification|token)\b|expired|invalid/i.test(message);
+}
+
+function isPasswordApiError(message: string): boolean {
+  return /password.+(?:used|before)|choose a password/i.test(message);
+}
+
 export default function ResetConfirmScreen(): React.ReactElement {
   useThemeSync();
   const params = useLocalSearchParams<{ email?: string; resendAfter?: string }>();
@@ -90,22 +98,23 @@ export default function ResetConfirmScreen(): React.ReactElement {
 
     shownErrorRef.current = error;
     const message = safeResetErrorMessage(error);
-    if (/password.+(?:used|before)|choose a password/i.test(error)) {
-      // Inline placement points at the exact field to fix; the snackbar
-      // guarantees the user actually sees it even if they've scrolled past
-      // the password field by the time the response comes back.
+    if (isCodeApiError(error)) {
+      setCodeError(message);
+    } else if (isPasswordApiError(error)) {
       setPasswordApiError(message);
+    } else {
+      showSnackbar({ message, type: "error" });
     }
-    showSnackbar({ message, type: "error" });
     clearError();
   }, [clearError, error, showSnackbar]);
 
   const handleCodeChange = useCallback(
     (value: string) => {
       setCode(value);
-      if (codeTouched) setCodeError(validateResetConfirmation(value, password).code);
+      if (codeError) setCodeError(null);
+      else if (codeTouched) setCodeError(validateResetConfirmation(value, password).code);
     },
-    [codeTouched, password],
+    [codeError, codeTouched, password],
   );
 
   const handlePasswordChange = useCallback(
@@ -121,6 +130,7 @@ export default function ResetConfirmScreen(): React.ReactElement {
     if (busy || submittingRef.current) return;
 
     clearError();
+    setPasswordApiError(null);
     setCodeTouched(true);
     setPasswordTouched(true);
     const validation = validateResetConfirmation(code, password);

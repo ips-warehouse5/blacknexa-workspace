@@ -22,6 +22,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Platform,
   type ImageSourcePropType,
   Pressable,
   StyleSheet,
@@ -160,9 +161,13 @@ export default function IntroScreen(): React.ReactElement {
 
   return (
     <View style={[styles.root, { width, height: screenHeight }]}>
-      {/* The photo is dark edge-to-edge now, so the OS status bar needs light
-          icons here — the opposite of every other screen in the app. */}
-      <StatusBar style="light" />
+      {/* Android still needs explicit system-bar styling here. On iOS, React
+          Native's StatusBar manager uses a deprecated UIApplication API under
+          UIViewControllerBasedStatusBarAppearance=false, so leave iOS on the
+          app-level plist default instead of calling setStyle from JS. */}
+      {Platform.OS === "android" ? (
+        <StatusBar style="light" backgroundColor="transparent" translucent />
+      ) : null}
 
       <FlatList
         ref={listRef}
@@ -317,14 +322,14 @@ function Splash(): React.ReactElement {
         <View style={styles.mark}>
           <ShieldMark />
         </View>
-        <Text variant="displayLg" color={colors.t0} center style={{ fontSize: 36, marginTop: 20 }}>
+        <Text variant="displayLg" color={colors.t0} center style={styles.splashTitle}>
           BlackNexa
         </Text>
         <Text
           variant="eyebrow"
           color={colors.t3}
           center
-          style={{ marginTop: 14, letterSpacing: 2.3 }}
+          style={styles.splashTagline}
         >
           Document · Preserve · Connect
         </Text>
@@ -419,6 +424,20 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
 
   splashCentre: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 70 },
+  splashTitle: {
+    fontSize: 36,
+    lineHeight: 46,
+    marginTop: 18,
+    paddingTop: 2,
+    paddingHorizontal: 16,
+  },
+  splashTagline: {
+    letterSpacing: 2.3,
+    lineHeight: 18,
+    marginTop: 10,
+    paddingTop: 2,
+    paddingHorizontal: 24,
+  },
   mark: {
     width: 68,
     height: 68,

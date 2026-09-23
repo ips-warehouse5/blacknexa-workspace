@@ -16,8 +16,8 @@
  * navigated away from.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
@@ -27,11 +27,14 @@ import * as Location from "expo-location";
 import Svg, { Path } from "react-native-svg";
 import { Mail } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { alpha, colors, controlHeight, radius, screenPadding, useThemeSync } from "@/constants/theme";
+import { alpha, colors, controlHeight, layout, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
+import BlockingLoader from "@/components/ui/BlockingLoader";
 import { LocationPermissionModal } from "@/components/ui/LocationPermissionModal";
 import { useAuth } from "@/providers/AuthProvider";
+import { useSnackbar } from "@/providers/SnackbarProvider";
+import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
 
 // Required so the browser tab used for Google's OAuth prompt closes itself and
 // hands the result back to the app; without this the flow can hang after login.
@@ -59,9 +62,14 @@ const GOOGLE_WEB_CLIENT_ID =
 export default function WelcomeScreen(): React.ReactElement {
   useThemeSync();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= layout.tabletBreakpoint;
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [socialAuthPending, setSocialAuthPending] = useState(false);
+  const shownErrorRef = useRef<string | null>(null);
   /**
    * Covers the window the provider's own `busy` cannot: the browser prompt and
    * the code-for-token exchange, both of which happen before `signInWithGoogleToken`
@@ -132,11 +140,30 @@ export default function WelcomeScreen(): React.ReactElement {
       .catch(() => setAppleAvailable(false));
   }, []);
 
+  // Welcome has no field-level validation context for social sign-in failures,
+  // so show them in the app-wide Snackbar instead of as inline screen copy.
+  useEffect(() => {
+    const message = error || googleError;
+
+    if (!message) {
+      shownErrorRef.current = null;
+      return;
+    }
+    if (shownErrorRef.current === message) return;
+
+    shownErrorRef.current = message;
+    showSnackbar({ message: safeLoginErrorMessage(message), type: "error" });
+
+    if (error) clearError();
+    if (googleError) setGoogleError(null);
+  }, [clearError, error, googleError, showSnackbar]);
+
   useEffect(() => {
     if (!googleResponse) return;
     // A cancelled prompt is not an error worth showing, matching Apple's flow.
     if (googleResponse.type === "dismiss" || googleResponse.type === "cancel") {
       setGoogleBusy(false);
+      setSocialAuthPending(false);
       return;
     }
     if (googleResponse.type === "error") {
@@ -148,10 +175,12 @@ export default function WelcomeScreen(): React.ReactElement {
           "That sign-in did not complete. Please try again.",
       );
       setGoogleBusy(false);
+      setSocialAuthPending(false);
       return;
     }
     if (googleResponse.type !== "success") {
       setGoogleBusy(false);
+      setSocialAuthPending(false);
       return;
     }
     const idToken = googleResponse.params?.id_token;
@@ -163,6 +192,7 @@ export default function WelcomeScreen(): React.ReactElement {
       if (googleResponse.params?.code) return;
       setGoogleError("That sign-in did not complete. Please try again.");
       setGoogleBusy(false);
+      setSocialAuthPending(false);
       return;
     }
     // Only clear the busy state on failure. On success, AuthGate's status
@@ -173,32 +203,41 @@ export default function WelcomeScreen(): React.ReactElement {
     // before the redirect landed. Staying busy until unmount removes that
     // flash without touching AuthGate's timing at all.
     void signInWithGoogleToken(idToken).then((ok) => {
-      if (!ok) setGoogleBusy(false);
+      if (!ok) {
+        setGoogleBusy(false);
+        setSocialAuthPending(false);
+      }
     });
   }, [googleResponse, signInWithGoogleToken]);
 
   const onGoogle = useCallback(async () => {
+    if (socialAuthPending) return;
     clearError();
     setGoogleError(null);
+    setSocialAuthPending(true);
     setGoogleBusy(true);
     try {
       await promptGoogle();
     } catch {
       setGoogleError("That sign-in did not complete. Please try again.");
       setGoogleBusy(false);
+      setSocialAuthPending(false);
     }
-  }, [clearError, promptGoogle]);
+  }, [clearError, promptGoogle, socialAuthPending]);
 
   const onApple = useCallback(async () => {
+    if (socialAuthPending) return;
     clearError();
     setGoogleError(null);
-    await signInWithApple();
-  }, [clearError, signInWithApple]);
+    setSocialAuthPending(true);
+    const ok = await signInWithApple();
+    if (!ok) setSocialAuthPending(false);
+  }, [clearError, signInWithApple, socialAuthPending]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {/* The 330px brand band, with the artboard's scrim resolving into the page. */}
-      <View style={[styles.band, { height: 330 }]}>
+      <View style={[styles.band, { height: isTablet ? Math.min(440, height * 0.42) : 330 }]}>
         <LinearGradient colors={[colors.s6, colors.s4]} style={StyleSheet.absoluteFill} />
         <LinearGradient
           colors={[alpha(colors.deep, 0.18), alpha(colors.deep, 0.06), colors.bg]}
@@ -207,29 +246,29 @@ export default function WelcomeScreen(): React.ReactElement {
         />
       </View>
 
-      <View style={{ flex: 1, paddingTop: insets.top }}>
+      <View style={[styles.shell, { paddingTop: insets.top }, isTablet && styles.shellTablet]}>
         {/* The artboard's flat 150px top padding is a position in an 844px frame,
             so it becomes inset-relative here. */}
-        <View style={{ paddingHorizontal: 26, paddingTop: 120 }}>
-          <Text variant="displayLg" color={colors.t0}>
+        <View style={[styles.heroCopy, isTablet && styles.heroCopyTablet]}>
+          <Text
+            variant="displayLg"
+            color={colors.t0}
+            center={isTablet}
+            style={isTablet ? styles.titleTablet : undefined}
+          >
             Welcome to BlackNexa™
           </Text>
-          <Text variant="bodyLg" color={colors.t2} style={{ marginTop: 12, maxWidth: 320 }}>
+          <Text
+            variant="bodyLg"
+            color={colors.t2}
+            center={isTablet}
+            style={[styles.subtitle, isTablet && styles.subtitleTablet]}
+          >
             Document what happened, keep it safe, and find people who can help.
           </Text>
         </View>
 
-        {error || googleError ? (
-          <Text
-            variant="bodySm"
-            color={colors.bad2}
-            style={{ marginTop: 16, paddingHorizontal: screenPadding.hero }}
-          >
-            {error || googleError}
-          </Text>
-        ) : null}
-
-        <View style={styles.routes}>
+        <View style={[styles.routes, isTablet && styles.routesTablet]}>
           {appleAvailable ? (
             <Button
               label="Continue with Apple"
@@ -238,6 +277,7 @@ export default function WelcomeScreen(): React.ReactElement {
               variant="primary"
               style={{ backgroundColor: colors.t0 }}
               icon={<AppleMark />}
+              disabled={socialAuthPending}
               testID="welcome-apple"
             />
           ) : null}
@@ -252,7 +292,7 @@ export default function WelcomeScreen(): React.ReactElement {
             loading={googleBusy}
             // The request loads asynchronously (it generates the PKCE verifier);
             // prompting before it exists silently does nothing.
-            disabled={!googleRequest}
+            disabled={!googleRequest || socialAuthPending}
             testID="welcome-google"
           />
 
@@ -263,6 +303,7 @@ export default function WelcomeScreen(): React.ReactElement {
             style={{ borderRadius: radius.lg }}
             icon={<MailMark />}
             onPress={() => router.push("/(auth)/sign-up/account")}
+            disabled={socialAuthPending}
             testID="welcome-email"
           />
 
@@ -272,6 +313,7 @@ export default function WelcomeScreen(): React.ReactElement {
             height={controlHeight.button}
             style={{ borderRadius: radius.lg }}
             onPress={() => router.push("/(auth)/log-in")}
+            disabled={socialAuthPending}
             testID="welcome-login"
           />
         </View>
@@ -293,10 +335,12 @@ export default function WelcomeScreen(): React.ReactElement {
       </View>
 
       <LocationPermissionModal
-        visible={showLocationModal}
+        visible={showLocationModal && !socialAuthPending}
         onAllow={handleLocationAllow}
         onDeny={handleLocationDeny}
       />
+
+      <BlockingLoader visible={socialAuthPending} message="Signing you in…" />
     </View>
   );
 }
@@ -341,5 +385,26 @@ function MailMark(): React.ReactElement {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   band: { position: "absolute", top: 0, left: 0, right: 0 },
+  shell: { flex: 1 },
+  shellTablet: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+    justifyContent: "center",
+    paddingBottom: 42,
+  },
+  heroCopy: { paddingHorizontal: 26, paddingTop: 120 },
+  heroCopyTablet: { paddingHorizontal: screenPadding.tablet, paddingTop: 0 },
+  titleTablet: { fontSize: 54, lineHeight: 62 },
+  subtitle: { marginTop: 12, maxWidth: 320 },
+  subtitleTablet: { maxWidth: 500, alignSelf: "center", marginTop: 16 },
   routes: { paddingHorizontal: screenPadding.hero, paddingTop: 34, gap: 10 },
+  routesTablet: {
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
+    paddingHorizontal: screenPadding.tablet,
+    paddingTop: 42,
+    gap: 12,
+  },
 });

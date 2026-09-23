@@ -1,6 +1,6 @@
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Location from "expo-location";
@@ -78,16 +78,22 @@ async function persistLocation(loc: UserLocation): Promise<void> {
  * denial), calling `requestForegroundPermissionsAsync()` again silently
  * resolves to denied with no OS prompt; the only way to recover is sending
  * the user to the OS settings screen (see `openSettings` below). Accuracy is
- * set to ~1km so it's battery-friendly and privacy-safe — we only need
- * city/region-level granularity for news.
+ * set to ~100m for city/region-level granularity for news.
  */
 async function captureLocation(): Promise<{ location: UserLocation | null; canAskAgain: boolean }> {
   const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
   if (status !== "granted") return { location: null, canAskAgain };
 
-  const pos = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Low,
-  });
+  let pos: Location.LocationObject | null = null;
+  try {
+    pos = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+  } catch {
+    pos = await Location.getLastKnownPositionAsync();
+  }
+  if (!pos) return { location: null, canAskAgain: true };
+
   const { latitude, longitude } = pos.coords;
 
   let city = "";
@@ -173,6 +179,8 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
   // "Enable Location" button that re-requests and silently fails again.
   const [canAskAgain, setCanAskAgain] = useState<boolean>(true);
 
+  const queryClient = useQueryClient();
+
   // Hydrate from AsyncStorage on mount so we have a location immediately.
   const cacheQuery = useQuery<UserLocation | null, Error>({
     queryKey: ["location_cached"],
@@ -195,7 +203,7 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
    * if permission is already granted, expo-location returns it without
    * re-prompting.
    */
-  const requestLocation = useCallback(async (): Promise<void> => {
+  const requestLocation = useCallback(async (): Promise<UserLocation | null> => {
     setStatus("requesting");
     setError(null);
     try {
@@ -207,13 +215,15 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
         setStatus("denied");
         setCanAskAgain(false);
         setError("Location permission was denied. Enable it in Settings to continue.");
-        return;
+        return null;
       }
       const { location: loc, canAskAgain: resultCanAskAgain } = await captureLocation();
       if (loc) {
+        queryClient.setQueryData(["location_cached"], loc);
         await cacheQuery.refetch();
         setStatus("granted");
         setCanAskAgain(true);
+        return loc;
       } else {
         setStatus("denied");
         setCanAskAgain(resultCanAskAgain);
@@ -222,21 +232,24 @@ export const [LocationProvider, useLocation] = createContextHook(() => {
             ? "Location permission was denied."
             : "Location permission was denied. Enable it in Settings to continue.",
         );
+        return null;
       }
     } catch (e) {
       setStatus("unavailable");
       setError(e instanceof Error ? e.message : "Could not capture location.");
+      return null;
     }
-  }, [cacheQuery]);
+  }, [cacheQuery, queryClient]);
 
   const setLocation = useCallback(
     async (loc: UserLocation): Promise<void> => {
       await persistLocation(loc);
+      queryClient.setQueryData(["location_cached"], loc);
       await cacheQuery.refetch();
       setStatus("granted");
       setError(null);
     },
-    [cacheQuery],
+    [cacheQuery, queryClient],
   );
 
   /**

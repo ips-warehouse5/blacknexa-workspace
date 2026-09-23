@@ -29,11 +29,8 @@ function readAppVariant(): AppVariant {
 
 const APP_VARIANT = readAppVariant();
 const IS_PRODUCTION = APP_VARIANT === "production";
-const DISPLAY_NAME = IS_PRODUCTION
-  ? "BlackNexa"
-  : APP_VARIANT === "preview"
-    ? "BlackNexa Preview"
-    : "BlackNexa Dev";
+const NATIVE_APP_NAME = "BlackNexa";
+const DISPLAY_NAME = "BlackNexa";
 const URL_SCHEME = IS_PRODUCTION
   ? "blacknexa"
   : APP_VARIANT === "preview"
@@ -44,7 +41,11 @@ const URL_SCHEME = IS_PRODUCTION
 // environment instead of being hardcoded per-platform literals. Everything
 // else here is unchanged, static config carried over verbatim.
 const config: ExpoConfig = {
-  name: DISPLAY_NAME,
+  // Keep this stable so generated native projects are named BlackNexa.
+  // Environment-specific launcher labels are set by platform config plugins
+  // below. Keeping them out of `ios.infoPlist` avoids Expo's "name is ignored"
+  // warning while preserving the stable native project name.
+  name: NATIVE_APP_NAME,
   slug: "blacknexa",
   // The EAS account that owns this project. Without it the CLI defaults to
   // the logged-in personal account (mitdips) and every command fails the
@@ -74,7 +75,8 @@ const config: ExpoConfig = {
     backgroundColor: "#FFFFFF",
   },
   ios: {
-    supportsTablet: false,
+    supportsTablet: true,
+    requireFullScreen: true,
     bundleIdentifier: "com.blacknexa.app",
     buildNumber: IOS_BUILD_NUMBER,
     // firebase/*.plist is gitignored, so EAS Build (which only sees
@@ -96,6 +98,8 @@ const config: ExpoConfig = {
       googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY,
     },
     infoPlist: {
+      LSApplicationCategoryType: "public.app-category.social-networking",
+      UIViewControllerBasedStatusBarAppearance: false,
       NSMicrophoneUsageDescription:
         "BlackNexa records audio you attach to a report. Recordings are stored as files with the report and are never transcribed.",
       NSCameraUsageDescription:
@@ -107,6 +111,15 @@ const config: ExpoConfig = {
       NSFaceIDUsageDescription:
         "BlackNexa uses Face ID to unlock your session and your evidence vault.",
       ITSAppUsesNonExemptEncryption: false,
+      UIRequiresFullScreen: true,
+      UISupportedInterfaceOrientations: [
+        "UIInterfaceOrientationPortrait",
+        "UIInterfaceOrientationPortraitUpsideDown",
+      ],
+      "UISupportedInterfaceOrientations~ipad": [
+        "UIInterfaceOrientationPortrait",
+        "UIInterfaceOrientationPortraitUpsideDown",
+      ],
     },
   },
   android: {
@@ -213,7 +226,14 @@ const config: ExpoConfig = {
     ],
     "expo-audio",
     "expo-asset",
+    ["./plugins/withAndroidDisplayName", { displayName: DISPLAY_NAME }],
+    [
+      "./plugins/withIosDisplayName",
+      { displayName: DISPLAY_NAME, bundleName: NATIVE_APP_NAME },
+    ],
+    "./plugins/withIosEnvSchemes",
     "./plugins/withIosSceneLifecycle",
+    "./plugins/withIosPodsBuildFixes",
     "./plugins/withIosUserScriptSandboxingDisabled",
     "./plugins/withIPhoneOnlyDestinations",
     "./plugins/withAndroidMailtoQuery",
