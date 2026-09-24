@@ -40,6 +40,7 @@ import {
   WorkSans_500Medium,
   WorkSans_600SemiBold,
   WorkSans_700Bold,
+  WorkSans_400Regular_Italic,
 } from "@expo-google-fonts/work-sans";
 
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
@@ -372,6 +373,7 @@ export default function RootLayout(): React.ReactElement | null {
     WorkSans_500Medium,
     WorkSans_600SemiBold,
     WorkSans_700Bold,
+    WorkSans_400Regular_Italic,
   });
 
   // A font that fails to load must not brick the app — better the system face

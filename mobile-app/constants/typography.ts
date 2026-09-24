@@ -30,6 +30,7 @@ export const fonts = {
   bodyMedium: "WorkSans_500Medium",
   bodySemi: "WorkSans_600SemiBold",
   bodyBold: "WorkSans_700Bold",
+  bodyItalic: "WorkSans_400Regular_Italic",
 } as const;
 
 /**

@@ -66,8 +66,16 @@ export const FAQ_SEED: FaqSeed[] = [
   {
     categoryId: "general",
     question: "What exactly is BlackNexa?",
-    answer:
-      "A God-centered platform that combines a fact-driven AI news engine with community tools: a global social feed, geo-stamped incident reporting, an encrypted evidence vault, and automated routing to the authorities qualified to act on what you report.",
+    // Client-supplied copy (24 Sep 2026). Plain text: the app renders `\n` but
+    // not Markdown, so the client's bold labels are written as "Label:".
+    answer: [
+      "BlackNexa™ is a groundbreaking, God-centered ecosystem that combines a global social network with a social justice platform, designed to protect, connect, and empower Black, brown, and underserved communities. In plain terms, it is a mobile application that acts as both a digital shield for your personal safety and a wholesome digital home for your community.",
+      "What the App Does:",
+      "• The Godly Community Feed & Social Network: This is the heart of the app's social side. Spanning across local towns, U.S. cities, and international borders worldwide, it is a safe, peaceful space where people can connect, discuss business, share everyday life, and address social or political issues—all conducted in a godly manner with mutual respect, keeping God's commandments, and loving our neighbor as ourselves.",
+      "• The Injustice Pocket Recorder & Systemic Protection: If you ever face systemic racism, racial profiling, or unfair public encounters, this tool puts power directly back into the hands of the people. With a single tap, it records video while automatically locking in unalterable GPS coordinates, timestamps, and metadata. By capturing undeniable, objective evidence of systemic injustice on the spot, it prevents these incidents from being swept under the rug, deters misconduct through transparent accountability, and ensures accountability is enforced.",
+      "• Encrypted Evidence Vault & Automated Routing: Your captured recordings are securely backed up and structured so they can be automatically routed to the appropriate oversight bodies, human rights regulatory agencies, and legal advocates who have the authority to act on what you report.",
+      "• AI Fact-Check News Engine: A smart news engine that cuts straight through media spin and systemic bias to give you clear, fact-driven information on important topics.",
+    ].join("\n\n"),
     surfaces: ["website", "app"],
     startHere: true,
   },

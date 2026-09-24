@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/legal/legal-document";
-import { legalUpdated, privacySections } from "@/data/legal";
+import { privacySections, privacyUpdated } from "@/data/legal";
 import { siteConfig } from "@/data/site";
 
 const description = "How BlackNexa collects, protects, and handles your account and evidence data.";
@@ -22,5 +22,5 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function PrivacyPage() {
-  return <LegalDocument title="Privacy Policy" updated={legalUpdated} sections={privacySections} />;
+  return <LegalDocument title="Privacy Policy" updated={privacyUpdated} sections={privacySections} />;
 }

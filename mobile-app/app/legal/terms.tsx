@@ -35,7 +35,7 @@ export default function TermsScreen(): React.ReactElement {
 
       <Text variant="bodySm" color={colors.t3} center style={styles.footer}>{TERMS.footer}</Text>
       <Text variant="metaSm" color={colors.t4} center style={styles.tm}>
-        BlackNexa™ is a trademark pending with the USPTO. © {new Date().getFullYear()} BlackNexa.
+        © {new Date().getFullYear()} News Moves Markets Forex LLC. All Rights Reserved. BlackNexa™ is a trademark of News Moves Markets Forex LLC.
       </Text>
     </ScrollScreen>
   );

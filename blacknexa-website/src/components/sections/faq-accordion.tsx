@@ -30,7 +30,7 @@ export function FaqAccordion({ items }: { items: FaqItem[] }) {
               </span>
             </button>
             {open ? (
-              <p id={`faq-panel-${i}`} className="max-w-[66ch] pb-6 text-[15px] leading-[1.76] text-pretty text-text-secondary">
+              <p id={`faq-panel-${i}`} className="max-w-[66ch] whitespace-pre-line pb-6 text-[15px] leading-[1.76] text-pretty text-text-secondary">
                 {item.a}
               </p>
             ) : null}

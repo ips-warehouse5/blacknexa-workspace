@@ -131,8 +131,13 @@ export const privacySections: LegalSection[] = [
     n: "12",
     id: "p-controller",
     title: "Who we are",
+    // Client-supplied copy (24 Sep 2026), matching the mobile app's §12.
+    // `**…**` renders bold and `_…_` italic in LegalDocument.
     body: [
-      "BlackNexa is operated by NEWSMOVESMARKETSFOREX LLC, 6303 Waterford District Dr Ste 4002361, Miami, FL 33126-6002, United States. For any privacy question or request, write to legal@blacknexa.com.",
+      "• **BlackNexa™** is a trademark-pending brand and proprietary software ecosystem owned and licensed exclusively by **News Moves Markets Forex LLC**.",
+      "• **Scope of Protection:** The intellectual property, name, logo, underlying utility architecture (including the Injustice Pocket Recorder, AI Fact-Check News Engine, and global Community Feed), and brand rights are legally protected under United States trademark law (Serial Number: 99385360) covering software services (Class 042) and personal, legal, and social networking services (Class 045), and (Serial Number: 50068604) covering downloadable computer application software for mobile phones and downloadable software for social networking (Class 009).",
+      "• **Licensing Entity:** All rights, brand distribution, and platform developments are managed and operated under the authority of News Moves Markets Forex LLC.",
+      `_© ${new Date().getFullYear()} News Moves Markets Forex LLC. All Rights Reserved. BlackNexa™ is a trademark of News Moves Markets Forex LLC._`,
     ],
   },
   {
@@ -214,3 +219,5 @@ export const termsSections: LegalSection[] = [
 ];
 
 export const legalUpdated = "17 September 2026";
+/** The Privacy Policy moved on its own when §12 changed; Terms did not. */
+export const privacyUpdated = "24 September 2026";

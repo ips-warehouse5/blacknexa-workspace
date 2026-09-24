@@ -42,7 +42,7 @@ export function Footer() {
 
         <div className="mt-[52px] border-t border-border pt-[34px]">
           <p className="text-[13px]" style={{ color: "var(--bn-hero-secondary-text)" }}>
-            © {new Date().getFullYear()} BlackNexa. All rights reserved.
+            © {new Date().getFullYear()} News Moves Markets Forex LLC. All rights reserved.
           </p>
         </div>
       </div>

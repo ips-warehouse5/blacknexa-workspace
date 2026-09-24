@@ -50,7 +50,7 @@ export const legalDocuments: Record<string, LegalDocument> = {
       },
       {
         heading: "9. Trademark notice",
-        body: "BlackNexa™ is a trademark of BlackNexa with an application pending before the United States Patent and Trademark Office (USPTO). All brand assets, logos, and platform content are protected intellectual property.",
+        body: "BlackNexa™ is a trademark of News Moves Markets Forex LLC with an application pending before the United States Patent and Trademark Office (USPTO). All brand assets, logos, and platform content are protected intellectual property.",
       },
       {
         heading: "10. Changes",
