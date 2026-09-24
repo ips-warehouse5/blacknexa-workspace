@@ -3,13 +3,13 @@ import { siteConfig } from "@/data/site";
 import { getNewsArticles } from "@/data/news";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = ["", "/contact", "/privacy", "/terms", "/disclaimer", "/news"];
+  const staticRoutes = ["", "/waitlist", "/contact", "/privacy", "/terms", "/disclaimer", "/news"];
 
   const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((route) => ({
     url: `${siteConfig.url}${route}`,
     lastModified: new Date(),
     changeFrequency: route === "" || route === "/news" ? "weekly" : "monthly",
-    priority: route === "" ? 1 : route === "/news" ? 0.8 : 0.6,
+    priority: route === "" ? 1 : route === "/waitlist" ? 0.9 : route === "/news" ? 0.8 : 0.6,
   }));
 
   // Article URLs are never hardcoded — pulled live from the backend so the

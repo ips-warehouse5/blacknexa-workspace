@@ -1,4 +1,5 @@
 import { HashLink } from "@/components/ui/hash-link";
+import { HomeLink } from "@/components/ui/home-link";
 import { BlackNexaLogo } from "@/components/ui/logo";
 import {
   footerCompanyLinks,
@@ -16,9 +17,13 @@ export function Footer() {
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(196px,1fr))] gap-[30px]">
           <div>
-            <span style={{ color: "var(--bn-hero-text)" }}>
+            <HomeLink
+              aria-label="BlackNexa home"
+              className="inline-flex"
+              style={{ color: "var(--bn-hero-text)" }}
+            >
               <BlackNexaLogo size={26} />
-            </span>
+            </HomeLink>
             <p className="mt-[18px] text-sm tracking-wide" style={{ color: "var(--bn-hero-secondary-text)" }}>
               {siteConfig.tagline}
             </p>

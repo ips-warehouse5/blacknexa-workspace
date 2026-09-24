@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { ReferralLink } from "@/components/sections/referral-link";
+import { siteConfig } from "@/data/site";
 
 type Status = "idle" | "sending" | "success" | "error";
 
@@ -15,10 +17,19 @@ const PHONE_DIGITS_MAX = 13;
 const PHONE_INPUT_MIN_LENGTH = PHONE_DIGITS_MIN;
 const PHONE_INPUT_MAX_LENGTH = 13;
 
+// TODO: queue position + referral link are hidden from the success message
+// for now (client decision pending). Set to true to show them again — the
+// API still returns both, nothing else needs to change.
+const SHOW_QUEUE_AND_REFERRAL = false;
+
+/** Queue position and referral code; absent if the API returned neither. */
+type Receipt = { position?: number; referralCode?: string };
+
 async function submitWaitlist(payload: {
   email: string;
   phone: string;
-}): Promise<void> {
+  referredBy?: string;
+}): Promise<Receipt> {
   const res = await fetch("/api/waitlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,14 +41,34 @@ async function submitWaitlist(payload: {
       data?.error ?? "Something went wrong on our end — try again.",
     );
   }
+  const data = await res.json().catch(() => null);
+  return {
+    position: typeof data?.position === "number" ? data.position : undefined,
+    referralCode:
+      typeof data?.referralCode === "string" ? data.referralCode : undefined,
+  };
 }
 
 export function WaitlistForm({
   variant = "hero",
   idPrefix,
+  referredBy,
+  copy,
+  allowPhone = true,
 }: {
   variant?: "hero" | "cta";
   idPrefix: string;
+  /** Referral code from the `?ref=` of the link that brought the visitor. */
+  referredBy?: string;
+  /** Wording overrides — the /waitlist funnel uses the client's exact copy. */
+  copy?: {
+    placeholder?: string;
+    submit?: string;
+    successTitle?: string;
+    sharePrompt?: string;
+  };
+  /** Hide the optional phone field for a one-field, email-only form. */
+  allowPhone?: boolean;
 }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -45,6 +76,7 @@ export function WaitlistForm({
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [receipt, setReceipt] = useState<Receipt>({});
 
   const isHero = variant === "hero";
   // The hero variant sits on the Hero section, which switches
@@ -110,7 +142,7 @@ export function WaitlistForm({
     setPhoneError("");
     setStatus("sending");
     try {
-      await submitWaitlist({ email, phone });
+      setReceipt(await submitWaitlist({ email, phone, referredBy }));
       setStatus("success");
     } catch (err) {
       setStatus("idle");
@@ -123,6 +155,8 @@ export function WaitlistForm({
   }
 
   if (status === "success") {
+    const ink = isHero ? "var(--bn-feature-ink)" : "var(--bn-text-primary)";
+    const ink2 = isHero ? "var(--bn-feature-ink2)" : "var(--bn-text-secondary)";
     return (
       <div
         role="status"
@@ -134,23 +168,39 @@ export function WaitlistForm({
       >
         <h3
           className="font-serif text-[26px] font-semibold"
-          style={{
-            color: isHero ? "var(--bn-feature-ink)" : "var(--bn-text-primary)",
-          }}
+          style={{ color: ink }}
         >
-          You&rsquo;re on the list.
+          {copy?.successTitle ?? <>You&rsquo;re on the list.</>}
         </h3>
-        <p
-          className="mt-3 text-[15px] leading-[1.6]"
-          style={{
-            color: isHero
-              ? "var(--bn-feature-ink2)"
-              : "var(--bn-text-secondary)",
-          }}
-        >
+        {SHOW_QUEUE_AND_REFERRAL && receipt.position ? (
+          <p
+            className="mt-4 inline-block rounded-[3px] border border-accent px-4 py-2.5 text-[15px] text-accent-text"
+          >
+            Priority Queue Position:{" "}
+            <strong className="font-semibold">
+              #{receipt.position.toLocaleString("en-US")}
+            </strong>
+          </p>
+        ) : null}
+        <p className="mt-3 text-[15px] leading-[1.6]" style={{ color: ink2 }}>
           We&rsquo;ll email you the moment BlackNexa hits the App Store and
           Google Play.
         </p>
+        {SHOW_QUEUE_AND_REFERRAL && receipt.referralCode ? (
+          <>
+            <p
+              className="mt-5 text-[14.5px] leading-[1.6]"
+              style={{ color: ink2 }}
+            >
+              {copy?.sharePrompt ??
+                "Want to move up? Share your link with your community — every person who joins through it moves you closer to the front."}
+            </p>
+            <ReferralLink
+              className="mt-3"
+              link={`${siteConfig.url}/waitlist?ref=${encodeURIComponent(receipt.referralCode)}`}
+            />
+          </>
+        ) : null}
       </div>
     );
   }
@@ -169,7 +219,10 @@ export function WaitlistForm({
             autoComplete="email"
             aria-invalid={!!error}
             aria-describedby={`${idPrefix}-msg`}
-            placeholder="Enter your email for pre-launch app store alerts…"
+            placeholder={
+              copy?.placeholder ??
+              "Enter your email for pre-launch app store alerts…"
+            }
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -191,7 +244,9 @@ export function WaitlistForm({
           ) : null}
           {status === "sending"
             ? "Securing…"
-            : isHero
+            : copy?.submit
+              ? copy.submit
+              : isHero
               ? "Secure Your Spot"
               : "Join the Global Movement"}
         </Button>
@@ -219,7 +274,7 @@ export function WaitlistForm({
         {error}
       </p>
 
-      {showPhone ? (
+      {!allowPhone ? null : showPhone ? (
         <div className="mt-2.5">
           <label
             htmlFor={`${idPrefix}-phone`}

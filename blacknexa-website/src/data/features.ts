@@ -41,8 +41,8 @@ export const services: { title: string; body: string; icon: IconName }[] = [
     icon: "news",
   },
   {
-    title: "Geo-Stamp Incident Reporting",
-    body: "Record what is happening and capture the exact location, date, and time as it happens.",
+    title: "Pocket Reporting Tool",
+    body: "Geo-stamped incident reporting: record what is happening and capture the exact location, date, and time as it happens, building an unalterable paper trail.",
     icon: "geo",
   },
   {
@@ -205,7 +205,7 @@ export const reportingSteps: {
     num: "03",
     icon: "dispatch",
     title: "Vetting & Direct Dispatch",
-    body: "Once verified through our careful vetting process, our trademark-pending technology service allows the system to securely route your report straight to the proper legal teams, human rights organizations, civil rights agencies, or press entities. Your voice is heard, the truth is documented, and accountability is locked in.",
+    body: "Once verified through our careful vetting process, our trademark-pending technology service allows the system to securely route your report straight to the proper legal teams, human rights organizations, civil rights agencies, or press entities, with verified high-priority incidents pushed to the BlackNexa News Network (NOC) and independent media partners. Your voice is heard, the truth is documented, and accountability is locked in.",
   },
 ];
 
@@ -279,6 +279,7 @@ export const newsCategories: { title: string; body: string; icon: IconName }[] =
     },
   ];
 
+/** Used by ReferralSection (currently not rendered — see its doc comment). */
 export const referralSteps: {
   num: string;
   title: string;

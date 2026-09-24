@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Hero } from "@/components/sections/hero";
 import { ProofBar } from "@/components/sections/proof-bar";
 import { FaithSection } from "@/components/sections/faith-section";
@@ -14,8 +15,9 @@ import { WhyChooseSection } from "@/components/sections/why-choose-section";
 import { SecuritySection } from "@/components/sections/security-section";
 import { ImpactSection } from "@/components/sections/impact-section";
 import { PromoSection } from "@/components/sections/promo-section";
-import { WaitlistSection } from "@/components/sections/waitlist-section";
-import { ReferralSection } from "@/components/sections/referral-section";
+// TODO: "Secure your spot before launch" section hidden — sign-ups now go
+// through /waitlist (client funnel brief). Uncomment here and below to restore.
+// import { WaitlistSection } from "@/components/sections/waitlist-section";
 import { FinalCtaSection } from "@/components/sections/final-cta-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { ContactTeaserSection } from "@/components/sections/contact-teaser-section";
@@ -24,6 +26,10 @@ import { DisclaimerSummarySection } from "@/components/sections/disclaimer-summa
 // Server-rendered on every request (not a static build artifact) — the News
 // section's data must always reflect the backend's current state.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function HomePage() {
   return (
@@ -44,8 +50,7 @@ export default function HomePage() {
       <SecuritySection />
       <ImpactSection />
       <PromoSection />
-      <WaitlistSection />
-      <ReferralSection />
+      {/* TODO: hidden, see import note above. <WaitlistSection /> */}
       <FinalCtaSection />
       <FaqSection />
       <ContactTeaserSection />

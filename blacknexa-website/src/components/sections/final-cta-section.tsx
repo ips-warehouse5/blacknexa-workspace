@@ -46,7 +46,7 @@ export function FinalCtaSection() {
             className="text-[11px] font-semibold tracking-[0.18em]"
             style={{ color: "var(--bn-hero-secondary-text)" }}
           >
-            DOWNLOAD THE APP TODAY
+            COMING SOON TO iOS AND ANDROID
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <span
@@ -76,7 +76,7 @@ export function FinalCtaSection() {
         </div>
 
         <HashLink
-          href="/#waitlist"
+          href="/waitlist"
           className="mt-[34px] inline-flex min-h-[48px] items-center justify-center rounded-[3px] bg-accent px-[30px] py-[17px] text-[15px] font-semibold text-accent-foreground transition-[filter] hover:brightness-110"
         >
           Join the Global Movement
