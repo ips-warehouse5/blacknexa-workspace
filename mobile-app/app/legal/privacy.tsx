@@ -55,8 +55,8 @@ export default function PrivacyScreen(): React.ReactElement {
         {PRIVACY.footer}
       </Text>
       <Text variant="metaSm" color={colors.t4} center style={styles.tm}>
-        © 2026 News Moves Markets Forex LLC. All Rights Reserved. BlackNexa™ is
-        a trademark of News Moves Markets Forex LLC.
+        © {new Date().getFullYear()} News Moves Markets Forex LLC. All Rights
+        Reserved. BlackNexa™ is a trademark of News Moves Markets Forex LLC.
       </Text>
     </ScrollScreen>
   );
