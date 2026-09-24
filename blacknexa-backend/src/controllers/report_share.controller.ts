@@ -26,9 +26,13 @@
  *     line of D10's card.
  *
  * ── Who can open it ───────────────────────────────────────────────────────
- * A public report needs no token: it is already in the community feed. Anything
- * narrower needs the `?t=` token the owner minted, and a revoked token is a 404 —
- * not a 403, which would confirm the report exists.
+ * Only a *published* report (`moderation_state = 'approved'`, docs/
+ * INCIDENT_MODULE_PLAN.md §7.3) that is not private (D3). A public one needs no
+ * token: it is already in the community feed, and a non-owner who taps Share is
+ * handed exactly this plain URL (review R11). A Trusted-Circle one needs the
+ * `?t=` token its author minted — a token minted by anyone else, or a revoked
+ * one, is a 404 (review R7) — not a 403, which would confirm the report exists.
+ * Everything else is the same 404 page.
  */
 
 import type { Request, Response } from "express";
@@ -114,16 +118,31 @@ class ReportShareController {
     }
 
     /*
+     * Published and shareable, or nothing (§7.3, D3). A report still waiting for
+     * its automated check — or held, rejected or taken down — is not on the page
+     * even with a valid token: a link must never be a way around moderation. A
+     * private report is never shown here at all, token or not; share links were
+     * the only way a private report could reach anyone else, so they are refused
+     * at minting and ignored here (the migration revoked the old ones).
+     */
+    if (report.moderation_state !== "approved" || report.visibility === "private") {
+      this.notFound(res);
+      return;
+    }
+
+    /*
      * A public report is already readable by anyone. Anything narrower needs the
-     * token, checked against a live row — so revoking a link in the app actually
-     * closes the page rather than only hiding the button.
+     * token, checked against a live row minted by the report's own author — so
+     * revoking a link in the app actually closes the page rather than only hiding
+     * the button, and a link a non-owner minted before revision 2 never opens a
+     * Trusted-Circle report (review R7).
      */
     if (report.visibility !== "public") {
       if (!token) {
         this.notFound(res);
         return;
       }
-      const valid = await reportService.resolveShareToken(token, report.id);
+      const valid = await reportService.resolveShareToken(token, report);
       if (!valid) {
         this.notFound(res);
         return;

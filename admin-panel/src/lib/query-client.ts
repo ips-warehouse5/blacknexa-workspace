@@ -68,6 +68,35 @@ export const queryKeys = {
     summary: ["faq", "summary"] as const,
     categories: ["faq", "categories"] as const,
   },
+  moderation: {
+    all: ["moderation"] as const,
+    list: (params: unknown) => ["moderation", "list", params] as const,
+    detail: (id: string) => ["moderation", "detail", id] as const,
+    summary: ["moderation", "summary"] as const,
+    stats: ["moderation", "stats"] as const,
+  },
+  keywordRules: {
+    all: ["keywordRules"] as const,
+    list: (params: unknown) => ["keywordRules", "list", params] as const,
+  },
+  incidents: {
+    all: ["incidents"] as const,
+    list: (params: unknown) => ["incidents", "list", params] as const,
+    detail: (id: string) => ["incidents", "detail", id] as const,
+    summary: (params: unknown) => ["incidents", "summary", params] as const,
+    assignees: ["incidents", "assignees"] as const,
+  },
+  /**
+   * What only the dashboard reads. Its KPI tiles reuse the modules' own
+   * summary keys (so a decision anywhere refreshes them); these are the
+   * dashboard's aggregates and its urgent-incident slice, which no decision
+   * invalidates — they refetch on a short interval instead.
+   */
+  dashboard: {
+    all: ["dashboard"] as const,
+    metrics: (range: unknown) => ["dashboard", "metrics", range] as const,
+    urgentIncidents: (params: unknown) => ["dashboard", "urgentIncidents", params] as const,
+  },
 } as const;
 
 export default queryClient;

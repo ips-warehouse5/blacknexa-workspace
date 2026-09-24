@@ -16,9 +16,29 @@
  * Push is lossy: a device can be offline, a token can go stale, a permission can
  * be revoked. The notification centre has to be complete, so the row is the
  * record and the push is a best-effort copy.
+ *
+ * ── Notifying from inside a transaction (D18) ──────────────────────────────
+ * `create()` takes no transaction, so every writer that had to notify as part
+ * of a larger change (a status transition, a reply, a corroboration) called
+ * `Notification.create` directly — and those pushes never fired at all.
+ * `createInTx()` fixes that: it writes the row in the caller's transaction and
+ * appends a `PendingPush` to a list the caller owns. Once the transaction has
+ * *resolved successfully*, the caller hands that list to `dispatchPushes()`.
+ *
+ * It deliberately does not use `transaction.afterCommit`: in Sequelize 6.37 the
+ * after-commit hooks run even when the COMMIT itself fails, which would push a
+ * notification whose row was rolled back. An explicit list dispatched after
+ * `await sequelize.transaction(...)` returns is the only ordering that is
+ * actually "after a successful commit".
+ *
+ * ── `moderation_notice` ────────────────────────────────────────────────────
+ * The fifth kind ("Your comment was removed"). It respects the member's
+ * notification preference like every kind except `urgent_safety`, and it never
+ * carries the removed text — no unmoderated member text in any notification,
+ * push or email (docs/INCIDENT_MODULE_PLAN.md §0).
  */
 
-import { Op } from "sequelize";
+import { Op, type Transaction } from "sequelize";
 import env from "@/config/env.config";
 import logger, { runBackground } from "@/utils/logger.util";
 import { nowIso } from "@/models/model_options";
@@ -49,10 +69,42 @@ export interface CreateNotification {
   reportId?: string;
 }
 
+/**
+ * A push owed for a notification row written inside a transaction. Collected
+ * by the caller and handed to `dispatchPushes()` after the transaction has
+ * committed — never before, and never if it rolled back.
+ */
+export interface PendingPush {
+  notificationId: string;
+  input: CreateNotification;
+}
+
+/** Title and body limits of the `notifications` columns. */
+const TITLE_MAX = 200;
+const BODY_MAX = 512;
+
 class NotificationService {
   /** `urgent_safety` is exempt from the preference — see the file header. */
   private ignoresPreference(type: NotificationType): boolean {
     return type === "urgent_safety";
+  }
+
+  /**
+   * How loudly a kind is delivered. Only `urgent_safety` makes a sound and asks
+   * for high priority; a moderation notice is news about your own content, not
+   * an alarm, so it is delivered like a status change.
+   */
+  private pushStyle(type: NotificationType): { sound: "default" | null; priority: "high" | "normal" } {
+    switch (type) {
+      case "urgent_safety":
+        return { sound: "default", priority: "high" };
+      case "status_change":
+      case "corroboration_or_reply":
+      case "dispatch_ready":
+      case "moderation_notice":
+      default:
+        return { sound: null, priority: "normal" };
+    }
   }
 
   /**
@@ -75,6 +127,64 @@ class NotificationService {
     });
 
     runBackground(this.push(row.id, input), "push notification");
+  }
+
+  /**
+   * Write a notification row inside `tx` and owe its push.
+   *
+   * The push descriptor is appended to `pendingPushes`; the caller dispatches
+   * the list with `dispatchPushes()` once the transaction has resolved. If the
+   * transaction rolls back the row is gone and the caller simply drops the list.
+   * Returns the new row's id.
+   */
+  async createInTx(
+    tx: Transaction,
+    input: CreateNotification,
+    pendingPushes: PendingPush[],
+  ): Promise<string> {
+    // The push says exactly what the row says.
+    const stored: CreateNotification = {
+      ...input,
+      title: input.title.slice(0, TITLE_MAX),
+      body: input.body != null ? input.body.slice(0, BODY_MAX) : undefined,
+    };
+    const row = await Notification.create(
+      {
+        user_id: stored.userId,
+        type: stored.type,
+        title: stored.title,
+        body: stored.body ?? null,
+        link: stored.link ?? null,
+        report_id: stored.reportId ?? null,
+        created_at: nowIso(),
+      },
+      { transaction: tx },
+    );
+    pendingPushes.push({ notificationId: row.id, input: stored });
+    return row.id;
+  }
+
+  /**
+   * Deliver the pushes owed by a committed transaction.
+   *
+   * Call only after `await sequelize.transaction(...)` resolved. Each push runs
+   * detached through `runBackground`, so this returns immediately, never throws
+   * and must not be awaited by a request path. The list is emptied as it is
+   * taken, so dispatching the same list twice cannot push twice.
+   */
+  dispatchPushes(pendingPushes: PendingPush[]): void {
+    const owed = pendingPushes.splice(0, pendingPushes.length);
+    for (const pending of owed) {
+      try {
+        runBackground(this.push(pending.notificationId, pending.input), "push notification");
+      } catch (err) {
+        // `push` is async, so this is unreachable in practice — but a request
+        // that already committed must not fail over a best-effort copy.
+        logger.warn("[push] dispatch failed", {
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
   }
 
   /** Deliver to every live session for the member. */
@@ -107,8 +217,7 @@ class NotificationService {
             // Every push carries its destination: a notification that dumps the
             // reader on the feed to go hunting is a failed notification.
             data: { link: input.link ?? null, reportId: input.reportId ?? null },
-            sound: input.type === "urgent_safety" ? "default" : null,
-            priority: input.type === "urgent_safety" ? "high" : "normal",
+            ...this.pushStyle(input.type),
           })),
         ),
       });

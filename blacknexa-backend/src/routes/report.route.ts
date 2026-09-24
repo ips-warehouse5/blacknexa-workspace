@@ -12,13 +12,29 @@
  * The static paths — `/drafts`, `/facets`, `/search`, `/evidence` — are declared
  * before `/:id`, or `/:id` would swallow them and `GET /reports/search` would look
  * up a report whose reference is the word "search".
+ *
+ * ── Limiters (docs/INCIDENT_MODULE_PLAN.md §7.6, §7.9) ─────────────────────
+ * The wizard's writes — drafts, evidence, filing — use `userWriteLimiter`, keyed
+ * by the member rather than the IP, so a shared carrier-grade NAT cannot exhaust
+ * a whole neighbourhood's filings. Flags use `flagLimiter` (a per-window and a
+ * per-day budget per member). Every other write keeps the per-IP `writeLimiter`.
+ *
+ * ── Reads ─────────────────────────────────────────────────────────────────
+ * `optionalAuth` attaches only a member token with a live session; each handler
+ * applies the one visibility rule (`report_visibility.ts`), so an unpublished,
+ * private or deleted report is a 404 to everyone but its author.
  */
 
 import { Router } from "express";
 import reportController from "@/controllers/report.controller";
 import { validate } from "@/middlewares/validate.middleware";
 import { userAuthGuard, optionalAuth } from "@/middlewares/auth.middleware";
-import { readLimiter, writeLimiter } from "@/middlewares/rate_limit.middleware";
+import {
+  flagLimiter,
+  readLimiter,
+  userWriteLimiter,
+  writeLimiter,
+} from "@/middlewares/rate_limit.middleware";
 import { asyncHandler } from "@/middlewares/error.middleware";
 
 const router = Router();
@@ -28,7 +44,7 @@ const router = Router();
 router.post(
   "/drafts",
   userAuthGuard,
-  writeLimiter,
+  userWriteLimiter,
   validate("reports.saveDraft"),
   asyncHandler((req, res) => reportController.saveDraft(req, res)),
 );
@@ -51,7 +67,7 @@ router.get(
 router.delete(
   "/drafts/:id",
   userAuthGuard,
-  writeLimiter,
+  userWriteLimiter,
   validate("reports.draftId"),
   asyncHandler((req, res) => reportController.discardDraft(req, res)),
 );
@@ -61,7 +77,7 @@ router.delete(
 router.post(
   "/evidence/presign",
   userAuthGuard,
-  writeLimiter,
+  userWriteLimiter,
   validate("reports.presignEvidence"),
   asyncHandler((req, res) => reportController.presignEvidence(req, res)),
 );
@@ -70,7 +86,7 @@ router.post(
 router.post(
   "/evidence/:id/commit",
   userAuthGuard,
-  writeLimiter,
+  userWriteLimiter,
   validate("reports.commitEvidence"),
   asyncHandler((req, res) => reportController.commitEvidence(req, res)),
 );
@@ -78,7 +94,7 @@ router.post(
 router.delete(
   "/evidence/:id",
   userAuthGuard,
-  writeLimiter,
+  userWriteLimiter,
   validate("reports.evidenceId"),
   asyncHandler((req, res) => reportController.removeEvidence(req, res)),
 );
@@ -113,7 +129,7 @@ router.get(
 router.post(
   "/",
   userAuthGuard,
-  writeLimiter,
+  userWriteLimiter,
   validate("reports.file"),
   asyncHandler((req, res) => reportController.file(req, res)),
 );
@@ -171,7 +187,7 @@ router.post(
 router.post(
   "/:id/flags",
   userAuthGuard,
-  writeLimiter,
+  flagLimiter,
   validate("reports.flag"),
   asyncHandler((req, res) => reportController.flag(req, res)),
 );
@@ -235,7 +251,7 @@ commentRouter.post(
 commentRouter.post(
   "/:id/flags",
   userAuthGuard,
-  writeLimiter,
+  flagLimiter,
   validate("comments.flag"),
   asyncHandler((req, res) => reportController.flagComment(req, res)),
 );

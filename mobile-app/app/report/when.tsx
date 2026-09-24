@@ -16,7 +16,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker, {
   type DateTimePickerEvent,
@@ -24,7 +23,7 @@ import DateTimePicker, {
 import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { Checkbox, SegmentedControl, SwitchRow } from "@/components/ui/Controls";
-import { WizardShell, cardHairline } from "@/components/report/WizardShell";
+import { WizardShell, cardHairline, useStepNavigation } from "@/components/report/WizardShell";
 import { Chevron } from "@/app/report/details";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
@@ -48,8 +47,9 @@ function startOfDayOffset(days: number): Date {
 export default function WhenStep(): React.ReactElement {
   useThemeSync();
   const insets = useSafeAreaInsets();
-  const { payload, patch, setStep, savedAt } = useReportDraft();
+  const { payload, patch, savedAt } = useReportDraft();
   const exit = useWizardExit();
+  const { back, advance } = useStepNavigation(3);
 
   // Ensure we always have a valid Date instance and never an invalid Date or Unix epoch 0
   const initialDate = useMemo(() => {
@@ -177,9 +177,8 @@ export default function WhenStep(): React.ReactElement {
       return;
     }
     commit({ when: occurred });
-    setStep(4);
-    router.push("/report/where");
-  }, [commit, happeningNow, occurred, setStep]);
+    advance();
+  }, [advance, commit, happeningNow, occurred]);
 
   /** Which quick chip matches the current date, if any. */
   const activeQuick = useMemo<QuickChoice | null>(() => {
@@ -196,7 +195,7 @@ export default function WhenStep(): React.ReactElement {
       stepName="Date & time"
       savedAt={savedAt}
       onClose={exit}
-      onBack={() => router.back()}
+      onBack={back}
       onNext={next}
       problem={problem}
       testID="wizard-when"

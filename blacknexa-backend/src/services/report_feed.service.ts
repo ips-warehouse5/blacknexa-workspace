@@ -15,6 +15,27 @@
  * 3. **The card variant is decided server-side.** The 1a card needs to know
  *    whether it has a lead image before it renders, or it cannot pick a height and
  *    the list janks. So `leadMedia` and `mediaCount` come down with the row.
+ *
+ * ── Revision 2: only published reports (docs/INCIDENT_MODULE_PLAN.md §7.3) ──
+ * Every public read here — page, facets, search and the "did you mean" corpus —
+ * starts from `visibleWhere(viewer)` in `report_visibility.ts`: not deleted,
+ * **approved**, and a visibility the viewer's role admits. Before this a public
+ * report was in the feed, the counts and the suggestions the instant it was
+ * filed, and the suggestion corpus even read the titles of private reports.
+ *
+ * The public feed is ordered by `published_at` (D11), set on first approval and
+ * never moved by an edit — so a report a moderator approved hours after filing is
+ * not back-dated behind newer ones, and an edited report does not jump the queue.
+ * B2's When filter counts from publication too. The owner's Vault (`mine`) keeps
+ * `filed_at`, the date the author knows, and adds the fields the Vault needs to
+ * say where each report is (§7.4): `status`, `moderationState`, `displayStatus`,
+ * with the `displayStatus` chip filter.
+ *
+ * Evidence on a public card follows D22: the lead image is an *approved* file,
+ * and `mediaCount` counts what the detail view will list (approved files plus
+ * those awaiting review), never a rejected file or a failed upload. A file
+ * approved on its preview alone leads the card through that preview only — the
+ * card never carries a URL to an original nobody assessed (review R5).
  */
 
 import { Op, QueryTypes, type WhereOptions } from "sequelize";
@@ -23,6 +44,14 @@ import { Report, ReportEvidence } from "@/models/report.model";
 import { ReportHide, ReportSupport } from "@/models/report_social.model";
 import { AppUser } from "@/models/app_user.model";
 import evidenceService from "@/services/evidence.service";
+import {
+  evidenceAccessFor,
+  evidenceIsOpenable,
+  readableVisibilities,
+  visibleWhere,
+  type Viewer,
+} from "@/services/report_visibility";
+import { displayStatusFilter, displayStatusOf } from "@/types/moderation.interface";
 import type {
   FeedCardView,
   FeedFacets,
@@ -77,31 +106,30 @@ function sinceFor(when: FeedQuery["when"]): Date | null {
 
 class ReportFeedService {
   /**
-   * Build the shared WHERE.
+   * Build the shared WHERE for the public feed, facets and search.
    *
    * `omit` lets the facet pass drop one dimension — see point 1 in the header.
    */
   private buildWhere(
     query: FeedQuery,
-    viewerRole: string | null,
+    viewer: Viewer,
     hiddenIds: string[],
     omit?: "category" | "when" | "verified" | "urgent",
   ): WhereOptions {
     const where: Record<string, unknown> = {
-      // A deleted report leaves every read path immediately — D2's promise.
-      deleted_at: null,
+      // Not deleted, approved, and a visibility this viewer may read (§3.2).
+      ...visibleWhere(viewer),
+      // In the feed means published: D11's sort key must exist. An approved row
+      // without it would be an invariant breach, and Postgres sorts NULLs first
+      // on DESC — it would pin itself to the top of everyone's feed.
+      published_at: { [Op.ne]: null },
     };
-
-    // Trusted Circle is advocate-only; private is never in a feed. Moderators
-    // read through `/admin/moderation`, not through the member feed.
-    where.visibility =
-      viewerRole === "advocate" ? { [Op.in]: ["public", "trusted"] } : "public";
 
     if (query.category && omit !== "category") where.category = query.category;
 
     if (omit !== "when") {
       const since = sinceFor(query.when);
-      if (since) where.filed_at = { [Op.gte]: since.toISOString() };
+      if (since) where.published_at = { [Op.gte]: since.toISOString() };
     }
 
     if (query.verifiedOnly && omit !== "verified") where.status = "verified";
@@ -122,40 +150,60 @@ class ReportFeedService {
     return rows.map((row) => row.report_id);
   }
 
-  /** Which column each sort orders by, and its direction. */
-  private sortColumn(sort: FeedQuery["sort"]): { column: string; op: symbol } {
+  /**
+   * Which column each sort orders by. The public feed's "newest" is publication
+   * (D11); the Vault's is filing.
+   */
+  private sortColumn(sort: FeedQuery["sort"], mine: boolean): { column: string; op: symbol } {
     switch (sort) {
       case "supported":
         return { column: "support_count", op: Op.lt };
       case "corroborated":
         return { column: "corroboration_count", op: Op.lt };
       default:
-        return { column: "filed_at", op: Op.lt };
+        return { column: mine ? "filed_at" : "published_at", op: Op.lt };
     }
+  }
+
+  /** The Vault's WHERE: the caller's own reports, any visibility, any state. */
+  private mineWhere(query: FeedQuery, viewerId: string): Record<string, unknown> {
+    const where: Record<string, unknown> = { user_id: viewerId, deleted_at: null };
+    if (query.displayStatus) {
+      // The inverse of `displayStatusOf` (§3.2), so a chip returns exactly the
+      // cards that show that chip's label.
+      const filter = displayStatusFilter(query.displayStatus);
+      where.moderation_state = filter.moderationState;
+      if (filter.statuses) where.status = { [Op.in]: [...filter.statuses] };
+      if (filter.visibility === "private") where.visibility = "private";
+      else if (filter.visibility === "not_private") where.visibility = { [Op.ne]: "private" };
+    }
+    return where;
   }
 
   /**
    * B1 — a page of the feed.
    *
    * `mine` switches to the Vault's view: the caller's own reports at every
-   * visibility, including private ones and drafts-turned-reports.
+   * visibility and every publication state, with the owner-only card fields.
+   * Drafts themselves come from `/reports/drafts`.
    */
   async page(
     query: FeedQuery,
-    viewer: { id: string | null; role: string | null },
+    viewer: Viewer,
   ): Promise<{ items: FeedCardView[]; nextCursor: string | null }> {
     const limit = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
-    const hidden = await this.hiddenFor(viewer.id);
+    const mine = Boolean(query.mine);
 
     let where: Record<string, unknown>;
-    if (query.mine) {
+    if (mine) {
       if (!viewer.id) return { items: [], nextCursor: null };
-      where = { user_id: viewer.id, deleted_at: null };
+      where = this.mineWhere(query, viewer.id);
     } else {
-      where = this.buildWhere(query, viewer.role, hidden) as Record<string, unknown>;
+      const hidden = await this.hiddenFor(viewer.id);
+      where = this.buildWhere(query, viewer, hidden) as Record<string, unknown>;
     }
 
-    const { column, op } = this.sortColumn(query.sort);
+    const { column, op } = this.sortColumn(query.sort, mine);
     const cursor = decodeCursor(query.cursor);
     if (cursor) {
       // Seek past the last row. The id tie-break keeps equal counts stable.
@@ -178,7 +226,7 @@ class ReportFeedService {
     const hasMore = rows.length > limit;
     const page = hasMore ? rows.slice(0, limit) : rows;
 
-    const items = await this.toCards(page, viewer.id);
+    const items = await this.toCards(page, viewer.id, { owner: mine });
     const last = page[page.length - 1];
     const nextCursor =
       hasMore && last
@@ -193,9 +241,13 @@ class ReportFeedService {
    *
    * Batched deliberately: the lead media, the author names and the caller's
    * standing-with set are three queries for the whole page rather than three per
-   * row.
+   * row. `owner` is true only for the Vault, whose rows are all the caller's own.
    */
-  private async toCards(rows: Report[], viewerId: string | null): Promise<FeedCardView[]> {
+  private async toCards(
+    rows: Report[],
+    viewerId: string | null,
+    options: { owner: boolean },
+  ): Promise<FeedCardView[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((row) => row.id);
 
@@ -228,16 +280,35 @@ class ReportFeedService {
 
     return Promise.all(
       rows.map(async (row) => {
-        const own = evidence.filter((item) => item.report_id === row.id);
+        // D22: what this viewer may know about. The owner sees every file.
+        const own = evidence.filter(
+          (item) =>
+            item.report_id === row.id && evidenceAccessFor(item, options.owner) !== "hidden",
+        );
+        // Only a file this viewer may open can lead the card — a file approved on
+        // its preview alone (R5) only through that preview.
+        const openable = own.filter((item) => {
+          if (item.upload_state !== "sealed") return false;
+          const access = evidenceAccessFor(item, options.owner);
+          return access === "full" || (evidenceIsOpenable(access) && Boolean(item.thumb_key));
+        });
         // The lead image is the first photo, else a video's poster. Audio- and
         // document-only reports have none, which is what selects the text-first
         // card variant — see the screens plan §3.3.
         const lead =
-          own.find((item) => item.kind === "photo" && item.upload_state === "sealed") ??
-          own.find((item) => item.kind === "video" && item.upload_state === "sealed") ??
+          openable.find((item) => item.kind === "photo") ??
+          openable.find((item) => item.kind === "video") ??
           null;
 
-        let leadView = lead ? await evidenceService.toView(lead) : null;
+        /*
+         * Projected for *this* viewer (review R5). This used to take `toView`'s
+         * staff default, so every card handed every reader a URL to the original
+         * — including one the AI never saw, because it assessed only the preview.
+         * A member now gets exactly the bytes the approval covered.
+         */
+        let leadView = lead
+          ? await evidenceService.toView(lead, { audience: options.owner ? "owner" : "member" })
+          : null;
 
         /*
          * A video only qualifies as lead media once it has a poster frame.
@@ -257,7 +328,7 @@ class ReportFeedService {
             ? "Anonymous"
             : nameById.get(row.user_id)?.trim() || "Anonymous";
 
-        return {
+        const card: FeedCardView = {
           id: row.id,
           caseRef: row.case_ref,
           title: row.title,
@@ -300,7 +371,19 @@ class ReportFeedService {
             : null,
           mediaCount: own.length,
           standingWith: standing.has(row.id),
-        } satisfies FeedCardView;
+        };
+
+        // The Vault's own fields (§7.4) — never on someone else's card.
+        if (options.owner) {
+          card.status = row.status;
+          card.moderationState = row.moderation_state;
+          card.displayStatus = displayStatusOf({
+            moderationState: row.moderation_state,
+            status: row.status,
+            visibility: row.visibility,
+          });
+        }
+        return card;
       }),
     );
   }
@@ -309,37 +392,35 @@ class ReportFeedService {
    * B1's chip counts and B2's per-option counts.
    *
    * Each dimension is counted with itself omitted from the filter — see point 1.
+   * Counted over published reports only, like the feed they describe.
    */
-  async facets(
-    query: FeedQuery,
-    viewer: { id: string | null; role: string | null },
-  ): Promise<FeedFacets> {
+  async facets(query: FeedQuery, viewer: Viewer): Promise<FeedFacets> {
     const hidden = await this.hiddenFor(viewer.id);
 
     const [total, categoryRows, verified, urgent, today, week, month, all] = await Promise.all([
-      Report.count({ where: this.buildWhere(query, viewer.role, hidden) }),
+      Report.count({ where: this.buildWhere(query, viewer, hidden) }),
       Report.findAll({
-        where: this.buildWhere(query, viewer.role, hidden, "category"),
+        where: this.buildWhere(query, viewer, hidden, "category"),
         attributes: ["category", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
         group: ["category"],
         raw: true,
       }) as unknown as Promise<{ category: ReportCategory; count: string }[]>,
       Report.count({
         where: {
-          ...(this.buildWhere(query, viewer.role, hidden, "verified") as object),
+          ...(this.buildWhere(query, viewer, hidden, "verified") as object),
           status: "verified",
         },
       }),
       Report.count({
         where: {
-          ...(this.buildWhere(query, viewer.role, hidden, "urgent") as object),
+          ...(this.buildWhere(query, viewer, hidden, "urgent") as object),
           urgent: true,
         },
       }),
-      Report.count({ where: this.buildWhere({ ...query, when: "today" }, viewer.role, hidden, "when") }),
-      Report.count({ where: this.buildWhere({ ...query, when: "week" }, viewer.role, hidden, "when") }),
-      Report.count({ where: this.buildWhere({ ...query, when: "month" }, viewer.role, hidden, "when") }),
-      Report.count({ where: this.buildWhere({ ...query, when: "all" }, viewer.role, hidden, "when") }),
+      Report.count({ where: this.buildWhere({ ...query, when: "today" }, viewer, hidden) }),
+      Report.count({ where: this.buildWhere({ ...query, when: "week" }, viewer, hidden) }),
+      Report.count({ where: this.buildWhere({ ...query, when: "month" }, viewer, hidden) }),
+      Report.count({ where: this.buildWhere({ ...query, when: "all" }, viewer, hidden) }),
     ]);
 
     const counts = new Map(categoryRows.map((row) => [row.category, Number(row.count)]));
@@ -368,7 +449,7 @@ class ReportFeedService {
   async search(
     term: string,
     query: FeedQuery,
-    viewer: { id: string | null; role: string | null },
+    viewer: Viewer,
   ): Promise<{ items: SearchResultView[]; suggestion: string | null }> {
     const trimmed = term.trim();
     if (!trimmed) return { items: [], suggestion: null };
@@ -381,7 +462,7 @@ class ReportFeedService {
     // area label and category are searchable; a description match is therefore
     // reported only when the term appears in the title's own words too. That is a
     // real limitation of sealing the body, and it is better stated than hidden.
-    const base = this.buildWhere(query, viewer.role, hidden) as Record<string, unknown>;
+    const base = this.buildWhere(query, viewer, hidden) as Record<string, unknown>;
     const rows = await Report.findAll({
       where: {
         ...base,
@@ -393,11 +474,14 @@ class ReportFeedService {
           sequelize.where(sequelize.fn("LOWER", sequelize.col("category")), { [Op.like]: like }),
         ],
       } as WhereOptions,
-      order: [["filed_at", "DESC"]],
+      order: [
+        ["published_at", "DESC"],
+        ["id", "DESC"],
+      ],
       limit,
     });
 
-    const cards = await this.toCards(rows, viewer.id);
+    const cards = await this.toCards(rows, viewer.id, { owner: false });
     const needle = trimmed.toLowerCase();
 
     const items: SearchResultView[] = cards.map((card, index) => {
@@ -410,7 +494,7 @@ class ReportFeedService {
       return { ...card, matchedIn, snippet: null };
     });
 
-    const suggestion = items.length === 0 ? await this.suggest(trimmed) : null;
+    const suggestion = items.length === 0 ? await this.suggest(trimmed, viewer) : null;
     return { items, suggestion };
   }
 
@@ -421,6 +505,11 @@ class ReportFeedService {
    * suggestion always leads somewhere — proposing a spelling with no results would
    * be a second dead end rather than a recovery.
    *
+   * The corpus is exactly what this viewer's search can return (§7.3): published,
+   * not deleted, and a visibility their role admits. It used to be every
+   * non-deleted report — private, trusted and still-unchecked titles included —
+   * so a word nobody else could read could surface in the "did you mean" line.
+   *
    * ── Why edit distance leads, and trigrams only break ties ─────────────────
    * The design's own example is `utcia` → `utica`, which is a transposition. Its
    * trigram similarity is **0.2** — below any threshold loose enough to be useful,
@@ -430,7 +519,7 @@ class ReportFeedService {
    * length so "cat" does not suggest "dog", and trigram similarity orders the
    * candidates that survive.
    */
-  private async suggest(term: string): Promise<string | null> {
+  private async suggest(term: string, viewer: Viewer): Promise<string | null> {
     const needle = term.toLowerCase().trim();
     // Multi-word terms are reduced to their longest word: B6 suggests a corrected
     // word inside the phrase ("utcia ave" → "utica"), not a whole re-phrasing.
@@ -455,12 +544,17 @@ class ReportFeedService {
     try {
       const rows = await sequelize.query<{ word: string }>(
         `
-        WITH corpus AS (
-          SELECT LOWER(unnest(string_to_array(title, ' '))) AS word
-          FROM reports WHERE deleted_at IS NULL
+        WITH visible AS (
+          SELECT title, location_label
+          FROM reports
+          WHERE deleted_at IS NULL
+            AND moderation_state = 'approved'
+            AND published_at IS NOT NULL
+            AND visibility IN (:visibilities)
+        ), corpus AS (
+          SELECT LOWER(unnest(string_to_array(title, ' '))) AS word FROM visible
           UNION ALL
-          SELECT LOWER(unnest(string_to_array(COALESCE(location_label, ''), ' '))) AS word
-          FROM reports WHERE deleted_at IS NULL
+          SELECT LOWER(unnest(string_to_array(COALESCE(location_label, ''), ' '))) AS word FROM visible
         ), candidates AS (
           SELECT DISTINCT regexp_replace(word, '[^a-z0-9]', '', 'g') AS word FROM corpus
         )
@@ -473,7 +567,10 @@ class ReportFeedService {
         ORDER BY levenshtein(word, :word) ASC, similarity(word, :word) DESC
         LIMIT 1
         `,
-        { replacements: { word, maxDistance }, type: QueryTypes.SELECT },
+        {
+          replacements: { word, maxDistance, visibilities: readableVisibilities(viewer) },
+          type: QueryTypes.SELECT,
+        },
       );
       return rows[0]?.word ?? null;
     } catch {

@@ -4,6 +4,10 @@ Persistence is optional. With no `DATABASE_URL` the engine runs stateless: the
 session factory is never created and every repository write becomes a no-op. That
 keeps the AI engine deployable on its own, which is the normal case — the run log
 is observability, not a dependency of generation.
+
+The asyncpg connect timeout is `DB_CONNECT_TIMEOUT_SECONDS` (5 s) instead of the
+driver's 60 s (review R19): a run-log database that drops packets should cost a
+write a few seconds, never a minute per request.
 """
 
 from __future__ import annotations
@@ -40,6 +44,13 @@ def _normalise_dsn(url: str) -> str:
     return url
 
 
+def _connect_args(dsn: str) -> dict[str, float]:
+    """Driver connect arguments. `timeout` is asyncpg's; other drivers get none."""
+    if dsn.startswith("postgresql+asyncpg://"):
+        return {"timeout": settings.db_connect_timeout_seconds}
+    return {}
+
+
 def init_engine() -> None:
     """Create the engine and session factory. No-op when persistence is disabled."""
     global _engine, _session_factory
@@ -50,12 +61,14 @@ def init_engine() -> None:
     if _engine is not None:
         return
 
+    dsn = _normalise_dsn(settings.database_url)
     _engine = create_async_engine(
-        _normalise_dsn(settings.database_url),
+        dsn,
         echo=settings.db_echo,
         pool_size=settings.db_pool_size,
         max_overflow=settings.db_pool_size,
         pool_pre_ping=True,
+        connect_args=_connect_args(dsn),
     )
     _session_factory = async_sessionmaker(
         _engine, class_=AsyncSession, expire_on_commit=False

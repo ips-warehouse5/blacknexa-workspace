@@ -19,6 +19,7 @@
 
 import path from "path";
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
@@ -29,6 +30,18 @@ import env from "@/config/env.config";
 import logger from "@/utils/logger.util";
 import { uuid } from "@/utils/id.util";
 import { sniffMediaType } from "@/utils/binary.util";
+
+/** An object larger than the caller's `maxBytes` — refused before it is drained. */
+export class ObjectTooLargeError extends Error {
+  constructor(
+    readonly key: string,
+    readonly bytes: number,
+    readonly limit: number,
+  ) {
+    super(`Object ${key} is ${bytes} bytes, over the ${limit}-byte limit`);
+    this.name = "ObjectTooLargeError";
+  }
+}
 
 class S3Service {
   private client: S3Client | null = null;
@@ -129,18 +142,74 @@ class S3Service {
    * Added for evidence sealing: on commit the server hashes the stored bytes and
    * compares them to the SHA-256 the client declared, so "Sealed" on screens C5,
    * C9, D3 and D12 is a statement the server has actually verified rather than one
-   * it has taken on trust. Bounded by `MAX_UPLOAD_BYTES`, which the presign step
-   * has already enforced.
+   * it has taken on trust. Pass `maxBytes` to bound it: the presign step checks
+   * the size the client *declares*, but a presigned PUT does not enforce it.
    */
-  async getObjectBytes(key: string): Promise<Buffer> {
+  async getObjectBytes(key: string, options: { maxBytes?: number } = {}): Promise<Buffer> {
+    return (await this.getObject(key, options)).bytes;
+  }
+
+  /**
+   * Read an object with its ETag — what evidence sealing needs to bind a later
+   * copy to the exact bytes it hashed (`copyObject`'s `ifMatchEtag`, review R5).
+   *
+   * `maxBytes` refuses an object larger than the caller will hold in memory
+   * before draining it. A presigned PUT does not bound the upload's size — the
+   * `bytes` declared at presign is only a claim — so without this a member could
+   * park a multi-gigabyte "preview" and have the commit read it all.
+   */
+  async getObject(
+    key: string,
+    options: { maxBytes?: number } = {},
+  ): Promise<{ bytes: Buffer; etag: string | null; contentType: string | null }> {
     const response = await this.getClient().send(
       new GetObjectCommand({ Bucket: env.storage.s3Bucket, Key: key }),
     );
     if (!response.Body) throw new Error(`Object ${key} has no body`);
+    const limit = options.maxBytes;
+    if (limit !== undefined && typeof response.ContentLength === "number" && response.ContentLength > limit) {
+      // Close the stream rather than draining bytes nobody will read.
+      (response.Body as { destroy?: () => void }).destroy?.();
+      throw new ObjectTooLargeError(key, response.ContentLength, limit);
+    }
     // `transformToByteArray` is the SDK v3 way to drain the stream without
     // pulling in a Node-specific stream helper.
-    const bytes = await response.Body.transformToByteArray();
-    return Buffer.from(bytes);
+    const bytes = Buffer.from(await response.Body.transformToByteArray());
+    // Backstop for a provider that omits Content-Length.
+    if (limit !== undefined && bytes.length > limit) throw new ObjectTooLargeError(key, bytes.length, limit);
+    return { bytes, etag: response.ETag ?? null, contentType: response.ContentType ?? null };
+  }
+
+  /**
+   * Server-side copy within the bucket (review R5).
+   *
+   * Evidence sealing copies an upload to a fresh, server-chosen key that no
+   * presigned PUT covers, so the object that is served — and that moderation
+   * approved — can no longer be replaced by re-using the upload URL while it is
+   * still valid. `ifMatchEtag` makes the copy conditional on the source still
+   * being the exact object the caller hashed: a re-PUT between the read and the
+   * copy fails the copy (412) instead of sealing bytes nobody verified.
+   *
+   * The metadata and Content-Type travel with the object (`COPY` directive); the
+   * copy is encrypted at rest like every other write here.
+   */
+  async copyObject(
+    sourceKey: string,
+    destinationKey: string,
+    options: { ifMatchEtag?: string | null } = {},
+  ): Promise<void> {
+    const encodedSource = sourceKey.split("/").map(encodeURIComponent).join("/");
+    await this.getClient().send(
+      new CopyObjectCommand({
+        Bucket: env.storage.s3Bucket,
+        Key: destinationKey,
+        CopySource: `${env.storage.s3Bucket}/${encodedSource}`,
+        ...(options.ifMatchEtag ? { CopySourceIfMatch: options.ifMatchEtag } : {}),
+        MetadataDirective: "COPY",
+        ServerSideEncryption: "AES256",
+      }),
+    );
+    logger.info("[s3] object copied", { from: sourceKey, to: destinationKey });
   }
 
   /** A short-lived download URL. This is how private files are ever served. */

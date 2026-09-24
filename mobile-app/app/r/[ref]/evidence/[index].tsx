@@ -14,9 +14,22 @@
  *
  * D12 shows "Device: Not recorded", which is the honest answer for most files: the
  * capture device is not something the app collects.
+ *
+ * ── What a viewer may open (docs/INCIDENT_MODULE_PLAN.md D22, §7.3, §11a) ──
+ * A file still waiting for a moderator reaches a viewer with no URL at all, so
+ * its frame says "Awaiting review" instead of showing an empty box. A photo
+ * whose approval covered only its sealed preview (`fullResolutionPending`)
+ * opens on that thumbnail — the only URL the viewer was sent — with a line
+ * saying the full image is awaiting review. The owner always has both URLs,
+ * and is told when one of their files is not visible to anyone else yet.
+ *
+ * The facts panel calls a hashed file "Sealed", not "Verified": Verified is a
+ * moderator's verdict on the whole report (D1), and a file's hash is not that.
+ * The header's share button is gone — a presigned evidence URL expires within
+ * minutes and must not be handed around; the report itself is what gets shared.
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FlatList, Image, Pressable, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +39,6 @@ import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { StatusPill } from "@/components/report/StatusPill";
 import { MicGlyph } from "@/components/report/AudioRecorderRow";
-import { ShareGlyph } from "@/app/r/[ref]/index";
 import reportsApi, {
   absoluteTime,
   formatBytes,
@@ -34,6 +46,12 @@ import reportsApi, {
   type EvidenceView,
   type ReportDetailView,
 } from "@/lib/api/reports";
+import {
+  evidenceFrameImage,
+  evidenceFrameNote,
+  evidenceTile,
+  shouldRetryRead,
+} from "@/lib/report/detail";
 
 export default function EvidenceLightbox(): React.ReactElement {
   useThemeSync();
@@ -47,13 +65,16 @@ export default function EvidenceLightbox(): React.ReactElement {
     queryKey: ["report", ref],
     queryFn: () => reportsApi.detail(ref!),
     enabled: Boolean(ref),
+    retry: shouldRetryRead,
   });
 
-  const evidence = useMemo(
-    () => (detail.data as ReportDetailView | undefined)?.evidence ?? [],
-    [detail.data],
-  );
-  const file = evidence[current];
+  const report = detail.data as ReportDetailView | undefined;
+  const owner = report?.isOwner === true;
+  const evidence = useMemo(() => report?.evidence ?? [], [report]);
+  // A stale index (the list shrank after a re-read) lands on the last file.
+  const position = evidence.length === 0 ? 0 : Math.min(current, evidence.length - 1);
+  const file = evidence[position];
+  const note = file ? evidenceFrameNote(file, { owner }) : null;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -73,18 +94,30 @@ export default function EvidenceLightbox(): React.ReactElement {
         </Pressable>
 
         <Text variant="label" color={colors.t1} style={{ fontSize: 13.5 }}>
-          {evidence.length > 0 ? `${current + 1} of ${evidence.length}` : ""}
+          {evidence.length > 0 ? `${position + 1} of ${evidence.length}` : ""}
         </Text>
 
-        <Pressable hitSlop={11} accessibilityRole="button" accessibilityLabel="Share this file">
-          <ShareGlyph />
-        </Pressable>
+        {/* Balances the close button; there is deliberately no per-file share. */}
+        <View style={{ width: 22 }} />
       </View>
 
       {/* The frame. Shrinks when the panel expands rather than being covered. */}
-      <View style={[styles.frame, expanded && styles.frameCompact]}>
+      <View style={[styles.frame, { backgroundColor: colors.ph }, expanded && styles.frameCompact]}>
         {file ? <EvidenceFrame file={file} /> : null}
       </View>
+
+      {/* Said about the file, under the frame — never over it. */}
+      {note ? (
+        <Text
+          variant="metaSm"
+          color={colors.t3}
+          center
+          style={{ marginTop: 10, paddingHorizontal: 24, lineHeight: 17 }}
+          testID="lightbox-note"
+        >
+          {note}
+        </Text>
+      ) : null}
 
       {/* Filmstrip. */}
       {evidence.length > 1 ? (
@@ -94,30 +127,42 @@ export default function EvidenceLightbox(): React.ReactElement {
           keyExtractor={(item) => item.id}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.strip}
-          renderItem={({ item, index: position }) => (
-            <Pressable
-              onPress={() => setCurrent(position)}
-              accessibilityRole="button"
-              accessibilityLabel={`File ${position + 1}`}
-              style={[
-                styles.stripItem,
-                position === current
-                  ? { borderWidth: 2, borderColor: colors.acc }
-                  : { opacity: 0.55 },
-              ]}
-              testID={`strip-${position}`}
-            >
-              {item.kind === "audio" ? (
-                <View style={styles.stripAudio}>
-                  <MicGlyph color={colors.t3} size={20} />
-                </View>
-              ) : item.thumbUrl ? (
-                <Image source={{ uri: item.thumbUrl }} style={StyleSheet.absoluteFill} />
-              ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.ph }]} />
-              )}
-            </Pressable>
-          )}
+          renderItem={({ item, index: stripIndex }) => {
+            const tile = evidenceTile(item, { owner });
+            return (
+              <Pressable
+                onPress={() => setCurrent(stripIndex)}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  tile.badge ? `File ${stripIndex + 1}, ${tile.badge.toLowerCase()}` : `File ${stripIndex + 1}`
+                }
+                style={[
+                  styles.stripItem,
+                  { backgroundColor: colors.s5 },
+                  stripIndex === position
+                    ? { borderWidth: 2, borderColor: colors.acc }
+                    : { opacity: 0.55 },
+                ]}
+                testID={`strip-${stripIndex}`}
+              >
+                {tile.state === "awaiting" ? (
+                  <View style={[styles.stripAudio, { backgroundColor: colors.s5 }]}>
+                    <Text variant="eyebrowSm" color={colors.t4} style={{ fontSize: 8 }}>
+                      REVIEW
+                    </Text>
+                  </View>
+                ) : item.kind === "audio" ? (
+                  <View style={[styles.stripAudio, { backgroundColor: colors.s5 }]}>
+                    <MicGlyph color={colors.t3} size={20} />
+                  </View>
+                ) : tile.image ? (
+                  <Image source={{ uri: tile.image }} style={StyleSheet.absoluteFill} />
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.ph }]} />
+                )}
+              </Pressable>
+            );
+          }}
         />
       ) : null}
 
@@ -145,7 +190,7 @@ export default function EvidenceLightbox(): React.ReactElement {
                   .filter(Boolean)
                   .join(" · ")}
               </Text>
-              {file.sealedAt ? <StatusPill kind="verified" /> : null}
+              {file.sealedAt ? <StatusPill kind="sealed" /> : null}
             </View>
 
             {expanded ? (
@@ -175,6 +220,20 @@ export default function EvidenceLightbox(): React.ReactElement {
 
 /** The frame's content, by kind. */
 function EvidenceFrame({ file }: { file: EvidenceView }): React.ReactElement {
+  if (file.pendingReview) {
+    // Nothing was sent to open — say so rather than draw an empty frame.
+    return (
+      <View style={[styles.audioFrame, { backgroundColor: colors.s3 }]} testID="lightbox-awaiting">
+        <Text variant="cardTitleSm" color={colors.t1} center>
+          Awaiting review
+        </Text>
+        <Text variant="metaSm" color={colors.t4} center style={{ marginTop: 6, lineHeight: 17 }}>
+          {`This ${file.kind} opens here once a moderator clears it.`}
+        </Text>
+      </View>
+    );
+  }
+
   if (file.kind === "video" && file.url) {
     return <VideoFrame uri={file.url} />;
   }
@@ -208,8 +267,11 @@ function EvidenceFrame({ file }: { file: EvidenceView }): React.ReactElement {
     );
   }
 
-  return file.url ? (
-    <Image source={{ uri: file.url }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+  // A photo — or a video's poster while the video itself awaits review. A
+  // preview-only photo opens on its thumbnail, the only URL the viewer has.
+  const image = evidenceFrameImage(file);
+  return image ? (
+    <Image source={{ uri: image }} style={StyleSheet.absoluteFill} resizeMode="contain" />
   ) : (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.ph }]} />
   );

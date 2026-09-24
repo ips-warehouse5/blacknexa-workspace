@@ -22,6 +22,24 @@
  * Vault. Sealed files are destroyed after 30 days" — so it is a status change plus
  * a scheduled purge, not a soft delete. `deleted_at` marks the start of that
  * window; the purge job does the rest.
+ *
+ * ── Two axes: `status` and `moderation_state` (D1) ─────────────────────────
+ * `status` is the case verdict (submitted → under_review → verified /
+ * dismissed) and is unchanged. `moderation_state` is publication: whether any
+ * member other than the author may see the report (`docs/INCIDENT_MODULE_PLAN.md`
+ * §3.2, §4.1). The column's database default is `'approved'` purely so that
+ * adding it to a populated table is a fast metadata change that leaves legacy
+ * reports visible; it is *not* a default anyone may rely on. Both insert paths
+ * write it explicitly — a public report is filed `pending` in the same
+ * transaction as its moderation run — and the creation type below makes it
+ * required, so forgetting it is a compile error rather than a report published
+ * without review. The same holds for evidence (D22).
+ *
+ * `content_version` is bumped in SQL under the row lock on every owner edit;
+ * moderation runs carry the version they assess, and a result for an older
+ * version is discarded (§5.3). `published_at` is set on first approval and
+ * never moved by edits, so a report a human approved hours later is not
+ * back-dated behind newer ones in the feed (D11).
  */
 
 import {
@@ -44,6 +62,11 @@ import type {
   TimePrecision,
   UploadState,
 } from "@/types/report.interface";
+import type {
+  EvidenceApprovedScope,
+  EvidenceModerationState,
+  ReportModerationState,
+} from "@/types/moderation.interface";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // reports
@@ -99,6 +122,35 @@ export class Report extends Model<
   /** Set when the owner deletes. Starts the 30-day evidence purge window. */
   declare deleted_at: CreationOptional<string | null>;
   declare verified_at: CreationOptional<string | null>;
+
+  // ── Publication (moderation) axis — §4.1 ────────────────────────────────
+  /** Required on create: see the file header. */
+  declare moderation_state: ReportModerationState;
+  /** Reject or deactivate reason code — author-visible codes only. */
+  declare moderation_reason: CreationOptional<string | null>;
+  /** Author-visible note accompanying the reason. */
+  declare moderation_note: CreationOptional<string | null>;
+  declare moderated_at: CreationOptional<string | null>;
+  /** First approval. Never bumped by edits (D11); the public feed sorts on it. */
+  declare published_at: CreationOptional<string | null>;
+  declare content_version: CreationOptional<number>;
+  /** Set on every approval. */
+  declare approved_content_version: CreationOptional<number | null>;
+  /** Set when a human approves/keeps; blocks auto-hide of that version (D8). */
+  declare human_reviewed_version: CreationOptional<number | null>;
+  /** Edits after a rejection. Capped at `MAX_RESUBMISSIONS` (D19). */
+  declare resubmission_count: CreationOptional<number>;
+  declare last_edited_at: CreationOptional<string | null>;
+  /** The draft this was filed from — the idempotency key for filing (D12). */
+  declare source_draft_id: CreationOptional<string | null>;
+
+  // ── Incident management — §4.1, D17 ─────────────────────────────────────
+  declare assigned_admin_id: CreationOptional<string | null>;
+  declare assigned_at: CreationOptional<string | null>;
+  declare assigned_by: CreationOptional<string | null>;
+  /** What Reactivate restores (D10, §9.1). */
+  declare pre_deactivation_state: CreationOptional<ReportModerationState | null>;
+  declare pre_deactivation_version: CreationOptional<number | null>;
 }
 
 Report.init(
@@ -148,6 +200,26 @@ Report.init(
 
     deleted_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
     verified_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+
+    // Mirrors the migration's fast default — see the file header for why no
+    // code path may rely on it.
+    moderation_state: { type: DataTypes.STRING(16), allowNull: false, defaultValue: "approved" },
+    moderation_reason: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    moderation_note: { type: DataTypes.STRING(512), allowNull: true, defaultValue: null },
+    moderated_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    published_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    content_version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+    approved_content_version: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
+    human_reviewed_version: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
+    resubmission_count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    last_edited_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    source_draft_id: { type: DataTypes.UUID, allowNull: true, defaultValue: null },
+
+    assigned_admin_id: { type: DataTypes.UUID, allowNull: true, defaultValue: null },
+    assigned_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    assigned_by: { type: DataTypes.UUID, allowNull: true, defaultValue: null },
+    pre_deactivation_state: { type: DataTypes.STRING(16), allowNull: true, defaultValue: null },
+    pre_deactivation_version: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
   },
   {
     sequelize,
@@ -162,6 +234,16 @@ Report.init(
       { name: "idx_reports_geohash", fields: ["geohash"] },
       { name: "idx_reports_support", fields: ["support_count"] },
       { name: "idx_reports_corroboration", fields: ["corroboration_count"] },
+      // The public feed after revision 2: approved + visibility, keyset on
+      // `published_at` (D11). Same names as `db:migrate:moderation`.
+      { name: "idx_reports_public_feed", fields: ["moderation_state", "visibility", "published_at"] },
+      { name: "idx_reports_assignee", fields: ["assigned_admin_id"] },
+      // The reconciler's and the incident list's scan by publication state.
+      { name: "idx_reports_moderation", fields: ["moderation_state", "filed_at"] },
+      // D12: re-posting a consumed draft finds the report it became. A unique
+      // index (not a column constraint) so the migration can create the very
+      // same object with IF NOT EXISTS; NULLs never collide.
+      { name: "uq_reports_source_draft", unique: true, fields: ["source_draft_id"] },
     ],
   },
 );
@@ -245,11 +327,25 @@ export class ReportEvidence extends Model<
   declare bytes: CreationOptional<number>;
   declare duration_ms: CreationOptional<number | null>;
 
-  /** Server-generated object key. Never built from a client filename. */
+  /**
+   * Server-generated object key. Never built from a client filename. Until the
+   * commit it is the upload key a presigned PUT covers; the commit copies the
+   * verified bytes to a fresh `sealed/…` key no PUT URL was ever issued for and
+   * repoints this column there (review R5), so the served object cannot be
+   * replaced after it was hashed — or after it was approved.
+   */
   declare storage_key: string;
+  /** The preview, under the same rule as `storage_key` once sealed. */
   declare thumb_key: CreationOptional<string | null>;
   /** Hex SHA-256, verified server-side at commit. */
   declare sha256: CreationOptional<string | null>;
+  /**
+   * Hex SHA-256 of the sealed preview, computed server-side at commit (R5). The
+   * pipeline re-checks it before the preview is sent to the AI, so an approval
+   * is bound to the exact preview bytes that are then served. Never part of the
+   * integrity claim D3 prints — that is `sha256`, the original.
+   */
+  declare thumb_sha256: CreationOptional<string | null>;
 
   declare captured_at: CreationOptional<string | null>;
   declare sealed_at: CreationOptional<string | null>;
@@ -258,6 +354,20 @@ export class ReportEvidence extends Model<
   declare sort_order: CreationOptional<number>;
   /** Set when the parent report is deleted; the purge job reads it. */
   declare purge_after: CreationOptional<string | null>;
+  /**
+   * D22: non-owners see only `approved` files. Written `pending` at presign
+   * (private reports: `approved`); required on create for the same reason as
+   * `Report.moderation_state` — see the file header.
+   */
+  declare moderation_state: EvidenceModerationState;
+  /**
+   * What an approval covered: `full` (the original) or `thumbnail` (only the
+   * sealed preview — non-owners then get the preview alone). NULL while pending
+   * or rejected, and treated as `thumbnail` if an approved row ever lacks it
+   * (`report_visibility.ts`). Written only by `evidence.service.ts`
+   * (`approveEvidence`, presign and filing of private reports) — review R5.
+   */
+  declare approved_scope: CreationOptional<EvidenceApprovedScope | null>;
 }
 
 ReportEvidence.init(
@@ -275,6 +385,7 @@ ReportEvidence.init(
     storage_key: { type: DataTypes.STRING(512), allowNull: false },
     thumb_key: { type: DataTypes.STRING(512), allowNull: true, defaultValue: null },
     sha256: { type: DataTypes.STRING(64), allowNull: true, defaultValue: null },
+    thumb_sha256: { type: DataTypes.STRING(64), allowNull: true, defaultValue: null },
 
     captured_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
     sealed_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
@@ -282,6 +393,9 @@ ReportEvidence.init(
     metadata_scrubbed: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     sort_order: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     purge_after: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    moderation_state: { type: DataTypes.STRING(16), allowNull: false, defaultValue: "approved" },
+    // No default, on purpose: an approval must say what it covered (R5).
+    approved_scope: { type: DataTypes.STRING(16), allowNull: true, defaultValue: null },
   },
   {
     sequelize,
@@ -322,6 +436,8 @@ export class ReportStatusEvent extends Model<
   declare actor_kind: CreationOptional<"system" | "moderator" | "owner">;
   declare actor_id: CreationOptional<string | null>;
   declare note: CreationOptional<string | null>;
+  /** The reason code behind a decision (e.g. a dismiss reason) — §4.2. */
+  declare reason_code: CreationOptional<string | null>;
   declare at: string;
 }
 
@@ -333,6 +449,7 @@ ReportStatusEvent.init(
     actor_kind: { type: DataTypes.STRING(16), allowNull: false, defaultValue: "system" },
     actor_id: { type: DataTypes.UUID, allowNull: true, defaultValue: null },
     note: { type: DataTypes.STRING(512), allowNull: true, defaultValue: null },
+    reason_code: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
     at: { type: DataTypes.STRING(32), allowNull: false },
   },
   {

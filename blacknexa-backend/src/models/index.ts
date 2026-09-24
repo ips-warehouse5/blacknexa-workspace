@@ -1,8 +1,9 @@
 /**
  * Model registry, associations, and schema bootstrap.
  *
- * Importing this module registers all 42 models on the shared Sequelize
- * instance. `initializeModels()` optionally syncs the schema (development only —
+ * Importing this module registers every model on the shared Sequelize
+ * instance (the moderation module's five tables included — see
+ * `moderation.model.ts`). `initializeModels()` optionally syncs the schema (development only —
  * `DB_SYNC` is forced to false in production by env validation) and seeds the
  * article table on first boot, which is the behaviour the Durable Object's
  * `ensureSeed()` provided.
@@ -60,6 +61,13 @@ import {
   ReportShareLink,
   ReportSupport,
 } from "@/models/report_social.model";
+import {
+  AuditEvent,
+  KeywordRule,
+  ModerationCase,
+  ModerationRun,
+  ReportNote,
+} from "@/models/moderation.model";
 
 // ── Associations ─────────────────────────────────────────────────────────────
 //
@@ -265,6 +273,72 @@ Report.hasMany(ReportShareLink, {
   onDelete: "CASCADE",
 });
 
+// A comment flag carries `comment_id`; this lets the moderation detail load a
+// comment's flags without a hand-written join. No constraint, for the same
+// polymorphic reason as the report side above.
+ReportComment.hasMany(ReportFlag, {
+  foreignKey: "comment_id",
+  sourceKey: "id",
+  as: "flags",
+  constraints: false,
+});
+
+// ── Moderation graph ─────────────────────────────────────────────────────────
+//
+// Every association here is `constraints: false`. None of these rows may block
+// or be silently removed by a report's deletion: `purgeDeletedReports` deletes
+// runs, cases and notes, and redacts audit rows, explicitly and in one
+// transaction (docs/INCIDENT_MODULE_PLAN.md §7.8). A database cascade would
+// hide that from the code that has to reason about it, and a hard constraint
+// would also make `db:migrate:moderation`'s `Model.sync()` emit REFERENCES
+// clauses on tables that are meant to be self-contained.
+
+Report.hasMany(ModerationRun, {
+  foreignKey: "report_id",
+  sourceKey: "id",
+  as: "moderationRuns",
+  constraints: false,
+});
+ModerationRun.belongsTo(Report, { foreignKey: "report_id", targetKey: "id", as: "report", constraints: false });
+
+Report.hasMany(ModerationCase, {
+  foreignKey: "report_id",
+  sourceKey: "id",
+  as: "moderationCases",
+  constraints: false,
+});
+ModerationCase.belongsTo(Report, { foreignKey: "report_id", targetKey: "id", as: "report", constraints: false });
+ModerationCase.belongsTo(ReportComment, {
+  foreignKey: "comment_id",
+  targetKey: "id",
+  as: "comment",
+  constraints: false,
+});
+ModerationCase.belongsTo(ModerationRun, {
+  foreignKey: "latest_run_id",
+  targetKey: "id",
+  as: "latestRun",
+  constraints: false,
+});
+ModerationCase.hasMany(ReportFlag, {
+  foreignKey: "case_id",
+  sourceKey: "id",
+  as: "flags",
+  constraints: false,
+});
+
+Report.hasMany(ReportNote, {
+  foreignKey: "report_id",
+  sourceKey: "id",
+  as: "notes",
+  constraints: false,
+});
+ReportNote.belongsTo(AdminUser, { foreignKey: "admin_id", targetKey: "id", as: "admin", constraints: false });
+
+// `keyword_rules` and `audit_events` stand alone: a rule is referenced by id
+// inside `moderation_runs.keyword_hits` (JSONB), and an audit row must outlive
+// everything it describes.
+
 // ── Registry ─────────────────────────────────────────────────────────────────
 
 export const models = {
@@ -314,6 +388,11 @@ export const models = {
   ReportHide,
   ReportShareLink,
   Notification,
+  ModerationRun,
+  ModerationCase,
+  KeywordRule,
+  AuditEvent,
+  ReportNote,
 };
 
 export type Models = typeof models;
@@ -386,6 +465,11 @@ export {
   ReportHide,
   ReportShareLink,
   Notification,
+  ModerationRun,
+  ModerationCase,
+  KeywordRule,
+  AuditEvent,
+  ReportNote,
 };
 
 export default models;

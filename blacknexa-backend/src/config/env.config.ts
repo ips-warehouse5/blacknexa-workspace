@@ -19,6 +19,12 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 export type NodeEnv = "development" | "test" | "production";
 export type StorageDriver = "db" | "s3";
+/** What happens to a report when the AI stage cannot give an answer (D5). */
+export type ReportAiFallback = "hold" | "approve";
+/** What happens to a keyword-clean comment when the AI stage cannot answer (D5). */
+export type CommentAiFallback = "approve" | "hold";
+/** Media the AI cannot see: wait for a moderator, or publish with the text (D22). */
+export type UnassessedMediaPolicy = "review" | "publish";
 
 /** Shape of the validated configuration exposed to the rest of the app. */
 export interface AppEnv {
@@ -63,6 +69,13 @@ export interface AppEnv {
   };
   bcryptSaltRounds: number;
   bcryptDummyHash: string;
+  /**
+   * `SERVER_ENCRYPTION_SECRET` — the dedicated key for sealing report bodies and
+   * exact locations at rest. Empty means "not configured": sealing then falls
+   * back to the legacy key chain, and opening always tries this first and the
+   * legacy chain after it (see `services/encryption.service.ts`).
+   */
+  serverEncryptionSecret: string;
   ai: {
     toolkitUrl: string;
     secretKey: string;
@@ -101,6 +114,15 @@ export interface AppEnv {
     authMax: number;
     writeMax: number;
     readMax: number;
+    /**
+     * Per-member (not per-IP) write budget for drafts, evidence and filing
+     * (§7.9), so one carrier-grade NAT cannot exhaust a whole city's wizard.
+     */
+    userWriteMax: number;
+    /** Per-member flags per `windowMs` (§7.6). */
+    flagMax: number;
+    /** Per-member flags per 24 hours (§7.6). */
+    flagDailyMax: number;
   };
 
   storage: {
@@ -165,6 +187,40 @@ export interface AppEnv {
     applePrivateKey: string;
     /** True only when a client secret can actually be signed. */
     appleRevocationEnabled: boolean;
+  };
+
+  /**
+   * The automated moderation pipeline — docs/INCIDENT_MODULE_PLAN.md §5.5.
+   *
+   * Thresholds are passed *into* the pure policy module rather than read there,
+   * so `moderation_policy.ts` stays testable without an environment.
+   */
+  moderation: {
+    /** False skips the AI stage only (`ai_status = skipped`); D5 fallbacks still apply. */
+    enabled: boolean;
+    /** Start the worker in this process. Every replica may run one (SKIP LOCKED). */
+    workerEnabled: boolean;
+    workerConcurrency: number;
+    workerPollMs: number;
+    /** Claim lease. Boot refuses unless ≥ 2 × aiTimeoutMs + 30 s. */
+    leaseSeconds: number;
+    /** Per-call engine timeout for the assess endpoint. */
+    aiTimeoutMs: number;
+    maxAttempts: number;
+    /** `min(2, maxAttempts)`: an urgent report reaches a human faster in an outage. */
+    urgentMaxAttempts: number;
+    autoApproveMinConfidence: number;
+    violationMinConfidence: number;
+    flagAutohideMinConfidence: number;
+    reportAiFallback: ReportAiFallback;
+    commentAiFallback: CommentAiFallback;
+    unassessedMedia: UnassessedMediaPolicy;
+    /** Only flaggers at least this old trigger an AI re-check (D8). */
+    flagMinAccountAgeDays: number;
+    /** Photo thumbnails sent per assessment (engine cap 10). */
+    maxImages: number;
+    /** Extra alert recipients; active moderators/superadmins are always included. */
+    alertEmails: string[];
   };
 
   /** The report module's own switches. */
@@ -249,7 +305,11 @@ const schema = Joi.object({
   }),
   BCRYPT_DUMMY_HASH: Joi.string()
     .default("$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva"),
-  SERVER_ENCRYPTION_SECRET: Joi.string().allow("").default(""),
+  // Seals report bodies and exact locations at rest. Optional (the legacy key
+  // chain applies when unset) but, once set, as strong as the JWT secrets.
+  SERVER_ENCRYPTION_SECRET: Joi.string().min(32).allow("").default("").messages({
+    "string.min": "SERVER_ENCRYPTION_SECRET must be at least 32 characters when set",
+  }),
 
   AI_TOOLKIT_URL: Joi.string().uri().allow("").default("https://toolkit.rork.com"),
   AI_TOOLKIT_SECRET_KEY: Joi.string().allow("").default(""),
@@ -283,6 +343,10 @@ const schema = Joi.object({
   RATE_LIMIT_AUTH_MAX: Joi.number().integer().min(1).default(8),
   RATE_LIMIT_WRITE_MAX: Joi.number().integer().min(1).default(30),
   RATE_LIMIT_READ_MAX: Joi.number().integer().min(1).default(600),
+  // Keyed by member id, not IP (§7.9, §7.6).
+  RATE_LIMIT_USER_WRITE_MAX: Joi.number().integer().min(1).default(120),
+  RATE_LIMIT_FLAG_MAX: Joi.number().integer().min(1).default(20),
+  RATE_LIMIT_FLAG_DAILY_MAX: Joi.number().integer().min(1).default(50),
 
   STORAGE_DRIVER: Joi.string().valid("db", "s3").default("db"),
   // Screen C5 attaches a 24.8 MB video, so the previous 10 MB default rejected
@@ -340,6 +404,25 @@ const schema = Joi.object({
     .integer()
     .min(1024)
     .default(256 * 1024 * 1024),
+
+  // ── Automated moderation (docs/INCIDENT_MODULE_PLAN.md §5.5) ──────────────
+  MODERATION_ENABLED: Joi.boolean().truthy("true").falsy("false").default(true),
+  MODERATION_WORKER_ENABLED: Joi.boolean().truthy("true").falsy("false").default(true),
+  MODERATION_WORKER_CONCURRENCY: Joi.number().integer().min(1).max(32).default(4),
+  MODERATION_WORKER_POLL_MS: Joi.number().integer().min(250).max(60_000).default(1500),
+  MODERATION_LEASE_SECONDS: Joi.number().integer().min(30).max(3600).default(120),
+  // The engine's own model timeout is 30 s; the rest is transport and overhead.
+  MODERATION_AI_TIMEOUT_MS: Joi.number().integer().min(1000).max(300_000).default(40_000),
+  MODERATION_MAX_ATTEMPTS: Joi.number().integer().min(1).max(10).default(4),
+  MODERATION_AUTO_APPROVE_MIN_CONFIDENCE: Joi.number().min(0).max(1).default(0.8),
+  MODERATION_VIOLATION_MIN_CONFIDENCE: Joi.number().min(0).max(1).default(0.5),
+  MODERATION_FLAG_AUTOHIDE_MIN_CONFIDENCE: Joi.number().min(0).max(1).default(0.85),
+  MODERATION_REPORT_AI_FALLBACK: Joi.string().valid("hold", "approve").default("hold"),
+  MODERATION_COMMENT_AI_FALLBACK: Joi.string().valid("approve", "hold").default("approve"),
+  MODERATION_UNASSESSED_MEDIA: Joi.string().valid("review", "publish").default("review"),
+  MODERATION_FLAG_MIN_ACCOUNT_AGE_DAYS: Joi.number().integer().min(0).max(365).default(7),
+  MODERATION_MAX_IMAGES: Joi.number().integer().min(0).max(10).default(10),
+  MODERATION_ALERT_EMAILS: Joi.string().allow("").default(""),
 
   // `tlds: { allow: false }` validates the address format without requiring an
   // IANA-registered TLD, so an internal ops address (admin@company.internal,
@@ -436,6 +519,33 @@ const schema = Joi.object({
         custom: "ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD must be set together",
       });
     }
+    // Fail closed (D5, §0): an AI outage must never publish reports unseen. The
+    // switch exists for a laptop without an AI key, not for a real audience.
+    if (value.NODE_ENV === "production" && value.MODERATION_REPORT_AI_FALLBACK === "approve") {
+      return helpers.message({
+        custom:
+          "MODERATION_REPORT_AI_FALLBACK=approve is refused in production — reports must hold for a human when the AI cannot answer",
+      });
+    }
+    // A lease shorter than a worst-case engine call lets a second replica
+    // re-claim a run that is still in flight: two AI calls, and a fenced-off
+    // result thrown away (§5.2). Two timeouts plus 30 s of slack covers the
+    // engine call, the S3 thumbnail reads and the apply transaction.
+    const leaseMs = value.MODERATION_LEASE_SECONDS * 1000;
+    const minimumLeaseMs = 2 * value.MODERATION_AI_TIMEOUT_MS + 30_000;
+    if (leaseMs < minimumLeaseMs) {
+      return helpers.message({
+        custom: `MODERATION_LEASE_SECONDS must be at least ${Math.ceil(minimumLeaseMs / 1000)} (2 × MODERATION_AI_TIMEOUT_MS + 30 s)`,
+      });
+    }
+    const badAlertEmail = parseList(value.MODERATION_ALERT_EMAILS).find(
+      (address) => Joi.string().email({ tlds: { allow: false } }).validate(address).error,
+    );
+    if (badAlertEmail) {
+      return helpers.message({
+        custom: `MODERATION_ALERT_EMAILS contains an invalid address: ${badAlertEmail}`,
+      });
+    }
     return value;
   });
 
@@ -524,6 +634,7 @@ export const env: AppEnv = {
   },
   bcryptSaltRounds: raw.BCRYPT_SALT_ROUNDS,
   bcryptDummyHash: raw.BCRYPT_DUMMY_HASH,
+  serverEncryptionSecret: raw.SERVER_ENCRYPTION_SECRET || "",
   ai: {
     // The Worker read EXPO_PUBLIC_* names; both are accepted so an existing
     // deployment's secrets can be reused verbatim.
@@ -560,6 +671,9 @@ export const env: AppEnv = {
     authMax: raw.RATE_LIMIT_AUTH_MAX,
     writeMax: raw.RATE_LIMIT_WRITE_MAX,
     readMax: raw.RATE_LIMIT_READ_MAX,
+    userWriteMax: raw.RATE_LIMIT_USER_WRITE_MAX,
+    flagMax: raw.RATE_LIMIT_FLAG_MAX,
+    flagDailyMax: raw.RATE_LIMIT_FLAG_DAILY_MAX,
   },
 
   storage: {
@@ -610,6 +724,26 @@ export const env: AppEnv = {
     appleRevocationEnabled: Boolean(
       applePrivateKey && raw.APPLE_KEY_ID && raw.APPLE_TEAM_ID,
     ),
+  },
+
+  moderation: {
+    enabled: raw.MODERATION_ENABLED,
+    workerEnabled: raw.MODERATION_WORKER_ENABLED,
+    workerConcurrency: raw.MODERATION_WORKER_CONCURRENCY,
+    workerPollMs: raw.MODERATION_WORKER_POLL_MS,
+    leaseSeconds: raw.MODERATION_LEASE_SECONDS,
+    aiTimeoutMs: raw.MODERATION_AI_TIMEOUT_MS,
+    maxAttempts: raw.MODERATION_MAX_ATTEMPTS,
+    urgentMaxAttempts: Math.min(2, raw.MODERATION_MAX_ATTEMPTS),
+    autoApproveMinConfidence: raw.MODERATION_AUTO_APPROVE_MIN_CONFIDENCE,
+    violationMinConfidence: raw.MODERATION_VIOLATION_MIN_CONFIDENCE,
+    flagAutohideMinConfidence: raw.MODERATION_FLAG_AUTOHIDE_MIN_CONFIDENCE,
+    reportAiFallback: raw.MODERATION_REPORT_AI_FALLBACK as ReportAiFallback,
+    commentAiFallback: raw.MODERATION_COMMENT_AI_FALLBACK as CommentAiFallback,
+    unassessedMedia: raw.MODERATION_UNASSESSED_MEDIA as UnassessedMediaPolicy,
+    flagMinAccountAgeDays: raw.MODERATION_FLAG_MIN_ACCOUNT_AGE_DAYS,
+    maxImages: raw.MODERATION_MAX_IMAGES,
+    alertEmails: parseList(raw.MODERATION_ALERT_EMAILS).map((address) => address.toLowerCase()),
   },
 
   reports: {

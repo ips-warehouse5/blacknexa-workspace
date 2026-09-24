@@ -21,6 +21,15 @@
  * instead of sent, so the whole sign-up flow is walkable without a mail provider.
  * That fallback is refused in production: `env.config.ts` requires `SMTP_HOST`
  * when the reports surface is enabled.
+ *
+ * ── Moderation mail (docs/INCIDENT_MODULE_PLAN.md §5.3, §7.9, D21) ─────────
+ * `sendFlagOutcome` carries text a moderator typed, so every interpolated value
+ * is HTML-escaped: an unescaped resolution was a way to put markup, links or a
+ * phishing form into mail sent from our domain. `sendModerationAlert` tells
+ * moderators that an urgent or safety-risk report is waiting, and contains *no
+ * member content* — only the case reference and a console link — because no
+ * unmoderated member text may leave the platform by email (§0), and a
+ * moderator's inbox is not the place a self-harm statement should be read.
  */
 
 import nodemailer, { type Transporter } from "nodemailer";
@@ -66,6 +75,37 @@ function codeBlock(code: string): string {
 
 function minutesFrom(seconds: number): number {
   return Math.max(1, Math.round(seconds / 60));
+}
+
+/**
+ * Escape a value for an HTML text node or a double-quoted attribute.
+ *
+ * Applied to every value in the moderation templates that did not originate in
+ * this file — moderator-written resolutions, references, URLs.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Subject lines must stay on one line whatever a value contains. */
+function oneLine(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
+/** Why a moderation alert was sent. Decides the wording, never the content. */
+export type ModerationAlertReason = "urgent" | "safety";
+
+export interface ModerationAlert {
+  /** The report's `BNX-####`. */
+  reportRef: string;
+  reason: ModerationAlertReason;
+  /** A link into the admin console — built by the server, never from a request. */
+  consoleUrl: string;
 }
 
 class MailerService {
@@ -311,28 +351,89 @@ class MailerService {
     });
   }
 
-  /** Screen D9 — "You will hear back: By email". */
+  /**
+   * Screen D9 — "You will hear back: By email".
+   *
+   * `outcome` and `detail` are written by a moderator (or by the system for a
+   * withdrawn target), so every value is escaped before it reaches the HTML.
+   */
   async sendFlagOutcome(
     to: string,
     flagRef: string,
     outcome: string,
     detail: string,
   ): Promise<boolean> {
+    const ref = escapeHtml(flagRef);
     return this.deliver({
       to,
-      subject: `Your report ${flagRef} has been reviewed`,
+      subject: oneLine(`Your report ${flagRef} has been reviewed`),
       text: [`Flag ${flagRef}`, ``, `Outcome: ${outcome}`, ``, detail].join("\n"),
       html: wrap(
         "A moderator has looked",
-        `<p style="margin:12px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Reference <strong style="color:#0E1116;">${flagRef}</strong></p>
+        `<p style="margin:12px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Reference <strong style="color:#0E1116;">${ref}</strong></p>
          <div style="margin:20px 0 0;padding:16px;background:#F5F7FA;border-radius:12px;">
            <div style="font:600 11px/1 -apple-system,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7A8593;">Outcome</div>
-           <div style="margin-top:8px;font:600 16px/1.4 -apple-system,sans-serif;color:#0E1116;">${outcome}</div>
+           <div style="margin-top:8px;font:600 16px/1.4 -apple-system,sans-serif;color:#0E1116;">${escapeHtml(outcome)}</div>
          </div>
-         <p style="margin:20px 0 0;font:400 14px/1.6 -apple-system,sans-serif;color:#55606E;">${detail}</p>`,
+         <p style="margin:20px 0 0;font:400 14px/1.6 -apple-system,sans-serif;color:#55606E;white-space:pre-line;">${escapeHtml(detail)}</p>`,
         "The person who filed the report was told nothing about you.",
       ),
     });
+  }
+
+  /**
+   * Alert moderators that a report cannot wait in the ordinary queue (D21, §5.3):
+   * the AI signalled a safety risk, or an urgent report is held. Sent once per
+   * case by the pipeline.
+   *
+   * Contains the case reference and a console link — no title, body, category
+   * or location, because none of it has been moderated (see the file header).
+   * Each recipient gets their own message so moderators' addresses are not
+   * disclosed to one another. Returns how many messages were delivered; like
+   * every send here it never throws.
+   */
+  async sendModerationAlert(to: string[], alert: ModerationAlert): Promise<number> {
+    const recipients = [
+      ...new Set(to.map((address) => address.trim().toLowerCase()).filter(Boolean)),
+    ];
+    if (recipients.length === 0) return 0;
+
+    const safety = alert.reason === "safety";
+    const subject = oneLine(
+      safety
+        ? `Safety check needed now: ${alert.reportRef}`
+        : `Urgent report waiting: ${alert.reportRef}`,
+    );
+    const lead = safety
+      ? "The automated check flagged a possible risk to someone's safety. Please look at it now."
+      : "An urgent report is waiting for a moderator. Urgent reports are promised a check within the hour.";
+    const ref = escapeHtml(alert.reportRef);
+    const url = escapeHtml(alert.consoleUrl);
+
+    let delivered = 0;
+    for (const recipient of recipients) {
+      const ok = await this.deliver({
+        to: recipient,
+        subject,
+        text: [
+          lead,
+          ``,
+          `Reference: ${alert.reportRef}`,
+          `Open it in the moderation console: ${alert.consoleUrl}`,
+          ``,
+          `This email deliberately contains none of the report's content.`,
+        ].join("\n"),
+        html: wrap(
+          safety ? "Safety check needed" : "Urgent report waiting",
+          `<p style="margin:12px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">${escapeHtml(lead)}</p>
+           <p style="margin:16px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;">Reference <strong style="color:#0E1116;">${ref}</strong></p>
+           <p style="margin:16px 0 0;font:400 15px/1.6 -apple-system,sans-serif;color:#55606E;"><a href="${url}" style="color:#0A7CFF;">Open it in the moderation console</a></p>`,
+          "This email deliberately contains none of the report's content. Read it in the console.",
+        ),
+      });
+      if (ok) delivered += 1;
+    }
+    return delivered;
   }
 
   /**

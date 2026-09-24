@@ -1,5 +1,6 @@
 /**
- * The status pill — URGENT, VERIFIED, PUBLIC, CORROBORATED, and the category chip.
+ * The status pill — URGENT, VERIFIED, PUBLIC, CORROBORATED, the owner's display
+ * status, and the category chip.
  *
  * ── Two variants, and why ──────────────────────────────────────────────────
  * The design draws this pill two ways, and the difference is not stylistic:
@@ -14,23 +15,44 @@
  *
  * Same token, different alpha. Keeping both here means a card cannot pick the
  * wrong one by accident — the surface it sits on decides.
+ *
+ * ── The owner's display status (docs/INCIDENT_MODULE_PLAN.md §3.2) ────────
+ * D2 and the Vault label a report with one owner-facing word — Checking, With a
+ * moderator, Not published, Taken down, Published, and the case words Under
+ * review, Verified, Dismissed, Private. Those words and their tones come from
+ * `lib/report/moderation.ts` (`DISPLAY_STATUS_LABELS`, `ownerStatusCopy`), so a
+ * pill here, the D2 banner and a Vault chip can never disagree about what
+ * colour "With a moderator" is. The publication words are **owner-only**: D1
+ * never draws Checking, With a moderator or Under review for someone else's
+ * report — a viewer only ever reaches published reports, and only Verified is
+ * news to a reader.
  */
 
 import React from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { alpha, colors, radius } from "@/constants/theme";
 import Text from "@/components/ui/Text";
+import {
+  DISPLAY_STATUS_LABELS,
+  ownerStatusCopy,
+  type DisplayStatus,
+  type StatusTone,
+} from "@/lib/report/moderation";
 
+/**
+ * Every pill. The display statuses are part of the union, so `verified`,
+ * `under_review`, `dismissed` and `private` are one kind each whichever screen
+ * asks — the case badge on D1 and the owner's status on D2 share a colour.
+ */
 export type PillKind =
   | "urgent"
-  | "verified"
   | "public"
   | "trusted"
-  | "private"
   | "anonymous"
   | "corroborated"
-  | "under_review"
-  | "dismissed";
+  /** A file the server hashed on arrival — D11's facts panel. Not a verdict. */
+  | "sealed"
+  | DisplayStatus;
 
 export type PillVariant = "tint" | "onMedia";
 
@@ -40,16 +62,48 @@ interface PillSpec {
   color: string | null;
 }
 
+/**
+ * A moderation tone as a colour token — read at render time, because `colors`
+ * is the live theme. `neutral` is the plain raised surface, like visibility.
+ */
+function toneColor(tone: StatusTone): string | null {
+  switch (tone) {
+    case "ok":
+      return colors.ok;
+    case "attention":
+      return colors.warn;
+    case "bad":
+      return colors.bad;
+    case "progress":
+      return colors.acc;
+    case "muted":
+      return colors.t3;
+    case "neutral":
+    default:
+      return null;
+  }
+}
+
+/** A display status's pill: the owner's word and the tone D2's banner uses. */
+function displaySpec(status: DisplayStatus): PillSpec {
+  return { label: DISPLAY_STATUS_LABELS[status], color: toneColor(ownerStatusCopy(status).tone) };
+}
+
 function specFor(kind: PillKind, count?: number): PillSpec {
   switch (kind) {
     case "urgent":
       return { label: "Urgent", color: colors.bad };
+    case "sealed":
+      return { label: "Sealed", color: colors.ok };
+    case "checking":
+    case "with_moderator":
+    case "not_published":
+    case "taken_down":
+    case "published":
     case "verified":
-      return { label: "Verified", color: colors.ok };
     case "under_review":
-      return { label: "Under review", color: colors.warn };
     case "dismissed":
-      return { label: "Dismissed", color: colors.t3 };
+      return displaySpec(kind);
     case "corroborated":
       return {
         label: count === undefined ? "Corroborated" : `Corroborated · ${count}`,
@@ -99,8 +153,9 @@ export function StatusPill({
     ? onMedia
       ? colors.onAcc
       : // `bad2` rather than `bad` for text: the darker red keeps its contrast
-        // against a 16% red ground, where `bad` starts to vibrate.
-        kind === "urgent"
+        // against a 16% red ground, where `bad` starts to vibrate — Urgent,
+        // Not published and Taken down alike.
+        spec.color === colors.bad
         ? colors.bad2
         : spec.color
     : onMedia
@@ -128,6 +183,26 @@ export function StatusPill({
       </Text>
     </View>
   );
+}
+
+/**
+ * The owner's display status as a pill (D2, the Vault). `published` on a private
+ * report reads *Private* — §3.2's substitution — for a caller that has only the
+ * visibility to go on.
+ */
+export function DisplayStatusPill({
+  displayStatus,
+  isPrivate = false,
+  variant = "tint",
+  style,
+}: {
+  displayStatus: DisplayStatus;
+  isPrivate?: boolean;
+  variant?: PillVariant;
+  style?: StyleProp<ViewStyle>;
+}): React.ReactElement {
+  const kind: PillKind = displayStatus === "published" && isPrivate ? "private" : displayStatus;
+  return <StatusPill kind={kind} variant={variant} style={style} />;
 }
 
 /** The category chip — a 6px dot plus the label, never a coloured fill. */

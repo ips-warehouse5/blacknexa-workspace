@@ -22,6 +22,7 @@ import { adminSchemas } from "@/validations/admin.validation";
 import { userAuthSchemas } from "@/validations/user_auth.validation";
 import { reportSchemas } from "@/validations/report.validation";
 import { moderationSchemas } from "@/validations/moderation.validation";
+import { incidentSchemas } from "@/validations/incident.validation";
 import { contactSchemas } from "@/validations/contact.validation";
 import { locationSchemas } from "@/validations/location.validation";
 import { faqSchemas } from "@/validations/faq.validation";
@@ -41,6 +42,7 @@ const registry: SchemaRegistry = {
   ...userAuthSchemas,
   ...reportSchemas,
   ...moderationSchemas,
+  ...incidentSchemas,
   ...contactSchemas,
   ...locationSchemas,
   ...faqSchemas,

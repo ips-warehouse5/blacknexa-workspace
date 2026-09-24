@@ -17,7 +17,7 @@
 
 import React, { useCallback } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, useThemeSync } from "@/constants/theme";
@@ -72,17 +72,15 @@ export default function TabLayout(): React.ReactElement {
 
       {/*
         The centre button. It has to be registered as a screen for the tab bar to
-        lay out five slots, but `tabBarButton` replaces it entirely and the
-        listener prevents navigation — so it opens the wizard modal instead of
-        ever showing this route.
+        lay out five slots, but `tabBarButton` replaces it entirely and never
+        calls the tab's own press — so it opens the wizard modal instead of ever
+        focusing this route.
       */}
       <Tabs.Screen
         name="new"
         options={{
           title: "",
-          tabBarButton: (props) => (
-            <CentreButton accessibilityState={props.accessibilityState} onPress={props.onPress} />
-          ),
+          tabBarButton: () => <CentreButton />,
         }}
       />
 
@@ -105,30 +103,29 @@ export default function TabLayout(): React.ReactElement {
   );
 }
 
-/** The lifted accent square for the centre tab. */
-function CentreButton({
-  accessibilityState,
-  onPress,
-}: {
-  accessibilityState?: { selected?: boolean };
-  onPress?: React.ComponentProps<typeof Pressable>["onPress"];
-}): React.ReactElement {
-  const open = useCallback((event: Parameters<NonNullable<typeof onPress>>[0]) => {
+/**
+ * The lifted accent square for the centre tab.
+ *
+ * A12: "The centre button opens a report over whatever you were doing." So it
+ * pushes the wizard modal and leaves the current tab where it was — focusing the
+ * placeholder route underneath would leave the person on an empty tab when they
+ * close the wizard.
+ */
+function CentreButton(): React.ReactElement {
+  const open = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
-    onPress?.(event);
-    // TODO(Centre Slot): Re-enable the report-wizard action when report development resumes.
-    // router.push("/report");
-  }, [onPress]);
+    router.push("/report");
+  }, []);
 
   return (
     <Pressable
       onPress={open}
       accessibilityRole="button"
       accessibilityLabel="File a new report"
-      accessibilityState={accessibilityState}
       style={styles.centreSlot}
+      testID="tab-new-report"
     >
       <View
         style={[

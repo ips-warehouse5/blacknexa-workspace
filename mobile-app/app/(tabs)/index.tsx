@@ -20,17 +20,28 @@
  *     active filters, so tapping one never lands on an empty result by surprise.
  *
  * The card is treatment 1a — see `components/report/FeedCard.tsx`.
+ *
+ * ── Revision 2 (docs/INCIDENT_MODULE_PLAN.md §10 "Entry points") ───────────
+ * The feed is live again, with search and the bell. The server now lists only
+ * *published* reports here (§7.3), so a report someone just filed appears once the
+ * automated check — or a moderator — has approved it, never while it is checking.
+ * The bell's dot follows the account's real unread count instead of always
+ * showing.
  */
 
 import React, { useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
-import ComingSoon from "@/components/ui/ComingSoon";
 import Text from "@/components/ui/Text";
 import { Chip } from "@/components/ui/Controls";
 import FeedCard, { CARD_GAP, cardHeight } from "@/components/report/FeedCard";
@@ -51,16 +62,30 @@ const SORT_LABEL: Record<NonNullable<FeedQuery["sort"]>, string> = {
   corroborated: "Most corroborated",
 };
 
+/** One page of `GET /reports`, as the infinite query caches it. */
+type FeedPage = { items: FeedCardView[]; nextCursor: string | null };
+
 const SORT_SENTENCE: Record<NonNullable<FeedQuery["sort"]>, string> = {
   newest: "Newest first",
   supported: "Most supported",
   corroborated: "Most corroborated",
 };
 
-function ExistingHomeScreen(): React.ReactElement {
+export default function HomeScreen(): React.ReactElement {
+  useThemeSync();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  /**
+   * One row is enough: `unread` counts the whole account, not the page. Keyed
+   * under `notifications` so B3 marking everything read refreshes the dot too.
+   */
+  const unread = useQuery({
+    queryKey: ["notifications", "unread"],
+    queryFn: () => reportsApi.notifications(undefined, 1),
+    select: (page) => page.unread,
+  });
 
   const [filters, setFilters] = useState<FeedQuery>({ sort: "newest", when: "all" });
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -141,7 +166,7 @@ function ExistingHomeScreen(): React.ReactElement {
   const toggleSupport = useCallback(
     async (item: FeedCardView) => {
       const key = ["feed", ...filterKey];
-      queryClient.setQueryData(key, (old: typeof feed.data) => {
+      queryClient.setQueryData(key, (old: InfiniteData<FeedPage> | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -210,10 +235,12 @@ function ExistingHomeScreen(): React.ReactElement {
             onPress={() => router.push("/notifications")}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={
+              (unread.data ?? 0) > 0 ? `Notifications, ${unread.data} unread` : "Notifications"
+            }
             testID="feed-notifications"
           >
-            <BellGlyph withDot />
+            <BellGlyph withDot={(unread.data ?? 0) > 0} />
           </Pressable>
         </View>
       </View>
@@ -362,58 +389,6 @@ function ExistingHomeScreen(): React.ReactElement {
         }}
         onClose={() => setSortOpen(false)}
       />
-    </View>
-  );
-}
-
-export default function HomeScreen(): React.ReactElement {
-  useThemeSync();
-  const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-
-  return (
-    <View style={[styles.root, { paddingTop: insets.top, backgroundColor: colors.bg }]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.push("/profile")}
-          accessibilityRole="button"
-          accessibilityLabel="Your profile"
-          style={[styles.avatar, { backgroundColor: colors.s6 }]}
-          testID="feed-avatar"
-        >
-          <Text variant="labelSm" color={colors.acc}>
-            {user?.initials ?? "?"}
-          </Text>
-        </Pressable>
-
-        <Text variant="cardTitle" color={colors.t0} style={{ fontSize: 18 }}>
-          BlackNexa
-        </Text>
-
-        <View style={styles.headerActions}>
-          <Pressable
-            disabled
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Search reports is coming soon"
-            testID="feed-search"
-          >
-            <SearchGlyph />
-          </Pressable>
-          <Pressable
-            disabled
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications are coming soon"
-            testID="feed-notifications"
-          >
-            <BellGlyph withDot />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* TODO(Home): Re-enable the Home feed, filters, search, and notifications when Home development resumes. */}
-      <ComingSoon />
     </View>
   );
 }

@@ -33,6 +33,7 @@ PROTECTED = [
     ("post", "/api/v1/internal/news/translate", {"language": "es", "headline": "H"}),
     ("get", "/api/v1/internal/news/daily-prompts", None),
     ("get", "/api/v1/internal/news/languages", None),
+    ("post", "/api/v1/internal/moderation/assess", {"runId": "0" * 32, "targetType": "report", "body": "B"}),
     ("get", "/api/v1/admin/runs", None),
 ]
 

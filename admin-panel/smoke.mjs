@@ -76,6 +76,33 @@ async function main() {
     problems.push(`[request] ${currentRoute}: ${req.url()} — ${req.failure()?.errorText}`);
   });
 
+  /*
+   * The two detail screens take database ids — a moderation case
+   * (`/moderation/:caseId`) and a report (`/incidents/:incidentId`) — not the
+   * prototype's display references (`CMT-90412`, `INC-20481`), which no longer
+   * name anything. The ids are taken from the list responses the queue screens
+   * make while they are walked, so the walk opens a record that exists and
+   * uses the browser's own session: signing in again through the API would
+   * rotate the superadmin's refresh token and sign this browser out.
+   */
+  const detailIds = { moderation: null, incidents: null };
+  page.on("response", async (res) => {
+    const url = res.url();
+    const kind = /\/admin\/moderation\/cases\?/.test(url)
+      ? "moderation"
+      : /\/admin\/incidents\?/.test(url)
+        ? "incidents"
+        : null;
+    if (!kind || detailIds[kind] || res.request().method() !== "GET" || !res.ok()) return;
+    try {
+      const body = await res.json();
+      const first = Array.isArray(body?.result) ? body.result[0] : null;
+      if (typeof first?.id === "string") detailIds[kind] = first.id;
+    } catch {
+      // A body that cannot be read (the page moved on) leaves the id unresolved.
+    }
+  });
+
   // ── 1. The login screen renders ──────────────────────────────────────────
   currentRoute = "/login";
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle0", timeout: 60_000 });
@@ -112,13 +139,15 @@ async function main() {
   console.log(`nav items (${navLabels.length}): ${navLabels.join(", ")}`);
 
   // ── 3. Walk every route ──────────────────────────────────────────────────
+  // `:incidentId` and `:caseId` are filled from the queue walked just before
+  // them (see `detailIds`); with an empty queue the detail route is skipped.
   const routes = [
     "/dashboard",
     "/incidents",
-    "/incidents/INC-20481",
+    "/incidents/:incidentId",
     "/incidents/assigned",
     "/moderation",
-    "/moderation/CMT-90412",
+    "/moderation/:caseId",
     "/moderation/keywords",
     "/resources",
     "/resources/RES-101",
@@ -138,7 +167,14 @@ async function main() {
     "/settings",
   ];
 
-  for (const route of routes) {
+  for (const entry of routes) {
+    const route = entry
+      .replace(":incidentId", detailIds.incidents ?? ":incidentId")
+      .replace(":caseId", detailIds.moderation ?? ":caseId");
+    if (route.includes("/:")) {
+      console.log(`  ${entry.padEnd(30)} SKIPPED — the queue before it listed nothing to open`);
+      continue;
+    }
     currentRoute = route;
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle0", timeout: 45_000 });
     await page.waitForSelector("#main-content", { timeout: 20_000 });

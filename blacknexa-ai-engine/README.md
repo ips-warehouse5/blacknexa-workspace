@@ -3,7 +3,10 @@
 Python · FastAPI · Pydantic · httpx · SQLAlchemy
 
 The AI generation engine for BlackNexa news: grounded web search, briefing
-synthesis, photojournalistic imagery, TTS audio and 19-language translation.
+synthesis, photojournalistic imagery, TTS audio and 19-language translation —
+and the AI stage of **incident-report moderation**: a policy assessment of member
+reports, comments and photo thumbnails before they are published (see
+[Content moderation](#content-moderation)).
 
 Extracted from the Node backend's in-process AI layer. **Every public and admin
 endpoint still lives in `blacknexa-backend`** — this service is internal, called
@@ -50,6 +53,7 @@ Two, called directly. There is no aggregating AI gateway in front of them, and n
 | Synthesis, translation | Gemini | `gemini-2.5-flash-lite` |
 | Imagery | Gemini | `gemini-2.5-flash-image` |
 | Audio briefings | Gemini | `gemini-2.5-flash-preview-tts` |
+| Content moderation | Gemini | `AI_MODERATION_MODEL` (defaults to the synthesis model) |
 | Grounded search | Exa | `POST api.exa.ai/search` |
 
 `GEMINI_API_KEY` and `EXA_API_KEY` are both required in production, and `/ready`
@@ -126,14 +130,17 @@ Transport: 20 s timeout, one retry after 300 ms.
 
 ```
 app/
-  api/v1/internal/   news routes — service-token auth
+  api/v1/internal/   news and moderation routes — service-token auth
   api/v1/admin/      run-log observability — role-gated
   core/              config, logging, security, errors, prompt_safety
   ai/
     graph.py         the pipeline runner
     state.py         typed state threaded between nodes
     nodes/           search → synthesis → source_filter → image
-    prompts/         verbatim ports of the editorial prompts + daily rotation
+                     moderation_prescreen → moderation_classify → moderation_finalise
+    moderation_graph.py, moderation_state.py   the moderation runner and state
+    prompts/         verbatim ports of the editorial prompts + daily rotation,
+                     and the moderation policy (moderation.py)
   integrations/
     search/exa.py    grounded web search — api.exa.ai
     llm/gemini.py    generateContent client: request shape + part extraction
@@ -167,9 +174,11 @@ Base path `/api/v1/internal`, all requiring a bearer service token.
 | POST | `/news/translate` | `i18nService.translateArticle()` |
 | GET | `/news/daily-prompts` | `pickDailyBatch()` / `dayIndexAt()` |
 | GET | `/news/languages` | `SUPPORTED_LANGUAGES` |
+| POST | `/moderation/assess` | new — the AI stage of the moderation worker |
 
 Plus `/api/v1/admin/runs`, `/runs/summary`, `/runs/prune`, and unauthenticated
-`/health` and `/ready`.
+`/health` and `/ready`. `/ready` also reports `moderationReady` (Gemini configured
+and permitted for moderation) without changing `ready`.
 
 ### `/news/synthesize` returns a synthesis result, not an article
 
@@ -205,8 +214,9 @@ batch still reports `failed: N`, and translations still fall back to English.
 
 ### Prompt injection
 
-Two untrusted inputs reach the model, and **neither was screened in the Node
-engine**:
+Two untrusted inputs reach the news model, and **neither was screened in the Node
+engine** (member report text, the third, is covered under
+[Content moderation](#content-moderation)):
 
 1. `topicPrompt`, from `POST /api/v1/news/generate` — public and unauthenticated.
 2. Exa result `title` and `highlights` — lifted from live web pages, so anyone who
@@ -243,6 +253,124 @@ by `prompt_safety` before it can reach a prompt.
 
 `GET /api/v1/admin/runs/summary` surfaces `injectionFlagged` and `sourcesRejected`
 — a rise in either means the model is being steered or is inventing citations.
+
+---
+
+## Content moderation
+
+The AI stage of the incident-report pipeline (`docs/INCIDENT_MODULE_PLAN.md` §5–6).
+Node's durable moderation worker owns the queue, retries, keyword rules and the
+publish/hold policy; this service only answers "what does the model make of this
+content?" — statelessly, once per call. Private reports never reach it.
+
+```
+request ─► [1] prescreen ─────► [2] classify ──────────► [3] finalise ─────► verdict
+           strip hidden chars       one Gemini call          8 codes, fixed order
+           flag injection and       §6.3 policy + schema     violation ⇒ review
+           boundary-like text       BLOCK_NONE, temp 0       clamp, cap, unescape
+                                    photos as inlineData
+                                    30 s, one attempt
+```
+
+### `POST /api/v1/internal/moderation/assess`
+
+Request (camelCase, unknown fields refused): `runId` (32 hex), `targetType`
+(`report` · `comment`), `category` (report category or null), `title` /
+`locationLabel` / `parentTitle` (≤200 or null), `body` (1–20 000), `urgent`,
+`flaggedCategories` (≤8 policy codes), `keywordSignals` (≤20 `{category, term}`),
+`images` (≤10 `{mimeType: image/jpeg|png|webp, data: base64 ≤1.5 MiB decoded}`).
+Legacy flag codes (`threatening`, `private_details`, `untrue`) are accepted.
+
+Response — **always 200 for a valid request**:
+
+| Field | Meaning |
+|---|---|
+| `status` | `assessed` · `unavailable` (unconfigured, not permitted, transport failure, invalid JSON, `MAX_TOKENS`) · `blocked` (prompt `blockReason`, or finish `SAFETY` / `PROHIBITED_CONTENT` / `BLOCKLIST` / `SPII`) |
+| `recommendation`, `confidence` | `approve` · `review` — the AI never rejects; any violation, and any breach of the output contract, forces `review`; not assessed ⇒ `review`, 0 |
+| `categories` | all 8 policy codes in fixed order: `violation`, `confidence`, `severity`, `evidence` (≤200, copied verbatim from the content, only for violations), `evidenceEnglish` |
+| `safetyRisk` | `none` · `self_harm` · `imminent_danger` — not a violation; Node holds and alerts |
+| `summary` | ≤600 chars, English, for the moderator |
+| `injectionSuspected` | the prescreen found text shaped like the prompt frame, a chat-template marker, a request for the system prompt, or "ignore previous instructions" — deliberately narrow (see below) |
+| `blockReason` | the provider's reason when `blocked` |
+| `language` | BCP-47 code, `und` when unknown |
+| `imagesAssessed` | photos the model saw — the first N, in request order |
+| `retryable` | **only meaningful when `status` is `unavailable`**: `false` when the same request would fail the same way, so Node should record a permanent failure instead of retrying. Always `true` for `assessed` and `blocked` |
+| `unavailableReason` | the operational code (≤64 chars) behind an `unavailable` answer, never member content; `null` otherwise |
+| `meta` | `runId`, `model`, `policyVersion`, `durationMs` |
+
+`unavailableReason` codes and whether each is `retryable`:
+
+| Code | Retryable | Cause |
+|---|---|---|
+| `timeout` | yes | the whole pipeline overran `MODERATION_TIMEOUT_SECONDS` + 2 s |
+| `provider_timeout`, `provider_transport_error` | yes | the Gemini call timed out or could not connect |
+| `provider_http_<status>` | 5xx, 408, 429: yes · any other 4xx: **no** | Gemini answered with an error status (a 400 for a corrupt thumbnail repeats on every attempt) |
+| `provider_bad_response` | yes | a 2xx whose body is not JSON |
+| `no_candidate` | yes | a 200 with neither candidates nor a block reason |
+| `finish_max_tokens`, `finish_recitation`, `finish_language` | **no** | unusable finishes that repeat at temperature 0 |
+| `finish_<other>` | yes | any other unusable finish |
+| `invalid_json` | **no** | the model's text is not a JSON object even though `responseSchema` was sent |
+| `gemini_unconfigured`, `data_terms_unspecified` | yes | configuration; no Gemini call is made, and Node's reconciler re-runs held items once `/ready` reports `moderationReady` |
+| `internal_error` | yes | an unexpected error in this service (logged by type and location) |
+
+An invalid request is a 422 whose body — like its log line — never contains the
+submitted values (`input`/`ctx` are stripped from every validation error, on every
+route). Node treats a 422 as permanent.
+
+### Why it is built this way
+
+* **Member text is data, never instructions.** It is HTML-escaped and wrapped in
+  a boundary tag that is random per request (`<content_{16 hex}>`), so it cannot
+  close its own frame. Override phrasing or boundary-like text is *not* rejected
+  or redacted — it is reported as `injectionSuspected`, and Node holds the item
+  for a human. The text is never cut below the 20 000-character report cap.
+  The signatures are moderation's own and much narrower than the news screen's:
+  "you are now under arrest", "act as if nothing happened", "they ignore all the
+  rules" and "they never verify anything" are narrative, and flagging them held
+  genuine reports for a human. Softer attempts to steer the model are its own to
+  report, under the `other` code, which forces `review` anyway.
+* **The classifier must see what it labels.** `MODERATION_SAFETY_THRESHOLD`
+  (`BLOCK_NONE`) applies to moderation calls only; news keeps
+  `GEMINI_SAFETY_THRESHOLD`. A refusal is still possible and is surfaced as
+  `blocked`, never dropped.
+* **Node owns retries.** One attempt, `MODERATION_TIMEOUT_SECONDS` (30 s), so a
+  call always ends inside the worker's lease. `unavailable` with `retryable: true`
+  is Node's cue to back off and retry; `retryable: false` means a retry would
+  pay for the same failure again; `blocked` is its cue to hold.
+* **The answer always beats Node's 40 s abort.** httpx applies the 30 s to each
+  phase of the call separately, so the whole pipeline also runs under a
+  `MODERATION_TIMEOUT_SECONDS` + 2 s deadline and answers `unavailable` /
+  `timeout` when it overruns. The run-log row is written after the response is
+  sent (FastAPI background task), bounded to 2 s, and asyncpg's connect timeout
+  is `DB_CONNECT_TIMEOUT_SECONDS` (5 s) — a slow run-log database can no longer
+  delay a verdict.
+* **The model's answer is not trusted on shape.** Gemini's `responseSchema`
+  constrains the literals, and the finalise node re-checks every invariant anyway.
+* **No member content in logs or the run log.** Provider error bodies and
+  unparseable model output are logged by status and length only; the run log gets
+  `operation="moderate"`, the run id, the outcome (`approve` / `review` /
+  `unavailable` / `blocked`), model and duration.
+* **Data terms gate production.** Until `GEMINI_DATA_TERMS` is `paid` or
+  `vertex`, production answers `unavailable` without calling Gemini and `/ready`
+  reports `moderationReady: false`.
+
+### Settings
+
+| Env | Default | Notes |
+|---|---|---|
+| `AI_MODERATION_MODEL` | synthesis model | |
+| `MODERATION_SAFETY_THRESHOLD` | `BLOCK_NONE` | moderation calls only |
+| `MODERATION_TIMEOUT_SECONDS` | `30` | one attempt |
+| `MODERATION_MAX_TEXT_CHARS` | `20000` | may not be set lower |
+| `MODERATION_MAX_IMAGES` | `10` | 0–10 |
+| `MODERATION_MAX_IMAGE_BYTES` | `1572864` | decoded, per photo |
+| `RATE_LIMIT_MODERATION` | `300/minute` | per token subject |
+| `GEMINI_DATA_TERMS` | `unspecified` | `unspecified` · `paid` · `vertex` |
+| `DB_CONNECT_TIMEOUT_SECONDS` | `5` | run-log connect timeout (all operations) |
+
+Photos are included in request order while their base64 fits an ~18 MiB inline
+budget (Gemini rejects requests over ~20 MB); any beyond it are not sent, and
+`imagesAssessed` says how many were.
 
 ---
 

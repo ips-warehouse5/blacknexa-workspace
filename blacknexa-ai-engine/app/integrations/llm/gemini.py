@@ -18,15 +18,34 @@ logged with the reason so they stay tellable apart in production:
   * transport/HTTP failure — handled in `transport.post_json`,
   * a blocked *prompt* (`promptFeedback.blockReason`),
   * a blocked or truncated *candidate* (`finishReason` other than `STOP`).
+
+Content moderation (INCIDENT_MODULE_PLAN.md §6.2) needs four things the news
+callers never did, all added as keyword arguments whose defaults reproduce the
+old request byte for byte:
+
+  * `extra_parts` — photo thumbnails as `inlineData` parts after the text part;
+  * `safety_threshold` — a per-call threshold, because the classifier has to be
+    able to read the threats it is labelling (the news threshold stays global);
+  * `return_blocked` — a blocked prompt is itself the answer for moderation
+    ("blocked", held for a human), so the body comes back with its
+    `promptFeedback` instead of collapsing to `None`;
+  * `max_attempts` / `log_preview` — passed to the transport: Node owns
+    moderation retries, and member content must never reach a log line.
+
+`generate_content_result` is the same call returning a `ProviderResult` — the
+HTTP status and failure kind behind a missing body — so moderation can tell a
+permanent failure (a 400, an unconfigured key) from an outage (review R20).
+`generate_content` wraps it and returns the body alone, as before.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.integrations.transport import post_json
+from app.integrations.transport import ProviderResult, post_json_result
 
 logger = get_logger(__name__)
 
@@ -55,17 +74,16 @@ def _auth_headers() -> dict[str, str]:
     return {"x-goog-api-key": settings.gemini_api_key}
 
 
-def safety_settings() -> list[dict[str, str]]:
-    """The configured threshold applied to every tunable category.
+def safety_settings(threshold: str | None = None) -> list[dict[str, str]]:
+    """One threshold applied to every tunable category.
 
-    See `GEMINI_SAFETY_THRESHOLD` in config for why this is loosened: at Gemini's
-    defaults, straight reporting on police accountability or geopolitics is
-    filtered often enough to break the feed.
+    Defaults to `GEMINI_SAFETY_THRESHOLD`; see config for why that is loosened: at
+    Gemini's defaults, straight reporting on police accountability or geopolitics
+    is filtered often enough to break the feed. Moderation passes its own
+    `MODERATION_SAFETY_THRESHOLD` instead.
     """
-    return [
-        {"category": category, "threshold": settings.gemini_safety_threshold}
-        for category in _SAFETY_CATEGORIES
-    ]
+    level = threshold or settings.gemini_safety_threshold
+    return [{"category": category, "threshold": level} for category in _SAFETY_CATEGORIES]
 
 
 async def generate_content(
@@ -76,45 +94,97 @@ async def generate_content(
     generation_config: dict[str, Any] | None = None,
     label: str,
     timeout_seconds: float | None = None,
+    extra_parts: Sequence[dict[str, Any]] | None = None,
+    safety_threshold: str | None = None,
+    return_blocked: bool = False,
+    max_attempts: int | None = None,
+    log_preview: bool = True,
 ) -> dict[str, Any] | None:
     """Call `generateContent` for one single-turn prompt.
 
     Every call in this engine is single-turn — one user message, an optional
     system instruction — so the signature stays flat rather than exposing a
-    message list nobody builds.
+    message list nobody builds. `extra_parts` (e.g. `inlineData` images) follow
+    the text part inside that one user turn.
+
+    With `return_blocked=True` a blocked prompt returns its body, so the caller
+    can read `promptFeedback.blockReason`; otherwise it returns `None` as before.
+    """
+    result = await generate_content_result(
+        model=model,
+        user=user,
+        system=system,
+        generation_config=generation_config,
+        label=label,
+        timeout_seconds=timeout_seconds,
+        extra_parts=extra_parts,
+        safety_threshold=safety_threshold,
+        return_blocked=return_blocked,
+        max_attempts=max_attempts,
+        log_preview=log_preview,
+    )
+    return result.body
+
+
+async def generate_content_result(
+    *,
+    model: str,
+    user: str,
+    system: str | None = None,
+    generation_config: dict[str, Any] | None = None,
+    label: str,
+    timeout_seconds: float | None = None,
+    extra_parts: Sequence[dict[str, Any]] | None = None,
+    safety_threshold: str | None = None,
+    return_blocked: bool = False,
+    max_attempts: int | None = None,
+    log_preview: bool = True,
+) -> ProviderResult:
+    """`generate_content`, with the reason for a missing body (review R20).
+
+    `failure` is `unconfigured` when no call was made, `blocked` for a blocked
+    prompt without `return_blocked`, and otherwise whatever the transport saw.
     """
     if not settings.ai_enabled:
         logger.warning("gemini_not_configured", call=label)
-        return None
+        return ProviderResult(body=None, failure="unconfigured")
+
+    parts: list[dict[str, Any]] = [{"text": user}]
+    if extra_parts:
+        parts.extend(extra_parts)
 
     payload: dict[str, Any] = {
-        "contents": [{"role": "user", "parts": [{"text": user}]}],
-        "safetySettings": safety_settings(),
+        "contents": [{"role": "user", "parts": parts}],
+        "safetySettings": safety_settings(safety_threshold),
     }
     if system:
         payload["systemInstruction"] = {"parts": [{"text": system}]}
     if generation_config:
         payload["generationConfig"] = generation_config
 
-    body = await post_json(
+    result = await post_json_result(
         endpoint(model),
         payload,
         label=label,
         headers=_auth_headers(),
         timeout_seconds=timeout_seconds,
+        max_attempts=max_attempts,
+        log_preview=log_preview,
     )
 
+    body = result.body
     if body is None:
-        return None
+        return result
 
     # A blocked prompt returns 200 with no candidates at all, so this has to be
     # checked before reading them.
     block_reason = (body.get("promptFeedback") or {}).get("blockReason")
     if block_reason:
         logger.warning("gemini_prompt_blocked", call=label, model=model, reason=block_reason)
-        return None
+        if not return_blocked:
+            return ProviderResult(body=None, status=result.status, failure="blocked")
 
-    return body
+    return result
 
 
 def first_candidate(body: dict[str, Any] | None) -> dict[str, Any] | None:

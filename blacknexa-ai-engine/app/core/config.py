@@ -11,6 +11,13 @@ No secret has a usable default. `GEMINI_API_KEY`, `EXA_API_KEY` and
 The engine talks to two providers directly — Google's Generative Language API for
 every model call, and Exa for web search. There is no aggregating gateway in
 between, so each provider is keyed, validated and reported on independently.
+
+Content moderation (`INCIDENT_MODULE_PLAN.md` §6) has its own section below. It
+reuses the Gemini key but none of the news tuning: a moderation call must be able
+to *see* the threats and slurs it is classifying (its own safety threshold), must
+answer inside Node's lease budget (its own timeout, one attempt — Node owns the
+retries), and must not run in production until the Gemini data terms are declared
+(`GEMINI_DATA_TERMS`, §13.2 of the plan).
 """
 
 from __future__ import annotations
@@ -23,6 +30,28 @@ from pydantic import Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["development", "test", "production"]
+
+#: Which Gemini terms the deployment runs under. Only `paid` (Gemini API paid
+#: tier) and `vertex` (Vertex AI) forbid training on submitted content, which is
+#: what the proposed member-facing copy promises (plan §13.1–2).
+GeminiDataTerms = Literal["unspecified", "paid", "vertex"]
+
+#: Every threshold Gemini accepts for the four tunable harm categories.
+_SAFETY_THRESHOLDS = frozenset(
+    {
+        "BLOCK_NONE",
+        "BLOCK_ONLY_HIGH",
+        "BLOCK_MEDIUM_AND_ABOVE",
+        "BLOCK_LOW_AND_ABOVE",
+        "OFF",
+    }
+)
+
+#: The request contract caps a report body at 20 000 characters (plan §6.1). The
+#: moderation text cap may be raised above that but never below it, otherwise the
+#: prescreen would silently cut off the end of a legitimate report — exactly
+#: where a threat or a home address would sit unseen.
+_MODERATION_MIN_TEXT_CHARS = 20_000
 
 
 class Settings(BaseSettings):
@@ -116,12 +145,52 @@ class Settings(BaseSettings):
     # outright instead of being neutralised and passed through.
     reject_suspicious_prompts: bool = Field(default=True, alias="REJECT_SUSPICIOUS_PROMPTS")
 
+    # ── Content moderation (INCIDENT_MODULE_PLAN.md §6) ──────────────────────
+    # Blank means "the synthesis model": one model family to evaluate and pay for
+    # until moderation data says otherwise. Filled in by `_default_moderation_model`.
+    moderation_model: str = Field(default="", alias="AI_MODERATION_MODEL")
+    # A classifier that cannot see a threat cannot report one. At the news
+    # threshold (BLOCK_ONLY_HIGH) Gemini refuses the very reports this call must
+    # label — quoted slurs, threats, injuries — so moderation asks for BLOCK_NONE
+    # on all four categories. A refusal that still happens is surfaced as
+    # `status: blocked` and held for a human, never dropped.
+    moderation_safety_threshold: str = Field(
+        default="BLOCK_NONE", alias="MODERATION_SAFETY_THRESHOLD"
+    )
+    # Node's lease check requires lease ≥ 2 × its 40 s engine timeout + 30 s; the
+    # engine answers inside that because it makes exactly one 30 s attempt.
+    moderation_timeout_seconds: float = Field(
+        default=30.0, gt=0, alias="MODERATION_TIMEOUT_SECONDS"
+    )
+    moderation_max_text_chars: int = Field(
+        default=_MODERATION_MIN_TEXT_CHARS,
+        ge=_MODERATION_MIN_TEXT_CHARS,
+        alias="MODERATION_MAX_TEXT_CHARS",
+    )
+    # Photo thumbnails only (plan D22). The request contract hard-caps both; these
+    # settings can only tighten them.
+    moderation_max_images: int = Field(default=10, ge=0, le=10, alias="MODERATION_MAX_IMAGES")
+    # 1.5 MiB decoded per image.
+    moderation_max_image_bytes: int = Field(
+        default=1_572_864, ge=1024, le=1_572_864, alias="MODERATION_MAX_IMAGE_BYTES"
+    )
+    # Every filing, edit, comment and flag re-check calls this once, from every
+    # API replica — far above the generation budget, but still a spend bound.
+    rate_limit_moderation: str = Field(default="300/minute", alias="RATE_LIMIT_MODERATION")
+    gemini_data_terms: GeminiDataTerms = Field(default="unspecified", alias="GEMINI_DATA_TERMS")
+
     # ── Run-log persistence (optional) ───────────────────────────────────────
     # Operational observability only: timings, token-ish counts, outcomes. Never
     # article content. With no DATABASE_URL the engine runs fully stateless.
     database_url: str = Field(default="", alias="DATABASE_URL")
     db_echo: bool = Field(default=False, alias="DB_ECHO")
     db_pool_size: int = Field(default=5, ge=1, alias="DB_POOL_SIZE")
+    # asyncpg waits 60 s for a connection by default. The run log is optional,
+    # so an unreachable database should fail a write fast, not hold a request
+    # (or, for moderation, a background task) for a minute — review R19.
+    db_connect_timeout_seconds: float = Field(
+        default=5.0, gt=0, alias="DB_CONNECT_TIMEOUT_SECONDS"
+    )
     run_log_retention_days: int = Field(default=30, ge=1, alias="RUN_LOG_RETENTION_DAYS")
 
     # ── Derived ──────────────────────────────────────────────────────────────
@@ -151,6 +220,22 @@ class Settings(BaseSettings):
         return bool(self.exa_base_url and self.exa_api_key)
 
     @property
+    def moderation_permitted(self) -> bool:
+        """False in production until the Gemini data terms are declared.
+
+        Member reports may only leave the platform under terms that forbid
+        training on them (plan §13.2). An undeclared tier in production therefore
+        answers every assessment `unavailable`, which Node holds for a human —
+        fail closed, never a silent publish.
+        """
+        return not (self.is_production and self.gemini_data_terms == "unspecified")
+
+    @property
+    def moderation_ready(self) -> bool:
+        """True when a moderation assessment can actually be made."""
+        return self.ai_enabled and self.moderation_permitted
+
+    @property
     def persistence_enabled(self) -> bool:
         return bool(self.database_url)
 
@@ -168,17 +253,36 @@ class Settings(BaseSettings):
     @field_validator("gemini_safety_threshold")
     @classmethod
     def _valid_safety_threshold(cls, v: str) -> str:
-        allowed = {
-            "BLOCK_NONE",
-            "BLOCK_ONLY_HIGH",
-            "BLOCK_MEDIUM_AND_ABOVE",
-            "BLOCK_LOW_AND_ABOVE",
-            "OFF",
-        }
         upper = v.upper()
-        if upper not in allowed:
-            raise ValueError(f"GEMINI_SAFETY_THRESHOLD must be one of {sorted(allowed)}")
+        if upper not in _SAFETY_THRESHOLDS:
+            raise ValueError(
+                f"GEMINI_SAFETY_THRESHOLD must be one of {sorted(_SAFETY_THRESHOLDS)}"
+            )
         return upper
+
+    @field_validator("moderation_safety_threshold")
+    @classmethod
+    def _valid_moderation_safety_threshold(cls, v: str) -> str:
+        upper = v.upper()
+        if upper not in _SAFETY_THRESHOLDS:
+            raise ValueError(
+                f"MODERATION_SAFETY_THRESHOLD must be one of {sorted(_SAFETY_THRESHOLDS)}"
+            )
+        return upper
+
+    @field_validator("moderation_model")
+    @classmethod
+    def _strip_moderation_model(cls, v: str) -> str:
+        return v.strip()
+
+    @model_validator(mode="after")
+    def _default_moderation_model(self) -> Settings:
+        # "Default = the synthesis model" has to be resolved after both fields are
+        # read, so an operator who overrides only AI_SYNTHESIS_MODEL moves
+        # moderation with it.
+        if not self.moderation_model:
+            self.moderation_model = self.synthesis_model
+        return self
 
     @field_validator("log_level")
     @classmethod

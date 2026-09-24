@@ -83,7 +83,9 @@ export const router = createBrowserRouter([
             children: [
               { path: "moderation", element: <ModerationQueuePage /> },
               { path: "moderation/keywords", element: <KeywordRulesPage /> },
-              { path: "moderation/:postId", element: <ModerationDetailPage /> },
+              // The param is a moderation case id — a report can have several
+              // cases over its life, and a comment has no reference of its own.
+              { path: "moderation/:caseId", element: <ModerationDetailPage /> },
             ],
           },
 

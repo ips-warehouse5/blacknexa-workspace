@@ -10,17 +10,35 @@
  *
  * The list reads the notifications table, not push history, so it is complete even
  * when a push was never delivered.
+ *
+ * ── What arrives here (docs/INCIDENT_MODULE_PLAN.md §7.7, D18) ─────────────
+ * News about your report ("Your report is live", "…is with a moderator", "…wasn't
+ * published", "…was taken down", verified, dismissed), corroborations and
+ * replies, urgent safety notices, and `moderation_notice` — "Your comment was
+ * removed", with the reason and the moderator's note. Every row renders the same
+ * way (the caption forbids per-kind icons); the kinds that can carry a reason, a
+ * note or crisis copy ("If you or someone else is in danger right now…") get room
+ * for four lines, because that text must never be cut off mid-sentence. The
+ * empty state names these kinds and no others: nothing produces a dispatch
+ * notice in this release.
  */
 
 import React, { useCallback, useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { Screen, BackHeader } from "@/components/ui/Screen";
 import reportsApi, { type NotificationView } from "@/lib/api/reports";
+import { NOTIFICATIONS_EMPTY_BODY, notificationBodyLines } from "@/lib/report/detail";
+
+/** The shape the feed bell's one-row unread query caches (`app/(tabs)/index.tsx`). */
+type UnreadPage = Awaited<ReturnType<typeof reportsApi.notifications>>;
+
+/** B3's own cache: the same pages, keyed by cursor. */
+type NotificationPages = InfiniteData<UnreadPage, string | undefined>;
 
 /** "TODAY" / "YESTERDAY" / a date — the grouping the artboard shows. */
 function dayLabel(iso: string): string {
@@ -91,7 +109,7 @@ export default function NotificationsScreen(): React.ReactElement {
   const markAllRead = useCallback(async () => {
     // Optimistic: the rows recede immediately, and a failure only means they
     // come back on the next fetch.
-    queryClient.setQueryData(["notifications"], (old: typeof query.data) => {
+    queryClient.setQueryData(["notifications"], (old: NotificationPages | undefined) => {
       if (!old) return old;
       return {
         ...old,
@@ -102,6 +120,10 @@ export default function NotificationsScreen(): React.ReactElement {
         })),
       };
     });
+    // The feed bell's dot reads its own one-row query; clear it in the same beat.
+    queryClient.setQueryData(["notifications", "unread"], (old: UnreadPage | undefined) =>
+      old ? { ...old, unread: 0, items: old.items.map((item) => ({ ...item, read: true })) } : old,
+    );
     await reportsApi.markAllRead().catch(() => {
       void queryClient.invalidateQueries({ queryKey: ["notifications"] });
     });
@@ -121,7 +143,12 @@ export default function NotificationsScreen(): React.ReactElement {
           padding={0}
           right={
             unread > 0 ? (
-              <Pressable onPress={markAllRead} hitSlop={8} accessibilityRole="button">
+              <Pressable
+                onPress={markAllRead}
+                hitSlop={8}
+                accessibilityRole="button"
+                testID="notifications-mark-all-read"
+              >
                 <Text variant="labelSm" color={colors.acc}>
                   Mark all read
                 </Text>
@@ -162,9 +189,7 @@ export default function NotificationsScreen(): React.ReactElement {
             Nothing yet
           </Text>
           <Text variant="bodySm" color={colors.t2} center style={styles.emptyBody}>
-            We only send four things: your report changing status, someone
-            corroborating or replying, a dispatch being ready, and urgent safety
-            notices for your area.
+            {NOTIFICATIONS_EMPTY_BODY}
           </Text>
         </View>
       ) : (
@@ -203,7 +228,7 @@ export default function NotificationsScreen(): React.ReactElement {
                   <Text
                     variant="bodyXs"
                     color={row.value.read ? colors.t3 : colors.t2}
-                    numberOfLines={2}
+                    numberOfLines={notificationBodyLines(row.value.type)}
                     style={{ marginTop: 4, lineHeight: 19 }}
                   >
                     {row.value.body}

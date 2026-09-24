@@ -17,6 +17,8 @@
  */
 
 import type { NextFunction, Request, RequestHandler, Response } from "express";
+import jwt from "jsonwebtoken";
+import env from "@/config/env.config";
 import authService, { AuthError } from "@/services/auth.service";
 import { legacyError } from "@/utils/response.util";
 import responseMessage from "@/utils/response_message.util";
@@ -24,6 +26,26 @@ import logger from "@/utils/logger.util";
 import { roleHasPermission, type Permission } from "@/config/rbac.config";
 import type { AdminRole, TokenAudience } from "@/types/admin.interface";
 import type { UserRole } from "@/types/user.interface";
+
+/**
+ * True only for a genuine member access token whose sole defect is that it
+ * expired: the signature verifies against `secret`, it is `typ=access`,
+ * `aud=user`, and it is past its `exp`. `optionalAuth` answers exactly this case
+ * with a 401 so the client refreshes (review R12). Anything else — a bad
+ * signature, a not-yet-valid token, an operator or refresh token, a token that
+ * is in fact still valid — is false.
+ */
+export function isExpiredMemberAccessToken(token: string, secret: string, nowMs: number = Date.now()): boolean {
+  try {
+    const decoded = jwt.verify(token, secret, { ignoreExpiration: true });
+    if (!decoded || typeof decoded !== "object") return false;
+    const claims = decoded as { typ?: unknown; aud?: unknown; exp?: unknown };
+    if (claims.typ !== "access" || claims.aud !== "user") return false;
+    return typeof claims.exp === "number" && claims.exp * 1000 <= nowMs;
+  } catch {
+    return false;
+  }
+}
 
 /** Pull a bearer token out of the Authorization header. */
 function extractBearerToken(req: Request): string | null {
@@ -220,25 +242,73 @@ export function checkUserRole(allowed: UserRole[]): RequestHandler {
 }
 
 /**
- * Attach `req.user` when a valid token is present, but never reject.
+ * Attach `req.user` when a valid **member** token with a live session is
+ * present, but never reject.
  *
- * For routes whose behaviour is richer for a known caller yet must stay open —
- * useful when the apps begin sending tokens, without a flag day.
+ * For the member read routes whose behaviour is richer for a known caller yet
+ * must stay open (the feed, a report, its comments). It used to accept any
+ * access token without checking the audience or the session
+ * (docs/INCIDENT_MODULE_PLAN.md §7.3), which had two consequences on routes that
+ * decide *who may read what*:
+ *
+ *   • an operator token whose admin role happens to be spelled `advocate`
+ *     passed as a Trusted-Circle member and read trusted reports through the
+ *     member API;
+ *   • a member who signed out, or whose device was revoked, kept reading as
+ *     themselves — including their own unpublished reports — until the token
+ *     expired.
+ *
+ * So only an `aud=user` token whose `user_sessions` row is still live counts,
+ * exactly as `userAuthGuard` requires. Anything else — an operator token, a
+ * revoked session, a forged or malformed token — is treated as no token at all:
+ * the caller reads what an anonymous visitor reads, and the route still answers.
+ *
+ * ── Except a member token that has merely expired (review R12) ─────────────
+ * That one answers 401 with the legacy envelope, exactly as `userAuthGuard`
+ * would. Access tokens last 15 minutes and the mobile client refreshes only on a
+ * 401, so read as anonymous, an author opening their own pending, held or
+ * rejected report after a warm resume (the very states the moderation pushes
+ * point to) got a 404 "That report is not available" instead of a refresh and a
+ * replay. The token must still carry a valid signature, `typ=access` and
+ * `aud=user` — only its `exp` may have failed — so a forged, operator or
+ * refresh token never earns the 401 and stays anonymous.
  */
-export const optionalAuth: RequestHandler = (req, _res, next) => {
+export const optionalAuth: RequestHandler = async (req, res, next) => {
   const token = extractBearerToken(req);
-  if (!token) return next();
+  if (!token) {
+    next();
+    return;
+  }
   try {
-    const payload = authService.verifyAccessToken(token);
-    req.user = {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
-      audience: payload.aud,
-      sessionId: (payload as { sid?: string }).sid,
-    };
-  } catch {
-    // An invalid token is treated as no token on an optional route.
+    let payload: ReturnType<typeof authService.verifyAccessToken>;
+    try {
+      payload = authService.verifyAccessToken(token);
+    } catch (err) {
+      if (err instanceof AuthError && isExpiredMemberAccessToken(token, env.jwt.accessSecret)) {
+        legacyError(res, err.message, 401);
+        return;
+      }
+      throw err;
+    }
+    const sessionId = (payload as { sid?: string }).sid;
+    if (payload.aud === "user" && sessionId && (await isSessionLive(sessionId, payload.sub))) {
+      req.user = {
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        audience: payload.aud,
+        sessionId,
+      };
+    }
+  } catch (err) {
+    // An invalid token is treated as no token on an optional route. A failed
+    // session lookup is too — but it is worth seeing, since it is not the
+    // caller's fault.
+    if (!(err instanceof AuthError)) {
+      logger.warn("[auth] optional session check failed", {
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
   next();
 };

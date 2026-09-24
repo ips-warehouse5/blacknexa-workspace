@@ -24,6 +24,20 @@
  * Drift is logged as a warning even though it is repaired, because a count that
  * needed repairing means a writer somewhere is not doing what it claims.
  *
+ * `comment_count` counts comments other members can read: `visible` *and*
+ * `approved` (docs/INCIDENT_MODULE_PLAN.md §7.5). The recount uses the same
+ * predicate as the live path (`COUNTED_COMMENT_WHERE` from `comment_state.ts`),
+ * so a comment still being checked, or held, is never counted by one and not
+ * the other.
+ *
+ * ── The purge and the moderation tables (§7.8) ─────────────────────────────
+ * A report hard-deleted after its retention window takes its moderation record
+ * with it: its runs (which hold the AI's evidence quotes — content), its cases,
+ * its internal notes and every flag on it or on its comments. Its audit rows are
+ * not deleted — the log must still say *that* a decision was made — but their
+ * free text and metadata are redacted through `auditService.redactForReport`,
+ * the one audit mutation erasure permits.
+ *
  * ── 3. Expired one-time codes and dead sessions ────────────────────────────
  * Neither is a security hole — both are checked on use — but an `email_otps` table
  * that only grows is a table nobody wants to read during an incident.
@@ -38,10 +52,14 @@ import { Report, ReportEvidence } from "@/models/report.model";
 import {
   ReportComment,
   ReportCorroboration,
+  ReportFlag,
   ReportSupport,
 } from "@/models/report_social.model";
 import { EmailOtp, UserSession } from "@/models/app_user.model";
+import { ModerationCase, ModerationRun, ReportNote } from "@/models/moderation.model";
 import s3Service from "@/services/s3.service";
+import { auditService } from "@/services/audit.service";
+import { COUNTED_COMMENT_WHERE } from "@/services/comment_state";
 
 /** How long a revoked session row is kept before it is dropped. */
 const REVOKED_SESSION_RETENTION_DAYS = 30;
@@ -141,9 +159,9 @@ class ReportMaintenanceService {
     const [supports, corroborations, comments] = await Promise.all([
       this.tally(ReportSupport, {}),
       this.tally(ReportCorroboration, {}),
-      // Hidden and removed comments are excluded, matching what `commentService`
-      // counts when it increments — the footer says how many are readable.
-      this.tally(ReportComment, { status: "visible" }),
+      // Only comments other members can read — visible *and* approved — exactly
+      // the predicate `setCommentState` applies live (§7.5).
+      this.tally(ReportComment, { ...COUNTED_COMMENT_WHERE }),
     ]);
 
     const reports = await Report.findAll({
@@ -245,7 +263,11 @@ class ReportMaintenanceService {
    *
    * Called after the purge, so a report is only hard-deleted once nothing points at
    * a file that still exists. Children go with it — comments and corroborations on a
-   * report that no longer exists are unreachable by any route.
+   * report that no longer exists are unreachable by any route — and so does its
+   * moderation record (§7.8): runs, cases, internal notes, and the flags on the
+   * report and on its comments. None of those tables has a foreign key, so each is
+   * deleted explicitly, flags before the comments they point at. The audit rows
+   * stay, redacted, in the same transaction.
    */
   async purgeDeletedReports(): Promise<number> {
     const cutoff = new Date(
@@ -272,14 +294,40 @@ class ReportMaintenanceService {
       return 0;
     }
 
-    await sequelize.transaction(async (transaction) => {
+    const purged = await sequelize.transaction(async (transaction) => {
+      // A lock wait (a moderator acting on a flag of a long-deleted report) fails
+      // the batch after five seconds; it is retried tomorrow.
+      await sequelize.query("SET LOCAL lock_timeout = '5s'", { transaction });
+
+      // Flags first: comment flags are found through the comments deleted below.
+      const commentIds = (
+        await ReportComment.findAll({
+          where: { report_id: { [Op.in]: ids } },
+          attributes: ["id"],
+          transaction,
+        })
+      ).map((row) => row.id);
+      const flags = await ReportFlag.destroy({
+        where:
+          commentIds.length > 0
+            ? { [Op.or]: [{ report_id: { [Op.in]: ids } }, { comment_id: { [Op.in]: commentIds } }] }
+            : { report_id: { [Op.in]: ids } },
+        transaction,
+      });
+      // Comment runs and cases carry their parent's report_id, so these cover both.
+      const runs = await ModerationRun.destroy({ where: { report_id: { [Op.in]: ids } }, transaction });
+      const cases = await ModerationCase.destroy({ where: { report_id: { [Op.in]: ids } }, transaction });
+      const notes = await ReportNote.destroy({ where: { report_id: { [Op.in]: ids } }, transaction });
+      const auditRedacted = await auditService.redactForReport(transaction, ids);
+
       await ReportSupport.destroy({ where: { report_id: { [Op.in]: ids } }, transaction });
       await ReportCorroboration.destroy({ where: { report_id: { [Op.in]: ids } }, transaction });
       await ReportComment.destroy({ where: { report_id: { [Op.in]: ids } }, transaction });
       await Report.destroy({ where: { id: { [Op.in]: ids } }, force: true, transaction });
+      return { flags, runs, cases, notes, auditRedacted };
     });
 
-    logger.info("[reports] deleted reports purged", { count: due.length });
+    logger.info("[reports] deleted reports purged", { count: due.length, ...purged });
     return due.length;
   }
 }

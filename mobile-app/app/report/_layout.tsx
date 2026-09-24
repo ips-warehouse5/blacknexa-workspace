@@ -38,7 +38,8 @@ export default function ReportWizardLayout(): React.ReactElement {
         <Stack.Screen name="review" />
         {/* C8 — fades in, and the Android back button is swallowed inside. */}
         <Stack.Screen name="submitting" options={{ animation: "fade" }} />
-        {/* C9 — the flow is over; there is nothing behind it to go back to. */}
+        {/* C9 — the flow is over. The steps are still beneath it, so its Android
+            back finishes the flow instead of popping to an emptied Review. */}
         <Stack.Screen name="receipt" options={{ animation: "fade" }} />
         {/*
           C10 / C11. A transparent modal so the dimmed step stays visible behind

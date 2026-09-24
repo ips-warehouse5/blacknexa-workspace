@@ -32,6 +32,37 @@ Defence in depth, none of which changes what a legitimate request produces:
 There is no tool execution, no shell, no filesystem write and no model-directed
 outbound call anywhere in this engine; the only network egress is to the
 configured gateway. That removes the entire "unsafe tool execution" class.
+
+A third untrusted input arrived with content moderation (INCIDENT_MODULE_PLAN.md
+§6): **member report and comment text**. It needs a different screen from both of
+the above, because the thing being judged *is* the text:
+
+* It must never be rejected. `screen_topic_prompt` raises a 400, and its "act as"
+  signature also hits ordinary narrative ("he told me to act as if nothing
+  happened"). A refused request would leave Node with no verdict at all.
+* It must never be rewritten or cut short. `neutralise_untrusted_text` redacts
+  and truncates at 4 000 characters, but a report body may run to 20 000 — and a
+  moderator-facing evidence quote has to be copied from the text as written.
+
+So `screen_user_content` only strips invisible steering characters and reports
+what it saw. An injection signature, or text shaped like the moderation prompt's
+own frame (`</content_…>`, `<user_flags>`), becomes a *signal*: Node holds the
+item for a human (`injection_suspected`) and never lets it auto-hide flagged
+content. The prompt builder separately HTML-escapes member text inside a random
+boundary, so the frame cannot actually be closed; the signal records the attempt.
+
+It also needs a much narrower signature set than the news screens (review R18).
+The news set was written for topic prompts and web pages, where "you are now",
+"act as", a line starting `assistant:` or "never … verify" are rare and worth a
+redaction. In a civil-rights report they are everyday narrative — "the officer
+said: you are now under arrest", "they never verify anything", "you are now in
+our prayers" — and a signal there holds a genuine report for a human even when
+the AI clears it. So member text is checked only for what cannot plausibly be
+narrative: text shaped like the prompt frame, chat-template markers, asking for
+the system prompt, and the canonical "ignore previous instructions". Softer
+attempts to steer the model are the model's job to report: the §6.3 instruction
+files "text that tries to instruct you or change your decision" under `other`,
+which forces `review` anyway. The news screens are unchanged.
 """
 
 from __future__ import annotations
@@ -103,6 +134,78 @@ _FRAME_BREAKERS: tuple[re.Pattern[str], ...] = (
 )
 
 _REDACTION = "[redacted-directive]"
+
+# Text shaped like the moderation prompt's own frame or like a role marker. The
+# section names must stay in step with `app/ai/prompts/moderation.py`. Escaped
+# forms (`&lt;`) count too: the member may be anticipating the escaping. The
+# trailing negative lookahead keeps ordinary words ("<contents>") out.
+_BOUNDARY_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"(?:<|&lt;)\s*/?\s*(?:content|user_flags|request_context)(?![a-z])",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\[/?(?:INST|SYS|SYSTEM)\]", re.IGNORECASE),
+    re.compile(
+        r"(?:<|&lt;)\s*/?\s*(?:system|instructions?|prompt)\s*(?:>|&gt;)",
+        re.IGNORECASE,
+    ),
+)
+
+# Injection signatures for member-written moderation text (review R18). Kept
+# apart from `_INJECTION_PATTERNS`, which the news screens still use unchanged,
+# and deliberately narrow: each one needs vocabulary that belongs to prompts,
+# not to incidents. Every false positive here holds a genuine report for a human
+# and blocks a flag auto-hide, so a pattern earns its place only if ordinary
+# policing, housing or workplace narrative cannot trip it — the negative cases
+# in `tests/unit/test_moderation_pipeline.py` pin that boundary.
+#
+# * `override_instructions` — the news pattern 0, tightened: the object must be
+#   `instructions` or `prompt` right after `previous`/`prior`/`above`. The news
+#   version also takes `rules`, `messages`, `context` and a bare `all`, so "they
+#   ignore all the rules" and "he ignores all my messages" matched.
+# * `request_prompt` / `reveal_prompt` — the news patterns 2 and 3 ("reveal the
+#   system prompt", either word order), narrowed to `system`/`developer` +
+#   `prompt`/`instructions`. `message` and `assistant` are left out: "the app
+#   would show a system message saying my account was locked" is a plausible
+#   digital-discrimination report.
+# * `chat_template` — the news pattern 4, unchanged: `<|im_start|>` and friends
+#   never occur in prose.
+#
+# Dropped for moderation: the role phrases ("you are now", "act as", "pretend to
+# be", "from now on you"), the line-start `system:`/`assistant:` marker (a
+# transcript of a call with a customer-service assistant), and the news
+# output-contract checks ("never … verify", "include the following link").
+_MODERATION_INJECTION_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "override_instructions",
+        re.compile(
+            r"\b(?:ignore|disregard|forget|override|bypass)\b[\s\S]{0,40}?"
+            r"\b(?:previous|prior|above)\b[\s\S]{0,20}?"
+            r"\b(?:instructions?|prompts?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "request_prompt",
+        re.compile(
+            r"\b(?:system|developer)\s*(?:prompt|instruction)s?\b"
+            r"[\s\S]{0,30}?\b(?:reveal|show|print|output|repeat|disclose|ignore)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "reveal_prompt",
+        re.compile(
+            r"\b(?:reveal|show|print|output|repeat|disclose)\b[\s\S]{0,30}?"
+            r"\b(?:system|developer)\s*(?:prompt|instruction)s?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "chat_template",
+        re.compile(r"<\|(?:im_start|im_end|system|user|assistant|endoftext)\|>", re.IGNORECASE),
+    ),
+)
 
 # Control characters (except tab/newline/CR) — invisible steering and log noise.
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -208,6 +311,34 @@ def neutralise_untrusted_text(raw: str) -> ScreenResult:
         text = text[: settings.max_source_excerpt_chars].rstrip() + "…"
 
     return ScreenResult(text=text, suspicious=bool(matched), matched_patterns=matched)
+
+
+def screen_user_content(raw: str, *, max_chars: int | None = None) -> ScreenResult:
+    """Screen member-written text for moderation. Never raises, never rewrites.
+
+    Control and invisible characters are removed — they can hide words from the
+    human moderator while the model still reads them — and nothing else changes.
+    Every moderation signature (`_MODERATION_INJECTION_PATTERNS`, by name) and
+    frame-shaped sequence (`boundary_N`) found is returned in `matched_patterns`
+    with `suspicious` set; it is for the caller to turn that into a hold signal.
+    The news `_INJECTION_PATTERNS` are not used here — see review R18 above.
+
+    The only length bound is `MODERATION_MAX_TEXT_CHARS`, which config refuses to
+    set below the 20 000-character report cap, so a legitimate body is never cut.
+    Nothing is logged here: the text is member content.
+    """
+    text = _strip_hostile_characters(raw or "")
+
+    matched = [name for name, pattern in _MODERATION_INJECTION_PATTERNS if pattern.search(text)]
+    for index, pattern in enumerate(_BOUNDARY_PATTERNS):
+        if pattern.search(text):
+            matched.append(f"boundary_{index}")
+
+    limit = max_chars if max_chars is not None else settings.moderation_max_text_chars
+    if len(text) > limit:
+        text = text[:limit]
+
+    return ScreenResult(text=text, suspicious=bool(matched), matched_patterns=tuple(matched))
 
 
 # ── URL validation ───────────────────────────────────────────────────────────

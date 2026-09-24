@@ -11,6 +11,7 @@
 import {
   DataTypes,
   Model,
+  Op,
   type CreationOptional,
   type InferAttributes,
   type InferCreationAttributes,
@@ -19,6 +20,11 @@ import sequelize from "@/config/database.config";
 import { BASE_OPTIONS } from "@/models/model_options";
 import { uuidv4 } from "@/utils/id.util";
 import type { FlagReason, NotificationType } from "@/types/report.interface";
+import type {
+  CommentModerationState,
+  CommentStatus,
+  FlagStatus,
+} from "@/types/moderation.interface";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // report_supports — D1's "Stand with"
@@ -120,6 +126,20 @@ ReportCorroboration.beforeValidate((row) => {
  *
  * `anonymous` is per comment and independent of the report's setting — D4's
  * composer has its own switch, inheriting the profile default.
+ *
+ * ── `status` and `moderation_state` (§3.2, §7.5) ───────────────────────────
+ * `status` (visible / hidden / removed) is unchanged; `moderation_state` is the
+ * pre-moderation gate (D2). Others see a comment only when it is `visible` *and*
+ * `approved`, and `reports.comment_count` counts exactly that set — every state
+ * change goes through `services/comment_state.ts`, which locks the row and
+ * applies the counter delta in SQL. Like the report column, the `'approved'`
+ * database default exists only so the migration is a fast metadata change; the
+ * creation type makes the state required, because a comment created without
+ * one would be published unchecked.
+ *
+ * `reply_notified` moves the "Someone replied to your report" notification from
+ * creation to approval (D18): held text must never reach the report owner, and
+ * a comment approved twice (held, then kept) must notify once.
  */
 export class ReportComment extends Model<
   InferAttributes<ReportComment>,
@@ -132,8 +152,14 @@ export class ReportComment extends Model<
   declare anonymous: CreationOptional<boolean>;
   declare body: string;
   declare like_count: CreationOptional<number>;
-  declare status: CreationOptional<"visible" | "hidden" | "removed">;
+  declare status: CreationOptional<CommentStatus>;
   declare created_at: string;
+  /** Required on create — see the header. */
+  declare moderation_state: CommentModerationState;
+  /** A reject code when a moderator removed it. Staff-facing. */
+  declare moderation_reason: CreationOptional<string | null>;
+  declare moderated_at: CreationOptional<string | null>;
+  declare reply_notified: CreationOptional<boolean>;
 }
 
 ReportComment.init(
@@ -147,6 +173,10 @@ ReportComment.init(
     like_count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     status: { type: DataTypes.STRING(16), allowNull: false, defaultValue: "visible" },
     created_at: { type: DataTypes.STRING(32), allowNull: false },
+    moderation_state: { type: DataTypes.STRING(16), allowNull: false, defaultValue: "approved" },
+    moderation_reason: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    moderated_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    reply_notified: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   {
     sequelize,
@@ -157,6 +187,8 @@ ReportComment.init(
       { name: "idx_report_comments_report", fields: ["report_id", "created_at"] },
       { name: "idx_report_comments_parent", fields: ["parent_id"] },
       { name: "idx_report_comments_top", fields: ["report_id", "like_count"] },
+      // Author history on the moderation case and account deletion (§4.2).
+      { name: "idx_report_comments_user", fields: ["user_id"] },
     ],
   },
 );
@@ -209,6 +241,20 @@ CommentLike.beforeValidate((row) => {
  * D9's promise — "The author is told: Nothing about you" — is a projection rule
  * rather than a storage one, but it is worth stating here too: `reporter_id` is
  * read only by moderators, and no owner-facing query ever selects it.
+ *
+ * ── One open flag per reporter per target (§4.2) ───────────────────────────
+ * Two partial unique indexes make a double-tap or a retried request land on the
+ * existing flag instead of inflating the count a case's priority reads:
+ * `uq_report_flags_open_report` (report flags: `comment_id IS NULL`) and
+ * `uq_report_flags_open_comment`. They cover `open` flags only, so a member may
+ * flag again after a moderator resolved their earlier one. The migration
+ * dedupes existing rows before creating them, with the same names and
+ * predicates declared here.
+ *
+ * `reason` is stored canonical (`PolicyCategory`) from revision 2 on; rows
+ * written earlier may hold a legacy code and are normalised on read. `case_id`
+ * ties a flag to the moderation case it raised, `content_version` to the
+ * version it was raised against (D8: one AI re-check per version).
  */
 export class ReportFlag extends Model<
   InferAttributes<ReportFlag>,
@@ -223,10 +269,14 @@ export class ReportFlag extends Model<
   declare reporter_id: CreationOptional<string | null>;
   declare reason: FlagReason;
   declare note: CreationOptional<string | null>;
-  declare status: CreationOptional<"open" | "resolved" | "dismissed">;
+  declare status: CreationOptional<FlagStatus>;
   declare resolution: CreationOptional<string | null>;
   declare created_at: string;
   declare resolved_at: CreationOptional<string | null>;
+  declare case_id: CreationOptional<string | null>;
+  /** The admin who resolved it; null for system resolutions (withdrawn, superseded). */
+  declare resolved_by: CreationOptional<string | null>;
+  declare content_version: CreationOptional<number | null>;
 }
 
 ReportFlag.init(
@@ -242,6 +292,9 @@ ReportFlag.init(
     resolution: { type: DataTypes.STRING(512), allowNull: true, defaultValue: null },
     created_at: { type: DataTypes.STRING(32), allowNull: false },
     resolved_at: { type: DataTypes.STRING(32), allowNull: true, defaultValue: null },
+    case_id: { type: DataTypes.UUID, allowNull: true, defaultValue: null },
+    resolved_by: { type: DataTypes.UUID, allowNull: true, defaultValue: null },
+    content_version: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
   },
   {
     sequelize,
@@ -252,6 +305,21 @@ ReportFlag.init(
       { name: "idx_report_flags_report", fields: ["report_id"] },
       { name: "idx_report_flags_comment", fields: ["comment_id"] },
       { name: "idx_report_flags_status", fields: ["status", "created_at"] },
+      { name: "idx_report_flags_case", fields: ["case_id"] },
+      { name: "idx_report_flags_reporter", fields: ["reporter_id"] },
+      // Same names and predicates as `db:migrate:moderation` — see the header.
+      {
+        name: "uq_report_flags_open_report",
+        unique: true,
+        fields: ["reporter_id", "report_id"],
+        where: { comment_id: null, status: "open" },
+      },
+      {
+        name: "uq_report_flags_open_comment",
+        unique: true,
+        fields: ["reporter_id", "comment_id"],
+        where: { comment_id: { [Op.ne]: null }, status: "open" },
+      },
     ],
   },
 );
@@ -343,6 +411,9 @@ ReportShareLink.beforeValidate((row) => {
  * Push is lossy — a device can be offline, a token can be stale — but the
  * notification centre has to be complete, so the row is the record and the push is
  * a best-effort copy of it.
+ *
+ * `type` is `STRING(32)`; revision 2 adds `moderation_notice` ("Your comment was
+ * removed", D18) without a schema change.
  */
 export class Notification extends Model<
   InferAttributes<Notification>,

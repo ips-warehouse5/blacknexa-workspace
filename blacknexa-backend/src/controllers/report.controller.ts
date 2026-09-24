@@ -6,18 +6,29 @@
  * report exists, and for a private or Trusted-Circle report that confirmation is
  * itself the disclosure. So `load()` collapses "absent" and "not yours" into one
  * answer.
+ *
+ * ── Revision 2 (docs/INCIDENT_MODULE_PLAN.md §7) ───────────────────────────
+ * "Not yours" now includes "not published yet": a public report is `pending`
+ * until the moderation pipeline approves it, and until then only its author gets
+ * anything but a 404 (§3.2) — for the detail, the trust sheet, comments, and
+ * every action on it (support, corroborate, flag, comment, share). The rule lives
+ * in `report_visibility.ts`; `load()` applies it once.
+ *
+ * Response shapes are unchanged for the shipped mobile client; everything new is
+ * an added field. Filing a draft that was already filed answers 200 with the
+ * same receipt instead of 201 (D12); a repeated flag answers 200 with the
+ * existing flag (§7.6).
  */
 
 import type { Request, Response } from "express";
-import env from "@/config/env.config";
 import reportService from "@/services/report.service";
 import reportFeedService from "@/services/report_feed.service";
 import evidenceService from "@/services/evidence.service";
 import commentService from "@/services/comment.service";
 import notificationService from "@/services/notification.service";
-import { Report, nextFlagRef } from "@/models/report.model";
-import { ReportFlag } from "@/models/report_social.model";
-import { nowIso } from "@/models/model_options";
+import flagService from "@/services/flag.service";
+import type { MemberViewer, Viewer } from "@/services/report_visibility";
+import type { Report } from "@/models/report.model";
 import { responseData } from "@/utils/response.util";
 import responseMessage from "@/utils/response_message.util";
 import {
@@ -36,11 +47,20 @@ import type {
   SaveDraftDto,
 } from "@/types/report.interface";
 
-/** The caller, as the guards leave it. */
-function viewer(req: Request): { id: string | null; role: string | null } {
-  return req.user
+/**
+ * The caller, as the guards leave it. Only a member token counts: `optionalAuth`
+ * and `userAuthGuard` both attach `aud=user` callers only, and this re-checks it
+ * so an operator token can never be read as a member role here (§7.3).
+ */
+function viewer(req: Request): Viewer {
+  return req.user && req.user.audience === "user"
     ? { id: req.user.id, role: req.user.role as string }
     : { id: null, role: null };
+}
+
+/** The signed-in member behind a `userAuthGuard` route. */
+function member(req: Request): MemberViewer {
+  return { id: req.user!.id, role: req.user!.role as string };
 }
 
 class ReportController {
@@ -52,8 +72,7 @@ class ReportController {
   private async load(req: Request): Promise<Report> {
     const { id } = validatedParams<{ id: string }>(req);
     const report = await reportService.findByIdOrRef(decodeURIComponent(id));
-    const who = viewer(req);
-    if (!report || !reportService.canRead(report, who.id, who.role)) {
+    if (!report || !reportService.canRead(report, viewer(req))) {
       throw notFound("That report is not available.");
     }
     return report;
@@ -90,10 +109,10 @@ class ReportController {
     responseData({ res, message: responseMessage("success", "list", "Draft"), result: drafts });
   }
 
-  /** `GET /reports/drafts/:id/evidence` — C5's attached list. */
+  /** `GET /reports/drafts/:id/evidence` — C5's attached list. The caller's own draft only. */
   async draftEvidence(req: Request, res: Response): Promise<void> {
     const { id } = validatedParams<{ id: string }>(req);
-    const evidence = await evidenceService.listForDraft(id);
+    const evidence = await evidenceService.listForDraft(req.user!.id, id);
     responseData({ res, message: responseMessage("success", "list", "Evidence"), result: evidence });
   }
 
@@ -107,16 +126,25 @@ class ReportController {
 
   // ── Filing (C7 → C9) ──────────────────────────────────────────────────────
 
-  /** `POST /reports` — file a draft. */
+  /**
+   * `POST /reports` — file a draft.
+   *
+   * 201 for a new report; 200 with the same receipt when this draft was already
+   * filed (D12) — a retry after a lost response lands on C9, not on an error.
+   */
   async file(req: Request, res: Response): Promise<void> {
     const body = validatedBody<FileReportDto>(req);
-    const result = await reportService.fileReport(req.user!.id, body.draftId, body.attested);
+    const { receipt, created } = await reportService.fileReport(
+      req.user!.id,
+      body.draftId,
+      body.attested,
+    );
     responseData({
       res,
-      status: 201,
+      status: created ? 201 : 200,
       // C9's own words, so the receipt and the API agree.
-      message: "Your report is filed.",
-      result,
+      message: created ? "Your report is filed." : "This report was already filed.",
+      result: receipt,
     });
   }
 
@@ -192,31 +220,33 @@ class ReportController {
     }
 
     await reportService.recordView(report, who.id);
-    const result = await reportService.detailView(report, who.id);
+    const result = await reportService.detailView(report, who);
     responseData({ res, message: responseMessage("success", "fetch", "Report"), result });
   }
 
   /** `GET /reports/:id/trust` — D3. */
   async trust(req: Request, res: Response): Promise<void> {
     const report = await this.load(req);
-    const result = await reportService.trustView(report);
+    const result = await reportService.trustView(report, viewer(req));
     responseData({ res, message: responseMessage("success", "fetch", "Trust"), result });
   }
 
-  /** `PATCH /reports/:id` — D2's edit. Title and body only. */
+  /**
+   * `PATCH /reports/:id` — D2's edit. Title and body only. A moderated report
+   * goes back to `pending` and is re-checked before others see it again (D19).
+   */
   async update(req: Request, res: Response): Promise<void> {
     const report = await this.loadOwned(req);
     const body = validatedBody<{ title?: string; body?: string }>(req);
-    await reportService.updateReport(report, body);
-    await report.reload();
-    const result = await reportService.ownerView(report);
+    const updated = await reportService.updateReport(report, req.user!.id, body);
+    const result = await reportService.ownerView(updated);
     responseData({ res, message: responseMessage("success", "update", "Report"), result });
   }
 
   /** `DELETE /reports/:id` — D2's delete, with the 30-day evidence window. */
   async remove(req: Request, res: Response): Promise<void> {
     const report = await this.loadOwned(req);
-    await reportService.deleteReport(report);
+    await reportService.deleteReport(report, req.user!.id);
     responseData({
       res,
       // D2's own copy, so the confirmation matches what the button promised.
@@ -244,59 +274,34 @@ class ReportController {
   }
 
   /**
-   * `POST /reports/:id/flags` — D8 → D9.
+   * `POST /reports/:id/flags` — D8 → D9 (§7.6).
    *
    * The reference comes back so D9 can print it, and the response repeats what the
    * author is told, because that is the reassurance the screen exists to give.
+   * Flagging the same report again returns the existing flag with 200.
    */
   async flag(req: Request, res: Response): Promise<void> {
     const report = await this.load(req);
     const body = validatedBody<CreateFlagDto>(req);
-
-    const flagRef = await nextFlagRef();
-    await ReportFlag.create({
-      flag_ref: flagRef,
-      report_id: report.id,
-      reporter_id: req.user!.id,
-      reason: body.reason,
-      note: body.note ?? null,
-      created_at: nowIso(),
-    });
-
+    const { receipt, created } = await flagService.flagReport(report.id, member(req), body);
     responseData({
       res,
-      status: 201,
-      message: "Thank you — a moderator will look.",
-      result: {
-        flagRef,
-        authorIsTold: "Nothing about you",
-        // D9: most within a day, a safety flag within the hour.
-        expectedWithin:
-          body.reason === "threatening" ? "within the hour" : "within a day",
-      },
+      status: created ? 201 : 200,
+      message: created ? "Thank you — a moderator will look." : "You have already flagged this.",
+      result: receipt,
     });
   }
 
-  /** `POST /comments/:id/flags` — the same sheet, three reasons. */
+  /** `POST /comments/:id/flags` — the same sheet, six reasons (§3.1). */
   async flagComment(req: Request, res: Response): Promise<void> {
     const { id } = validatedParams<{ id: string }>(req);
     const body = validatedBody<CreateFlagDto>(req);
-
-    const flagRef = await nextFlagRef();
-    await ReportFlag.create({
-      flag_ref: flagRef,
-      comment_id: id,
-      reporter_id: req.user!.id,
-      reason: body.reason,
-      note: body.note ?? null,
-      created_at: nowIso(),
-    });
-
+    const { receipt, created } = await flagService.flagComment(id, member(req), body);
     responseData({
       res,
-      status: 201,
-      message: "Thank you — a moderator will look.",
-      result: { flagRef, authorIsTold: "Nothing about you" },
+      status: created ? 201 : 200,
+      message: created ? "Thank you — a moderator will look." : "You have already flagged this.",
+      result: receipt,
     });
   }
 
@@ -307,19 +312,29 @@ class ReportController {
     responseData({ res, message: "Hidden from your feed.", result: null });
   }
 
-  /** `POST /reports/:id/share-link` — D10. */
+  /**
+   * `POST /reports/:id/share-link` — D10 (§7.3, D3, review R11).
+   *
+   * The author of a published, non-private report gets a minted `?t=` link
+   * (201). Any other reader of a published *public* report gets the plain
+   * `/r/<caseRef>` URL (200) — no token and no row, since the page serves a
+   * public report to anyone — so the shipped D1 share sheet, which asks for a
+   * link as soon as a viewer opens it, works again. A non-owner of a
+   * Trusted-Circle report gets 403; a private or unpublished report 409. The
+   * body has the same shape either way.
+   */
   async shareLink(req: Request, res: Response): Promise<void> {
     const report = await this.load(req);
-    const token = await reportService.createShareToken(report, req.user!.id);
+    // Through the config (inside the service), not `process.env`: the origin has
+    // a validated default there, and a share link that renders as `/r/BNX-4471`
+    // with no host is a link nobody can open.
+    const { url, minted } = await reportService.shareLinkFor(report, member(req));
     responseData({
       res,
-      status: 201,
+      status: minted ? 201 : 200,
       message: "Link ready.",
       result: {
-        // Through the config, not `process.env`: the origin has a validated default
-        // there, and a share link that renders as `/r/BNX-4471` with no host is a
-        // link nobody can open.
-        url: `${env.publicSiteOrigin}/r/${report.case_ref}?t=${token}`,
+        url,
         caseRef: report.case_ref,
         // D10's "what a recipient sees" card, stated by the API too so the client
         // cannot drift from the promise.
@@ -339,8 +354,8 @@ class ReportController {
     const report = await this.load(req);
     const query = validatedQuery<{ sort?: "top" | "new"; cursor?: string }>(req);
     const result = await commentService.list(
-      report.id,
-      viewer(req).id,
+      report,
+      viewer(req),
       query.sort ?? "top",
       query.cursor,
     );
@@ -358,13 +373,15 @@ class ReportController {
       body.parentId,
       body.anonymous ?? false,
     );
+    // "Posted" to the author: it is shown to them at once as "Checking…" and to
+    // everyone else once the automated check has approved it (§7.5).
     responseData({ res, status: 201, message: "Posted.", result });
   }
 
   /** `POST /comments/:id/like` */
   async likeComment(req: Request, res: Response): Promise<void> {
     const { id } = validatedParams<{ id: string }>(req);
-    const result = await commentService.toggleLike(id, req.user!.id);
+    const result = await commentService.toggleLike(id, member(req));
     responseData({ res, message: "Updated.", result });
   }
 

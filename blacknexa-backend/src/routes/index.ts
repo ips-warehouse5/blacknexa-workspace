@@ -22,6 +22,7 @@ import reportRoutes, {
   notificationRouter,
 } from "@/routes/report.route";
 import moderationRoutes from "@/routes/moderation.route";
+import incidentRoutes from "@/routes/incident.route";
 import contactRoutes, { adminContactRouter } from "@/routes/contact.route";
 import helpRoutes, { adminFaqRouter } from "@/routes/faq.route";
 import locationRoutes from "@/routes/location.route";
@@ -149,7 +150,7 @@ export const ROUTE_MANIFEST: string[] = [
   "POST   /api/v1/reports/evidence/:id/commit",
   "DELETE /api/v1/reports/evidence/:id",
   "POST   /api/v1/reports",
-  "GET    /api/v1/reports?category=&when=&sort=&cursor=&verifiedOnly=&urgentOnly=&mine=",
+  "GET    /api/v1/reports?category=&when=&sort=&cursor=&verifiedOnly=&urgentOnly=&mine=&displayStatus=",
   "GET    /api/v1/reports/facets",
   "GET    /api/v1/reports/search?q=",
   "GET    /api/v1/reports/:idOrRef",
@@ -185,17 +186,39 @@ export const ROUTE_MANIFEST: string[] = [
   "PATCH  /api/v1/admin/staff/:id/status (staff.toggle)",
   "POST   /api/v1/admin/staff/:id/reset-password (staff.reset)",
   "DELETE /api/v1/admin/staff/:id (staff.delete)",
-  // Moderation — the surface that makes the status/verified story real
-  "GET    /api/v1/admin/moderation (internal HTML queue)",
-  "GET    /api/v1/admin/moderation/stats",
-  "GET    /api/v1/admin/moderation/reports?status=&urgent=&flagged=",
-  "GET    /api/v1/admin/moderation/reports/:id",
-  "GET    /api/v1/admin/moderation/reports/:id/evidence/:evidenceId",
-  "POST   /api/v1/admin/moderation/reports/:id/status",
-  "POST   /api/v1/admin/moderation/flags/:id/resolve",
-  "POST   /api/v1/admin/moderation/comments/:id/hide",
-  "POST   /api/v1/admin/moderation/broadcast (superadmin)",
-  "POST   /api/v1/admin/moderation/maintenance (superadmin)",
+  // Content Moderation — the case queue and its decisions (docs/ADMIN_MODERATION_API.md)
+  "GET    /api/v1/admin/moderation/cases?page=&limit=&tab=&state=&targetType=&urgent=&search=&sort= (moderation.view)",
+  "GET    /api/v1/admin/moderation/cases/summary (moderation.view)",
+  "GET    /api/v1/admin/moderation/cases/:id (moderation.view)",
+  "GET    /api/v1/admin/moderation/cases/:id/evidence/:evidenceId (moderation.view)",
+  "POST   /api/v1/admin/moderation/cases/:id/approve (moderation.decide)",
+  "POST   /api/v1/admin/moderation/cases/:id/reject (moderation.decide)",
+  "POST   /api/v1/admin/moderation/cases/:id/evidence/:evidenceId/reject (moderation.decide)",
+  "POST   /api/v1/admin/moderation/cases/:id/rerun (moderation.decide)",
+  "POST   /api/v1/admin/moderation/members/:id/ban (moderation.ban)",
+  "POST   /api/v1/admin/moderation/members/:id/unban (moderation.ban)",
+  "GET    /api/v1/admin/moderation/keyword-rules?page=&limit=&search=&action=&enabled=&category=&appliesTo= (moderation.view)",
+  "GET    /api/v1/admin/moderation/keyword-rules/:id (moderation.view)",
+  "POST   /api/v1/admin/moderation/keyword-rules (moderation.keywords)",
+  "PATCH  /api/v1/admin/moderation/keyword-rules/:id (moderation.keywords)",
+  "DELETE /api/v1/admin/moderation/keyword-rules/:id (moderation.keywords)",
+  "GET    /api/v1/admin/moderation/stats (moderation.view)",
+  "POST   /api/v1/admin/moderation/broadcast (platform.operate — superadmin)",
+  "POST   /api/v1/admin/moderation/maintenance (platform.operate — superadmin)",
+  // Incident Management — case verification, assignment, notes (docs/ADMIN_MODERATION_API.md)
+  "GET    /api/v1/admin/incidents?page=&limit=&status=&category=&from=&to=&range=&search=&sort=&assignee=&moderation=&urgent= (incidents.view)",
+  "GET    /api/v1/admin/incidents/summary?assignee= (incidents.view)",
+  "GET    /api/v1/admin/incidents/metrics?range=7d|30d|90d|12m (incidents.view)",
+  "GET    /api/v1/admin/incidents/assignees (incidents.assign)",
+  "GET    /api/v1/admin/incidents/:id (incidents.view)",
+  "GET    /api/v1/admin/incidents/:id/evidence/:evidenceId (incidents.view)",
+  "POST   /api/v1/admin/incidents/:id/verify (incidents.verify)",
+  "POST   /api/v1/admin/incidents/:id/dismiss (incidents.dismiss)",
+  "POST   /api/v1/admin/incidents/:id/reopen (incidents.dismiss)",
+  "POST   /api/v1/admin/incidents/:id/deactivate (incidents.deactivate)",
+  "POST   /api/v1/admin/incidents/:id/reactivate (incidents.deactivate)",
+  "POST   /api/v1/admin/incidents/:id/assign (incidents.assign)",
+  "POST   /api/v1/admin/incidents/:id/notes (incidents.notes)",
   // Contact us — the marketing site's enquiry form and the console's queue
   "POST   /api/v1/contact (public)",
   "GET    /api/v1/admin/contact?page=&limit=&search=&status=&subject= (contact.view)",
@@ -268,6 +291,7 @@ export function mountRoutes(app: Express): void {
   api.use("/admin/auth", adminRoutes);
   api.use("/admin/staff", staffRouter);
   api.use("/admin/moderation", moderationRoutes);
+  api.use("/admin/incidents", incidentRoutes);
   api.use("/help", helpRoutes);
   api.use("/admin/faqs", adminFaqRouter);
   api.use("/locations", locationRoutes);

@@ -7,15 +7,28 @@
  * are unselectable, so `occurredAt` is validated against now. These are not
  * arbitrary defensive limits — they are the contract the screens already made with
  * the user, restated where it can be enforced.
+ *
+ * ── Revision 2 (docs/INCIDENT_MODULE_PLAN.md §3.1, §7.4, §7.9) ─────────────
+ *   • A *draft* may hold an empty title, body or location label (§7.9): the
+ *     wizard saves on every step, and a person who clears a field to retype it
+ *     must not lose the save. Filing still requires a title and a body, and an
+ *     *edit* still may not blank the title.
+ *   • Flags accept the eight policy codes plus the three legacy codes shipped
+ *     clients send (D6/D7); a comment flag accepts its six codes plus the two
+ *     legacy codes that map into them. The flag service normalises before
+ *     anything is stored.
+ *   • The Vault's `mine=true` feed accepts a `displayStatus` chip filter (§7.4).
  */
 
 import Joi from "joi";
 import type { SchemaRegistry } from "@/validations";
 import {
+  ALL_COMMENT_FLAG_REASONS,
   ALL_EVIDENCE_KINDS,
   ALL_FLAG_REASONS,
   ALL_REPORT_CATEGORIES,
 } from "@/types/report.interface";
+import { ALL_DISPLAY_STATUSES } from "@/types/moderation.interface";
 import { ALL_PRECISIONS, ALL_VISIBILITIES } from "@/types/user.interface";
 
 const UUID = Joi.string().uuid({ version: "uuidv4" });
@@ -31,6 +44,11 @@ const ID_OR_REF = Joi.string()
 const TITLE = Joi.string().trim().min(1).max(70).messages({
   "string.max": "Titles are one line — 70 characters at most.",
   "string.empty": "Give the report a title.",
+});
+
+/** A draft's title: the same rule, but an empty field is a save, not an error (§7.9). */
+const DRAFT_TITLE = Joi.string().trim().max(70).allow("").messages({
+  "string.max": "Titles are one line — 70 characters at most.",
 });
 
 /** C3: "Future dates are unselectable." */
@@ -49,8 +67,8 @@ const OCCURRED_AT = Joi.string()
 /** The wizard's accumulated state. Every field optional — steps fill it in turn. */
 const DRAFT_PAYLOAD = Joi.object({
   category: Joi.string().valid(...ALL_REPORT_CATEGORIES),
-  title: TITLE,
-  body: Joi.string().trim().max(20_000),
+  title: DRAFT_TITLE,
+  body: Joi.string().trim().max(20_000).allow(""),
   occurredAt: OCCURRED_AT,
   occurredPrecision: Joi.string().valid("exact", "day_part", "unknown"),
   occurredDayPart: Joi.string().valid("morning", "afternoon", "evening", "night"),
@@ -79,6 +97,8 @@ const FEED_QUERY = {
   cursor: Joi.string().max(512),
   limit: Joi.number().integer().min(1).max(50).default(20),
   mine: Joi.boolean(),
+  // The Vault's chips (§7.4). Ignored unless `mine` is set.
+  displayStatus: Joi.string().valid(...ALL_DISPLAY_STATUSES),
 };
 
 export const reportSchemas: SchemaRegistry = {
@@ -219,9 +239,12 @@ export const reportSchemas: SchemaRegistry = {
   "comments.flag": {
     params: Joi.object({ id: UUID.required() }),
     body: Joi.object({
+      // Six categories for a comment (§3.1) — `misleading` and `graphic` describe
+      // a report as a whole — plus the legacy codes that map into them.
       reason: Joi.string()
-        .valid(...ALL_FLAG_REASONS)
-        .required(),
+        .valid(...ALL_COMMENT_FLAG_REASONS)
+        .required()
+        .messages({ "any.required": "Choose a reason." }),
       note: Joi.string().trim().max(1000).allow("").optional(),
     }),
   },

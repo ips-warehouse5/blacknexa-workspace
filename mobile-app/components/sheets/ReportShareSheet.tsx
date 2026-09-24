@@ -12,19 +12,35 @@
  * Copy confirms in place because a toast is gone before the reader has decided
  * whether it worked, and this is a link they may be about to paste somewhere
  * consequential.
+ *
+ * ── Who gets which link (docs/INCIDENT_MODULE_PLAN.md §7.3, §11a) ─────────
+ * The author of a published, non-private report gets a minted link; any other
+ * reader of a published *public* report gets the plain `/r/<ref>` URL (200).
+ * D1 and D2 offer Share only where one of those applies (`canShare`), so a
+ * refusal here means the report changed underneath the screen — unpublished
+ * by an edit, taken down, made private. The server's own words say which
+ * ("You can share this report once it is published."), so a 4xx is shown as
+ * it came; only a failure on our side or the network gets the generic line.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Modal, Pressable, Share, StyleSheet, View } from "react-native";
+import { Modal, Platform, Pressable, Share, StyleSheet, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, radius, scrim, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ShieldGlyph } from "@/components/report/TrustCard";
 import reportsApi, { type ReportDetailView } from "@/lib/api/reports";
+import { errorInfo } from "@/lib/report/detail";
+
+/** The line under the link when it could not be made. See the file header. */
+function shareErrorMessage(err: unknown): string {
+  const { status, message } = errorInfo(err);
+  if (status !== null && status >= 400 && status < 500 && status !== 401 && message) return message;
+  return "That link could not be created. Try again.";
+}
 
 export function ReportShareSheet({
   visible,
@@ -48,10 +64,20 @@ export function ReportShareSheet({
       setError(null);
       return;
     }
+    // A late answer for a sheet that has since closed (or reopened on another
+    // report) must not land in this one.
+    let current = true;
     void reportsApi
       .shareLink(report.id)
-      .then((result) => setUrl(result.url))
-      .catch(() => setError("That link could not be created. Try again."));
+      .then((result) => {
+        if (current) setUrl(result.url);
+      })
+      .catch((err: unknown) => {
+        if (current) setError(shareErrorMessage(err));
+      });
+    return () => {
+      current = false;
+    };
   }, [report.id, visible]);
 
   const copy = useCallback(async () => {

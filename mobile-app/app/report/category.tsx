@@ -11,20 +11,20 @@
 
 import React, { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
-import { router } from "expo-router";
 import { colors, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot } from "@/components/ui/Controls";
-import { WizardShell } from "@/components/report/WizardShell";
+import { WizardShell, useStepNavigation } from "@/components/report/WizardShell";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { CATEGORY_META, CATEGORY_ORDER, type ReportCategory } from "@/lib/api/reports";
 import { useWizardExit } from "@/components/report/useWizardExit";
 
 export default function CategoryStep(): React.ReactElement {
   useThemeSync();
-  const { payload, patch, setStep, savedAt } = useReportDraft();
+  const { payload, patch, savedAt } = useReportDraft();
   const [problem, setProblem] = useState<string | null>(null);
   const exit = useWizardExit();
+  const { advance } = useStepNavigation(1);
 
   const choose = useCallback(
     (category: ReportCategory) => {
@@ -40,9 +40,8 @@ export default function CategoryStep(): React.ReactElement {
       setProblem("Choose the kind of thing that happened.");
       return;
     }
-    setStep(2);
-    router.push("/report/details");
-  }, [payload.category, setStep]);
+    advance();
+  }, [advance, payload.category]);
 
   return (
     <WizardShell

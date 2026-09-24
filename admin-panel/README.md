@@ -5,9 +5,24 @@ Written for: engineers picking this project up.
 The operator console for BlackNexa — a React + Vite application ported from the
 approved prototype (`BlackNexa-Admin-Panel 10 (1).html`).
 
-Two modules are live against the API: **authentication** and **Admin & Roles**.
-Every other screen is built and navigable but reads prototype fixtures; each one
-says so on screen while `VITE_USE_MOCK_DATA=true`.
+Live against the API: **authentication**, **Admin & Roles**, **Contact
+Inquiries**, **FAQs**, **Content Moderation** (the case queue, case detail and
+keyword rules), **Incident Management** (All Incidents, My Assigned Cases and
+the incident detail) and the **Dashboard** (KPI tiles, incident activity and
+categories from `/admin/incidents/metrics`, urgent queue alerts). Every other
+screen is built and navigable but reads prototype fixtures, as do the two
+dashboard cards that have no endpoint yet — the Total Users tile and Top
+Regional Clusters; each one says so on screen while `VITE_USE_MOCK_DATA=true`.
+
+Content Moderation and Incident Management follow
+`docs/INCIDENT_MODULE_PLAN.md` §8–§9 (in the workspace root); the endpoints and
+response shapes they call are written out in
+`../blacknexa-backend/docs/ADMIN_MODERATION_API.md`, and their wire types in
+`features/moderation/*.types.ts` and `features/incidents/incidents.types.ts`
+mirror that contract field for field. Their detail routes take database ids —
+`/moderation/:caseId` is a moderation case, `/incidents/:incidentId` a report —
+so the prototype's display references (`CMT-90412`, `INC-20481`) still used by
+fixture-backed screens open a "not found" page rather than a record.
 
 ---
 
@@ -18,6 +33,7 @@ The console needs the API for sign-in, so start both.
 ```bash
 # 1. API — in ../blacknexa-backend
 npm run db:sync          # create tables
+npm run db:migrate:moderation   # moderation schema + keyword rules (idempotent)
 npm run db:seed:admin    # one operator account per role (development only)
 npm run dev              # http://localhost:3010 (whatever PORT in its .env says)
 
@@ -167,10 +183,16 @@ operator out.
 ## The smoke test
 
 `npm run smoke` drives a real Chrome against the running stack: it signs in
-through the form, walks all 22 routes checking each one actually paints, watches
+through the form, walks every route checking each one actually paints, watches
 for console errors and failed requests, resolves both accents in both modes, and
 confirms a Support Staff session is kept out of Admin & Roles. Screenshots land
 in `smoke-shots/`.
+
+The moderation case and incident detail routes open the first record their
+queue lists (the id is read from the queue's own API response, in the browser's
+session), so they are only walked when the database has one — otherwise the
+line says SKIPPED. Run `npm run db:migrate:moderation` in the backend first, or
+the moderation queue has no tables to read.
 
 It needs both servers up and a Chrome binary; set `CHROME_PATH` if the default
 is wrong.

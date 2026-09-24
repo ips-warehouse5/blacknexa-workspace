@@ -13,15 +13,39 @@
  * is not deleted — it moved to D3, one tap away, where someone who wants a hash
  * can find one and everyone else is not asked to read one.
  *
+ * ── The bottom bar ends in a Flag ─────────────────────────────────────────
+ * v7's caption: "The bottom bar now ends in a Flag, not a Share — flagging for
+ * admin review is the scope requirement, and sharing is the system sheet from the
+ * header." And D9's: "the Flag button in the bar stays filled so the state is
+ * legible after the snackbar goes." So the bar is *Stand with · Comments · Flag*,
+ * Share lives in the header, and a report the viewer has already flagged
+ * (`flaggedByMe`, §7.4) shows a filled, inert Flag and says "You flagged this" —
+ * flagging twice would only return the same flag (§7.6). The flag itself still
+ * goes through the reason sheet (D7: a category tab needs a category).
+ *
+ * ── What a viewer is never told (docs/INCIDENT_MODULE_PLAN.md §3.2, §10) ──
+ * A viewer only reaches a *published* report — anything else is a 404, which is
+ * why the error state cannot and does not say "not published yet". So there is
+ * no *Under review* pill here: the case axis is the owner's business until it
+ * ends in Verified. Evidence still waiting for a moderator is listed as
+ * "Awaiting review" tiles, and a photo cleared only as a preview shows its
+ * thumbnail with a note — said about the file, never the report.
+ *
+ * Share is offered only where it can work: a viewer of a public report gets the
+ * plain `/r/<ref>` link back from the server (§11a); a Trusted-Circle report can
+ * be shared only by its author, so the action is absent rather than broken.
+ *
  * ── Owner routing ─────────────────────────────────────────────────────────
  * D2 is "a separate screen, not a variant", so an owner is redirected rather than
- * shown a version of this page with pieces swapped out.
+ * shown a version of this page with pieces swapped out — and sees the skeleton,
+ * not a flash of the viewer page, while that happens.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Svg, { Path } from "react-native-svg";
 import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
@@ -34,25 +58,36 @@ import TrustSheet from "@/components/sheets/TrustSheet";
 import FlagSheet from "@/components/sheets/FlagSheet";
 import ReportShareSheet from "@/components/sheets/ReportShareSheet";
 import { AuthorRow } from "@/components/report/AuthorRow";
+import { useSnackbar } from "@/providers/SnackbarProvider";
 import reportsApi, {
   CATEGORY_META,
   absoluteTime,
   type ReportDetailView,
 } from "@/lib/api/reports";
+import {
+  canShare,
+  errorInfo,
+  readErrorCopy,
+  shouldRetryRead,
+  viewerStatusPills,
+} from "@/lib/report/detail";
 
 export default function ReportDetailScreen(): React.ReactElement {
   useThemeSync();
   const { ref } = useLocalSearchParams<{ ref: string }>();
   const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
 
   const [trustOpen, setTrustOpen] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [corroborating, setCorroborating] = useState(false);
 
   const detail = useQuery({
     queryKey: ["report", ref],
     queryFn: () => reportsApi.detail(ref!),
     enabled: Boolean(ref),
+    retry: shouldRetryRead,
   });
 
   const report = detail.data as ReportDetailView | undefined;
@@ -78,54 +113,80 @@ export default function ReportDetailScreen(): React.ReactElement {
     );
     try {
       await reportsApi.toggleSupport(report.id);
-    } catch {
+    } catch (err) {
       void queryClient.invalidateQueries({ queryKey: ["report", ref] });
+      showSnackbar({
+        message: errorInfo(err).message ?? "That didn't save. Try again.",
+        type: "error",
+      });
     }
-  }, [queryClient, ref, report]);
+  }, [queryClient, ref, report, showSnackbar]);
 
   const corroborate = useCallback(async () => {
-    if (!report) return;
-    await reportsApi.corroborate(report.id).catch(() => {});
-    void queryClient.invalidateQueries({ queryKey: ["report", ref] });
-  }, [queryClient, ref, report]);
+    if (!report || corroborating) return;
+    setCorroborating(true);
+    try {
+      await reportsApi.corroborate(report.id);
+    } catch (err) {
+      showSnackbar({
+        message: errorInfo(err).message ?? "That didn't save. Try again.",
+        type: "error",
+      });
+    } finally {
+      setCorroborating(false);
+      void queryClient.invalidateQueries({ queryKey: ["report", ref] });
+    }
+  }, [corroborating, queryClient, ref, report, showSnackbar]);
 
-  if (detail.isLoading) {
-    return (
-      <ScrollScreen padding={screenPadding.detail} testID="report-detail-loading">
-        <BackHeader onBack={() => router.back()} padding={0} />
-        <View style={{ gap: 12, marginTop: 18 }}>
-          <View style={[styles.bar, { width: 140, height: 24, borderRadius: 7 }]} />
-          <View style={[styles.bar, { width: "94%", height: 28 }]} />
-          <View style={[styles.bar, { width: "72%", height: 28 }]} />
-          <View style={[styles.bar, { width: "100%", height: 172, borderRadius: 16, marginTop: 12 }]} />
-        </View>
-      </ScrollScreen>
+  /** D9: the bar's Flag fills the moment the server has the flag. */
+  const markFlagged = useCallback(() => {
+    queryClient.setQueryData(["report", ref], (old: ReportDetailView | undefined) =>
+      old ? { ...old, flaggedByMe: true } : old,
     );
+  }, [queryClient, ref]);
+
+  if (detail.isLoading || report?.isOwner) {
+    return <DetailSkeleton />;
   }
 
   if (detail.isError || !report) {
+    const copy = readErrorCopy(detail.error);
     return (
       <ScrollScreen padding={screenPadding.detail} testID="report-detail-error">
         <BackHeader onBack={() => router.back()} padding={0} />
         <View style={styles.centre}>
           <Text variant="sectionTitle" color={colors.t0} center>
-            That report is not available
+            {copy.title}
           </Text>
           <Text variant="bodySm" color={colors.t2} center style={{ marginTop: 9, lineHeight: 21 }}>
-            It may have been removed, or it may not be public.
+            {copy.body}
           </Text>
-          <Button
-            label="Back to the feed"
-            onPress={() => router.back()}
-            block={false}
-            style={{ marginTop: 22, paddingHorizontal: 22 }}
-          />
+          {copy.retry ? (
+            <Button
+              label="Try again"
+              onPress={() => void detail.refetch()}
+              loading={detail.isFetching}
+              block={false}
+              style={{ marginTop: 22, paddingHorizontal: 22 }}
+              testID="report-detail-retry"
+            />
+          ) : (
+            <Button
+              label="Back to the feed"
+              onPress={() => router.back()}
+              block={false}
+              style={{ marginTop: 22, paddingHorizontal: 22 }}
+              testID="report-detail-back"
+            />
+          )}
         </View>
       </ScrollScreen>
     );
   }
 
   const meta = CATEGORY_META[report.category];
+  const flagged = report.flaggedByMe === true;
+  const shareable = canShare(report);
 
   return (
     <>
@@ -134,7 +195,7 @@ export default function ReportDetailScreen(): React.ReactElement {
         bottomSpace={34}
         testID="report-detail"
         footer={
-          /* The bottom bar stays put. */
+          /* The bottom bar stays put, and ends in a Flag. */
           <View style={styles.actionBar}>
             <Button
               label={`${report.standingWith ? "Standing with" : "Stand with"} · ${report.supportCount}`}
@@ -146,20 +207,25 @@ export default function ReportDetailScreen(): React.ReactElement {
             <Pressable
               onPress={() => router.push(`/r/${report.caseRef}/comments`)}
               accessibilityRole="button"
-              accessibilityLabel={`${report.commentCount} comments`}
-              style={styles.iconButton}
+              accessibilityLabel={`${report.commentCount} comment${report.commentCount === 1 ? "" : "s"}`}
+              style={[styles.iconButton, { backgroundColor: colors.s5 }]}
               testID="detail-comments"
             >
               <CommentGlyph />
             </Pressable>
             <Pressable
-              onPress={() => setShareOpen(true)}
+              onPress={() => setFlagOpen(true)}
+              disabled={flagged}
               accessibilityRole="button"
-              accessibilityLabel="Share this report"
-              style={styles.iconButton}
-              testID="detail-share"
+              accessibilityLabel={flagged ? "You flagged this report" : "Flag this report"}
+              accessibilityState={{ disabled: flagged, selected: flagged }}
+              style={[
+                styles.iconButton,
+                { backgroundColor: flagged ? alpha(colors.bad, 0.12) : colors.s5 },
+              ]}
+              testID="detail-flag"
             >
-              <ShareGlyph />
+              <FlagGlyph filled={flagged} />
             </Pressable>
           </View>
         }
@@ -171,21 +237,25 @@ export default function ReportDetailScreen(): React.ReactElement {
           padding={0}
           border
           right={
-            <Pressable
-              onPress={() => setShareOpen(true)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Share"
-            >
-              <ShareGlyph />
-            </Pressable>
+            shareable ? (
+              <Pressable
+                onPress={() => setShareOpen(true)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Share this report"
+                testID="detail-share"
+              >
+                <ShareGlyph />
+              </Pressable>
+            ) : undefined
           }
         />
 
+        {/* Urgent and Verified only — never a moderation word (§10 "Viewer D1"). */}
         <View style={styles.badges}>
-          {report.urgent ? <StatusPill kind="urgent" /> : null}
-          {report.status === "verified" ? <StatusPill kind="verified" /> : null}
-          {report.status === "under_review" ? <StatusPill kind="under_review" /> : null}
+          {viewerStatusPills(report).map((kind) => (
+            <StatusPill key={kind} kind={kind} />
+          ))}
           <CategoryPill label={meta.label.toUpperCase()} dotColor={colors[meta.token]} />
           <StatusPill kind={report.visibility} />
         </View>
@@ -197,7 +267,7 @@ export default function ReportDetailScreen(): React.ReactElement {
         <AuthorRow author={report.author} area={report.location.label} style={{ marginTop: 18 }} />
 
         {/* HAPPENED / FILED, between hairlines. */}
-        <View style={styles.timePair}>
+        <View style={[styles.timePair, { borderColor: alpha(colors.t0, 0.07) }]}>
           <View>
             <Text variant="eyebrowSm" color={colors.t4}>
               HAPPENED
@@ -233,9 +303,7 @@ export default function ReportDetailScreen(): React.ReactElement {
             </Text>
             <EvidenceGrid
               evidence={report.evidence}
-              onOpen={(index) =>
-                router.push(`/r/${report.caseRef}/evidence/${index}`)
-              }
+              onOpen={(index) => router.push(`/r/${report.caseRef}/evidence/${index}`)}
               style={{ marginTop: 11 }}
             />
           </>
@@ -257,7 +325,7 @@ export default function ReportDetailScreen(): React.ReactElement {
         ) : null}
 
         {/* Support summary, with Corroborate as its own act. */}
-        <View style={styles.supportCard}>
+        <View style={[styles.supportCard, { backgroundColor: colors.s3 }]}>
           <View style={{ flex: 1 }}>
             <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
               {`${report.supportCount} standing with`}
@@ -277,6 +345,7 @@ export default function ReportDetailScreen(): React.ReactElement {
             block={false}
             height={36}
             disabled={report.corroborated}
+            loading={corroborating}
             onPress={corroborate}
             style={{ paddingHorizontal: 14, borderRadius: 12 }}
             testID="detail-corroborate"
@@ -293,6 +362,7 @@ export default function ReportDetailScreen(): React.ReactElement {
               onPress={() => router.push(`/r/${report.caseRef}/comments`)}
               accessibilityRole="button"
               style={{ marginTop: 12 }}
+              testID="detail-see-comments"
             >
               <Text variant="labelSm" color={colors.acc}>
                 {`See all ${report.commentCount} comment${report.commentCount === 1 ? "" : "s"}`}
@@ -310,20 +380,15 @@ export default function ReportDetailScreen(): React.ReactElement {
           style={{ marginTop: 22 }}
         />
 
-        <View style={styles.footerRow}>
+        <View style={[styles.footerRow, { borderTopColor: alpha(colors.t0, 0.07) }]}>
           <Text variant="meta" color={colors.t4}>
             {`Reference ${report.caseRef}`}
           </Text>
-          <Pressable
-            onPress={() => setFlagOpen(true)}
-            hitSlop={8}
-            accessibilityRole="button"
-            testID="detail-flag"
-          >
-            <Text variant="meta" color={colors.t3}>
-              Flag this report
+          {flagged ? (
+            <Text variant="meta" color={colors.bad2} testID="detail-flagged">
+              You flagged this
             </Text>
-          </Pressable>
+          ) : null}
         </View>
       </ScrollScreen>
 
@@ -335,33 +400,76 @@ export default function ReportDetailScreen(): React.ReactElement {
       <FlagSheet
         visible={flagOpen}
         target={{ kind: "report", id: report.id }}
+        onFlagged={markFlagged}
         onClose={() => setFlagOpen(false)}
       />
-      <ReportShareSheet
-        visible={shareOpen}
-        report={report}
-        onClose={() => setShareOpen(false)}
-      />
+      {shareable ? (
+        <ReportShareSheet
+          visible={shareOpen}
+          report={report}
+          onClose={() => setShareOpen(false)}
+        />
+      ) : null}
     </>
+  );
+}
+
+/** I1's skeleton — also what an owner sees for the instant before D2 replaces this. */
+function DetailSkeleton(): React.ReactElement {
+  return (
+    <ScrollScreen padding={screenPadding.detail} testID="report-detail-loading">
+      <BackHeader onBack={() => router.back()} padding={0} />
+      <View style={{ gap: 12, marginTop: 18 }} accessibilityLabel="Loading the report">
+        <View style={[styles.bar, { backgroundColor: colors.s5, width: 140, height: 24, borderRadius: 7 }]} />
+        <View style={[styles.bar, { backgroundColor: colors.s5, width: "94%", height: 28 }]} />
+        <View style={[styles.bar, { backgroundColor: colors.s5, width: "72%", height: 28 }]} />
+        <View
+          style={[
+            styles.bar,
+            { backgroundColor: colors.s5, width: "100%", height: 172, borderRadius: 16, marginTop: 12 },
+          ]}
+        />
+      </View>
+    </ScrollScreen>
   );
 }
 
 function CommentGlyph(): React.ReactElement {
   return (
     <View style={styles.glyph}>
-      <View style={styles.bubble} />
-      <View style={styles.bubbleTail} />
+      <View style={[styles.bubble, { borderColor: colors.t1 }]} />
+      <View style={[styles.bubbleTail, { borderColor: colors.t1 }]} />
     </View>
+  );
+}
+
+/**
+ * The board's flag: a pennant on a pole. Outlined in the bar; filled red once
+ * the viewer has flagged the report, and it stays that way (D9).
+ */
+function FlagGlyph({ filled }: { filled: boolean }): React.ReactElement {
+  const tint = filled ? colors.bad2 : colors.t1;
+  return (
+    <Svg width={19} height={19} viewBox="0 0 22 22">
+      <Path
+        d="M5.5 19V3.4h11l-2 3.6 2 3.6h-11"
+        fill={filled ? tint : "none"}
+        stroke={tint}
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
   );
 }
 
 export function ShareGlyph(): React.ReactElement {
   return (
     <View style={styles.glyph}>
-      <View style={styles.shareStem} />
-      <View style={[styles.shareArrow, { transform: [{ rotate: "45deg" }] }]} />
-      <View style={[styles.shareArrow, { transform: [{ rotate: "-45deg" }] }]} />
-      <View style={styles.shareTray} />
+      <View style={[styles.shareStem, { backgroundColor: colors.t1 }]} />
+      <View style={[styles.shareArrow, { backgroundColor: colors.t1, transform: [{ rotate: "45deg" }] }]} />
+      <View style={[styles.shareArrow, { backgroundColor: colors.t1, transform: [{ rotate: "-45deg" }] }]} />
+      <View style={[styles.shareTray, { borderColor: colors.t1 }]} />
     </View>
   );
 }
@@ -377,14 +485,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: alpha(colors.t0, 0.07),
   },
 
   supportCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: colors.s3,
     borderRadius: radius.xl,
     paddingVertical: 14,
     paddingHorizontal: 15,
@@ -395,10 +501,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
     marginTop: 22,
     paddingTop: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: alpha(colors.t0, 0.07),
   },
 
   actionBar: { flexDirection: "row", gap: 9 },
@@ -406,13 +512,12 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: radius.lg,
-    backgroundColor: colors.s5,
     alignItems: "center",
     justifyContent: "center",
   },
 
   centre: { alignItems: "center", justifyContent: "center", paddingTop: 80, paddingHorizontal: 20 },
-  bar: { backgroundColor: colors.s5, borderRadius: 6 },
+  bar: { borderRadius: 6 },
 
   glyph: { width: 19, height: 19, alignItems: "center", justifyContent: "center" },
   bubble: {
@@ -420,7 +525,6 @@ const styles = StyleSheet.create({
     height: 11,
     borderRadius: 3,
     borderWidth: 1.5,
-    borderColor: colors.t1,
     marginBottom: 3,
   },
   bubbleTail: {
@@ -431,15 +535,13 @@ const styles = StyleSheet.create({
     height: 4,
     borderLeftWidth: 1.5,
     borderBottomWidth: 1.5,
-    borderColor: colors.t1,
   },
-  shareStem: { position: "absolute", top: 1, width: 1.7, height: 10, backgroundColor: colors.t1 },
+  shareStem: { position: "absolute", top: 1, width: 1.7, height: 10 },
   shareArrow: {
     position: "absolute",
     top: 3,
     width: 1.7,
     height: 5,
-    backgroundColor: colors.t1,
   },
   shareTray: {
     position: "absolute",
@@ -448,7 +550,6 @@ const styles = StyleSheet.create({
     height: 7,
     borderWidth: 1.7,
     borderTopWidth: 0,
-    borderColor: colors.t1,
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
   },

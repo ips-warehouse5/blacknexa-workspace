@@ -14,6 +14,7 @@ import { create } from "zustand";
 
 import { authApi } from "@/features/auth/auth.api";
 import { installSessionExpiryHandler } from "@/lib/http";
+import { queryClient } from "@/lib/query-client";
 import {
   clearTokens,
   getRefreshToken,
@@ -71,10 +72,41 @@ interface AuthState {
  */
 let restoreInFlight: Promise<void> | null = null;
 
+/*
+ * The operator whose data the React Query cache may be holding (review Q1).
+ *
+ * What the API returns depends on who asked: a Super Admin's incident detail
+ * carries an anonymous reporter's name and email and the exact coordinates, an
+ * unassigned advocate's does not exist at all. The query keys do not carry the
+ * operator's id, and cached data outlives the component that fetched it (5 min
+ * `gcTime`, and 30 s during which it is served without a refetch). So when one
+ * operator signs out and another signs in on the same tab — and the login
+ * screen sends them straight back to the page the first one was on — the
+ * second would be shown the first one's copy until a refetch replaced it.
+ *
+ * The cache is therefore emptied whenever the session ends (logout, expiry),
+ * and again on sign-in when the incoming operator is not the one the cache was
+ * filled for — the belt-and-braces case for a session that ended without
+ * passing through either path. Clearing rather than keying every query on the
+ * admin id: nothing cached for one operator is worth keeping for another, and a
+ * key someone forgets to extend would leak silently.
+ */
+let cacheOwnerId: string | null = null;
+
+/** Drop every cached response. Called after the store has gone anonymous. */
+function forgetCachedData(): void {
+  cacheOwnerId = null;
+  // Also cancels in-flight fetches, so a response for the old operator that
+  // lands after this point is not written back into the cache.
+  queryClient.clear();
+}
+
 /** Apply a completed sign-in: persist tokens, adopt the profile. */
 function adoptSession(session: AuthSession, remember: boolean): Pick<AuthState, "status" | "admin" | "challenge"> {
   setAccessToken(session.tokens.accessToken);
   setRefreshToken(session.tokens.refreshToken, remember);
+  if (cacheOwnerId !== session.admin.id) queryClient.clear();
+  cacheOwnerId = session.admin.id;
   return { status: "authenticated", admin: session.admin, challenge: null };
 }
 
@@ -135,7 +167,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Ignored deliberately — see above.
     }
     clearTokens();
+    // Anonymous first, so the protected screens unmount on the next render
+    // instead of re-subscribing to the emptied cache and refetching without a
+    // token; then the cache is emptied before anyone else can sign in (Q1).
     set({ status: "anonymous", admin: null, challenge: null, expiryNotice: null });
+    forgetCachedData();
   },
 
   /**
@@ -164,6 +200,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } catch {
         clearTokens();
         set({ status: "anonymous", admin: null });
+        forgetCachedData();
       }
     })().finally(() => {
       restoreInFlight = null;
@@ -200,6 +237,9 @@ installSessionExpiryHandler(() => {
     challenge: null,
     expiryNotice: "Your session has ended. Please sign in again.",
   });
+  // The login screen returns the next operator to this page; they must not be
+  // shown this operator's cached copy of it (review Q1).
+  forgetCachedData();
 });
 
 // ── Selectors ───────────────────────────────────────────────────────────────

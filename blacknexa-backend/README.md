@@ -41,11 +41,15 @@ prints the offending keys. That is deliberate — see `src/config/env.config.ts`
 | `npm run build` | `tsc` then `tsc-alias` (rewrites `@/` to relative paths) |
 | `npm start` | run the compiled `dist/server.js` |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | unit tests (`node --test` over `src/**/*.test.ts`) — pure modules only, no database or `.env` needed |
 | `npm run db:sync` | create/align the schema (`--no-alter` to skip alter) |
 | `npm run db:seed` | seed articles, jurisdictions, bootstrap admin |
 | `npm run db:seed:admin` | one operator account per role, for the admin console (refuses to run in production) |
 | `npm run db:migrate:roles` | migrate operator roles onto the four-role model (idempotent) |
+| `npm run db:migrate:profile-faq` | add the profile columns and FAQ tables to an existing database (idempotent) |
+| `npm run db:migrate:moderation` | add the incident moderation schema, backfills and seed keyword rules (idempotent; `--no-seed` skips the rules) — see [Incident moderation](#incident-moderation) |
 | `npm run db:snapshot` | take a persistence snapshot (`-- --integrity` to check instead) |
+| `npm run smoke:moderation` | walk the console's moderation and incident APIs against a running server — see [The console API](#the-console-api) |
 
 ---
 
@@ -233,6 +237,126 @@ Create the first operator by setting `ADMIN_BOOTSTRAP_EMAIL` and
 
 ---
 
+## Incident moderation
+
+Design: [`../docs/INCIDENT_MODULE_PLAN.md`](../docs/INCIDENT_MODULE_PLAN.md)
+(revision 2). In short: a public or trusted report, its evidence and every
+comment are stored `pending` and checked **before** anyone else sees them — a
+keyword stage in Node, then an AI assessment by the Python engine — and are
+either published automatically or held for a human in the Content Moderation
+queue. The AI never rejects; only people do. Private reports are never sent.
+
+### Schema
+
+```bash
+npm run db:migrate:moderation     # safe to re-run; always run it after db:sync
+```
+
+* **Fresh database:** `npm run db:sync`, then `npm run db:migrate:moderation`
+  (sync creates the tables; the migration backfills and seeds the keyword rules).
+* **Existing database:** run `db:migrate:moderation` *before* booting with
+  `DB_SYNC=true` — once the models declare the new columns, a sync without
+  `alter` tries to index columns that do not exist yet.
+* **Production:** `DB_SYNC` is refused, so the migration is the whole story.
+
+The script adds columns with `ADD COLUMN IF NOT EXISTS` (legacy rows stay
+`approved`, so nothing that is visible today disappears), creates the
+`moderation_runs`, `moderation_cases`, `keyword_rules`, `audit_events` and
+`report_notes` tables with `Model.sync()` (never `alter`), backfills
+`published_at` for legacy reports, revokes share links on private reports,
+dismisses duplicate open flags before creating the one-open-flag-per-reporter
+unique indexes, and seeds six keyword rules by name. It prints a summary of
+what it changed.
+
+### The worker
+
+The moderation worker starts with the API on **every** replica (runs are
+claimed with `FOR UPDATE SKIP LOCKED`), independent of `ENABLE_CRON`. Set
+`MODERATION_WORKER_ENABLED=false` to keep a process out of it. Without an AI
+engine configured, reports are held for a human (fail closed); comments with no
+keyword hit are approved. Locally you may set `MODERATION_REPORT_AI_FALLBACK=approve`;
+production refuses to boot with it.
+
+### Configuration
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MODERATION_ENABLED` | `true` | `false` skips the AI stage only — the fallbacks still apply, so it is not a publish-everything switch |
+| `MODERATION_WORKER_ENABLED` | `true` | run the worker in this process |
+| `MODERATION_WORKER_CONCURRENCY` / `MODERATION_WORKER_POLL_MS` | `4` / `1500` | parallel runs per process; idle poll interval |
+| `MODERATION_LEASE_SECONDS` | `120` | claim lease; boot refuses unless `× 1000 ≥ 2 × MODERATION_AI_TIMEOUT_MS + 30000` |
+| `MODERATION_AI_TIMEOUT_MS` | `40000` | per-call engine timeout |
+| `MODERATION_MAX_ATTEMPTS` | `4` | attempts before the terminal hold (urgent: `min(2, this)`); backoff 15 s, 60 s, 4 min |
+| `MODERATION_AUTO_APPROVE_MIN_CONFIDENCE` / `_VIOLATION_MIN_CONFIDENCE` / `_FLAG_AUTOHIDE_MIN_CONFIDENCE` | `0.8` / `0.5` / `0.85` | policy thresholds |
+| `MODERATION_REPORT_AI_FALLBACK` | `hold` | `approve` is refused in production |
+| `MODERATION_COMMENT_AI_FALLBACK` | `approve` | `approve` or `hold` |
+| `MODERATION_UNASSESSED_MEDIA` | `review` | media the AI cannot see waits for a moderator (`review`) or publishes with the text (`publish`) |
+| `MODERATION_FLAG_MIN_ACCOUNT_AGE_DAYS` | `7` | only older accounts' flags trigger an AI re-check |
+| `MODERATION_MAX_IMAGES` | `10` | photo thumbnails per assessment (needs `STORAGE_DRIVER=s3`) |
+| `MODERATION_ALERT_EMAILS` | `""` | extra recipients for urgent/safety alerts (active moderators are always included) |
+| `SERVER_ENCRYPTION_SECRET` | `""` | seals report bodies when set; opening tries it first, then the legacy chain, so setting it on a live database is safe |
+| `RATE_LIMIT_USER_WRITE_MAX` / `RATE_LIMIT_FLAG_MAX` / `RATE_LIMIT_FLAG_DAILY_MAX` | `120` / `20` / `50` | per-member budgets (not per IP) |
+
+The engine side is configured in `blacknexa-ai-engine` (`AI_MODERATION_MODEL`,
+`GEMINI_DATA_TERMS`, …); Node reaches it through `AI_ENGINE_URL` and
+`AI_ENGINE_TOKEN`.
+
+### The console API
+
+Two routers serve the admin console's Content Moderation and Incident
+Management screens (plan §8.1, §9.1):
+
+```
+/api/v1/admin/moderation   cases (queue, summary, detail, files) · approve · reject ·
+                           hide a file · re-run AI · ban / unban · keyword rules · stats
+/api/v1/admin/incidents    list · summary · assignees · detail · files · verify · dismiss ·
+                           reopen · deactivate · reactivate · assign · notes
+```
+
+Every endpoint — method, path, permission, query and body schema, the exact
+response shapes and the error messages — is written out in
+[`docs/ADMIN_MODERATION_API.md`](docs/ADMIN_MODERATION_API.md). The console's
+wire types (`admin-panel/src/features/moderation/*.types.ts`,
+`features/incidents/incidents.types.ts`) mirror it field for field, and the doc
+itself mirrors the interfaces at the top of `moderation_admin.service.ts` and
+`incident_admin.service.ts` — change the three together. Both routers run
+`adminAuthGuard`, then `requirePermission("moderation.*" | "incidents.*")` per
+route (`config/rbac.config.ts`), then Joi; every write also passes the
+per-operator `adminWriteLimiter` (keyed by admin id, budget
+`RATE_LIMIT_USER_WRITE_MAX`). An operator whose own member account wrote or
+flagged the content is refused (D16, 403, audited). The old server-rendered
+queue, `/admin/moderation/reports*`, `/flags/:id/resolve` and
+`/comments/:id/hide` are gone.
+
+`npm run smoke:moderation` walks both routers against a live server. It needs:
+
+* the seeded operator accounts — `npm run db:seed:admin` (refused in
+  production): `superadmin@`, `moderator@`, `advocate@` and `staff@blacknexa.com`;
+* the server's log at `$LOG` (default `/tmp/bn-server.log`) — member sign-up
+  codes are read from it — and the moderation worker running (it starts with
+  the API);
+* a raised per-IP budget locally, e.g. `RATE_LIMIT_MAX=2000`: the walk makes a
+  few hundred requests from one address and the `apiLimiter` would cut it short.
+
+`API`, `ROOT` and `MOD_WAIT` (seconds per wait for the worker, default 90) are
+overridable. Without an AI engine, held reports are approved through the API as
+part of the walk, and the one step that needs a particular pipeline outcome
+(Re-run AI) reports SKIP rather than FAIL.
+
+### Tests
+
+```bash
+npm test
+```
+
+Runs every `src/**/*.test.ts` with Node's built-in runner, compiled on the fly
+by `ts-node` in transpile-only mode (`npm run typecheck` is what type-checks
+the tests). The moderation vocabulary, policy table, keyword matcher and its
+golden corpus are pure modules, so the suite needs neither a database nor a
+`.env` — and a test must never import a model or `config/env.config.ts`.
+
+---
+
 ## Bugs found and fixed during the port
 
 Nine defects in the current production backend surfaced while porting. All are
@@ -292,6 +416,11 @@ fixed **server-side only** — no mobile release needed. Details in
 7. **Without `AI_TOOLKIT_SECRET_KEY`** the service still runs: the feed serves
    stored and seed articles, generation returns a clear 500, translations fall back
    to English, and geo-legal lookups use the 22 curated jurisdictions.
+8. **Run `npm run db:migrate:moderation`** on every existing database before
+   deploying the incident moderation module, and set `SERVER_ENCRYPTION_SECRET`
+   before removing `AI_TOOLKIT_SECRET_KEY` from this service. Existing report
+   bodies open only while the secret that sealed them — the toolkit key, or
+   failing that the JWT access secret — is still configured.
 
 ### Health probes
 

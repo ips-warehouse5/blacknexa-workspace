@@ -6,14 +6,32 @@
  * From D9: "Names the reason back, gives a reference, and states what the author is
  * told. Hiding it from your own feed is offered here rather than assumed."
  *
- * ── Two things this sheet promises ─────────────────────────────────────────
+ * ── Revision 2: the one taxonomy (docs/INCIDENT_MODULE_PLAN.md D6, D7, §3.1) ─
+ * The reasons are now the eight policy categories — six for a comment — in the
+ * member's words ("It threatens or encourages violence"), because a flag has to
+ * land in the admin tab the member meant (*Direct Threat & Violence*). The board's
+ * v7 swapped this sheet for a reasonless confirm; D7 keeps the picker, since a
+ * category tab cannot be fed without a category. The catalogue is
+ * `flagOptionsFor()` in `lib/report/moderation.ts`, word for word the server's
+ * `MEMBER_FLAG_LABELS`.
+ *
+ * ── Three things this sheet promises ───────────────────────────────────────
  *   • "A moderator reads every flag. The person who filed the report is not told
  *     who flagged it." Said before the flag is sent, and again after.
+ *   • "Safety flags are looked at within the hour." (§10) — threats, private
+ *     details and graphic content, marked on their rows. D9 repeats the promise
+ *     from the server's `expectedWithin`, not from the row tapped: flagging the
+ *     same thing twice returns the *existing* flag (200, same reference), whose
+ *     category may not be the one chosen this time — so D9 does not name the
+ *     reason back any more.
  *   • Hiding is **offered, not assumed.** Someone who flags a report for exposing a
  *     plate may still want to follow it. The switch is off by default.
+ *
+ * A refusal is shown in the server's words — "You can't flag your own report.",
+ * "That comment is not available.", the rate limit — rather than a vague retry.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { alpha, colors, radius, scrim, screenPadding } from "@/constants/theme";
@@ -22,38 +40,17 @@ import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import { SwitchRow } from "@/components/ui/Controls";
 import { SuccessTick } from "@/app/(auth)/reset/done";
-import reportsApi, { type FlagReason } from "@/lib/api/reports";
+import reportsApi, { type FlagReceipt } from "@/lib/api/reports";
+import { flagOptionsFor, type PolicyCategory } from "@/lib/report/moderation";
+import {
+  SAFETY_ROW_HINT,
+  flagErrorMessage,
+  flagReceiptLine,
+  flagSheetIntro,
+} from "@/lib/report/detail";
 
-interface ReasonOption {
-  value: FlagReason;
-  label: string;
-  hint?: string;
-}
-
-/** D8's six, for a report. */
-const REPORT_REASONS: ReasonOption[] = [
-  { value: "untrue", label: "It isn't true", hint: "Invented, or the evidence doesn't match" },
-  {
-    value: "private_details",
-    label: "It exposes someone's private details",
-    hint: "A name, address, plate or face that shouldn't be here",
-  },
-  { value: "threatening", label: "It threatens or targets a person" },
-  { value: "graphic", label: "Graphic content with no warning" },
-  { value: "spam", label: "Spam or advertising" },
-  { value: "other", label: "Something else" },
-];
-
-/** The same sheet with three, for a comment. */
-const COMMENT_REASONS: ReasonOption[] = [
-  { value: "threatening", label: "It threatens or targets a person" },
-  {
-    value: "private_details",
-    label: "It exposes someone's private details",
-    hint: "A name, address, plate or face that shouldn't be here",
-  },
-  { value: "spam", label: "Spam or advertising" },
-];
+/** The server's note limit (`reports.flag` / `comments.flag` validation). */
+const NOTE_MAX = 1000;
 
 export type FlagTarget = { kind: "report"; id: string } | { kind: "comment"; id: string };
 
@@ -61,20 +58,26 @@ export function FlagSheet({
   visible,
   target,
   onClose,
+  onFlagged,
 }: {
   visible: boolean;
   target: FlagTarget;
   onClose: () => void;
+  /**
+   * Called as soon as the server answers with a receipt — before Done — so the
+   * screen can show "You flagged this" without waiting for a refetch.
+   */
+  onFlagged?: (receipt: FlagReceipt) => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
-  const reasons = target.kind === "report" ? REPORT_REASONS : COMMENT_REASONS;
+  const options = flagOptionsFor(target.kind);
 
   // Nothing preselected.
-  const [reason, setReason] = useState<FlagReason | null>(null);
+  const [reason, setReason] = useState<PolicyCategory | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const [sent, setSent] = useState<{ flagRef: string; expectedWithin?: string } | null>(null);
+  const [sent, setSent] = useState<FlagReceipt | null>(null);
   const [hide, setHide] = useState(false);
 
   const reset = useCallback(() => {
@@ -83,9 +86,21 @@ export function FlagSheet({
     setSent(null);
     setHide(false);
     setProblem(null);
+    setBusy(false);
   }, []);
 
+  // A different target is a different flag: never carry a half-made choice over.
+  useEffect(() => {
+    reset();
+  }, [reset, target.kind, target.id]);
+
+  const close = useCallback(() => {
+    reset();
+    onClose();
+  }, [onClose, reset]);
+
   const send = useCallback(async () => {
+    if (busy) return;
     if (!reason) {
       setProblem("Choose a reason so the moderator knows what to look at.");
       return;
@@ -93,53 +108,56 @@ export function FlagSheet({
     setBusy(true);
     setProblem(null);
     try {
-      if (target.kind === "report") {
-        const result = await reportsApi.flag(target.id, reason, note.trim() || undefined);
-        setSent({ flagRef: result.flagRef, expectedWithin: result.expectedWithin });
-      } else {
-        const result = await reportsApi.flagComment(target.id, reason, note.trim() || undefined);
-        setSent({ flagRef: result.flagRef });
-      }
-    } catch {
-      setProblem("That flag did not send. Try again.");
+      const trimmed = note.trim() || undefined;
+      const receipt =
+        target.kind === "report"
+          ? await reportsApi.flag(target.id, reason, trimmed)
+          : await reportsApi.flagComment(target.id, reason, trimmed);
+      setSent(receipt);
+      onFlagged?.(receipt);
+    } catch (err) {
+      setProblem(flagErrorMessage(err));
     } finally {
       setBusy(false);
     }
-  }, [note, reason, target]);
+  }, [busy, note, onFlagged, reason, target]);
 
   const finish = useCallback(async () => {
     // Hiding happens on the way out, only if it was asked for.
     if (hide && target.kind === "report") {
       await reportsApi.hide(target.id).catch(() => {});
     }
-    reset();
-    onClose();
-  }, [hide, onClose, reset, target]);
-
-  const chosenLabel = reasons.find((option) => option.value === reason)?.label.toLowerCase();
+    close();
+  }, [close, hide, target]);
 
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={sent ? finish : onClose}
+      onRequestClose={sent ? finish : close}
     >
       <View style={styles.root}>
         <Pressable
-          style={styles.backdrop}
-          onPress={sent ? finish : onClose}
+          style={[styles.backdrop, { backgroundColor: alpha(colors.deep, scrim.sheetDeep) }]}
+          onPress={sent ? finish : close}
           accessibilityRole="button"
           accessibilityLabel="Close"
         />
 
-        <View style={[styles.sheet, { maxHeight: "86%", paddingBottom: Math.max(insets.bottom, 12) }]}>
-          <View style={styles.grabber} />
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: colors.s2, maxHeight: "86%", paddingBottom: Math.max(insets.bottom, 12) },
+          ]}
+          testID="flag-sheet"
+        >
+          <View style={[styles.grabber, { backgroundColor: alpha(colors.t0, 0.18) }]} />
 
           {sent ? (
             /* D9 */
-            <View style={{ paddingTop: 20 }}>
-              <View style={styles.tick}>
+            <View style={{ paddingTop: 20 }} testID="flag-sent">
+              <View style={[styles.tick, { backgroundColor: alpha(colors.ok, 0.14) }]}>
                 <SuccessTick size={24} />
               </View>
 
@@ -152,18 +170,14 @@ export function FlagSheet({
                 center
                 style={{ marginTop: 10, lineHeight: 21 }}
               >
-                {`Flagged for ${chosenLabel}. ${
-                  sent.expectedWithin === "within the hour"
-                    ? "A safety flag is seen within the hour."
-                    : "Most flags are reviewed within a day; a safety flag is seen within the hour."
-                }`}
+                {flagReceiptLine(sent.expectedWithin)}
               </Text>
 
-              <View style={styles.receipt}>
+              <View style={[styles.receipt, { backgroundColor: colors.s5 }]}>
                 <ReceiptRow label="Reference" value={sent.flagRef} />
                 <ReceiptRow label="You will hear back" value="By email" />
-                {/* The promise, restated. */}
-                <ReceiptRow label="The author is told" value="Nothing about you" />
+                {/* The promise, restated — in the server's words. */}
+                <ReceiptRow label="The author is told" value={sent.authorIsTold || "Nothing about you"} />
               </View>
 
               {target.kind === "report" ? (
@@ -189,50 +203,64 @@ export function FlagSheet({
             <>
               <View style={{ paddingTop: 16, paddingBottom: 4 }}>
                 <Text variant="sectionTitle" color={colors.t0} style={{ fontSize: 20 }}>
-                  Why are you flagging this?
+                  {target.kind === "comment" ? "Why are you flagging this comment?" : "Why are you flagging this?"}
                 </Text>
                 <Text variant="bodyXs" color={colors.t3} style={{ marginTop: 6, lineHeight: 19 }}>
-                  A moderator reads every flag. The person who filed the report is
-                  not told who flagged it.
+                  {flagSheetIntro(target.kind)}
                 </Text>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
-                {reasons.map((option, index) => {
-                  const selected = reason === option.value;
-                  return (
-                    <Pressable
-                      key={option.value}
-                      onPress={() => {
-                        setReason(option.value);
-                        setProblem(null);
-                      }}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected }}
-                      accessibilityLabel={
-                        option.hint ? `${option.label}. ${option.hint}` : option.label
-                      }
-                      style={({ pressed }) => [
-                        styles.reasonRow,
-                        index < reasons.length - 1 && styles.reasonDivider,
-                        pressed && { opacity: 0.9 },
-                      ]}
-                      testID={`flag-reason-${option.value}`}
-                    >
-                      <View style={[styles.radio, selected && styles.radioOn]} />
-                      <View style={{ flex: 1 }}>
-                        <Text variant="body" color={colors.t0} style={{ fontSize: 14 }}>
-                          {option.label}
-                        </Text>
-                        {option.hint ? (
-                          <Text variant="metaSm" color={colors.t4} style={{ marginTop: 2 }}>
-                            {option.hint}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={{ flexGrow: 0 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View accessibilityRole="radiogroup">
+                  {options.map((option, index) => {
+                    const selected = reason === option.code;
+                    return (
+                      <Pressable
+                        key={option.code}
+                        onPress={() => {
+                          setReason(option.code);
+                          setProblem(null);
+                        }}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected, checked: selected }}
+                        accessibilityLabel={
+                          option.safety ? `${option.label}. ${SAFETY_ROW_HINT}` : option.label
+                        }
+                        style={({ pressed }) => [
+                          styles.reasonRow,
+                          index < options.length - 1 && {
+                            borderBottomWidth: StyleSheet.hairlineWidth,
+                            borderBottomColor: alpha(colors.t0, 0.06),
+                          },
+                          pressed && { opacity: 0.9 },
+                        ]}
+                        testID={`flag-reason-${option.code}`}
+                      >
+                        <View
+                          style={[
+                            styles.radio,
+                            { borderColor: colors.line },
+                            selected && { borderWidth: 5, borderColor: colors.acc, backgroundColor: colors.bg },
+                          ]}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text variant="body" color={colors.t0} style={{ fontSize: 14 }}>
+                            {option.label}
                           </Text>
-                        ) : null}
-                      </View>
-                    </Pressable>
-                  );
-                })}
+                          {option.safety ? (
+                            <Text variant="metaSm" color={colors.t4} style={{ marginTop: 2 }}>
+                              {SAFETY_ROW_HINT}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
 
                 <Text variant="fieldLabel" color={colors.t3} style={{ marginTop: 16 }}>
                   ANYTHING TO ADD{" "}
@@ -242,7 +270,8 @@ export function FlagSheet({
                 </Text>
                 <TextField
                   value={note}
-                  onChangeText={setNote}
+                  onChangeText={(value) => setNote(value.slice(0, NOTE_MAX))}
+                  maxLength={NOTE_MAX}
                   placeholder="What should the moderator look at?"
                   multiline
                   multilineHeight={76}
@@ -251,9 +280,15 @@ export function FlagSheet({
                 />
               </ScrollView>
 
-              <View style={styles.footer}>
+              <View style={[styles.footer, { borderTopColor: alpha(colors.t0, 0.07) }]}>
                 {problem ? (
-                  <Text variant="metaSm" color={colors.bad2} style={{ marginBottom: 10 }}>
+                  <Text
+                    variant="metaSm"
+                    color={colors.bad2}
+                    style={{ marginBottom: 10 }}
+                    accessibilityLiveRegion="polite"
+                    testID="flag-problem"
+                  >
                     {problem}
                   </Text>
                 ) : null}
@@ -282,9 +317,8 @@ function ReceiptRow({ label, value }: { label: string; value: string }): React.R
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: alpha(colors.deep, scrim.sheetDeep) },
+  backdrop: { ...StyleSheet.absoluteFillObject },
   sheet: {
-    backgroundColor: colors.s2,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     paddingHorizontal: screenPadding.detail,
@@ -295,28 +329,20 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4,
     borderRadius: 2,
-    backgroundColor: alpha(colors.t0, 0.18),
   },
 
   reasonRow: { flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 13 },
-  reasonDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: alpha(colors.t0, 0.06),
-  },
   radio: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 1.6,
-    borderColor: colors.line,
   },
-  radioOn: { borderWidth: 5, borderColor: colors.acc, backgroundColor: colors.bg },
 
   footer: {
     paddingTop: 14,
     marginTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: alpha(colors.t0, 0.07),
   },
 
   tick: {
@@ -324,12 +350,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: alpha(colors.ok, 0.14),
     alignItems: "center",
     justifyContent: "center",
   },
   receipt: {
-    backgroundColor: colors.s5,
     borderRadius: radius.lg,
     padding: 14,
     marginTop: 18,

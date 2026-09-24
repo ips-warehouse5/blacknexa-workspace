@@ -13,18 +13,29 @@
 import React, { useCallback, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import type { TextInput } from "react-native";
-import { router } from "expo-router";
 import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import TextField from "@/components/ui/TextField";
-import { WizardShell, SectionLabel, cardHairline } from "@/components/report/WizardShell";
+import {
+  WizardShell,
+  SectionLabel,
+  cardHairline,
+  useStepNavigation,
+} from "@/components/report/WizardShell";
 import { AudioRecorderRow } from "@/components/report/AudioRecorderRow";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
 
 /** C2's counter reads `44/70`, so the cap is 70. */
 const TITLE_MAX = 70;
+
+/**
+ * The server's cap on a draft's body (`reports.saveDraft`, 20 000 characters).
+ * Past it every save is refused, and the refusal only surfaces at filing — so
+ * the field stops there instead.
+ */
+const BODY_MAX = 20_000;
 
 /** The four prompts behind "Not sure where to start?". */
 const PROMPTS = [
@@ -36,8 +47,9 @@ const PROMPTS = [
 
 export default function DetailsStep(): React.ReactElement {
   useThemeSync();
-  const { payload, patch, setStep, savedAt } = useReportDraft();
+  const { payload, patch, savedAt } = useReportDraft();
   const exit = useWizardExit();
+  const { back, advance } = useStepNavigation(2);
 
   const [title, setTitle] = useState(payload.title ?? "");
   const [body, setBody] = useState(payload.body ?? "");
@@ -76,9 +88,8 @@ export default function DetailsStep(): React.ReactElement {
     }
 
     commit(title, body);
-    setStep(3);
-    router.push("/report/when");
-  }, [body, commit, setStep, title]);
+    advance();
+  }, [advance, body, commit, title]);
 
   return (
     <WizardShell
@@ -86,7 +97,7 @@ export default function DetailsStep(): React.ReactElement {
       stepName="Details"
       savedAt={savedAt}
       onClose={exit}
-      onBack={() => router.back()}
+      onBack={back}
       onNext={next}
       problem={problem}
       scrollRef={scrollRef}
@@ -118,10 +129,12 @@ export default function DetailsStep(): React.ReactElement {
         ref={bodyRef}
         value={body}
         onChangeText={(value) => {
-          setBody(value);
-          commit(title, value);
+          const next = value.slice(0, BODY_MAX);
+          setBody(next);
+          commit(title, next);
         }}
         error={bodyError}
+        maxLength={BODY_MAX}
         multiline
         multilineHeight={230}
         placeholder="Two officers stopped me on the way out of the station…"

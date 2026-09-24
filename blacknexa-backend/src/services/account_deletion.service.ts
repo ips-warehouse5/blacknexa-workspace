@@ -41,6 +41,25 @@
  *
  * The whole thing runs in one transaction. A half-deleted account is the worst of
  * the available outcomes: signed out, unreachable, and still present.
+ *
+ * ── Revision 2: moderation (docs/INCIDENT_MODULE_PLAN.md §7.5, §7.8) ────────
+ *   • **Their comments** leave through `setCommentState`, which locks each row and
+ *     moves `comment_count` by exactly what that comment contributed — only a
+ *     `visible AND approved` comment was ever counted, so removing a pending or
+ *     held one changes nothing and removing a hidden one no longer double-counts.
+ *     Each removed comment's queued run is withdrawn and its open case resolved
+ *     `withdrawn` (`moderationCaseService.closeForTarget`).
+ *   • **Erased reports** withdraw their moderation work exactly like an owner
+ *     delete: queued runs cancelled, open cases (theirs and their comments')
+ *     resolved `withdrawn`, open flags resolved "The author removed it".
+ *   • **Flaggers are told** — by email, after the commit, never from inside it.
+ *   • **The audit log forgets the member** (§4.6, §7.8): `actor_id` and `ip` are
+ *     nulled on the rows where they were the actor. It is one of the only two
+ *     mutations the audit log permits.
+ *   • **The AI forgets their words** (review R6): `ai_summary` and every verdict's
+ *     verbatim `evidence` / `evidenceEnglish` quote are nulled on the moderation
+ *     runs of their comments and of their reports (severed or erased), in the
+ *     same transaction — codes, confidences and severities stay for the audit.
  */
 
 import crypto from "node:crypto";
@@ -77,6 +96,10 @@ import {
 } from "@/models/report_social.model";
 import reportService from "@/services/report.service";
 import mailerService from "@/services/mailer.service";
+import auditService from "@/services/audit.service";
+import moderationCaseService, { type ResolvedFlagRow } from "@/services/moderation_case.service";
+import flagService, { AUTHOR_REMOVED } from "@/services/flag.service";
+import { setCommentState } from "@/services/comment_state";
 import { notFound } from "@/middlewares/error.middleware";
 
 /** What happens to the reports the person filed. */
@@ -133,17 +156,16 @@ class AccountDeletionService {
       CommentLike.findAll({ where: { user_id: userId }, attributes: ["comment_id"] }),
     ]);
 
-    const visibleComments = comments.filter((row) => row.status === "visible");
-
     let reportsSevered = 0;
     let reportsErased = 0;
+    // Flags resolved because the content they were about went away — their
+    // reporters are emailed once the transaction has committed.
+    const resolvedFlags: ResolvedFlagRow[] = [];
 
     await sequelize.transaction(async (transaction) => {
       // ── 2. Their activity on other people's reports ──────────────────────
-      await this.removeActivity(
-        userId,
-        { supports, corroborations, comments, visibleComments, likes },
-        transaction,
+      resolvedFlags.push(
+        ...(await this.removeActivity(userId, { supports, corroborations, comments, likes }, transaction)),
       );
 
       // ── 3. The reports they filed ────────────────────────────────────────
@@ -183,8 +205,30 @@ class AccountDeletionService {
             { purge_after: purgeAfter },
             { where: { report_id: { [Op.in]: ownedIds } }, transaction },
           );
+          // The same withdrawal as an owner delete (§7.8): queued runs, open
+          // cases and open flags on each report and its comments.
+          for (const reportId of ownedIds) {
+            resolvedFlags.push(
+              ...(await reportService.closeModerationForRemovedReport(transaction, reportId)),
+            );
+          }
           reportsErased = ownedIds.length;
         }
+
+        // Under both dispositions the AI's verbatim quotes and summaries of
+        // their reports go now (review R6): a severed report stays as record,
+        // but the moderation rows need only the codes and scores, and an erased
+        // one must not wait out the 30-day purge with its words still quoted.
+        //
+        // After the `Report.update` above, never before it. A worker's apply
+        // locks the report row first and writes its run's summary last, so a
+        // redaction that ran first found nothing on that run yet, the update
+        // then waited for the worker's commit, and the worker's quotes outlived
+        // the erasure. The update now waits for any such worker, and this sees
+        // what it committed; a worker that comes second sees `deleted_at` under
+        // its lock and stores nothing (an erased report), and the order here —
+        // report, then runs — is the worker's own, so the two cannot deadlock.
+        await redactModerationText(transaction, { reportIds: ownedIds });
       }
 
       // Drafts go under both dispositions — an unfinished report was never record.
@@ -205,6 +249,9 @@ class AccountDeletionService {
         { reporter_id: null },
         { where: { reporter_id: userId }, transaction },
       );
+
+      // The audit log keeps what they did and forgets who did it (§7.8).
+      await auditService.nullMemberActor(transaction, userId);
 
       // ── 1. The person ────────────────────────────────────────────────────
       await Notification.destroy({ where: { user_id: userId }, transaction });
@@ -235,6 +282,7 @@ class AccountDeletionService {
 
     // Outside the transaction, and fire-and-forget: a mail failure must not undo a
     // deletion that has already succeeded.
+    flagService.notifyReporters(resolvedFlags, AUTHOR_REMOVED.mail);
     runBackground(
       mailerService.sendAccountDeleted(email, disposition, {
         severed: reportsSevered,
@@ -282,6 +330,11 @@ class AccountDeletionService {
    * Each removal carries its counter with it. Doing this with raw `destroy` calls
    * and fixing the counts afterwards would leave a window where D1's footer lies,
    * and this all runs inside the caller's transaction so there is no such window.
+   *
+   * Comments go first. Each one is a moderation target whose lock order is
+   * comment → case → report counter (`moderation_case.service.ts`); taking them
+   * before the support and corroboration counters on the same reports keeps this
+   * transaction in that order too. Returns the flags resolved on their comments.
    */
   private async removeActivity(
     userId: string,
@@ -289,11 +342,62 @@ class AccountDeletionService {
       supports: ReportSupport[];
       corroborations: ReportCorroboration[];
       comments: ReportComment[];
-      visibleComments: ReportComment[];
       likes: CommentLike[];
     },
     transaction: Transaction,
-  ): Promise<void> {
+  ): Promise<ResolvedFlagRow[]> {
+    const resolvedFlags: ResolvedFlagRow[] = [];
+
+    /*
+     * Comments become `removed` rather than disappearing, which is exactly what
+     * `commentService.remove` already does when someone deletes their own comment.
+     * The reason is threading: replies hang off a root comment, and hard-deleting a
+     * root would take other people's replies with it. `removed` comments are
+     * filtered out of every listing, so the words are gone from the product — this
+     * is deletion of the content, not a tombstone the reader sees.
+     *
+     * `setCommentState` moves `comment_count` by what each comment actually
+     * contributed (`visible AND approved`, §7.5), and each removed comment's
+     * moderation work is withdrawn.
+     */
+    const commentIds = rows.comments.map((row) => row.id);
+    for (const comment of rows.comments) {
+      const change = await setCommentState(transaction, comment.id, { status: "removed" });
+      if (change.before.status === "removed") continue;
+      const closed = await moderationCaseService.closeForTarget(transaction, {
+        targetType: "comment",
+        targetId: comment.id,
+        resolution: "withdrawn",
+        flagOutcome: AUTHOR_REMOVED.outcome,
+      });
+      resolvedFlags.push(...closed.flags);
+    }
+    if (commentIds.length > 0) {
+      await ReportComment.update(
+        { body: "", anonymous: true },
+        { where: { id: { [Op.in]: commentIds } }, transaction },
+      );
+      // Likes other people gave to their comments go with the comments.
+      await CommentLike.destroy({
+        where: { comment_id: { [Op.in]: commentIds } },
+        transaction,
+      });
+      // And the AI's quotes of them (review R6) — see `redactModerationText`.
+      await redactModerationText(transaction, { commentIds });
+    }
+
+    // Likes they gave.
+    if (rows.likes.length > 0) {
+      await CommentLike.destroy({ where: { user_id: userId }, transaction });
+      for (const [commentId, count] of tally(rows.likes.map((r) => r.comment_id))) {
+        await ReportComment.decrement("like_count", {
+          by: count,
+          where: { id: commentId },
+          transaction,
+        });
+      }
+    }
+
     // Supports.
     if (rows.supports.length > 0) {
       await ReportSupport.destroy({ where: { user_id: userId }, transaction });
@@ -318,52 +422,77 @@ class AccountDeletionService {
       }
     }
 
-    // Likes they gave.
-    if (rows.likes.length > 0) {
-      await CommentLike.destroy({ where: { user_id: userId }, transaction });
-      for (const [commentId, count] of tally(rows.likes.map((r) => r.comment_id))) {
-        await ReportComment.decrement("like_count", {
-          by: count,
-          where: { id: commentId },
-          transaction,
-        });
-      }
-    }
-
-    // Likes other people gave to their comments go with the comments.
-    const commentIds = rows.comments.map((row) => row.id);
-    if (commentIds.length > 0) {
-      await CommentLike.destroy({
-        where: { comment_id: { [Op.in]: commentIds } },
-        transaction,
-      });
-    }
-
-    /*
-     * Comments become `removed` rather than disappearing, which is exactly what
-     * `commentService.remove` already does when someone deletes their own comment.
-     * The reason is threading: replies hang off a root comment, and hard-deleting a
-     * root would take other people's replies with it. `removed` comments are
-     * filtered out of every listing, so the words are gone from the product — this
-     * is deletion of the content, not a tombstone the reader sees.
-     */
-    if (commentIds.length > 0) {
-      await ReportComment.update(
-        { status: "removed", body: "", anonymous: true },
-        { where: { id: { [Op.in]: commentIds } }, transaction },
-      );
-      for (const [reportId, count] of tally(rows.visibleComments.map((r) => r.report_id))) {
-        await Report.decrement("comment_count", {
-          by: count,
-          where: { id: reportId },
-          transaction,
-        });
-      }
-    }
-
     // Feed-hide choices are a preference, and the preference has no owner now.
     await ReportHide.destroy({ where: { user_id: userId }, transaction });
+    return resolvedFlags;
   }
+}
+
+/**
+ * Strip the member's words out of `moderation_runs` (review R6).
+ *
+ * Every assessed run stores `ai_summary` and, per category, an `evidence` quote
+ * copied verbatim from the content plus its `evidenceEnglish` rendering. Nothing
+ * else ever rewrote those columns, and runs are deleted only with their parent
+ * report by the purge — so a comment on someone else's live report kept its
+ * quotes (a phone number flagged as private info, say) forever after the
+ * account was gone, breaking "the words are gone from the product" and
+ * resurfacing in the case detail.
+ *
+ * Kept: the codes, violations, confidences and severities, so the audit of what
+ * was decided and why still reads. Nulled: the summary and both quote fields
+ * (set to null rather than dropped, so every stored verdict keeps the
+ * `AiCategoryVerdict` shape). Scoped to the member's own content only: runs on
+ * their comments, and report-target runs (content and evidence runs) on their
+ * reports — never another member's comment on those reports.
+ *
+ * Call it only after the targets' own rows are locked by this transaction
+ * (the comments' `setCommentState`, the reports' `Report.update`). A worker
+ * locks the target first and writes its run's summary last, so the lock makes
+ * the redaction wait for an in-flight worker and see what it wrote; a worker
+ * that comes second finds the comment removed or the report deleted under its
+ * lock and stores no text (review R4's lock order). A severed report stays
+ * live, so a later run on it — a flag re-check — may quote its body again;
+ * that body is still published record, which is why it was kept.
+ */
+export async function redactModerationText(
+  transaction: Transaction,
+  targets: { commentIds?: readonly string[]; reportIds?: readonly string[] },
+): Promise<number> {
+  const clauses: string[] = [];
+  const replacements: Record<string, unknown> = {};
+  if (targets.commentIds && targets.commentIds.length > 0) {
+    clauses.push("(target_type = 'comment' AND comment_id IN (:commentIds))");
+    replacements.commentIds = [...targets.commentIds];
+  }
+  if (targets.reportIds && targets.reportIds.length > 0) {
+    clauses.push("(target_type = 'report' AND target_id IN (:reportIds))");
+    replacements.reportIds = [...targets.reportIds];
+  }
+  if (clauses.length === 0) return 0;
+
+  const [, result] = await sequelize.query(
+    `UPDATE moderation_runs
+        SET ai_summary = NULL,
+            ai_categories = CASE
+              WHEN jsonb_typeof(ai_categories) = 'array' THEN (
+                SELECT COALESCE(
+                         jsonb_agg(
+                           CASE WHEN jsonb_typeof(c.verdict) = 'object'
+                                THEN c.verdict || '{"evidence": null, "evidenceEnglish": null}'::jsonb
+                                ELSE c.verdict END
+                           ORDER BY c.pos),
+                         '[]'::jsonb)
+                  FROM jsonb_array_elements(ai_categories) WITH ORDINALITY AS c(verdict, pos))
+              ELSE ai_categories END,
+            updated_on = now()
+      WHERE (${clauses.join(" OR ")})
+        AND (ai_summary IS NOT NULL OR ai_categories IS NOT NULL)`,
+    { replacements, transaction },
+  );
+  return typeof result === "number"
+    ? result
+    : Number((result as { rowCount?: number } | undefined)?.rowCount ?? 0);
 }
 
 /** Count occurrences, so one `decrement` per report replaces one per row. */

@@ -7,14 +7,21 @@ endpoint that omitted one raised a 500 the moment limiting was switched on — w
 is exactly how it would have been deployed.
 
 These tests build a second app with limits on, so the decorated path is exercised.
+Every router module that carries `@limiter.limit` must be in the reload list below
+— the moderation route included — or its decorator keeps the session's disabled
+limiter and the regression goes untested.
 """
 
 from __future__ import annotations
 
 import importlib
 
+import httpx
 import pytest
+import respx
 from fastapi.testclient import TestClient
+
+from tests.support import MODERATION_URL, gemini_moderation, moderation_output, moderation_request
 
 
 @pytest.fixture
@@ -39,6 +46,9 @@ def limited_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     import app.api.v1.internal.news as news_module
 
     importlib.reload(news_module)
+    import app.api.v1.internal.moderation as moderation_module
+
+    importlib.reload(moderation_module)
     import app.api.v1.router as router_module
 
     importlib.reload(router_module)
@@ -57,6 +67,7 @@ def limited_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     config_module.get_settings.cache_clear()
     importlib.reload(rate_limit_module)
     importlib.reload(news_module)
+    importlib.reload(moderation_module)
     importlib.reload(router_module)
     importlib.reload(main_module)
 
@@ -73,6 +84,20 @@ def test_decorated_endpoint_works_when_limiting_is_on(limited_client: TestClient
     )
     assert response.status_code == 200, response.text
     assert response.json()["translation"]["language"] == "en"
+
+
+@respx.mock
+def test_moderation_endpoint_works_when_limiting_is_on(limited_client: TestClient) -> None:
+    """The same regression guard for the moderation route, which Node's worker
+    calls on every filing — a 500 here would hold every report."""
+    respx.post(MODERATION_URL).mock(
+        return_value=httpx.Response(200, json=gemini_moderation(moderation_output()))
+    )
+    response = limited_client.post(
+        "/api/v1/internal/moderation/assess", json=moderation_request()
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "assessed"
 
 
 def test_rate_limit_headers_are_emitted(limited_client: TestClient) -> None:

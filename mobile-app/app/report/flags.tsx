@@ -8,20 +8,33 @@
  * of a moderator within the hour — so the card states what each position means
  * rather than only what "on" does. And the mini card is the last chance to notice
  * that a report is about to publish under a real name.
+ *
+ * ── Revision 2 (docs/INCIDENT_MODULE_PLAN.md §10 "Copy") ──────────────────
+ * Every public or trusted report now goes through an automated safety check
+ * before it is published, so the urgent card's two positions describe that —
+ * "checked right away" versus "checked and published within minutes; some wait
+ * for a moderator" — and a private report, which is never checked (D3), gets a
+ * sentence that promises no check. Both halves print together, always.
  */
 
 import React, { useCallback, useState } from "react";
 import { View } from "react-native";
-import { router } from "expo-router";
 import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot, Switch, SwitchRow } from "@/components/ui/Controls";
 import { StatusPill } from "@/components/report/StatusPill";
-import { WizardShell, ConsequenceCard, SectionLabel, cardHairline } from "@/components/report/WizardShell";
+import {
+  WizardShell,
+  ConsequenceCard,
+  SectionLabel,
+  cardHairline,
+  useStepNavigation,
+} from "@/components/report/WizardShell";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
 import { useAuth } from "@/providers/AuthProvider";
 import { CATEGORY_META, type Visibility } from "@/lib/api/reports";
+import { urgentConsequence } from "@/lib/report/moderation";
 
 /** The three visibility cards, each with the consequence C6 prints. */
 const VISIBILITY: { value: Visibility; title: string; consequence: string }[] = [
@@ -36,9 +49,10 @@ const VISIBILITY: { value: Visibility; title: string; consequence: string }[] = 
 
 export default function FlagsStep(): React.ReactElement {
   useThemeSync();
-  const { payload, patch, setStep, savedAt } = useReportDraft();
+  const { payload, patch, savedAt } = useReportDraft();
   const { user } = useAuth();
   const exit = useWizardExit();
+  const { back, advance } = useStepNavigation(6);
 
   // Pre-filled from the profile default — the resolved decision from the plan:
   // visibility is a field the user already set deliberately on A9.
@@ -68,9 +82,8 @@ export default function FlagsStep(): React.ReactElement {
       return;
     }
     commit({});
-    setStep(7);
-    router.push("/report/review");
-  }, [commit, setStep, visibility]);
+    advance();
+  }, [advance, commit, visibility]);
 
   const publishedName = anonymous ? "Anonymous" : user?.displayName?.trim() || "Anonymous";
   const category = payload.category;
@@ -81,7 +94,7 @@ export default function FlagsStep(): React.ReactElement {
       stepName="Flags"
       savedAt={savedAt}
       onClose={exit}
-      onBack={() => router.back()}
+      onBack={back}
       onNext={next}
       problem={problem}
       testID="wizard-flags"
@@ -105,10 +118,13 @@ export default function FlagsStep(): React.ReactElement {
             testID="mark-urgent"
           />
         </View>
-        <Text variant="bodyXs" color={colors.t2} style={styles.urgentConsequence}>
-          {urgent
-            ? "On: a moderator sees it within the hour and it carries an Urgent badge in the feed."
-            : "Off: it joins the normal review queue, usually a day."}
+        <Text
+          variant="bodyXs"
+          color={colors.t2}
+          style={styles.urgentConsequence}
+          testID="urgent-consequence"
+        >
+          {urgentConsequence(visibility)}
         </Text>
       </View>
 

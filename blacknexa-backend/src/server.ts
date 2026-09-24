@@ -12,9 +12,16 @@
  *   4. Bootstrap the first admin if `ADMIN_BOOTSTRAP_*` is set and none exists.
  *   5. Seed articles if the table is empty, so the feed is never blank.
  *   6. Start listening, attach the WebSocket hub, register the cron schedules.
+ *   7. Start the moderation worker (docs/INCIDENT_MODULE_PLAN.md §5.2). It runs
+ *      on every replica unless `MODERATION_WORKER_ENABLED=false` and does not
+ *      depend on `ENABLE_CRON`: a filed report is checked within seconds, and
+ *      `FOR UPDATE SKIP LOCKED` makes any number of replicas safe.
  *
  * Shutdown drains in the reverse order and is bounded by a timeout, so a stuck
- * connection cannot block a rolling deploy indefinitely.
+ * connection cannot block a rolling deploy indefinitely. The moderation worker
+ * stops right after cron and *before* the database pool closes: it aborts its
+ * in-flight AI calls and releases their runs back to the queue (fenced, without
+ * spending an attempt), and that needs a live connection.
  */
 
 import http from "http";
@@ -28,6 +35,7 @@ import { startJobs, stopJobs } from "@/jobs";
 import authService from "@/services/auth.service";
 import newsService from "@/services/news.service";
 import aiEngineClient from "@/services/ai_engine.client";
+import moderationWorker from "@/services/moderation_worker";
 import { installProcessGuards } from "@/middlewares/error.middleware";
 import { registeredSchemaNames } from "@/validations";
 
@@ -53,7 +61,8 @@ async function bootstrap(): Promise<void> {
   logger.info("─".repeat(72));
   logger.info("BlackNexa Backend — News, Geo-Legal, Platform & Enterprise API");
   logger.info(
-    `env=${env.nodeEnv}  port=${env.port}  cron=${env.jobs.enableCron ? "on" : "off"}  ai=${aiMode}`,
+    `env=${env.nodeEnv}  port=${env.port}  cron=${env.jobs.enableCron ? "on" : "off"}  ai=${aiMode}  ` +
+      `moderation-worker=${env.moderation.workerEnabled ? "on" : "off"}`,
   );
   logger.info("─".repeat(72));
 
@@ -131,6 +140,10 @@ async function bootstrap(): Promise<void> {
 
   startJobs();
 
+  // 7. Moderation worker — after listen, so a replica that fails to bind never
+  //    claims runs it would then abandon until their leases expire.
+  moderationWorker.start();
+
   registerShutdownHandlers();
 }
 
@@ -151,6 +164,8 @@ async function shutdown(signal: string): Promise<void> {
 
   try {
     stopJobs();
+    // Before the pool closes: releasing in-flight runs needs the database.
+    await moderationWorker.stop();
     await closeLiveChat();
 
     if (server) {

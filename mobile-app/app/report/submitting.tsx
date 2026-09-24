@@ -17,13 +17,22 @@
  * On failure the screen does not bounce back to Review: it says what happened and
  * offers a retry, because the draft is intact and re-walking six steps to try again
  * would be a punishment for a network blip.
+ *
+ * ── Revision 2: a retry that works (docs/INCIDENT_MODULE_PLAN.md §10) ──────
+ *   • **Try again retries the failed files.** It used to reset the phase only, and
+ *     the failed file put the screen straight back into "That did not finish".
+ *   • **Filing again is safe.** The provider files the same draft, and the server
+ *     answers a draft it already filed with that report (D12) — a retry after a
+ *     lost response lands on C9, not on a second report or an error.
+ *   • **Files the server does not have sealed go back to upload** before anything
+ *     is filed; the screen keeps working and files once they seal.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, BackHandler, Easing, Platform, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
+import { alpha, colors, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { Screen, StickyFooter } from "@/components/ui/Screen";
@@ -31,13 +40,30 @@ import { useReportDraft } from "@/providers/ReportDraftProvider";
 
 type RowState = "done" | "active" | "pending" | "failed";
 
+/**
+ * How many times one visit re-uploads files the server turned out not to have
+ * before it stops and says so — a server that keeps losing them is a failure to
+ * show, not a loop to spin in.
+ */
+const MAX_REUPLOAD_ROUNDS = 2;
+
 export default function SubmittingScreen(): React.ReactElement {
   useThemeSync();
-  const { attachments, allSealed, uploadingCount, fileReport, filing, fileError } =
-    useReportDraft();
+  const {
+    attachments,
+    payload,
+    allSealed,
+    uploadingCount,
+    failedCount,
+    fileReport,
+    filing,
+    fileError,
+    retryFailed,
+  } = useReportDraft();
 
   const [phase, setPhase] = useState<"working" | "failed">("working");
   const started = useRef(false);
+  const reuploadRounds = useRef(0);
 
   /** Nothing closes this screen — including the hardware back button. */
   useEffect(() => {
@@ -52,26 +78,45 @@ export default function SubmittingScreen(): React.ReactElement {
     return total / attachments.length;
   }, [attachments]);
 
-  const anyFailed = attachments.some((item) => item.state === "failed");
+  const anyFailed = failedCount > 0;
 
   /** Fire once every file is sealed. */
   const submit = useCallback(async () => {
     if (started.current) return;
     started.current = true;
-    const result = await fileReport();
-    if (result) {
+    // Read before filing: a filed draft is cleared, and C9 needs these words
+    // before its own read of the report comes back.
+    const visibility = payload.visibility ?? "";
+    const anonymous = payload.anonymous ? "1" : "0";
+    const outcome = await fileReport();
+
+    if (outcome.status === "filed") {
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
+      const { receipt } = outcome;
       router.replace({
         pathname: "/report/receipt",
-        params: { caseRef: result.caseRef, reportId: result.reportId },
+        params: {
+          caseRef: receipt.caseRef,
+          reportId: receipt.reportId,
+          filedAt: receipt.filedAt,
+          displayStatus: receipt.displayStatus,
+          visibility,
+          anonymous,
+        },
       });
       return;
     }
+
     started.current = false;
+    if (outcome.status === "reupload" && reuploadRounds.current < MAX_REUPLOAD_ROUNDS) {
+      // Still "working": the effect below files again once they have sealed.
+      reuploadRounds.current += 1;
+      return;
+    }
     setPhase("failed");
-  }, [fileReport]);
+  }, [fileReport, payload.anonymous, payload.visibility]);
 
   useEffect(() => {
     if (phase !== "working") return;
@@ -93,10 +138,22 @@ export default function SubmittingScreen(): React.ReactElement {
   const fileState: RowState =
     phase === "failed" ? "failed" : filing ? "active" : allSealed ? "pending" : "pending";
 
+  /**
+   * Try again: failed files go back to the queue, and the screen files once every
+   * file has sealed — or straight away, when it was the filing itself that failed.
+   */
   const retry = useCallback(() => {
-    setPhase("working");
+    retryFailed();
+    reuploadRounds.current = 0;
     started.current = false;
-  }, []);
+    setPhase("working");
+  }, [retryFailed]);
+
+  const failureCopy = anyFailed
+    ? `${failedCount === 1 ? "One file" : `${failedCount} files`} did not upload, so nothing has been filed. Try again sends ${
+        failedCount === 1 ? "it" : "them"
+      } again — your draft is exactly as you left it.`
+    : fileError ?? "Nothing has been filed. Your draft is exactly as you left it.";
 
   return (
     <Screen padding={0} testID="wizard-submitting">
@@ -110,10 +167,14 @@ export default function SubmittingScreen(): React.ReactElement {
         <Text variant="displayXs" color={colors.t0} center style={{ marginTop: 28 }}>
           {phase === "failed" ? "That did not finish" : "Filing your report"}
         </Text>
-        <Text variant="bodySm" color={colors.t3} center style={{ marginTop: 8, lineHeight: 20 }}>
-          {phase === "failed"
-            ? fileError ?? "Nothing has been filed. Your draft is exactly as you left it."
-            : "Keep the app open until this finishes."}
+        <Text
+          variant="bodySm"
+          color={colors.t3}
+          center
+          style={{ marginTop: 8, lineHeight: 20 }}
+          testID="submitting-message"
+        >
+          {phase === "failed" ? failureCopy : "Keep the app open until this finishes."}
         </Text>
 
         <View style={styles.checklist}>
@@ -142,11 +203,14 @@ export default function SubmittingScreen(): React.ReactElement {
       {phase === "failed" ? (
         <StickyFooter padding={screenPadding.detail}>
           <Button label="Try again" onPress={retry} testID="submitting-retry" />
+          {/* Review is directly beneath this screen: popping returns to it rather
+              than stacking a second copy on top. */}
           <Button
             label="Back to review"
             variant="quiet"
-            onPress={() => router.replace("/report/review")}
+            onPress={() => router.back()}
             style={{ marginTop: 9 }}
+            testID="submitting-back"
           />
         </StickyFooter>
       ) : (
@@ -335,6 +399,4 @@ const styles = {
     borderRadius: 1,
     backgroundColor: colors.bad2,
   },
-  // Referenced so the radius token stays in use on this screen.
-  card: { borderRadius: radius.lg },
 };

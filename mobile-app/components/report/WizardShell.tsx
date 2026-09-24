@@ -18,13 +18,81 @@
  * path here at all — `onClose` opens the save-or-discard sheet.
  */
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { alpha, colors, screenPadding } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import { ScrollScreen } from "@/components/ui/Screen";
 import { StepHeader } from "@/components/ui/Progress";
+import { useReportDraft } from "@/providers/ReportDraftProvider";
+
+/** Wizard step (1–7) → route. The entry screen resumes into these and Back walks them. */
+export const STEP_ROUTES = [
+  "/report/category",
+  "/report/details",
+  "/report/when",
+  "/report/where",
+  "/report/evidence",
+  "/report/flags",
+  "/report/review",
+] as const;
+
+export type StepRoute = (typeof STEP_ROUTES)[number];
+
+/** The route for a step number, clamped to the seven that exist. */
+export function stepRoute(step: number): StepRoute {
+  const index = Math.min(Math.max(Math.floor(step) || 1, 1), STEP_ROUTES.length) - 1;
+  return STEP_ROUTES[index];
+}
+
+/**
+ * Back and Next for one step, correct for the two ways a step is reached other
+ * than by the previous step's Next:
+ *
+ *   • **A resumed draft** opens straight onto its step with nothing beneath it in
+ *     the wizard's stack — or only the blank entry screen — so a plain
+ *     `router.back()` closed the whole wizard (skipping C10) or landed on a blank
+ *     page. Back now replaces the step with the one before it instead.
+ *   • **C7's Edit** opens the step on top of Review (`?from=review`). The caption:
+ *     each Edit "jumps straight back to its step and returns here" — so Next goes
+ *     back to Review rather than walking every later step and stacking a second
+ *     Review on top.
+ */
+export function useStepNavigation(step: number): {
+  back: () => void;
+  advance: () => void;
+  fromReview: boolean;
+} {
+  const navigation = useNavigation();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const { setStep } = useReportDraft();
+  const fromReview = from === "review";
+
+  const back = useCallback(() => {
+    const state = navigation.getState();
+    const below = state && state.index > 0 ? state.routes[state.index - 1] : undefined;
+    // A real step beneath: pop to it. Nothing, or only the entry screen: walk back.
+    if (below && below.name !== "index") {
+      router.back();
+      return;
+    }
+    if (step > 1) router.replace(stepRoute(step - 1));
+  }, [navigation, step]);
+
+  const advance = useCallback(() => {
+    if (fromReview) {
+      setStep(STEP_ROUTES.length);
+      router.back();
+      return;
+    }
+    setStep(step + 1);
+    router.push(stepRoute(step + 1));
+  }, [fromReview, setStep, step]);
+
+  return { back, advance, fromReview };
+}
 
 /** "Draft saved · 9:41 PM" — the local save time, per the provider's contract. */
 function formatSavedAt(iso: string | null): string {

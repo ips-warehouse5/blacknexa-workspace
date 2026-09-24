@@ -10,90 +10,13 @@
  * that is kept, because the design shows dates in exactly that form and
  * round-tripping them through Date only to format them back would introduce
  * timezone drift for no gain.
+ *
+ * Content Moderation and Incident Management are live against the API
+ * (docs/INCIDENT_MODULE_PLAN.md §8, §9): their shapes are the wire types in
+ * `features/moderation/moderation.types.ts`, `keywordRules.types.ts` and
+ * `features/incidents/incidents.types.ts`, and their fixture types (moderation
+ * posts, keyword rules, incidents) were removed with the fixtures.
  */
-
-// ── Moderation queue ────────────────────────────────────────────────────────
-
-export type ModerationItemType = "Incident" | "Comment" | "Profile";
-
-/** A user report against a post: who reported it, why, and when. */
-export type UserFlag = [reporter: string, reason: string, at: string];
-
-/** An AI detection: the rule that matched, and the text that triggered it. */
-export type AiFlag = [rule: string, matchedText: string];
-
-export interface ModerationPost {
-  id: string;
-  type: ModerationItemType;
-  title: string;
-  /** Present on comments — the incident whose thread this belongs to. */
-  parentIncident?: string;
-  user: string;
-  category: string;
-  status: string;
-  location: string;
-  urgent: boolean;
-  submitted: string;
-  content: string;
-  evidence: string[];
-  /** Absent when nothing was machine-flagged. */
-  ai?: AiFlag[];
-  reports: UserFlag[];
-}
-
-export interface KeywordRule {
-  title: string;
-  type: string;
-  source: string;
-  /** Comma-separated terms, as the design displays and edits them. */
-  pattern: string;
-  detected: number;
-}
-
-// ── Incidents ───────────────────────────────────────────────────────────────
-
-/** Status labels exactly as the fixture and the design badges spell them. */
-export type IncidentStatus =
-  | "Submitted"
-  | "Under Review"
-  | "Verified"
-  | "Dismissed"
-  | "Deactivated";
-
-/** Evidence attached to an incident. `meta` is a preformatted summary line. */
-export interface IncidentEvidence {
-  /** Short kind marker shown on the tile: IMG, PDF, AUD, VID. */
-  type: string;
-  name: string;
-  meta: string;
-}
-
-export interface IncidentNote {
-  author: string;
-  date: string;
-  text: string;
-}
-
-export interface Incident {
-  id: string;
-  title: string;
-  author: string;
-  category: string;
-  status: IncidentStatus;
-  /** Who can see the incident on the public side: Public, Trusted, Private. */
-  visibility: string;
-  location: string;
-  submitted: string;
-  /** The reporter's account, in their own words. */
-  story: string;
-  /** Display name of the assignee, or "Unassigned". */
-  assignee: string;
-  /** Present once assigned. */
-  assignedRole?: string;
-  assignedAt?: string;
-  evidence: IncidentEvidence[];
-  notes: IncidentNote[];
-}
 
 // ── Users ───────────────────────────────────────────────────────────────────
 

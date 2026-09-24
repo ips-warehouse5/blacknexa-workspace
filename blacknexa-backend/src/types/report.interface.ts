@@ -11,9 +11,32 @@
  * 2. **Exact coordinates are never in a viewer's response.** `LocationView`
  *    carries only what the chosen precision permits, and the exact value lives in
  *    a separate sealed column the viewer projection never reads.
+ *
+ * ── Revision 2: incident moderation ─────────────────────────────────────────
+ * Every wire field the moderation module adds (docs/INCIDENT_MODULE_PLAN.md
+ * §7.4 — the owner's `moderation` block, the Vault card's `displayStatus`,
+ * `flaggedByMe`, comment and evidence moderation states) is **optional**, and
+ * `FlagReason` still accepts the three codes the shipped flag sheet sends, so
+ * the mobile client in the stores keeps working against the new server. The
+ * shared vocabulary itself — policy categories, states, reasons, the display
+ * table — lives in `moderation.interface.ts`.
  */
 
 import type { LocationPrecision, Visibility } from "@/types/user.interface";
+import {
+  ALL_LEGACY_FLAG_CODES,
+  COMMENT_FLAG_CATEGORIES,
+  POLICY_CATEGORIES,
+  type AiReportCategory,
+  type CommentModerationState,
+  type DisplayStatus,
+  type EvidenceModerationState,
+  type LegacyFlagCode,
+  type OwnerModerationEvent,
+  type OwnerModerationView,
+  type PolicyCategory,
+  type ReportModerationState,
+} from "@/types/moderation.interface";
 
 /** The nine categories on screen C1. `digital` and `other` are new. */
 export type ReportCategory =
@@ -59,6 +82,16 @@ export const ALL_REPORT_CATEGORIES: ReportCategory[] = [
 ];
 
 /**
+ * `moderation.interface.ts` restates the nine categories for the AI contract
+ * because it may import nothing. These two assignments fail to compile the
+ * moment either list gains or loses a member, so the copies cannot drift.
+ */
+const _categoriesMatchAiContract: AiReportCategory = "other" as ReportCategory;
+const _aiContractMatchesCategories: ReportCategory = "other" as AiReportCategory;
+void _categoriesMatchAiContract;
+void _aiContractMatchesCategories;
+
+/**
  * The five statuses, and no more.
  *
  * Screen A11 names exactly four post-draft states — "Submitted, under review,
@@ -89,31 +122,40 @@ export const ALL_EVIDENCE_KINDS: EvidenceKind[] = ["photo", "video", "audio", "d
 /** Where a file is in the lifecycle described in the feature plan §6.3. */
 export type UploadState = "pending" | "uploaded" | "sealed" | "failed";
 
-/** D8's six reasons, single choice. */
-export type FlagReason =
-  | "untrue"
-  | "private_details"
-  | "threatening"
-  | "graphic"
-  | "spam"
-  | "other";
+/**
+ * A flag reason as it arrives on the wire: one of the eight policy codes
+ * (D6/D7), or one of the three codes the old D8 sheet sent. Shipped clients keep
+ * working; the flag service normalises with `normaliseFlagCategory` before
+ * anything is stored, and readers normalise rows written before revision 2.
+ */
+export type FlagReason = PolicyCategory | LegacyFlagCode;
 
-export const ALL_FLAG_REASONS: FlagReason[] = [
-  "untrue",
-  "private_details",
+/** Every accepted report-flag input: the eight canonical codes, then the three legacy ones. */
+export const ALL_FLAG_REASONS: FlagReason[] = [...POLICY_CATEGORIES, ...ALL_LEGACY_FLAG_CODES];
+
+/**
+ * Accepted comment-flag inputs: the six comment categories (§3.1) plus the two
+ * legacy codes that map into them. `untrue` maps to `misleading`, which a
+ * comment cannot carry, so it is not accepted here.
+ */
+export const ALL_COMMENT_FLAG_REASONS: FlagReason[] = [
+  ...COMMENT_FLAG_CATEGORIES,
   "threatening",
-  "graphic",
-  "spam",
-  "other",
+  "private_details",
 ];
 
-/** The four notification types named on A11. */
+/**
+ * Notification kinds. A11 named the first four; `moderation_notice` is D18's
+ * "Your comment was removed" — a moderation outcome about something that is not
+ * a report status, so it is not squeezed into `status_change`.
+ */
 export type NotificationType =
   | "status_change"
   | "corroboration_or_reply"
   | "dispatch_ready"
   /** Ignores preferences. Enforced server-side, never by the client. */
-  | "urgent_safety";
+  | "urgent_safety"
+  | "moderation_notice";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Wire shapes
@@ -157,6 +199,23 @@ export interface EvidenceView {
   /** Short-lived presigned URLs, minted per request. */
   url: string | null;
   thumbUrl: string | null;
+  /**
+   * D22. Present on the owner's own view (and to staff). Non-owners are only
+   * ever sent approved files, so for them it is omitted.
+   */
+  moderationState?: EvidenceModerationState;
+  /**
+   * True for a file a non-owner may know exists but may not open yet — listed
+   * as "Awaiting review" without URLs (§7.3). Omitted means false.
+   */
+  pendingReview?: boolean;
+  /**
+   * True for a non-owner's view of an approved file whose approval covered only
+   * its sealed preview (D22, review R5): `thumbUrl` is set, `url` is null until
+   * the original is approved too. Omitted means false. Owners and staff always
+   * get both URLs.
+   */
+  fullResolutionPending?: boolean;
 }
 
 /** One node on the D2 timeline. */
@@ -166,6 +225,15 @@ export interface StatusEventView {
   /** "by a moderator" on D2, or null for a system transition. */
   actorLabel: string | null;
   note: string | null;
+  /**
+   * Set on the nodes of `ReportOwnerView.moderationTimeline` only: an owner-safe
+   * moderation event (published, with a moderator, not published, taken down,
+   * live again — §7.4). `status` then carries the case status at that moment.
+   * Never set on a `timeline` node — see `ReportOwnerView.moderationTimeline`.
+   */
+  moderationEvent?: OwnerModerationEvent;
+  /** Author-visible reason label (reject, deactivate or dismiss), when there is one. */
+  reasonLabel?: string | null;
 }
 
 /** What the 1a feed card needs, and nothing more. */
@@ -198,6 +266,13 @@ export interface FeedCardView {
   mediaCount: number;
   /** True when the caller has already stood with it. */
   standingWith: boolean;
+  /**
+   * Owner-only (the Vault, `mine=true`) — §7.4. The card previously carried only
+   * `verified`, which cannot tell submitted, under review or dismissed apart.
+   */
+  status?: ReportStatus;
+  moderationState?: ReportModerationState;
+  displayStatus?: DisplayStatus;
 }
 
 /** D1 — the community viewer's projection. */
@@ -225,11 +300,22 @@ export interface ReportDetailView {
   corroborated: boolean;
   /** True when the caller filed it — the client uses this to route to D2. */
   isOwner: boolean;
+  /** True when the caller has an open flag on this report — "You flagged this" (§10). */
+  flaggedByMe?: boolean;
 }
 
 /** D2 — everything the viewer projection has, plus what only the owner sees. */
 export interface ReportOwnerView extends ReportDetailView {
+  /** Case-status events only — what the shipped D2 renders, one row per status. */
   timeline: StatusEventView[];
+  /**
+   * Additive (§7.4, review R14): the owner-safe moderation events, each carrying
+   * `moderationEvent`, in ascending order. Kept out of `timeline` because the
+   * shipped D2 renders `STATUS_LABEL[event.status]` and ignores
+   * `moderationEvent`, so every moderation node there showed as a second
+   * "Submitted" row. A client that understands both merges them by `at`.
+   */
+  moderationTimeline: StatusEventView[];
   viewCount: number;
   moderatorCount: number;
   /** D2's "Outside organisations: None" until a dispatch happens. */
@@ -239,6 +325,8 @@ export interface ReportOwnerView extends ReportDetailView {
   /** Exact coordinates, released only here. */
   exactLat: number | null;
   exactLng: number | null;
+  /** The publication axis and what the author may be told about it (§7.4). */
+  moderation?: OwnerModerationView;
 }
 
 /** D3 — the trust sheet. */
@@ -263,6 +351,13 @@ export interface CommentView {
   createdAt: string;
   /** Present on root comments only. */
   replies?: CommentView[];
+  /**
+   * The caller's own comments only (§7.4): "Checking…", "Held for review",
+   * "Removed by a moderator". Never sent for someone else's comment.
+   */
+  moderationState?: CommentModerationState;
+  /** True when the caller wrote it. */
+  isMine?: boolean;
 }
 
 /** B1 and B2's live counts. */
@@ -363,4 +458,6 @@ export interface FeedQuery {
   cursor?: string;
   limit?: number;
   mine?: boolean;
+  /** Vault chip filter; only meaningful with `mine` (§7.4). */
+  displayStatus?: DisplayStatus;
 }

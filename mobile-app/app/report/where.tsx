@@ -15,18 +15,23 @@
  *     C4 shows it with a `YOUR DEFAULT` tag, but leaves the choice open. Publishing
  *     a location is consequential enough that it should be a fresh decision each
  *     time, and the tag is there to make the usual answer quick rather than automatic.
+ *
+ * ── What Hidden publishes ─────────────────────────────────────────────────
+ * The server keeps the area name for a Hidden report and drops the coordinates
+ * ("Hidden publishes an area label and nothing else", `report.service.ts`), so
+ * the label is still sent and the copy says the name is shown. It used to promise
+ * "no location is published" while the typed name went out word for word.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, View } from "react-native";
-import { router } from "expo-router";
 import * as Location from "expo-location";
 import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import { SegmentedControl } from "@/components/ui/Controls";
-import { WizardShell, SectionLabel } from "@/components/report/WizardShell";
+import { WizardShell, SectionLabel, useStepNavigation } from "@/components/report/WizardShell";
 import { MapPreview } from "@/components/report/MapPreview";
 import { useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
@@ -39,6 +44,21 @@ const PRECISION_COPY: Record<LocationPrecision, { label: string; detail: string 
   approximate: { label: "Approximate", detail: "Approximate — about 500 m" },
   hidden: { label: "Hidden", detail: "Hidden — no location is published" },
 };
+
+/** The summary line. Hidden with an area name shows the name only — see the file header. */
+function precisionDetail(precision: LocationPrecision, label: string): string {
+  if (precision === "hidden" && label.trim()) return "Hidden — only the area name is shown";
+  return PRECISION_COPY[precision].detail;
+}
+
+/** Typing pauses this long before the address is geocoded. */
+const GEOCODE_DEBOUNCE_MS = 600;
+
+/**
+ * The server's cap on the area name (`reports.saveDraft`, 160 characters). A
+ * longer one makes every draft save fail, which would only surface at filing.
+ */
+const LOCATION_LABEL_MAX = 160;
 
 /**
  * Above this radius, in metres, a fix is too coarse to honestly call "Exact".
@@ -65,9 +85,10 @@ function formatRadius(metres: number): string {
 
 export default function WhereStep(): React.ReactElement {
   useThemeSync();
-  const { payload, patch, setStep, savedAt } = useReportDraft();
+  const { payload, patch, savedAt } = useReportDraft();
   const { user } = useAuth();
   const exit = useWizardExit();
+  const { back, advance } = useStepNavigation(4);
 
   const [mode, setMode] = useState<"locate" | "type">(
     payload.lat !== undefined ? "locate" : "type",
@@ -97,35 +118,60 @@ export default function WhereStep(): React.ReactElement {
 
   const userDefault = user?.preferences.defaultPrecision ?? "approximate";
 
-  // Debounced geocoding when typing an address/area
-  const onAddressChange = useCallback((text: string) => {
-    setLabel(text);
-    setProblem(null);
-    if (!text.trim() || text.length < 3) return;
+  /** The pending geocode, so each keystroke replaces the last rather than adding one. */
+  const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Bumped by every keystroke and every device fix. A geocode answers for the
+   * text it was asked about, and a slow answer for an older string — or one that
+   * lands after "Use my location" — must not overwrite newer coordinates.
+   */
+  const geocodeSeq = useRef(0);
 
-    const timer = setTimeout(async () => {
-      try {
-        const results = await Location.geocodeAsync(text.trim());
-        if (results && results.length > 0) {
-          const first = results[0];
-          setCoords({ lat: first.latitude, lng: first.longitude });
-          // A geocoded address is not a device fix, so the previous fix's radius
-          // no longer describes these coordinates and must not be judged against.
-          setFixRadiusM(null);
-        }
-      } catch {
-        // Geocode failure is non-blocking
-      }
-    }, 600);
-
-    return () => clearTimeout(timer);
+  const cancelGeocode = useCallback(() => {
+    if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
+    geocodeTimer.current = null;
+    geocodeSeq.current += 1;
   }, []);
+
+  useEffect(() => cancelGeocode, [cancelGeocode]);
+
+  // Debounced geocoding when typing an address/area
+  const onAddressChange = useCallback(
+    (text: string) => {
+      setLabel(text);
+      setProblem(null);
+      cancelGeocode();
+      const query = text.trim();
+      if (query.length < 3) return;
+
+      const seq = geocodeSeq.current;
+      geocodeTimer.current = setTimeout(() => {
+        geocodeTimer.current = null;
+        void Location.geocodeAsync(query)
+          .then((results) => {
+            if (seq !== geocodeSeq.current) return;
+            const first = results?.[0];
+            if (!first) return;
+            setCoords({ lat: first.latitude, lng: first.longitude });
+            // A geocoded address is not a device fix, so the previous fix's radius
+            // no longer describes these coordinates and must not be judged against.
+            setFixRadiusM(null);
+          })
+          .catch(() => {
+            // Geocode failure is non-blocking
+          });
+      }, GEOCODE_DEBOUNCE_MS);
+    },
+    [cancelGeocode],
+  );
 
   const useMyLocation = useCallback(async () => {
     if (locationDeniedForever) {
       await Linking.openSettings();
       return;
     }
+    // A device fix outranks a geocode still in flight for typed text.
+    cancelGeocode();
     setLocating(true);
     setNotice(null);
     setProblem(null);
@@ -162,7 +208,7 @@ export default function WhereStep(): React.ReactElement {
         const parts = [place.district ?? place.subregion, place.city ?? place.region].filter(
           Boolean,
         );
-        if (parts.length > 0) setLabel(parts.join(", "));
+        if (parts.length > 0) setLabel(parts.join(", ").slice(0, LOCATION_LABEL_MAX));
       }
     } catch {
       setNotice("We could not read your location. Type an address instead.");
@@ -170,7 +216,7 @@ export default function WhereStep(): React.ReactElement {
     } finally {
       setLocating(false);
     }
-  }, []);
+  }, [cancelGeocode, locationDeniedForever]);
 
   const next = useCallback(() => {
     if (!precision) {
@@ -184,15 +230,15 @@ export default function WhereStep(): React.ReactElement {
 
     patch({
       locationPrecision: precision,
-      locationLabel: label.trim() || undefined,
-      // Hidden publishes nothing, so nothing is sent — the server cannot leak a
-      // coordinate it was never given.
+      // Kept for Hidden too: the server publishes the area name alone (header).
+      locationLabel: label.trim().slice(0, LOCATION_LABEL_MAX) || undefined,
+      // Hidden publishes no coordinates, so none are sent — the server cannot
+      // leak a coordinate it was never given.
       lat: precision === "hidden" ? undefined : coords?.lat,
       lng: precision === "hidden" ? undefined : coords?.lng,
     });
-    setStep(5);
-    router.push("/report/evidence");
-  }, [coords, label, patch, precision, setStep]);
+    advance();
+  }, [advance, coords, label, patch, precision]);
 
   return (
     <WizardShell
@@ -200,7 +246,7 @@ export default function WhereStep(): React.ReactElement {
       stepName="Location"
       savedAt={savedAt}
       onClose={exit}
-      onBack={() => router.back()}
+      onBack={back}
       onNext={next}
       problem={problem}
       testID="wizard-where"
@@ -239,10 +285,11 @@ export default function WhereStep(): React.ReactElement {
           label="AREA"
           value={label}
           onChangeText={onAddressChange}
+          maxLength={LOCATION_LABEL_MAX}
           placeholder="Brownsville, Brooklyn"
           autoCapitalize="words"
           containerStyle={{ marginTop: 16 }}
-          hint="A neighbourhood is enough. A street address is never published."
+          hint="A neighbourhood is enough. This name is shown with the report, so leave out street addresses."
           testID="area-label"
         />
       ) : null}
@@ -295,7 +342,7 @@ export default function WhereStep(): React.ReactElement {
       <View style={styles.summary}>
         <View style={{ flex: 1 }}>
           <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
-            {precision ? PRECISION_COPY[precision].detail : "Choose a precision"}
+            {precision ? precisionDetail(precision, label) : "Choose a precision"}
           </Text>
           <Text variant="metaSm" color={colors.t4} style={{ marginTop: 2 }}>
             {label.trim() || "No area named yet"}

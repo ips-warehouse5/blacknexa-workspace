@@ -43,8 +43,17 @@ export type LocationPrecision = "exact" | "approximate" | "hidden";
 
 export const ALL_PRECISIONS: LocationPrecision[] = ["exact", "approximate", "hidden"];
 
-/** Account lifecycle. `deleted` rows are retained only until the erasure job runs. */
-export type UserStatus = "active" | "suspended" | "deleted";
+/**
+ * Account lifecycle. `deleted` rows are retained only until the erasure job runs.
+ *
+ * `banned` is a moderator's decision (Content Moderation → Ban User, reasons in
+ * `BAN_REASONS`), distinct from `suspended` so the console's "Suspended /
+ * Banned" tab can tell a temporary measure from a permanent one. Login and
+ * refresh already refuse every non-`active` status, but the member guard does
+ * not re-read the status on each request — so a ban must also revoke the
+ * member's sessions, which the ban action does (§4.2, §7.9).
+ */
+export type UserStatus = "active" | "suspended" | "deleted" | "banned";
 
 /** Federated identity providers offered on screen A5. */
 export type SocialProvider = "apple" | "google";

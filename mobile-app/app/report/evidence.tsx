@@ -13,13 +13,12 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
-import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { alpha, colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
-import { WizardShell, SectionLabel } from "@/components/report/WizardShell";
+import { WizardShell, SectionLabel, useStepNavigation } from "@/components/report/WizardShell";
 import { MicGlyph } from "@/components/report/AudioRecorderRow";
 import { useReportDraft, type DraftAttachment } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
@@ -62,9 +61,10 @@ function kindFor(mime: string, assetType?: string | null): EvidenceKind {
 
 export default function EvidenceStep(): React.ReactElement {
   useThemeSync();
-  const { attachments, addAttachment, removeAttachment, retryAttachment, setStep, savedAt } =
+  const { attachments, addAttachment, removeAttachment, retryAttachment, savedAt } =
     useReportDraft();
   const exit = useWizardExit();
+  const { back, advance } = useStepNavigation(5);
   const [notice, setNotice] = useState<string | null>(null);
 
   const totalBytes = useMemo(
@@ -134,9 +134,12 @@ export default function EvidenceStep(): React.ReactElement {
           });
           if (result.canceled) return;
           for (const asset of result.assets) {
+            const kind = kindFor(asset.mimeType ?? "", asset.type);
             addAttachment({
-              kind: kindFor(asset.mimeType ?? "", asset.type),
-              mime: asset.mimeType ?? "image/jpeg",
+              kind,
+              // A video the picker reports without a MIME type must not be
+              // presigned as an image — the server would refuse the pair.
+              mime: asset.mimeType ?? (kind === "video" ? "video/mp4" : "image/jpeg"),
               uri: asset.uri,
               bytes: await sizeOf(asset.uri, asset.fileSize),
               durationMs: asset.duration ?? undefined,
@@ -168,11 +171,8 @@ export default function EvidenceStep(): React.ReactElement {
     [addAttachment, sizeOf],
   );
 
-  const next = useCallback(() => {
-    // Optional step: an empty list is a complete answer and Next always proceeds.
-    setStep(6);
-    router.push("/report/flags");
-  }, [setStep]);
+  // Optional step: an empty list is a complete answer and Next always proceeds.
+  const next = advance;
 
   return (
     <WizardShell
@@ -181,7 +181,7 @@ export default function EvidenceStep(): React.ReactElement {
       stepNote="Optional"
       savedAt={savedAt}
       onClose={exit}
-      onBack={() => router.back()}
+      onBack={back}
       onNext={next}
       testID="wizard-evidence"
     >

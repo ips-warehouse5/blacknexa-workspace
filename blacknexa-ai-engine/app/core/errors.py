@@ -7,10 +7,19 @@ logged here and replaced with a generic message in the response.
 Expected, caller-caused failures (validation, auth, no-grounding-material) keep
 their specific message, because that is information the caller needs to act on —
 and Node maps some of them onto user-facing copy.
+
+Validation errors never carry the request back out (INCIDENT_MODULE_PLAN.md §6.1).
+Pydantic attaches the offending value to every error as `input` (and sometimes a
+wrapped copy in `ctx`), so a report body one character over the cap, or a photo
+that fails to decode, would otherwise be echoed into the 422 body and written to
+the log verbatim. Both keys are stripped from every validation error, on every
+route, before the error is logged or returned; `type`, `loc` and `msg` are enough
+for the caller to fix the request.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -88,6 +97,19 @@ def _error_body(detail: str, **extra: Any) -> dict[str, Any]:
     return {"detail": detail, **extra}
 
 
+#: Keys of a Pydantic error that hold (a copy of) the caller's input.
+_INPUT_BEARING_KEYS = frozenset({"input", "ctx"})
+
+
+def _without_input(errors: Sequence[Any]) -> list[dict[str, Any]]:
+    """Validation errors with every input-bearing key removed."""
+    return [
+        {key: value for key, value in error.items() if key not in _INPUT_BEARING_KEYS}
+        for error in errors
+        if isinstance(error, dict)
+    ]
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Install handlers. Order matters: most specific first."""
 
@@ -106,13 +128,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def _validation_error(
         _request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        # Field-level detail is safe and useful — the caller is our own service.
-        logger.warning("request_validation_failed", errors=exc.errors())
+        # Field-level detail is useful — the caller is our own service — but the
+        # values themselves are member content on the moderation route, so only
+        # the shape of each error survives, in the log and in the response alike.
+        errors = _without_input(exc.errors())
+        logger.warning("request_validation_failed", errors=errors)
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            content=_error_body(
-                "Request validation failed.", errors=jsonable_encoder(exc.errors())
-            ),
+            content=_error_body("Request validation failed.", errors=jsonable_encoder(errors)),
         )
 
     @app.exception_handler(StarletteHTTPException)

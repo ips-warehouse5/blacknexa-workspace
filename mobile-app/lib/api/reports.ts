@@ -5,9 +5,37 @@
  * mirror rather than generated, because the shapes are small and the comments
  * about *why* a field exists are worth more here than the guarantee they stay in
  * lockstep automatically.
+ *
+ * ── Revision 2: incident moderation (docs/INCIDENT_MODULE_PLAN.md §7.4) ────
+ * Every field the moderation module added is mirrored here with the server's
+ * name and optionality: the owner's `moderation` block and `moderationTimeline`,
+ * the Vault card's `status` / `moderationState` / `displayStatus`, `flaggedByMe`,
+ * and the comment and evidence states. The vocabulary those fields use — states,
+ * display statuses, policy categories — is declared in `lib/report/moderation.ts`
+ * (a leaf module, so it can be unit-tested without React Native) and re-exported
+ * from here, so a screen imports its wire types from one place.
  */
 
 import api from "@/lib/api/client";
+import type {
+  CommentModerationState,
+  DisplayStatus,
+  EvidenceModerationState,
+  LegacyFlagCode,
+  OwnerModerationEvent,
+  PolicyCategory,
+  ReportModerationState,
+} from "@/lib/report/moderation";
+
+export type {
+  CommentModerationState,
+  DisplayStatus,
+  EvidenceModerationState,
+  LegacyFlagCode,
+  OwnerModerationEvent,
+  PolicyCategory,
+  ReportModerationState,
+} from "@/lib/report/moderation";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Enums
@@ -34,13 +62,24 @@ export type UploadState = "pending" | "uploaded" | "sealed" | "failed";
 export type Visibility = "public" | "trusted" | "private";
 export type LocationPrecision = "exact" | "approximate" | "hidden";
 export type MatchedField = "title" | "description" | "area" | "category";
-export type FlagReason =
-  | "untrue"
-  | "private_details"
-  | "threatening"
-  | "graphic"
-  | "spam"
-  | "other";
+
+/**
+ * A flag reason on the wire: one of the eight policy codes (D6/D7), or one of the
+ * three codes the old flag sheet sent, which the server still accepts and
+ * normalises. New code sends policy codes only — see `REPORT_FLAG_OPTIONS`.
+ */
+export type FlagReason = PolicyCategory | LegacyFlagCode;
+
+/**
+ * Notification kinds. `moderation_notice` is "Your comment was removed" — a
+ * moderation outcome about something that is not a report status (D18).
+ */
+export type NotificationType =
+  | "status_change"
+  | "corroboration_or_reply"
+  | "dispatch_ready"
+  | "urgent_safety"
+  | "moderation_notice";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Views
@@ -72,6 +111,22 @@ export interface EvidenceView {
   uploadState: UploadState;
   url: string | null;
   thumbUrl: string | null;
+  /**
+   * D22. On the owner's own files only — a viewer is only ever sent approved
+   * files, so for them it is omitted.
+   */
+  moderationState?: EvidenceModerationState;
+  /**
+   * A file a viewer may know exists but not open yet: listed without URLs, drawn
+   * as "Awaiting review" (§7.3). Omitted means false.
+   */
+  pendingReview?: boolean;
+  /**
+   * A viewer's copy of a file whose approval covered only its sealed preview
+   * (review R5): `thumbUrl` is set, `url` stays null until a moderator clears the
+   * original. Omitted means false. Owners always get both URLs.
+   */
+  fullResolutionPending?: boolean;
 }
 
 export interface StatusEventView {
@@ -79,6 +134,36 @@ export interface StatusEventView {
   at: string;
   actorLabel: string | null;
   note: string | null;
+  /**
+   * Set on `ReportOwnerView.moderationTimeline` nodes only: which owner-safe
+   * moderation event this is. `status` then carries the case status at that
+   * moment.
+   */
+  moderationEvent?: OwnerModerationEvent;
+  /** The author-visible reason (reject, deactivate or dismiss), when there is one. */
+  reasonLabel?: string | null;
+}
+
+/**
+ * The owner's view of the publication axis (§7.4). `reasonCode`, `reasonLabel`
+ * and `note` are sent only while the report is rejected or taken down — hold
+ * reasons are staff-only.
+ */
+export interface OwnerModerationView {
+  state: ReportModerationState;
+  displayStatus: DisplayStatus;
+  reasonCode?: string | null;
+  reasonLabel?: string | null;
+  note?: string | null;
+  /**
+   * Sent only while the report is rejected: how many more *Edit and resubmit*
+   * attempts the server accepts before it answers 409 "Contact support" (D19).
+   * At 0 D2 stops offering the action (§10 "hidden after 3"). A server older
+   * than this field omits it, and the 409 is then the only signal.
+   */
+  resubmissionsLeft?: number;
+  /** When the current state was reached, or null if never moderated. */
+  at: string | null;
 }
 
 /**
@@ -110,6 +195,13 @@ export interface FeedCardView {
   } | null;
   mediaCount: number;
   standingWith: boolean;
+  /**
+   * The Vault's own fields (`mine=true` only, §7.4). `verified` alone cannot tell
+   * checking, held, rejected or dismissed apart.
+   */
+  status?: ReportStatus;
+  moderationState?: ReportModerationState;
+  displayStatus?: DisplayStatus;
 }
 
 export interface ReportDetailView {
@@ -135,17 +227,28 @@ export interface ReportDetailView {
   standingWith: boolean;
   corroborated: boolean;
   isOwner: boolean;
+  /** True when the caller has an open flag on this report — "You flagged this" (§10). */
+  flaggedByMe?: boolean;
 }
 
 /** D2 — a separate screen, so a separate shape. */
 export interface ReportOwnerView extends ReportDetailView {
+  /** Case-status events only — one row per status. */
   timeline: StatusEventView[];
+  /**
+   * The owner-safe moderation events (published, with a moderator, not
+   * published, taken down, live again), ascending, each carrying
+   * `moderationEvent`. Merge with `timeline` by `at` to draw one history.
+   */
+  moderationTimeline: StatusEventView[];
   viewCount: number;
   moderatorCount: number;
   dispatchedTo: string[];
   canDispatch: boolean;
   exactLat: number | null;
   exactLng: number | null;
+  /** The publication axis and what the author may be told about it (§7.4). */
+  moderation?: OwnerModerationView;
 }
 
 export interface TrustView {
@@ -166,6 +269,13 @@ export interface CommentView {
   liked: boolean;
   createdAt: string;
   replies?: CommentView[];
+  /**
+   * The caller's own comments only: "Checking…", "Held for review", "Removed by
+   * a moderator" (§7.4). Never sent for someone else's comment.
+   */
+  moderationState?: CommentModerationState;
+  /** True when the caller wrote it — D4's delete-own affordance. */
+  isMine?: boolean;
 }
 
 export interface FeedFacets {
@@ -183,7 +293,7 @@ export interface SearchResultView extends FeedCardView {
 
 export interface NotificationView {
   id: string;
-  type: "status_change" | "corroboration_or_reply" | "dispatch_ready" | "urgent_safety";
+  type: NotificationType;
   title: string;
   body: string | null;
   link: string | null;
@@ -221,6 +331,27 @@ export interface DraftSummary {
   evidenceCount: number;
 }
 
+/**
+ * C9's receipt. `POST /reports` answers 201 with it for a new report — and 200
+ * with the *same* receipt when the draft had already been filed (D12), so a
+ * retry after a lost response lands on C9 rather than on an error.
+ */
+export interface FilingReceipt {
+  reportId: string;
+  caseRef: string;
+  filedAt: string;
+  /** What C9's stepper shows first. */
+  moderationState: ReportModerationState;
+  displayStatus: DisplayStatus;
+}
+
+/** D9's confirmation, for a report or a comment flag (§7.6). */
+export interface FlagReceipt {
+  flagRef: string;
+  authorIsTold: string;
+  expectedWithin: "within the hour" | "within a day";
+}
+
 export interface FeedQuery {
   category?: ReportCategory;
   when?: "today" | "week" | "month" | "all";
@@ -230,6 +361,8 @@ export interface FeedQuery {
   cursor?: string;
   limit?: number;
   mine?: boolean;
+  /** The Vault's chip filter. Only meaningful with `mine` (§7.4). */
+  displayStatus?: DisplayStatus;
 }
 
 /** Drop undefined keys so they do not become the string "undefined". */
@@ -257,8 +390,13 @@ export const reportsApi = {
     return api.get("/reports/drafts");
   },
 
+  /**
+   * Every file on one of the caller's own drafts, sealed or not — how a resumed
+   * draft rebuilds C5's list, and how the wizard reconciles its files with the
+   * server before filing. 404 for a draft that is gone or not the caller's.
+   */
   draftEvidence(draftId: string): Promise<EvidenceView[]> {
-    return api.get(`/reports/drafts/${draftId}/evidence`);
+    return api.get(`/reports/drafts/${encodeURIComponent(draftId)}/evidence`);
   },
 
   discardDraft(draftId: string): Promise<null> {
@@ -267,7 +405,12 @@ export const reportsApi = {
 
   // ── Filing (C7 → C9) ────────────────────────────────────────────────────
 
-  file(draftId: string): Promise<{ reportId: string; caseRef: string; filedAt: string }> {
+  /**
+   * File a draft. Safe to repeat: a draft that was already filed answers with the
+   * report it became (200) instead of a second report (D12), and a draft that
+   * does not exist answers 404 without creating anything.
+   */
+  file(draftId: string): Promise<FilingReceipt> {
     // `attested` is always true here: the wizard will not call this until C7's
     // checkbox is ticked, and the server rejects a literal false.
     return api.post("/reports", { draftId, attested: true });
@@ -367,11 +510,8 @@ export const reportsApi = {
     return api.post(`/reports/${id}/corroborate`, { note });
   },
 
-  flag(
-    id: string,
-    reason: FlagReason,
-    note?: string,
-  ): Promise<{ flagRef: string; authorIsTold: string; expectedWithin: string }> {
+  /** Idempotent: flagging the same report again returns the existing flag (200). */
+  flag(id: string, reason: FlagReason, note?: string): Promise<FlagReceipt> {
     return api.post(`/reports/${id}/flags`, { reason, note });
   },
 
@@ -414,20 +554,24 @@ export const reportsApi = {
     return api.post(`/comments/${commentId}/like`);
   },
 
-  flagComment(commentId: string, reason: FlagReason, note?: string): Promise<{ flagRef: string }> {
+  /** The comment sheet's six categories (§3.1). Idempotent, like `flag`. */
+  flagComment(commentId: string, reason: FlagReason, note?: string): Promise<FlagReceipt> {
     return api.post(`/comments/${commentId}/flags`, { reason, note });
   },
 
+  /** The author's own comment only, in any moderation state (§7.5). */
   removeComment(commentId: string): Promise<null> {
     return api.delete(`/comments/${commentId}`);
   },
 
   // ── Notifications (B3) ──────────────────────────────────────────────────
 
+  /** `unread` counts the whole account, not the page — the feed bell's dot reads it. */
   notifications(
     cursor?: string,
+    limit?: number,
   ): Promise<{ items: NotificationView[]; nextCursor: string | null; unread: number }> {
-    return api.get(`/notifications${qs({ cursor })}`);
+    return api.get(`/notifications${qs({ cursor, limit })}`);
   },
 
   markAllRead(): Promise<{ updated: number }> {

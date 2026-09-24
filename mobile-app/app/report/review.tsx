@@ -4,12 +4,21 @@
  * From the caption: "Six labelled blocks, each with an Edit that jumps straight
  * back to its step and returns here."
  *
- * "And returns here" is the part worth implementing carefully: an Edit that pushes
- * the step onto the stack means Back lands on Review, which is exactly right. The
- * step's own Next also routes forward through the wizard, so both exits work.
+ * "And returns here" is the part worth implementing carefully: Edit opens the step
+ * on top of Review with `?from=review`, so Back lands here, and the step's own Next
+ * comes back here too rather than walking every later step again
+ * (`useStepNavigation`).
  *
  * The attestation is a real gate — the server rejects a literal `false` — so it is
- * the one thing on this screen that blocks the primary action.
+ * the one thing on this screen that blocks the primary action. A step still marked
+ * "Still needed", or a file that is uploading or failed, blocks it too, with the
+ * rule in words: the server would refuse the first on C8, and C8 cannot file
+ * before every file is sealed.
+ *
+ * ── Revision 2 (docs/INCIDENT_MODULE_PLAN.md §10 "Copy") ──────────────────
+ * "What happens when you file" now says what does: an automated safety check reads
+ * a public or trusted report first, and it is published or a moderator checks it
+ * (`filingExplainer`). The "dispatch it later" clause went with Dispatch (v7 D2).
  */
 
 import React, { useCallback, useMemo, useState } from "react";
@@ -18,16 +27,23 @@ import { router } from "expo-router";
 import { colors, radius, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { CategoryDot, CheckboxRow } from "@/components/ui/Controls";
-import { WizardShell, cardHairline } from "@/components/report/WizardShell";
+import {
+  WizardShell,
+  cardHairline,
+  stepRoute,
+  useStepNavigation,
+} from "@/components/report/WizardShell";
 import { Chevron } from "@/app/report/details";
-import { useReportDraft } from "@/providers/ReportDraftProvider";
+import { stepIsComplete, useReportDraft } from "@/providers/ReportDraftProvider";
 import { useWizardExit } from "@/components/report/useWizardExit";
 import {
   CATEGORY_META,
   absoluteTime,
   formatBytes,
+  type DraftPayload,
   type Visibility,
 } from "@/lib/api/reports";
+import { filingExplainer } from "@/lib/report/moderation";
 
 const VISIBILITY_LABEL: Record<Visibility, string> = {
   public: "Public",
@@ -35,10 +51,36 @@ const VISIBILITY_LABEL: Record<Visibility, string> = {
   private: "Private",
 };
 
+/** What each required step is missing, in the words the problem line uses. */
+const REQUIRED_STEPS: { step: number; missing: string }[] = [
+  { step: 1, missing: "a category" },
+  { step: 2, missing: "a title and what happened" },
+  { step: 3, missing: "when it happened" },
+  { step: 4, missing: "a location choice" },
+  { step: 6, missing: "who can see it" },
+];
+
+/** "This report still needs a category and when it happened. …" — or null. */
+function missingSentence(payload: DraftPayload): string | null {
+  const missing = REQUIRED_STEPS.filter((entry) => !stepIsComplete(entry.step, payload)).map(
+    (entry) => entry.missing,
+  );
+  if (missing.length === 0) return null;
+  const list =
+    missing.length === 1
+      ? missing[0]
+      : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]}`;
+  return `This report still needs ${list}. Tap Edit beside ${
+    missing.length === 1 ? "it" : "each one"
+  }.`;
+}
+
 export default function ReviewStep(): React.ReactElement {
   useThemeSync();
-  const { payload, attachments, savedAt, setStep, allSealed, uploadingCount } = useReportDraft();
+  const { payload, attachments, savedAt, setStep, allSealed, uploadingCount, failedCount } =
+    useReportDraft();
   const exit = useWizardExit();
+  const { back } = useStepNavigation(7);
 
   const [attested, setAttested] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -49,11 +91,11 @@ export default function ReviewStep(): React.ReactElement {
     [attachments],
   );
 
-  /** Edit jumps to the step and pushes, so Back returns here. */
+  /** Edit opens the step over Review; its Next and its Back both return here. */
   const edit = useCallback(
-    (step: number, path: string) => {
+    (step: number) => {
       setStep(step);
-      router.push(path as never);
+      router.push({ pathname: stepRoute(step), params: { from: "review" } });
     },
     [setStep],
   );
@@ -61,8 +103,23 @@ export default function ReviewStep(): React.ReactElement {
   const file = useCallback(() => {
     setProblem(null);
 
+    const missing = missingSentence(payload);
+    if (missing) {
+      setProblem(missing);
+      return;
+    }
     if (!attested) {
       setProblem("Confirm the report is true to the best of your knowledge.");
+      return;
+    }
+    // Failed files first: they will not finish on their own, and counting them as
+    // "still uploading" used to print "0 files are still uploading".
+    if (failedCount > 0) {
+      setProblem(
+        failedCount === 1
+          ? "One file did not upload. Try it again on the Evidence step, or remove it."
+          : `${failedCount} files did not upload. Try them again on the Evidence step, or remove them.`,
+      );
       return;
     }
     // C8's checklist seals before it files, so a still-uploading file means the
@@ -77,7 +134,7 @@ export default function ReviewStep(): React.ReactElement {
     }
 
     router.push("/report/submitting");
-  }, [allSealed, attested, uploadingCount]);
+  }, [allSealed, attested, failedCount, payload, uploadingCount]);
 
   const flags = useMemo(() => {
     const parts: string[] = [];
@@ -87,24 +144,22 @@ export default function ReviewStep(): React.ReactElement {
     return parts.join(" · ");
   }, [payload]);
 
+  const locationLabel = payload.locationLabel?.trim();
+
   return (
     <WizardShell
       step={7}
       stepName="Review"
       savedAt={savedAt}
       onClose={exit}
-      onBack={() => router.back()}
+      onBack={back}
       onNext={file}
       nextLabel="File report"
       problem={problem}
       testID="wizard-review"
     >
       <View>
-        <ReviewRow
-          label="CATEGORY"
-          onEdit={() => edit(1, "/report/category")}
-          testID="review-category"
-        >
+        <ReviewRow label="CATEGORY" onEdit={() => edit(1)} testID="review-category">
           {payload.category ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
               <CategoryDot color={colors[CATEGORY_META[payload.category].token]} />
@@ -117,8 +172,8 @@ export default function ReviewStep(): React.ReactElement {
           )}
         </ReviewRow>
 
-        <ReviewRow label="DETAILS" onEdit={() => edit(2, "/report/details")} testID="review-details">
-          {payload.title?.trim() ? (
+        <ReviewRow label="DETAILS" onEdit={() => edit(2)} testID="review-details">
+          {stepIsComplete(2, payload) ? (
             <>
               <Text variant="label" color={colors.t0} style={{ fontSize: 13.5, lineHeight: 18 }}>
                 {payload.title}
@@ -137,7 +192,7 @@ export default function ReviewStep(): React.ReactElement {
           )}
         </ReviewRow>
 
-        <ReviewRow label="DATE & TIME" onEdit={() => edit(3, "/report/when")} testID="review-when">
+        <ReviewRow label="DATE & TIME" onEdit={() => edit(3)} testID="review-when">
           {payload.occurredAt ? (
             <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
               {payload.happeningNow
@@ -155,11 +210,11 @@ export default function ReviewStep(): React.ReactElement {
           )}
         </ReviewRow>
 
-        <ReviewRow label="LOCATION" onEdit={() => edit(4, "/report/where")} testID="review-where">
+        <ReviewRow label="LOCATION" onEdit={() => edit(4)} testID="review-where">
           {payload.locationPrecision ? (
             <>
               <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
-                {payload.locationLabel?.trim() ||
+                {locationLabel ||
                   (payload.locationPrecision === "hidden" ? "Not published" : "Area not named")}
               </Text>
               <Text variant="metaSm" color={colors.t3} style={{ marginTop: 3 }}>
@@ -167,7 +222,9 @@ export default function ReviewStep(): React.ReactElement {
                   ? "Approximate — about 500 m"
                   : payload.locationPrecision === "exact"
                     ? "Exact"
-                    : "Hidden — no location is published"}
+                    : locationLabel
+                      ? "Hidden — only the area name is shown"
+                      : "Hidden — no location is published"}
               </Text>
             </>
           ) : (
@@ -175,11 +232,7 @@ export default function ReviewStep(): React.ReactElement {
           )}
         </ReviewRow>
 
-        <ReviewRow
-          label="EVIDENCE"
-          onEdit={() => edit(5, "/report/evidence")}
-          testID="review-evidence"
-        >
+        <ReviewRow label="EVIDENCE" onEdit={() => edit(5)} testID="review-evidence">
           <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
             {attachments.length === 0
               ? "No files"
@@ -187,14 +240,19 @@ export default function ReviewStep(): React.ReactElement {
                   totalBytes > 0 ? ` · ${formatBytes(totalBytes)}` : ""
                 }`}
           </Text>
-          {!allSealed ? (
+          {uploadingCount > 0 ? (
             <Text variant="metaSm" color={colors.warn} style={{ marginTop: 3 }}>
               {`${uploadingCount} still uploading`}
             </Text>
           ) : null}
+          {failedCount > 0 ? (
+            <Text variant="metaSm" color={colors.bad2} style={{ marginTop: 3 }}>
+              {`${failedCount} did not upload`}
+            </Text>
+          ) : null}
         </ReviewRow>
 
-        <ReviewRow label="FLAGS" onEdit={() => edit(6, "/report/flags")} last testID="review-flags">
+        <ReviewRow label="FLAGS" onEdit={() => edit(6)} last testID="review-flags">
           <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
             {flags}
           </Text>
@@ -202,12 +260,20 @@ export default function ReviewStep(): React.ReactElement {
       </View>
 
       {/* "What happens when you file" — collapsed, as drawn. */}
-      <View style={styles.explainer}>
+      <View
+        style={{
+          backgroundColor: colors.s3,
+          borderRadius: radius.lg,
+          padding: 14,
+          marginTop: 14,
+        }}
+      >
         <Pressable
           onPress={() => setExpanded((open) => !open)}
           accessibilityRole="button"
           accessibilityState={{ expanded }}
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+          testID="review-explainer"
         >
           <Text variant="label" color={colors.t0} style={{ fontSize: 13.5 }}>
             What happens when you file
@@ -216,12 +282,18 @@ export default function ReviewStep(): React.ReactElement {
         </Pressable>
 
         {expanded ? (
-          <Text variant="bodyXs" color={colors.t2} style={styles.explainerBody}>
-            {attachments.length > 0
-              ? `Your ${attachments.length} file${attachments.length === 1 ? "" : "s"} ${
-                  attachments.length === 1 ? "is" : "are"
-                } sealed, then the report is filed and enters review. A moderator reads it. Nothing is sent to any outside organisation unless you choose to dispatch it later.`
-              : "The report is filed and enters review. A moderator reads it. Nothing is sent to any outside organisation unless you choose to dispatch it later."}
+          <Text
+            variant="bodyXs"
+            color={colors.t2}
+            style={{
+              marginTop: 10,
+              paddingTop: 10,
+              borderTopWidth: 1,
+              borderTopColor: cardHairline,
+              lineHeight: 19,
+            }}
+          >
+            {filingExplainer({ files: attachments.length, visibility: payload.visibility })}
           </Text>
         ) : null}
       </View>
@@ -255,7 +327,15 @@ function ReviewRow({
   testID?: string;
 }): React.ReactElement {
   return (
-    <View style={[styles.row, last && { borderBottomWidth: 0 }]}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        paddingVertical: 11,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: cardHairline,
+      }}
+    >
       <View style={{ flex: 1, paddingRight: 14 }}>
         <Text variant="eyebrowSm" color={colors.t4}>
           {label}
@@ -285,26 +365,3 @@ function Missing(): React.ReactElement {
     </Text>
   );
 }
-
-const styles = {
-  row: {
-    flexDirection: "row" as const,
-    alignItems: "flex-start" as const,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: cardHairline,
-  },
-  explainer: {
-    backgroundColor: colors.s3,
-    borderRadius: radius.lg,
-    padding: 14,
-    marginTop: 14,
-  },
-  explainerBody: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: cardHairline,
-    lineHeight: 19,
-  },
-};

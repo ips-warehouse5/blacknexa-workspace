@@ -49,6 +49,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         environment=settings.environment,
         gemini="configured" if settings.ai_enabled else "not configured",
         exa_search="configured" if settings.search_enabled else "not configured",
+        moderation="ready" if settings.moderation_ready else "not ready",
         persistence="enabled" if settings.persistence_enabled else "disabled",
     )
 
@@ -75,6 +76,19 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             ),
         )
 
+    if settings.ai_enabled and not settings.moderation_permitted:
+        # Distinct from "no key": Gemini works for news, but member reports may
+        # not be sent to it until the data terms are declared, so every
+        # moderation call answers `unavailable` and Node holds reports for a human.
+        logger.warning(
+            "moderation_not_permitted",
+            detail=(
+                "GEMINI_DATA_TERMS is 'unspecified' in production. Moderation "
+                "answers 'unavailable' and /ready reports moderationReady=false "
+                "until it is set to 'paid' or 'vertex'."
+            ),
+        )
+
     init_engine()
     try:
         yield
@@ -88,7 +102,8 @@ app = FastAPI(
     title="BlackNexa AI News Engine",
     description=(
         "Grounded article synthesis, photojournalistic imagery, TTS briefings and "
-        "translation for the BlackNexa news platform. Internal service — the Node "
+        "translation for the BlackNexa news platform, plus pre-publication content "
+        "moderation for incident reports and comments. Internal service — the Node "
         "backend remains the only public API."
     ),
     version=VERSION,
@@ -194,12 +209,18 @@ async def ready() -> dict[str, object]:
     at all; without Exa every synthesis fails for lack of grounding. In either
     case the engine would accept requests and fail them, which is worse than
     being taken out of rotation.
+
+    `moderationReady` is reported separately and does not change `ready`
+    (INCIDENT_MODULE_PLAN.md §6.2): moderation needs no Exa key, but it does need
+    Gemini *and* declared data terms in production. It is the health check for
+    Node's reconciler before it re-runs holds left by an AI outage (plan §5.2).
     """
     return {
         "ready": settings.ai_enabled and settings.search_enabled,
         "aiGatewayConfigured": settings.ai_enabled,
         "searchConfigured": settings.search_enabled,
         "persistenceEnabled": is_enabled(),
+        "moderationReady": settings.moderation_ready,
     }
 
 
