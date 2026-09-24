@@ -464,7 +464,7 @@ ${sources}
       <p class="verified">${htmlEscape(article.factCheckStatus)}</p>
       <p><a href="${url}">${url}</a></p>
       <hr/>
-      <p class="tm-notice">BlackNexa&trade; is a trademark of BlackNexa, application pending with the United States Patent and Trademark Office (USPTO). All content, concepts, methodology, and intellectual property herein are the exclusive protected property of BlackNexa&trade; &mdash; including the Truth Verification Engine, Civic Checks &amp; Balances, and faith-grounded news framework. &copy; ${new Date().getUTCFullYear()} BlackNexa&trade;. All rights reserved. Unauthorized reproduction, syndication, or derivative use is prohibited.</p>
+      <p class="tm-notice">BlackNexa&trade; is a trademark of News Moves Markets Forex LLC, application pending with the United States Patent and Trademark Office (USPTO). All content, concepts, methodology, and intellectual property herein are the exclusive protected property of News Moves Markets Forex LLC &mdash; including the Truth Verification Engine, Civic Checks &amp; Balances, and faith-grounded news framework. &copy; ${new Date().getUTCFullYear()} News Moves Markets Forex LLC. All rights reserved. Unauthorized reproduction, syndication, or derivative use is prohibited.</p>
     </footer>
   </article>
 </body>

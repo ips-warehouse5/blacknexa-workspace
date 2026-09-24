@@ -133,9 +133,9 @@ export default function OnboardingScreen(): React.ReactElement {
           </Pressable>
 
           <Text style={styles.tm}>
-            {"BlackNexa\u2122 is a trademark of BlackNexa with an application pending before the USPTO. \u00a9 "}
+            {"BlackNexa\u2122 is a trademark of News Moves Markets Forex LLC with an application pending before the USPTO. \u00a9 "}
             {new Date().getFullYear()}
-            {" BlackNexa. All rights reserved."}
+            {" News Moves Markets Forex LLC. All rights reserved."}
           </Text>
         </ScrollView>
       </View>

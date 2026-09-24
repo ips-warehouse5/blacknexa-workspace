@@ -1,4 +1,26 @@
+import type { ReactNode } from "react";
 import type { LegalSection } from "@/data/legal";
+
+/**
+ * Paragraphs are plain strings. `**…**` marks bold and `_…_` italic — the two
+ * emphases the client's Privacy §12 copy uses, and the same markers the mobile
+ * app's Privacy screen reads, so both render the copy identically.
+ */
+function renderInline(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((part, i) => {
+    if (part.length > 4 && part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-semibold text-text-primary">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.length > 2 && part.startsWith("_") && part.endsWith("_")) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
 
 export function LegalDocument({
   title,
@@ -48,7 +70,7 @@ export function LegalDocument({
                 </h2>
                 {s.body.map((p, i) => (
                   <p key={i} className="mt-[18px] text-pretty text-base leading-[1.78] text-text-secondary">
-                    {p}
+                    {renderInline(p)}
                   </p>
                 ))}
               </section>

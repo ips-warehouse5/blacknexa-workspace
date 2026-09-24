@@ -591,13 +591,13 @@ export default function NewsArticleScreen(): React.ReactElement {
             <Text style={styles.brandURL}>blacknexa.com/news/{article.slug}</Text>
             <View style={styles.tmBlock}>
               <Text style={styles.tmLine}>
-                BlackNexa™ is a trademark of BlackNexa, application pending with the USPTO.
+                BlackNexa™ is a trademark of News Moves Markets Forex LLC, application pending with the USPTO.
               </Text>
               <Text style={styles.tmLine}>
-                All content, concepts, methodology, and intellectual property herein are the exclusive protected property of BlackNexa™ — including the Truth Verification Engine, Civic Checks & Balances, and faith-grounded news framework.
+                All content, concepts, methodology, and intellectual property herein are the exclusive protected property of News Moves Markets Forex LLC — including the Truth Verification Engine, Civic Checks & Balances, and faith-grounded news framework.
               </Text>
               <Text style={styles.tmLine}>
-                © {new Date().getFullYear()} BlackNexa™. All rights reserved. Unauthorized reproduction, syndication, or derivative use is prohibited.
+                © {new Date().getFullYear()} News Moves Markets Forex LLC. All rights reserved. Unauthorized reproduction, syndication, or derivative use is prohibited.
               </Text>
             </View>
           </View>

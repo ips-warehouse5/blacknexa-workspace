@@ -1,20 +1,12 @@
 import type { ExpoConfig } from "expo/config";
 
 // Single source of truth for the human-facing semantic version shown in
-// both the Play Store and App Store listings — bump this here only, for
-// every release, and both platforms stay in step.
-//
-// Android's versionCode and iOS's buildNumber below are local fallbacks
-// only: eas.json sets `cli.appVersionSource: "remote"`, so EAS Build
-// tracks each platform's build number remotely and increments it
-// independently per platform (`autoIncrement: true` on the `production`
-// profile) regardless of what's written here. These values only take
-// effect for non-EAS flows (`expo prebuild`, `expo run:android/ios`) and
-// should track the last value EAS reports via
-// `eas build:version:get --platform <android|ios>`.
-const APP_VERSION = "1.0.0";
+// native iOS builds and store listings. eas.json uses
+// `cli.appVersionSource: "local"`, so EAS Build reads these values from
+// this file when it generates the native Xcode project.
+const APP_VERSION = "1.0";
 const ANDROID_VERSION_CODE = 5;
-const IOS_BUILD_NUMBER = "1";
+const IOS_BUILD_NUMBER = "3";
 type AppVariant = "development" | "preview" | "production";
 
 function readAppVariant(): AppVariant {
