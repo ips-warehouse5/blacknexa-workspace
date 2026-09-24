@@ -1,7 +1,13 @@
 import { router } from "expo-router";
 import React from "react";
 import { Text as RNText, StyleSheet, View } from "react-native";
-import { colors, fonts, radius, screenPadding, useThemeSync } from "@/constants/theme";
+import {
+  colors,
+  fonts,
+  radius,
+  screenPadding,
+  useThemeSync,
+} from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { BackHeader, ScrollScreen } from "@/components/ui/Screen";
 import BrandMark from "@/components/BrandMark";
@@ -15,10 +21,18 @@ export default function PrivacyScreen(): React.ReactElement {
       contentStyle={styles.content}
       testID="privacy-screen"
     >
-      <BackHeader title="Privacy Policy" onBack={() => router.back()} padding={0} />
+      <BackHeader
+        title="Privacy Policy"
+        onBack={() => router.back()}
+        padding={0}
+      />
       <BrandMark variant="chip" style={styles.brand} testID="privacy-brand" />
-      <Text variant="cardTitle" color={colors.t0} style={styles.title}>{PRIVACY.title}</Text>
-      <Text variant="metaSm" color={colors.t3} style={styles.updated}>{PRIVACY.updated}</Text>
+      <Text variant="cardTitle" color={colors.t0} style={styles.title}>
+        {PRIVACY.title}
+      </Text>
+      <Text variant="metaSm" color={colors.t3} style={styles.updated}>
+        {PRIVACY.updated}
+      </Text>
 
       {PRIVACY.sections.map((s) => (
         <View
@@ -28,14 +42,21 @@ export default function PrivacyScreen(): React.ReactElement {
             { backgroundColor: colors.s3, borderColor: colors.line },
           ]}
         >
-          <Text variant="labelLg" color={colors.acc} style={styles.heading}>{s.heading}</Text>
-          <Text variant="body" color={colors.t2} style={styles.body}>{renderInline(s.body)}</Text>
+          <Text variant="labelLg" color={colors.acc} style={styles.heading}>
+            {s.heading}
+          </Text>
+          <Text variant="body" color={colors.t2} style={styles.body}>
+            {renderInline(s.body)}
+          </Text>
         </View>
       ))}
 
-      <Text variant="bodySm" color={colors.t3} center style={styles.footer}>{PRIVACY.footer}</Text>
+      <Text variant="bodySm" color={colors.t3} center style={styles.footer}>
+        {PRIVACY.footer}
+      </Text>
       <Text variant="metaSm" color={colors.t4} center style={styles.tm}>
-        BlackNexa™ is a trademark pending with the USPTO.
+        © 2026 News Moves Markets Forex LLC. All Rights Reserved. BlackNexa™ is
+        a trademark of News Moves Markets Forex LLC.
       </Text>
     </ScrollScreen>
   );
@@ -50,10 +71,18 @@ export default function PrivacyScreen(): React.ReactElement {
 function renderInline(body: string): React.ReactNode[] {
   return body.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((part, i) => {
     if (part.length > 4 && part.startsWith("**") && part.endsWith("**")) {
-      return <RNText key={i} style={styles.bold}>{part.slice(2, -2)}</RNText>;
+      return (
+        <RNText key={i} style={styles.bold}>
+          {part.slice(2, -2)}
+        </RNText>
+      );
     }
     if (part.length > 2 && part.startsWith("_") && part.endsWith("_")) {
-      return <RNText key={i} style={styles.italic}>{part.slice(1, -1)}</RNText>;
+      return (
+        <RNText key={i} style={styles.italic}>
+          {part.slice(1, -1)}
+        </RNText>
+      );
     }
     return part;
   });

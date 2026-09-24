@@ -27,7 +27,7 @@ export const privacySections: LegalSection[] = [
     title: "What we collect",
     body: [
       "Account details you give us: your email address and the display name you choose. If you sign in with Apple or Google, we receive the name and email address those providers share with your permission.",
-      "Incident records you create: media files (photo, video, or audio) you attach as evidence, the GPS location and timestamp captured at the moment of recording (you control the precision — see \"Location precision\" below), the category you select, and the country or agency context used to route the record.",
+      'Incident records you create: media files (photo, video, or audio) you attach as evidence, the GPS location and timestamp captured at the moment of recording (you control the precision — see "Location precision" below), the category you select, and the country or agency context used to route the record.',
       "Device and session data needed to keep your account secure: a per-device session record so you can review or sign out individual devices, and a push-notification token if you enable alerts.",
       "Biometric unlock (Face ID / fingerprint), if you turn it on, is verified entirely on your device by your phone's operating system. BlackNexa never receives, stores, or transmits your biometric data — we only receive a yes/no confirmation that your device unlocked.",
       "We do not use advertising, analytics, or tracking SDKs of any kind, and BlackNexa does not request permission to track you across other apps or websites.",
@@ -56,7 +56,7 @@ export const privacySections: LegalSection[] = [
     id: "p-location",
     title: "Location precision",
     body: [
-      "BlackNexa only accesses your location while you are actively using the app (\"when in use\") — never in the background, and we do not track your movement over time.",
+      'BlackNexa only accesses your location while you are actively using the app ("when in use") — never in the background, and we do not track your movement over time.',
       "For each record, you choose one of three precision levels: Exact (the spot you picked), Approximate (rounded to about 500 metres), or Hidden (no location published at all). You can also set a default precision for future records in your profile.",
     ],
   },
@@ -135,7 +135,7 @@ export const privacySections: LegalSection[] = [
     // `**…**` renders bold and `_…_` italic in LegalDocument.
     body: [
       "• **BlackNexa™** is a trademark-pending brand and proprietary software ecosystem owned and licensed exclusively by **News Moves Markets Forex LLC**.",
-      "• **Scope of Protection:** The intellectual property, name, logo, underlying utility architecture (including the Injustice Pocket Recorder, AI Fact-Check News Engine, and global Community Feed), and brand rights are legally protected under United States trademark law (Serial Number: 99385360) covering software services (Class 042) and personal, legal, and social networking services (Class 045), and (Serial Number: 50068604) covering downloadable computer application software for mobile phones and downloadable software for social networking (Class 009).",
+      "• **Scope of Protection:** The intellectual property, name, logo, underlying utility architecture (including the Injustice Pocket Recorder, AI Fact-Check News Engine, and global Community Feed), and brand rights are legally protected under United States trademark law (Serial Number: 99385360) covering software services (Class 042) and personal, legal, and social networking services (Class 045), and (Serial Number: 50068604) covering Downloadable computer application software for mobile phones, namely, software for allowing users to upload video, audio, multimedia, and text content to a community, social networking, and media site on the topic of news, current events, black and brown culture, and social justice; Downloadable computer application software for mobile phones, namely, software for allowing users to view video, audio, multimedia, and text content on the topic of news, current events, black and brown culture, and social justice; Downloadable software for social networking (Class 009).",
       "• **Licensing Entity:** All rights, brand distribution, and platform developments are managed and operated under the authority of News Moves Markets Forex LLC.",
       `_© ${new Date().getFullYear()} News Moves Markets Forex LLC. All Rights Reserved. BlackNexa™ is a trademark of News Moves Markets Forex LLC._`,
     ],
@@ -172,7 +172,9 @@ export const termsSections: LegalSection[] = [
     n: "3",
     id: "t-account",
     title: "Your account",
-    body: ["Keep your credentials secure and your contact details current. You are responsible for activity under your account."],
+    body: [
+      "Keep your credentials secure and your contact details current. You are responsible for activity under your account.",
+    ],
   },
   {
     n: "4",
@@ -186,13 +188,17 @@ export const termsSections: LegalSection[] = [
     n: "5",
     id: "t-content",
     title: "Your content",
-    body: ["Your records are yours. You grant us the limited licence needed to store, seal, and route them as you direct."],
+    body: [
+      "Your records are yours. You grant us the limited licence needed to store, seal, and route them as you direct.",
+    ],
   },
   {
     n: "6",
     id: "t-ip",
     title: "Our intellectual property",
-    body: ["The BlackNexa name, mark, and software are protected. Nothing here transfers ownership of them to you."],
+    body: [
+      "The BlackNexa name, mark, and software are protected. Nothing here transfers ownership of them to you.",
+    ],
   },
   {
     n: "7",

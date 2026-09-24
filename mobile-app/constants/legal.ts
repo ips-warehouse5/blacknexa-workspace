@@ -18,7 +18,12 @@ export const LEGAL_VERSION = 1;
 
 export type LegalSection = { heading: string; body: string };
 
-export const TERMS: { title: string; updated: string; sections: LegalSection[]; footer: string } = {
+export const TERMS: {
+  title: string;
+  updated: string;
+  sections: LegalSection[];
+  footer: string;
+} = {
   title: "BlackNexa™ — Terms of Service",
   updated: "Updated 17 September 2026",
   sections: [
@@ -62,7 +67,12 @@ export const TERMS: { title: string; updated: string; sections: LegalSection[]; 
   footer: "Questions: legal@blacknexa.com",
 };
 
-export const PRIVACY: { title: string; updated: string; sections: LegalSection[]; footer: string } = {
+export const PRIVACY: {
+  title: string;
+  updated: string;
+  sections: LegalSection[];
+  footer: string;
+} = {
   title: "BlackNexa™ — Privacy Policy",
   updated: "Updated 24 September 2026",
   sections: [
@@ -114,7 +124,7 @@ export const PRIVACY: { title: string; updated: string; sections: LegalSection[]
       heading: "12. Who we are",
       // Client-supplied copy (24 Sep 2026). `**…**` renders bold and `_…_` italic
       // on the Privacy screen, matching the client's formatting.
-      body: `• **BlackNexa™** is a trademark-pending brand and proprietary software ecosystem owned and licensed exclusively by **News Moves Markets Forex LLC**.\n\n• **Scope of Protection:** The intellectual property, name, logo, underlying utility architecture (including the Injustice Pocket Recorder, AI Fact-Check News Engine, and global Community Feed), and brand rights are legally protected under United States trademark law (Serial Number: 99385360) covering software services (Class 042) and personal, legal, and social networking services (Class 045), and (Serial Number: 50068604) covering downloadable computer application software for mobile phones and downloadable software for social networking (Class 009).\n\n• **Licensing Entity:** All rights, brand distribution, and platform developments are managed and operated under the authority of News Moves Markets Forex LLC.\n\n_© ${new Date().getFullYear()} News Moves Markets Forex LLC. All Rights Reserved. BlackNexa™ is a trademark of News Moves Markets Forex LLC._`,
+      body: `**BlackNexa™** is a trademark-pending brand and proprietary software ecosystem owned and licensed exclusively by **News Moves Markets Forex LLC**.\n\n**Scope of Protection:** The intellectual property, name, logo, underlying utility architecture (including the Injustice Pocket Recorder, AI Fact-Check News Engine, and global Community Feed), and brand rights are legally protected under United States trademark law (Serial Number: 99385360) covering software services (Class 042) and personal, legal, and social networking services (Class 045), and (Serial Number: 50068604) covering Downloadable computer application software for mobile phones, namely, software for allowing users to upload video, audio, multimedia, and text content to a community, social networking, and media site on the topic of news, current events, black and brown culture, and social justice; Downloadable computer application software for mobile phones, namely, software for allowing users to view video, audio, multimedia, and text content on the topic of news, current events, black and brown culture, and social justice; Downloadable software for social networking (Class 009).\n\n**Licensing Entity:** All rights, brand distribution, and platform developments are managed and operated under the authority of News Moves Markets Forex LLC.`,
     },
     {
       heading: "13. Changes to this policy",
