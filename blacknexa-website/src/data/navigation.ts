@@ -14,7 +14,7 @@ export const mainNav: NavLink[] = [
 export const footerProductLinks: NavLink[] = [
   { label: "Features", href: "/#features" },
   { label: "News", href: "/#news" },
-  { label: "Waitlist", href: "/#waitlist" },
+  { label: "Waitlist", href: "/waitlist" },
   { label: "FAQ", href: "/#faq" },
 ];
 

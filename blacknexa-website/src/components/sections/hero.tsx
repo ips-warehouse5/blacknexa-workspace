@@ -1,6 +1,5 @@
 import Image from "next/image";
-import { AppleLogo, GooglePlayLogo } from "@/components/icons/store-badges";
-import { WaitlistForm } from "@/components/forms/waitlist-form";
+import Link from "next/link";
 import { HeroPhoneMockup } from "./hero-phone-mockup";
 import { versionedAsset } from "@/lib/asset-version";
 
@@ -33,7 +32,7 @@ export function Hero() {
       <div className="relative mx-auto flex w-full max-w-[1280px] flex-wrap items-end gap-14 px-7 pb-[82px]">
         <div className="bn-reveal min-w-[min(100%,320px)] max-w-[720px] flex-[1_1_520px]">
           <p className="mb-[26px] text-xs font-semibold tracking-[0.22em] text-accent">
-            PRE-LAUNCH · iOS AND ANDROID
+            THE POCKET REPORTING TOOL · PRE-LAUNCH · iOS AND ANDROID
           </p>
           <h1
             className="font-serif text-[clamp(2.7rem,6.4vw,5.9rem)] font-bold leading-[0.96] tracking-[-0.022em] text-balance"
@@ -53,16 +52,15 @@ export function Hero() {
             Built on God first, absolute truth, and moral integrity.
           </p>
 
-          <div className="mt-[38px] max-w-[620px]">
-            <WaitlistForm variant="hero" idPrefix="hero" />
-          </div>
-
-          <div className="mt-[34px] flex flex-wrap items-center gap-3">
-            <StoreBadge label="App Store" icon={<AppleLogo />} />
-            <StoreBadge label="Google Play" icon={<GooglePlayLogo />} />
-            <span className="rounded-[2px] border border-accent px-[9px] py-1 text-[11px] font-semibold tracking-[0.16em] text-accent">
-              COMING SOON
-            </span>
+          {/* Client funnel brief: the hero's main action routes to the
+              dedicated waitlist page. */}
+          <div className="mt-[38px]">
+            <Link
+              href="/waitlist"
+              className="inline-flex min-h-[52px] items-center justify-center rounded-[3px] bg-accent px-[34px] py-[17px] text-[15.5px] font-semibold text-accent-foreground transition-[filter] hover:brightness-110"
+            >
+              Get the App
+            </Link>
           </div>
         </div>
 
@@ -78,18 +76,5 @@ export function Hero() {
         <span className="block h-[22px] w-px" style={{ background: "currentColor" }} />
       </div>
     </section>
-  );
-}
-
-function StoreBadge({ label, icon }: { label: string; icon: React.ReactNode }) {
-  return (
-    <div
-      aria-label={`${label} — coming soon`}
-      className="flex items-center gap-2.5 rounded-[5px] border px-4 py-2.5 opacity-50"
-      style={{ borderColor: "rgb(var(--bn-feature-on) / 0.16)", color: "var(--bn-feature-ink)" }}
-    >
-      {icon}
-      <span className="text-[13px]">{label}</span>
-    </div>
   );
 }

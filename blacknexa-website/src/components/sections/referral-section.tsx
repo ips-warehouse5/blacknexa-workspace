@@ -1,8 +1,14 @@
 import { Icon } from "@/components/icons/icon";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { referralSteps } from "@/data/features";
-import { ReferralLink } from "./referral-link";
 
+/**
+ * Explains the waitlist referral loop (share link → they join → both move up).
+ *
+ * Not currently rendered: the client's funnel brief does not include this
+ * section, so it was taken off the homepage and /waitlist. Kept for reuse —
+ * see the TODO in src/app/waitlist/page.tsx.
+ */
 export function ReferralSection() {
   return (
     <section aria-label="Referral program" className="px-7 py-[clamp(52px,5.6vw,80px)]">
@@ -33,11 +39,6 @@ export function ReferralSection() {
             </div>
           ))}
         </div>
-        <ReferralLink />
-        <p className="mt-3.5 text-[12.5px] leading-[1.6] text-text-muted">
-          Link shown is an example. Reward tiers are being finalised and will be confirmed before
-          launch.
-        </p>
       </div>
     </section>
   );

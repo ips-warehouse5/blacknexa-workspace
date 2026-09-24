@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   devIndicators: false,
+  // `next dev` rejects dev assets (JS chunks, HMR) requested from any host
+  // but localhost, so over an ngrok tunnel the page renders but never
+  // hydrates — theme toggle, forms and the hero video switch all go dead.
+  // Wildcards because the free tunnel URL changes on every restart.
+  // Dev-only; production builds ignore this.
+  allowedDevOrigins: ["*.ngrok-free.dev", "*.ngrok-free.app", "*.ngrok.app", "*.ngrok.io"],
   images: {
     // Required so the image optimizer accepts our content-hash cache-busting
     // query string (?v=<hash>, see src/lib/asset-version.ts) on local
@@ -13,6 +19,11 @@ const nextConfig: NextConfig = {
     // string; the pathname restriction still limits this to our own asset
     // folder, not arbitrary paths.
     localPatterns: [{ pathname: "/images/blacknexa/**" }],
+  },
+  async redirects() {
+    // Marketing videos and the client brief use /waitlist.html; the query
+    // string (?ref=CODE) is carried over by Next automatically.
+    return [{ source: "/waitlist.html", destination: "/waitlist", permanent: true }];
   },
 };
 

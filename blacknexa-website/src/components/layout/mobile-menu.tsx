@@ -116,7 +116,7 @@ export function MobileMenu() {
             </nav>
 
             <HashLink
-              href="/#waitlist"
+              href="/waitlist"
               onClick={close}
               className="mt-auto min-h-[48px] rounded-[3px] bg-accent px-6 py-[19px] text-center text-base font-semibold text-accent-foreground"
             >

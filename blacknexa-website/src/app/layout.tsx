@@ -27,26 +27,44 @@ const workSans = Work_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
+    default: siteConfig.seoTitle,
     template: `%s — ${siteConfig.name}`,
   },
-  description: siteConfig.description,
+  description: siteConfig.seoDescription,
+  keywords: siteConfig.keywords,
   openGraph: {
     type: "website",
-    siteName: siteConfig.name,
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
+    siteName: `${siteConfig.name}™`,
+    title: siteConfig.socialTitle,
+    description: siteConfig.socialDescription,
     url: siteConfig.url,
+    images: [
+      { url: siteConfig.socialImage, alt: `${siteConfig.name} community` },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
+    title: siteConfig.twitterTitle,
+    description: siteConfig.twitterDescription,
+    images: [siteConfig.socialImage],
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: siteConfig.isProduction
+    ? {
+        index: true,
+        follow: true,
+        "max-snippet": -1,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-snippet": -1,
+          "max-image-preview": "large",
+          "max-video-preview": -1,
+        },
+      }
+    : { index: false, follow: false },
+  other: { title: siteConfig.seoTitle, "geo.placename": "Global" },
 };
 
 const organizationJsonLd = {
@@ -54,7 +72,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: siteConfig.name,
   url: siteConfig.url,
-  description: siteConfig.description,
+  description: siteConfig.seoDescription,
 };
 
 const websiteJsonLd = {
@@ -64,7 +82,11 @@ const websiteJsonLd = {
   url: siteConfig.url,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
@@ -77,14 +99,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
       </head>
-      <body>
+      {/* Browser extensions (Grammarly, password managers) write attributes
+          onto <body> before React hydrates. This ignores attribute diffs on
+          this element only — mismatches in its children are still reported. */}
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <FaviconSync />
           <RevealInit />
