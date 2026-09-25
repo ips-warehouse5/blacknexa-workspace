@@ -5,7 +5,7 @@ import type { ExpoConfig } from "expo/config";
 // `cli.appVersionSource: "local"`, so EAS Build reads these values from
 // this file when it generates the native Xcode project.
 const APP_VERSION = "1.0.0";
-const ANDROID_VERSION_CODE = 5;
+const ANDROID_VERSION_CODE = 1;
 const IOS_BUILD_NUMBER = "4";
 type AppVariant = "development" | "preview" | "production";
 
