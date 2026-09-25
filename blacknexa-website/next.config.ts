@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
     // string; the pathname restriction still limits this to our own asset
     // folder, not arbitrary paths.
     localPatterns: [{ pathname: "/images/blacknexa/**" }],
+    // 75 is the default for every image; 90 is for the feature artwork, whose
+    // on-screen text (the app screens in the pictures) goes soft at 75.
+    qualities: [75, 90],
   },
   async redirects() {
     // Marketing videos and the client brief use /waitlist.html; the query

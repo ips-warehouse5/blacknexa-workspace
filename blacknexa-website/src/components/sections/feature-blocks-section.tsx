@@ -8,15 +8,15 @@ import { versionedAsset } from "@/lib/asset-version";
 const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
   "01": {
     src: "/images/blacknexa/feature-social-feed.jpg",
-    alt: "A group of people gathered around the BlackNexa community feed on a touchscreen table, with a world map linking Atlanta, Salvador, Accra and Johannesburg behind them",
+    alt: "Someone scrolling the BlackNexa community feed on their phone at a café table, beside a coffee, a notebook and a Bible",
   },
   "02": {
     src: "/images/blacknexa/feature-news-engine.jpg",
-    alt: "A smiling woman working with a holographic AI interface in a modern tech office, representing the BlackNexa AI News Engine",
+    alt: "Someone reading a BlackNexa news story on their phone by a window at sunrise, a headline about a Justice Department review of the Shreveport police",
   },
   "03": {
     src: "/images/blacknexa/feature-geo-stamp.jpg",
-    alt: "Four people reviewing a tablet in front of a city map marked with geo-stamped incidents of housing discrimination, police profiling and medical bias, beside a phone showing a locked incident location and its review status",
+    alt: "A phone showing a BlackNexa incident report with its time, sealed evidence files and approximate location, beside a gold location pin on a city map and a gold padlock shield",
   },
 };
 
@@ -53,6 +53,9 @@ export function FeatureBlocksSection() {
                     // stacked and full content width (viewport − 56px padding)
                     // below that.
                     sizes="(min-width: 1336px) 645px, (min-width: 906px) 50vw, calc(100vw - 56px)"
+                    // The pictures show app screens; their text needs more
+                    // than the default 75 to stay crisp. Allowed in next.config.
+                    quality={90}
                     className="object-cover"
                   />
                 </div>
