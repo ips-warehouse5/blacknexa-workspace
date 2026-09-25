@@ -288,6 +288,44 @@ async function clearStoredSignInMethod(): Promise<void> {
   }
 }
 
+/**
+ * Set on first launch, in AsyncStorage on purpose: uninstalling the app deletes
+ * AsyncStorage, so a missing marker means a fresh install. Never cleared on
+ * sign-out — it records the install, not the session.
+ */
+const INSTALL_MARKER_KEY = "bn.install_marker.v1";
+
+/**
+ * Drop credentials a previous install left in the keychain.
+ *
+ * iOS keeps Keychain items — where SecureStore puts the session tokens — after
+ * the app is deleted. Without this, reinstalling signed the last member
+ * straight back in instead of asking anyone to log in. Android's Auto Backup
+ * can restore them the same way, so this runs on both.
+ *
+ * Existing installs that predate the marker are also treated as fresh, so the
+ * first launch after this ships signs the member out once.
+ */
+async function clearKeychainFromPreviousInstall(): Promise<void> {
+  if (Platform.OS === "web") return;
+  let marker: string | null;
+  try {
+    marker = await AsyncStorage.getItem(INSTALL_MARKER_KEY);
+  } catch {
+    // Unreadable storage proves nothing about a reinstall; never sign someone
+    // out on a storage hiccup.
+    return;
+  }
+  if (marker !== null) return;
+
+  await Promise.all([
+    api.clearTokens(),
+    clearStoredSignInMethod(),
+    clearPendingAppleName(),
+  ]).catch(() => {});
+  await AsyncStorage.setItem(INSTALL_MARKER_KEY, "1").catch(() => {});
+}
+
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const qc = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>("restoring");
@@ -351,6 +389,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
   const restore = useCallback(async () => {
     try {
+      // Before the keychain is read: a reinstall must start signed out.
+      await clearKeychainFromPreviousInstall();
       const hasTokens = await api.loadSession();
       if (!hasTokens) {
         setStatus("signedOut");

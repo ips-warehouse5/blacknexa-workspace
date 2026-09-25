@@ -24,7 +24,7 @@
  * Save therefore carries only the text fields and the avatar mode.
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActionSheetIOS,
   Image,
@@ -36,6 +36,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pencil, Check, UserRound } from "lucide-react-native";
 import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
@@ -43,6 +44,8 @@ import Text from "@/components/ui/Text";
 import TextField from "@/components/ui/TextField";
 import { ScrollScreen } from "@/components/ui/Screen";
 import { useAuth } from "@/providers/AuthProvider";
+import { useLocation } from "@/providers/LocationProvider";
+import { initialsFromName } from "@/lib/ui/initials";
 import { useSnackbar } from "@/providers/SnackbarProvider";
 import type { AvatarMode } from "@/lib/api/auth";
 
@@ -78,6 +81,7 @@ export default function IdentityScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { user, updateProfile, uploadAvatar, removeAvatar, busy, error, clearError } = useAuth();
   const { showSnackbar } = useSnackbar();
+  const { location, requestLocation } = useLocation();
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [avatarMode, setAvatarMode] = useState<AvatarMode>(user?.avatarMode ?? "initials");
   /**
@@ -96,13 +100,42 @@ export default function IdentityScreen(): React.ReactElement {
 
   const anonymous = avatarMode === "anonymous";
 
-  const initials = useMemo(() => {
-    const name = displayName.trim();
-    if (!name) return (user?.email[0] ?? "?").toUpperCase();
-    const parts = name.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return name.slice(0, 2).toUpperCase();
-  }, [displayName, user?.email]);
+  /**
+   * Refresh the device's position when the screen opens, so the preview
+   * shows where the member is now, not just the last cached fix, or nothing
+   * on a first visit. Only when permission is already granted: the OS prompt
+   * belongs to the location-permission step (see LocationProvider), so this
+   * screen never asks for it.
+   */
+  useEffect(() => {
+    if (user?.area?.label?.trim()) return;
+    let cancelled = false;
+    void (async () => {
+      const { granted } = await Location.getForegroundPermissionsAsync();
+      if (granted && !cancelled) await requestLocation();
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Once per visit; requestLocation changes identity on every fix.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * The place line under the name: the member's saved area, else where the
+   * device is. Formatted the way Your area shows it ("Atlanta, GA").
+   */
+  const previewPlace =
+    user?.area?.label?.trim() ||
+    (location?.city && location.region
+      ? `${location.city}, ${location.region}`
+      : location?.label) ||
+    "Report location";
+
+  const initials = useMemo(
+    () => initialsFromName(displayName) ?? (user?.email[0] ?? "?").toUpperCase(),
+    [displayName, user?.email],
+  );
 
   /** What a report or comment will actually publish. */
   const publishedName = anonymous || !displayName.trim() ? "Anonymous" : displayName.trim();
@@ -471,10 +504,10 @@ export default function IdentityScreen(): React.ReactElement {
             {publishedName}
           </Text>
           {/* On a real post this line is the report's general location and
-              age. Show a real place when the member has saved one, rather than
-              a placeholder that reads like a setting. */}
+              age. Show a real place (saved area or current location) rather
+              than a placeholder that reads like a setting. */}
           <Text variant="metaSm" color={colors.t4} numberOfLines={1}>
-            {user?.area?.label?.trim() || "Report location"} · just now
+            {previewPlace} · just now
           </Text>
         </View>
       </View>

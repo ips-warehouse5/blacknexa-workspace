@@ -30,6 +30,7 @@ import { Op } from "sequelize";
 import env from "@/config/env.config";
 import logger, { runBackground } from "@/utils/logger.util";
 import { uuid } from "@/utils/id.util";
+import { initialsFromName } from "@/utils/initials.util";
 import { nowIso } from "@/models/model_options";
 import {
   AppUser,
@@ -160,15 +161,7 @@ class UserAuthService {
    * never leaks more of the address than that.
    */
   private initialsFor(user: AppUser): string {
-    const name = user.display_name.trim();
-    if (name) {
-      const parts = name.split(/\s+/).filter(Boolean);
-      if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      }
-      return name.slice(0, 2).toUpperCase();
-    }
-    return (user.email[0] ?? "?").toUpperCase();
+    return initialsFromName(user.display_name) ?? (user.email[0] ?? "?").toUpperCase();
   }
 
   private preferencesFor(user: AppUser): UserPreferences {
@@ -188,22 +181,22 @@ class UserAuthService {
   }
 
   /**
-   * Resolve what the client should render as the avatar.
+   * Resolve what the client should render as the avatar: a photo the member
+   * uploaded, or nothing — in which case the app draws initials from the
+   * display name.
    *
-   * An uploaded photo always wins over a provider's: someone who took the
-   * trouble to set one has said what they want, and a later Google sign-in
-   * should not overwrite that.
+   * The Google picture (`avatar_external_url`) is deliberately not used. For a
+   * Google account without a real photo, Google supplies a generated letter
+   * tile of the *Google* account name, and nothing in the id token says which
+   * kind a picture is. Shown as the avatar, that tile ignored the display name
+   * the member chose ("V" for an account renamed "Gigii Gi").
    *
    * The raw storage key never ships — it is exchanged for a short-lived
-   * presigned URL here. A provider URL is passed through as-is because it is
-   * already a public URL on the provider's CDN and we have nothing to sign.
+   * presigned URL here.
    */
   private async avatarUrlFor(user: AppUser): Promise<string | null> {
-    if (user.avatar_key) {
-      const url = await avatarService.readUrl(user.avatar_key);
-      if (url) return url;
-    }
-    return user.avatar_external_url ?? null;
+    if (!user.avatar_key) return null;
+    return avatarService.readUrl(user.avatar_key);
   }
 
   /**
@@ -566,23 +559,16 @@ class UserAuthService {
       await user.update({ display_name: fullName.trim().slice(0, 120) });
     }
     /*
-     * Google publishes a profile picture in every id token, so this runs on each
-     * sign-in rather than only at account creation — a member who changes their
-     * Google photo sees the new one here without having to do anything.
-     *
-     * Kept out of `avatar_key`, which addresses an object in our own bucket and
-     * is handed to the presigner. Writing an `https://lh3.googleusercontent.com`
-     * URL there would produce a signed URL for a key that does not exist. The
-     * two columns stay separate and `avatarUrlFor` prefers an uploaded photo, so
-     * setting one in the app is never undone by the next Google sign-in.
+     * Google publishes a profile picture in every id token. It is recorded, but
+     * not shown and not allowed to switch the member to `photo` mode: for an
+     * account without a real photo it is a generated letter tile of the Google
+     * name, indistinguishable from a real photo in the token, and it would
+     * override the initials of the display name the member chose here. Members
+     * start on initials and upload a photo in the app if they want one — see
+     * `avatarUrlFor`. Kept out of `avatar_key`, which addresses our own bucket.
      */
     if (identity.picture && identity.picture !== user.avatar_external_url) {
       await user.update({ avatar_external_url: identity.picture });
-    }
-    // A provider photo is only worth showing if the member has not opted into
-    // initials or anonymity — `avatar_mode` is their choice, not the provider's.
-    if (identity.picture && user.avatar_mode === "initials" && !user.avatar_key) {
-      await user.update({ avatar_mode: "photo" });
     }
 
     if (!linked) {

@@ -38,6 +38,12 @@ export interface TextFieldProps extends Omit<TextInputProps, "style"> {
   label?: string;
   /** Set by submit validation, not by keystroke. */
   error?: string | null;
+  /**
+   * The caller re-validates on every change, so show `error` exactly as
+   * given instead of hiding it on the first keystroke. For a field whose
+   * error must stay up until the value is actually fixed (A6's email).
+   */
+  liveError?: boolean;
   /** Quiet helper under the field. Hidden while an error is showing. */
   hint?: string;
   /** Right-aligned counter, e.g. C2's "44/70". */
@@ -56,6 +62,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   {
     label,
     error,
+    liveError = false,
     hint,
     counter,
     accessory,
@@ -98,7 +105,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
     lastErrorRef.current = error;
     if (dirtySinceError) setDirtySinceError(false);
   }
-  const visibleError = error && !dirtySinceError ? error : null;
+  const visibleError = error && (liveError || !dirtySinceError) ? error : null;
 
   const handleChange = useCallback(
     (value: string) => {

@@ -27,6 +27,7 @@ import { Op, type Transaction } from "sequelize";
 import sequelize from "@/config/database.config";
 import env from "@/config/env.config";
 import logger from "@/utils/logger.util";
+import { initialsFromName } from "@/utils/initials.util";
 import { nowIso } from "@/models/model_options";
 import {
   Report,
@@ -160,11 +161,7 @@ class ReportService {
   // ── Author ────────────────────────────────────────────────────────────────
 
   private initialsFrom(name: string): string | null {
-    const trimmed = name.trim();
-    if (!trimmed) return null;
-    const parts = trimmed.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return trimmed.slice(0, 2).toUpperCase();
+    return initialsFromName(name);
   }
 
   /**

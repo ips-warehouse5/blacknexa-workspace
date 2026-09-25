@@ -23,6 +23,7 @@
     "db:sync:faq-answers": "ts-node -r tsconfig-paths/register src/scripts/sync_faq_answers.ts",
     "db:migrate:roles": "ts-node -r tsconfig-paths/register src/scripts/migrate_admin_roles.ts",
     "db:migrate:profile-faq": "ts-node -r tsconfig-paths/register src/scripts/migrate_profile_and_faq.ts",
+    "db:migrate:google-avatars": "ts-node -r tsconfig-paths/register src/scripts/migrate_google_avatars.ts",
     "db:snapshot": "ts-node -r tsconfig-paths/register src/scripts/snapshot.ts",
     "smoke:auth": "bash scripts/smoke_auth.sh",
     "smoke:reports": "bash scripts/smoke_reports.sh",

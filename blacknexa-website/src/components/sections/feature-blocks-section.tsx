@@ -3,13 +3,12 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { featureBlocks } from "@/data/features";
 import { versionedAsset } from "@/lib/asset-version";
 
-// Content-relevant stock photos (Unsplash) standing in for real product
-// screenshots/clips of each feature. Swap for actual BlackNexa app captures
-// (feed scroll, article view, geo-stamp incident flow) once available.
+// All three images are client-supplied artwork. They sit in a 4:3 frame, so
+// replacements should be 4:3 — ideally 1600 × 1200.
 const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
   "01": {
     src: "/images/blacknexa/feature-social-feed.jpg",
-    alt: "Hands holding a smartphone scrolling a social feed, representing the Global Community Feed",
+    alt: "The BlackNexa community feed on a phone, surrounded by member posts from Atlanta to Johannesburg",
   },
   "02": {
     src: "/images/blacknexa/feature-news-engine.jpg",
@@ -17,7 +16,7 @@ const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
   },
   "03": {
     src: "/images/blacknexa/feature-geo-stamp.jpg",
-    alt: "Push pins marking locations on a map, representing the Geo-Stamp incident reporting tool",
+    alt: "The BlackNexa incident report on a phone, with a verified geo-stamped location and captured evidence",
   },
 };
 
@@ -48,7 +47,12 @@ export function FeatureBlocksSection() {
                     src={versionedAsset(FEATURE_IMAGES[b.num].src)}
                     alt={FEATURE_IMAGES[b.num].alt}
                     fill
-                    sizes="(min-width: 768px) 440px, 100vw"
+                    // Rendered widths, so the browser downloads a sharp enough
+                    // file: two columns from ~906px (about half the width,
+                    // capped at ~645px once the 1280px container is full),
+                    // stacked and full content width (viewport − 56px padding)
+                    // below that.
+                    sizes="(min-width: 1336px) 645px, (min-width: 906px) 50vw, calc(100vw - 56px)"
                     className="object-cover"
                   />
                 </div>

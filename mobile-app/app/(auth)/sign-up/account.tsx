@@ -84,16 +84,14 @@ export default function SignUpAccountScreen(): React.ReactElement {
   const handleEmailChange = useCallback(
     (value: string) => {
       setEmail(value);
-      // Mirrors the password field: once the field has been left at least
-      // once (`emailTouched`), keep re-checking on every keystroke so a fix
-      // clears the error immediately rather than leaving it stuck until the
-      // next blur or a submit attempt.
-      if (emailTouched) {
+      // Once the email has been checked (the field was left, or Continue was
+      // tapped), re-check on every keystroke: the error stays up while the
+      // address is still invalid and clears the moment it becomes valid.
+      // Before that, typing is left alone so a half-typed address is not red.
+      if (emailTouched || emailError) {
         setEmailError(
           validateSignUpAccount(value, password, agreedToTerms, firstName, lastName).email,
         );
-      } else if (emailError) {
-        setEmailError(null);
       }
     },
     [agreedToTerms, emailError, emailTouched, firstName, lastName, password],
@@ -146,6 +144,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
     );
     setFirstNameError(validation.firstName);
     setEmailError(validation.email);
+    setEmailTouched(true);
     setPasswordError(validation.password);
     setConsentError(validation.consent);
 
@@ -292,6 +291,7 @@ export default function SignUpAccountScreen(): React.ReactElement {
             );
           }}
           error={emailError}
+          liveError
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"

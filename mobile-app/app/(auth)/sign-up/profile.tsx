@@ -23,6 +23,7 @@ import { StepHeader } from "@/components/ui/Progress";
 import { ChipGroup, SwitchRow } from "@/components/ui/Controls";
 import { useAuth } from "@/providers/AuthProvider";
 import { LEGAL_VERSION } from "@/constants/legal-copy";
+import { initialsFromName } from "@/lib/ui/initials";
 import type { AvatarMode, Visibility } from "@/lib/api/auth";
 
 /** The three sharing options, each with the consequence the artboard prints. */
@@ -62,15 +63,10 @@ export default function SignUpProfileScreen(): React.ReactElement {
   );
 
   /** Same derivation the server uses, so the tile matches the feed. */
-  const initials = useMemo(() => {
-    const name = displayName.trim();
-    if (name) {
-      const parts = name.split(/\s+/).filter(Boolean);
-      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      return name.slice(0, 2).toUpperCase();
-    }
-    return (user?.email[0] ?? "?").toUpperCase();
-  }, [displayName, user?.email]);
+  const initials = useMemo(
+    () => initialsFromName(displayName) ?? (user?.email[0] ?? "?").toUpperCase(),
+    [displayName, user?.email],
+  );
 
   /** What the author row will actually say once a report is filed. */
   const publishedName = anonymous || avatarMode === "anonymous" ? "Anonymous" : displayName.trim() || "Anonymous";
