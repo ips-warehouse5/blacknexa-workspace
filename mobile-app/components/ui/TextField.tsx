@@ -17,7 +17,7 @@
  * measure at submit time, keeps that instant.
  */
 
-import React, { forwardRef, useCallback, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -72,6 +72,10 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   ref,
 ) {
   const [focused, setFocused] = useState(false);
+  // Kept internally so a tap anywhere on the box can focus the input; callers
+  // still receive the same TextInput through their own ref.
+  const inputRef = useRef<TextInput>(null);
+  useImperativeHandle(ref, () => inputRef.current as TextInput, []);
   /**
    * The error is suppressed locally the moment the field changes, so the caller
    * can keep its own validation state without having to clear it on every
@@ -121,7 +125,17 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         </Text>
       ) : null}
 
-      <View
+      {/*
+        The TextInput is only a line tall inside a taller, padded box (and a
+        multiline input only as tall as its text), so a tap above, below or
+        beside the text used to land on nothing. The whole box focuses the
+        input instead. `accessible={false}` keeps the input — not this
+        wrapper — the element a screen reader announces.
+      */}
+      <Pressable
+        onPress={() => inputRef.current?.focus()}
+        disabled={rest.editable === false}
+        accessible={false}
         style={[
           styles.field,
           {
@@ -136,7 +150,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         ]}
       >
         <TextInput
-          ref={ref}
+          ref={inputRef}
           multiline={multiline}
           onFocus={(event) => {
             setFocused(true);
@@ -156,7 +170,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           {...rest}
         />
         {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
-      </View>
+      </Pressable>
 
       {(visibleError || hint || counter) && (
         <View style={styles.footer}>

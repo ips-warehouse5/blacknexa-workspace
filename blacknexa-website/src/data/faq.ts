@@ -63,7 +63,7 @@ export const FALLBACK_FAQS: FaqItem[] = [
   },
   {
     q: "How do I reach you about partnership or press?",
-    a: "Write to advertising@blacknexa.com for partnerships and advertising, press@blacknexa.com for media, or legal@blacknexa.com for legal matters. The contact form reaches the same people.",
+    a: "Write to advertising@blacknexa.com for partnerships and advertising, media@blacknexa.com for media, or support@blacknexa.com for legal matters. The contact form reaches the same people.",
   },
 ];
 

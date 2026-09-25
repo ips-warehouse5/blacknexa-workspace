@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Hero } from "@/components/sections/hero";
 import { ProofBar } from "@/components/sections/proof-bar";
 import { FaithSection } from "@/components/sections/faith-section";
@@ -22,6 +23,7 @@ import { FinalCtaSection } from "@/components/sections/final-cta-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { ContactTeaserSection } from "@/components/sections/contact-teaser-section";
 import { DisclaimerSummarySection } from "@/components/sections/disclaimer-summary-section";
+import { SectionPlaceholder } from "@/components/sections/section-placeholder";
 
 // Server-rendered on every request (not a static build artifact) — the News
 // section's data must always reflect the backend's current state.
@@ -45,14 +47,21 @@ export default function HomePage() {
       <GlobalMissionSection />
       <HowItWorksSection />
       <FeatureBlocksSection />
-      <NewsSection />
+      {/* News and FAQ read the platform API at request time. Each streams in
+          behind its own boundary so a slow or unreachable API delays only
+          that section, never the rest of the page. */}
+      <Suspense fallback={<SectionPlaceholder id="news" className="min-h-[1270px] md:min-h-[980px]" />}>
+        <NewsSection />
+      </Suspense>
       <WhyChooseSection />
       <SecuritySection />
       <ImpactSection />
       <PromoSection />
       {/* TODO: hidden, see import note above. <WaitlistSection /> */}
       <FinalCtaSection />
-      <FaqSection />
+      <Suspense fallback={<SectionPlaceholder id="faq" className="min-h-[2290px] md:min-h-[1640px]" />}>
+        <FaqSection />
+      </Suspense>
       <ContactTeaserSection />
       <DisclaimerSummarySection />
     </>

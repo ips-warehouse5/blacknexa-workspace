@@ -81,7 +81,7 @@ export function LegalDocument({
                 Questions about this document
               </h2>
               <p className="mt-3 text-[15px] leading-[1.7] text-text-secondary">
-                Write to <a href="mailto:legal@blacknexa.com">legal@blacknexa.com</a> or use the{" "}
+                Write to <a href="mailto:support@blacknexa.com">support@blacknexa.com</a> or use the{" "}
                 <a href="/contact">contact form</a>. We acknowledge legal notices in writing.
               </p>
             </div>

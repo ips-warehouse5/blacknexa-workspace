@@ -7,6 +7,7 @@
 import createContextHook from "@nkzw/create-context-hook";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Snackbar, { type SnackbarData, type SnackbarType } from "@/components/ui/Snackbar";
+import { isDuplicateSnackbar } from "@/lib/ui/snackbar-queue";
 
 const DEFAULT_DURATION = 2800;
 
@@ -22,11 +23,19 @@ export const [SnackbarProvider, useSnackbar] = createContextHook(() => {
   const [visible, setVisible] = useState(false);
   const idRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirrors `current` at the instant it changes, not after the next render:
+  // two calls from one action land before React re-renders, and the second
+  // must already see the first on screen.
+  const currentRef = useRef<SnackbarData | null>(null);
 
   const showSnackbar = useCallback(
     ({ message, type = "info", duration = DEFAULT_DURATION }: ShowSnackbarOptions) => {
       idRef.current += 1;
-      setQueue((prev) => [...prev, { id: idRef.current, message, type, duration }]);
+      const item = { id: idRef.current, message, type, duration };
+      // Functional update so calls made in the same tick see each other.
+      setQueue((prev) =>
+        isDuplicateSnackbar(item, prev, currentRef.current) ? prev : [...prev, item],
+      );
     },
     []
   );
@@ -35,6 +44,7 @@ export const [SnackbarProvider, useSnackbar] = createContextHook(() => {
     if (current || queue.length === 0) return;
     const [next, ...rest] = queue;
     setQueue(rest);
+    currentRef.current = next;
     setCurrent(next);
     // Allow the mount to happen before animating in.
     requestAnimationFrame(() => setVisible(true));
@@ -47,7 +57,10 @@ export const [SnackbarProvider, useSnackbar] = createContextHook(() => {
     timerRef.current = setTimeout(() => {
       setVisible(false);
       // Wait for the fade-out before unmounting, so the next item doesn't pop in.
-      setTimeout(() => setCurrent(null), 200);
+      setTimeout(() => {
+        currentRef.current = null;
+        setCurrent(null);
+      }, 200);
     }, current.duration);
 
     return () => {

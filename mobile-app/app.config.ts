@@ -6,7 +6,7 @@ import type { ExpoConfig } from "expo/config";
 // this file when it generates the native Xcode project.
 const APP_VERSION = "1.0.0";
 const ANDROID_VERSION_CODE = 5;
-const IOS_BUILD_NUMBER = "3";
+const IOS_BUILD_NUMBER = "4";
 type AppVariant = "development" | "preview" | "production";
 
 function readAppVariant(): AppVariant {
@@ -15,7 +15,8 @@ function readAppVariant(): AppVariant {
     process.env.EAS_BUILD_PROFILE ??
     process.env.EXPO_PUBLIC_APP_ENV;
 
-  if (raw === "development" || raw === "preview" || raw === "production") return raw;
+  if (raw === "development" || raw === "preview" || raw === "production")
+    return raw;
   return process.env.NODE_ENV === "production" ? "production" : "development";
 }
 
@@ -104,10 +105,11 @@ const config: ExpoConfig = {
         "BlackNexa uses Face ID to unlock your session and your evidence vault.",
       ITSAppUsesNonExemptEncryption: false,
       UIRequiresFullScreen: true,
-      UISupportedInterfaceOrientations: [
-        "UIInterfaceOrientationPortrait",
-        "UIInterfaceOrientationPortraitUpsideDown",
-      ],
+      // iPhone orientations come from the top-level `orientation: "portrait"`,
+      // which Expo writes as Portrait + PortraitUpsideDown. Setting
+      // `UISupportedInterfaceOrientations` here as well makes Expo ignore that
+      // property and warn on every build. It has no iPad equivalent, so the
+      // `~ipad` key stays explicit.
       "UISupportedInterfaceOrientations~ipad": [
         "UIInterfaceOrientationPortrait",
         "UIInterfaceOrientationPortraitUpsideDown",
@@ -223,6 +225,7 @@ const config: ExpoConfig = {
       "./plugins/withIosDisplayName",
       { displayName: DISPLAY_NAME, bundleName: NATIVE_APP_NAME },
     ],
+    ["./plugins/withIosXcodeIdentity", { displayName: DISPLAY_NAME }],
     "./plugins/withIosEnvSchemes",
     "./plugins/withIosSceneLifecycle",
     "./plugins/withIosPodsBuildFixes",

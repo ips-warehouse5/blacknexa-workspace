@@ -24,6 +24,7 @@ import OtpInput, {
 } from "@/components/ui/OtpInput";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
+import { useScreenFocused } from "@/lib/ui/use-screen-focused";
 import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
 import { validateVerificationCode } from "@/lib/auth/signup-validation";
 
@@ -33,6 +34,7 @@ export default function VerifyCodeScreen(): React.ReactElement {
   useThemeSync();
   const params = useLocalSearchParams<{ resendAfter?: string }>();
   const { signUpDraft, verifyEmail, resendVerification, busy, error, clearError } = useAuth();
+  const isFocused = useScreenFocused();
   const { showSnackbar } = useSnackbar();
 
   const [code, setCode] = useState("");
@@ -63,12 +65,15 @@ export default function VerifyCodeScreen(): React.ReactElement {
    */
   useEffect(() => {
     if (!error) return;
+    // Every screen in the stack watches the same auth error; only the one
+    // on top shows it, or the message repeats once per mounted screen.
+    if (!isFocused) return;
     showSnackbar({ message: safeLoginErrorMessage(error), type: "error" });
     if (lastOutcomeRef.current === "verification_failed" && code.length === CODE_LENGTH) {
       otpRef.current?.shake();
     }
     clearError();
-  }, [clearError, code.length, error, showSnackbar]);
+  }, [clearError, code.length, error, showSnackbar, isFocused]);
 
   const submit = useCallback(
     async (value: string) => {

@@ -8,8 +8,9 @@
  * device's own mail client via `Linking` — a real action with a real
  * outcome the user can see (their own mail app), not a simulated one.
  *
- * TODO: `SUPPORT_EMAIL` below is a placeholder inbox, not confirmed against
- * a real BlackNexa support address — replace once product/ops confirms it.
+ * The chosen subject decides the recipient: partnerships go to advertising@,
+ * media and press to media@, and everything else — legal matters included —
+ * to support@ (addresses confirmed by the client, Sep 2026).
  */
 
 import React, { useCallback, useRef, useState } from "react";
@@ -26,26 +27,29 @@ import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useSnackbar } from "@/providers/SnackbarProvider";
 import { useAuth } from "@/providers/AuthProvider";
 
+// Same inboxes as the website's "Direct lines" (blacknexa-website/src/data/site.ts).
 const SUPPORT_EMAIL = "support@blacknexa.com";
+const ADVERTISING_EMAIL = "advertising@blacknexa.com";
+const MEDIA_EMAIL = "media@blacknexa.com";
 const MIN_MESSAGE = 10;
 const MAX_MESSAGE = 1000;
+/** Each subject opens the mail client addressed to the inbox that handles it. */
 const SUBJECTS = [
-  "Something isn’t working",
-  "General enquiry",
-  "Partnership",
-  "Press",
-  "Report a problem",
-  "Legal",
+  { label: "Something isn’t working", email: SUPPORT_EMAIL },
+  { label: "General enquiry", email: SUPPORT_EMAIL },
+  { label: "Partnerships & advertising", email: ADVERTISING_EMAIL },
+  { label: "Media & press", email: MEDIA_EMAIL },
+  { label: "Report a problem", email: SUPPORT_EMAIL },
+  { label: "Legal matters", email: SUPPORT_EMAIL },
 ] as const;
+type Subject = (typeof SUBJECTS)[number];
 
 export default function ContactScreen(): React.ReactElement {
   useThemeSync();
   const { user } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [message, setMessage] = useState("");
-  const [subject, setSubject] = useState<(typeof SUBJECTS)[number]>(
-    SUBJECTS[0],
-  );
+  const [subject, setSubject] = useState<Subject>(SUBJECTS[0]);
   const [subjectsOpen, setSubjectsOpen] = useState(false);
   const [attachDiagnostics, setAttachDiagnostics] = useState(true);
   const [opening, setOpening] = useState(false);
@@ -80,13 +84,13 @@ export default function ContactScreen(): React.ReactElement {
 
     setMessageError(null);
     setOpening(true);
-    const encodedSubject = encodeURIComponent(`BlackNexa support: ${subject}`);
+    const encodedSubject = encodeURIComponent(`BlackNexa: ${subject.label}`);
     const body = encodeURIComponent(
-      `${trimmed}\n\n—\nSubject: ${subject}\nAccount: ${
+      `${trimmed}\n\n—\nSubject: ${subject.label}\nAccount: ${
         user?.email ?? "unknown"
       }\nAttach diagnostics: ${attachDiagnostics ? "yes" : "no"}`,
     );
-    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodedSubject}&body=${body}`;
+    const url = `mailto:${subject.email}?subject=${encodedSubject}&body=${body}`;
     try {
       const can = await Linking.canOpenURL(url);
       if (!can) {
@@ -154,7 +158,7 @@ export default function ContactScreen(): React.ReactElement {
           ]}
         >
           <Text variant="label" color={colors.t0} style={{ flex: 1 }}>
-            {subject}
+            {subject.label}
           </Text>
           <ChevronDown
             size={18}
@@ -175,10 +179,10 @@ export default function ContactScreen(): React.ReactElement {
             ]}
           >
             {SUBJECTS.map((option, index) => {
-              const selected = option === subject;
+              const selected = option.label === subject.label;
               return (
                 <Pressable
-                  key={option}
+                  key={option.label}
                   onPress={() => {
                     setSubject(option);
                     setSubjectsOpen(false);
@@ -199,7 +203,7 @@ export default function ContactScreen(): React.ReactElement {
                     variant="label"
                     color={selected ? colors.acc : colors.t1}
                   >
-                    {option}
+                    {option.label}
                   </Text>
                 </Pressable>
               );
@@ -207,6 +211,14 @@ export default function ContactScreen(): React.ReactElement {
           </View>
         ) : null}
       </View>
+      <Text
+        variant="metaSm"
+        color={colors.t4}
+        style={styles.recipient}
+        testID="contact-recipient"
+      >
+        Goes to {subject.email}
+      </Text>
 
       <TextField
         ref={messageRef}
@@ -300,8 +312,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  recipient: {
+    marginTop: 6,
+  },
   messageField: {
-    marginTop: 18,
+    marginTop: 14,
     zIndex: 0,
   },
   messageMeta: {

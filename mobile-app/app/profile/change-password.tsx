@@ -38,6 +38,7 @@ import OtpInput, {
 } from "@/components/ui/OtpInput";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
+import { useScreenFocused } from "@/lib/ui/use-screen-focused";
 import authApi from "@/lib/api/auth";
 import {
   safeResetErrorMessage,
@@ -49,6 +50,7 @@ const CODE_LENGTH = 6;
 export default function ChangePasswordScreen(): React.ReactElement {
   useThemeSync();
   const { user, forgotPassword, resetPassword, busy, error, clearError } = useAuth();
+  const isFocused = useScreenFocused();
   const { showSnackbar } = useSnackbar();
   const email = user?.email ?? "";
 
@@ -107,6 +109,9 @@ export default function ChangePasswordScreen(): React.ReactElement {
       shownErrorRef.current = null;
       return;
     }
+    // Every screen in the stack watches the same auth error; only the one
+    // on top shows it, or the message repeats once per mounted screen.
+    if (!isFocused) return;
     if (shownErrorRef.current === error) return;
     shownErrorRef.current = error;
     const message = safeResetErrorMessage(error);
@@ -118,7 +123,7 @@ export default function ChangePasswordScreen(): React.ReactElement {
     }
     showSnackbar({ message, type: "error" });
     clearError();
-  }, [clearError, error, showSnackbar]);
+  }, [clearError, error, showSnackbar, isFocused]);
 
   const handleCodeChange = useCallback(
     (value: string) => {

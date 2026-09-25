@@ -64,7 +64,7 @@ export const TERMS: {
       body: "BlackNexa™ provides automated evidence vaulting, location resolution, and dynamic agency matching tools.\n\nBlackNexa™ is not a government agency, law firm, or legal referral service. Generating intake filings or routing verified incident packages to researched agencies does not guarantee that any agency will initiate an investigation, take enforcement action, or grant relief. All intake and investigative decisions remain strictly under the independent authority of the respective government bodies and oversight entities.\n\nBlacknexa™ is a technology and software platform provider, not a law firm, legal representative, or government oversight agency. We do not provide legal advice, nor do we guarantee or control the response times, investigations, or actions of any third-party agencies, corporations, or civil authorities to which reports are submitted. BlackNexa provides secure technological tools and routing services designed solely to help users document incidents, organize data, and create a verifiable record identifying the appropriate entities so their voices can be heard.",
     },
   ],
-  footer: "Questions: legal@blacknexa.com",
+  footer: "Questions: support@blacknexa.com",
 };
 
 export const PRIVACY: {
@@ -131,5 +131,5 @@ export const PRIVACY: {
       body: "We post the revised policy here with a new date and, for material changes, notify you in the app and by email before they take effect.",
     },
   ],
-  footer: "Privacy questions: legal@blacknexa.com",
+  footer: "Privacy questions: support@blacknexa.com",
 };

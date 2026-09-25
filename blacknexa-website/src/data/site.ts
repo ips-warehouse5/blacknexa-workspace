@@ -59,7 +59,22 @@ export const siteConfig = {
       email: "advertising@blacknexa.com",
       href: "mailto:advertising@blacknexa.com",
     },
-    { label: "PRESS", email: "press@blacknexa.com", href: "mailto:press@blacknexa.com" },
-    { label: "LEGAL", email: "legal@blacknexa.com", href: "mailto:legal@blacknexa.com" },
+    { label: "PRESS", email: "media@blacknexa.com", href: "mailto:media@blacknexa.com" },
+    { label: "LEGAL", email: "support@blacknexa.com", href: "mailto:support@blacknexa.com" },
   ],
+  /** Official profiles, rendered in the footer and on /contact, and listed as `sameAs` in the Organization JSON-LD. */
+  socialLinks: [
+    {
+      platform: "instagram",
+      label: "Instagram",
+      handle: "@blacknexa_",
+      href: "https://www.instagram.com/blacknexa_/",
+    },
+    {
+      platform: "tiktok",
+      label: "TikTok",
+      handle: "@blacknexa",
+      href: "https://www.tiktok.com/@blacknexa",
+    },
+  ] as const,
 };

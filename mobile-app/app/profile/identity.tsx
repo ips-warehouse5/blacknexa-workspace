@@ -466,19 +466,23 @@ export default function IdentityScreen(): React.ReactElement {
             </Text>
           )}
         </View>
-        <View>
-          <Text variant="label" color={colors.t0}>
+        <View style={{ flex: 1 }}>
+          <Text variant="label" color={colors.t0} numberOfLines={1}>
             {publishedName}
           </Text>
-          <Text variant="metaSm" color={colors.t4}>
-            Your area · just now
+          {/* On a real post this line is the report's general location and
+              age. Show a real place when the member has saved one, rather than
+              a placeholder that reads like a setting. */}
+          <Text variant="metaSm" color={colors.t4} numberOfLines={1}>
+            {user?.area?.label?.trim() || "Report location"} · just now
           </Text>
         </View>
       </View>
 
       <Text variant="bodyXs" color={colors.t3} style={{ marginTop: 16, lineHeight: 19 }}>
-        Changing this affects new reports and comments. Anything already published
-        keeps the name it was published under.
+        Posts show the report&apos;s general location, even when you post
+        anonymously. Changing this affects new reports and comments. Anything
+        already published keeps the name it was published under.
       </Text>
 
       <Modal

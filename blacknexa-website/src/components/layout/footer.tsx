@@ -1,3 +1,4 @@
+import { SocialIcon } from "@/components/icons/social-icon";
 import { HashLink } from "@/components/ui/hash-link";
 import { HomeLink } from "@/components/ui/home-link";
 import { BlackNexaLogo } from "@/components/ui/logo";
@@ -33,6 +34,22 @@ export function Footer() {
             >
               {siteConfig.trademarkNote}
             </p>
+            <div className="mt-5 flex gap-2.5">
+              {siteConfig.socialLinks.map((s) => (
+                <a
+                  key={s.platform}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`BlackNexa on ${s.label} (${s.handle})`}
+                  title={`${s.label} ${s.handle}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border transition-colors hover:!border-accent hover:!text-accent"
+                  style={{ color: "var(--bn-hero-secondary-text)" }}
+                >
+                  <SocialIcon platform={s.platform} size={18} />
+                </a>
+              ))}
+            </div>
           </div>
 
           <FooterColumn title="PRODUCT" links={footerProductLinks} />

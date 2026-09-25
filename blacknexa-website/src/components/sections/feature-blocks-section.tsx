@@ -13,7 +13,7 @@ const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
   },
   "02": {
     src: "/images/blacknexa/feature-news-engine.jpg",
-    alt: "A vintage typewriter with a page reading \"News\", representing the BlackNexa AI News Engine",
+    alt: "A smiling woman working with a holographic AI interface in a modern tech office, representing the BlackNexa AI News Engine",
   },
   "03": {
     src: "/images/blacknexa/feature-geo-stamp.jpg",

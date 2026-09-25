@@ -7,7 +7,7 @@
  */
 import { useMutation } from "@tanstack/react-query";
 import { Coins, Heart, Loader2, Send, X } from "lucide-react-native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import InputRow from "@/components/ui/InputRow";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
@@ -79,6 +80,7 @@ export default function ArtistTippingSheet({
   artistId,
   artistName,
 }: Props): React.ReactElement {
+  const amountInputRef = useRef<TextInput>(null);
   const insets = useSafeAreaInsets();
   const { showSnackbar } = useSnackbar();
   const { user } = useAuth();
@@ -199,9 +201,10 @@ export default function ArtistTippingSheet({
             })}
           </View>
 
-          <View style={styles.customRow}>
+          <InputRow inputRef={amountInputRef} style={styles.customRow}>
             <Coins size={14} color={Colors.gold} />
             <TextInput
+              ref={amountInputRef}
               value={customAmount}
               onChangeText={(text) => {
                 const cleaned = text.replace(/[^0-9.]/g, "");
@@ -216,7 +219,7 @@ export default function ArtistTippingSheet({
               returnKeyType="done"
             />
             <Text style={styles.currencyLabel}>USD</Text>
-          </View>
+          </InputRow>
 
           <Text style={styles.fieldLabel}>Message (optional)</Text>
           <TextInput

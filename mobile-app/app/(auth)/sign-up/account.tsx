@@ -19,12 +19,14 @@ import {
 } from "@/components/ui/Progress";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
+import { useScreenFocused } from "@/lib/ui/use-screen-focused";
 import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
 import { validateSignUpAccount } from "@/lib/auth/signup-validation";
 
 export default function SignUpAccountScreen(): React.ReactElement {
   useThemeSync();
   const { register, busy, error, clearError, signUpDraft } = useAuth();
+  const isFocused = useScreenFocused();
   const { showSnackbar } = useSnackbar();
   const [firstName, setFirstName] = useState(signUpDraft?.firstName ?? "");
   const [lastName, setLastName] = useState(signUpDraft?.lastName ?? "");
@@ -62,11 +64,14 @@ export default function SignUpAccountScreen(): React.ReactElement {
       shownErrorRef.current = null;
       return;
     }
+    // Every screen in the stack watches the same auth error; only the one
+    // on top shows it, or the message repeats once per mounted screen.
+    if (!isFocused) return;
     if (shownErrorRef.current === error) return;
     shownErrorRef.current = error;
     showSnackbar({ message: safeLoginErrorMessage(error), type: "error" });
     clearError();
-  }, [clearError, error, showSnackbar]);
+  }, [clearError, error, showSnackbar, isFocused]);
 
   const scrollTo = useCallback((y: number) => {
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });

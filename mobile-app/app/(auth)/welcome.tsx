@@ -34,6 +34,7 @@ import BlockingLoader from "@/components/ui/BlockingLoader";
 import { LocationPermissionModal } from "@/components/ui/LocationPermissionModal";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
+import { useScreenFocused } from "@/lib/ui/use-screen-focused";
 import { safeLoginErrorMessage } from "@/lib/auth/login-validation";
 import {
   hasSeenLocationPrompt,
@@ -69,6 +70,7 @@ export default function WelcomeScreen(): React.ReactElement {
   const { width, height } = useWindowDimensions();
   const isTablet = width >= layout.tabletBreakpoint;
   const { signInWithApple, signInWithGoogleToken, busy, error, clearError } = useAuth();
+  const isFocused = useScreenFocused();
   const { showSnackbar } = useSnackbar();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
@@ -159,6 +161,9 @@ export default function WelcomeScreen(): React.ReactElement {
       shownErrorRef.current = null;
       return;
     }
+    // Every screen in the stack watches the same auth error; only the one
+    // on top shows it, or the message repeats once per mounted screen.
+    if (!isFocused) return;
     if (shownErrorRef.current === message) return;
 
     shownErrorRef.current = message;
@@ -166,7 +171,7 @@ export default function WelcomeScreen(): React.ReactElement {
 
     if (error) clearError();
     if (googleError) setGoogleError(null);
-  }, [clearError, error, googleError, showSnackbar]);
+  }, [clearError, error, googleError, showSnackbar, isFocused]);
 
   useEffect(() => {
     if (!googleResponse) return;

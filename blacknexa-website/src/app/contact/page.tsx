@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/forms/contact-form";
+import { SocialIcon } from "@/components/icons/social-icon";
 import { siteConfig } from "@/data/site";
 
 const description =
@@ -60,6 +61,26 @@ export default function ContactPage() {
                   </p>
                 </div>
               ))}
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-text-muted">
+                  FOLLOW BLACKNEXA
+                </p>
+                <div className="mt-[9px] flex flex-col gap-2.5">
+                  {siteConfig.socialLinks.map((s) => (
+                    <a
+                      key={s.platform}
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`BlackNexa on ${s.label} (${s.handle})`}
+                      className="inline-flex items-center gap-2.5 text-[15px] leading-[1.5]"
+                    >
+                      <SocialIcon platform={s.platform} size={18} />
+                      {s.handle}
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
             <p className="mt-[26px] border-t border-border pt-[22px] text-[13.5px] leading-[1.65] text-text-secondary">
               We reply to most messages within two business days. Legal notices

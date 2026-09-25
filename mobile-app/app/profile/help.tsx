@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -9,6 +9,7 @@ import {
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Search } from "lucide-react-native";
+import InputRow from "@/components/ui/InputRow";
 import { colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
@@ -16,6 +17,7 @@ import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { FALLBACK_HELP_FAQ, helpApi, type HelpFaqItem } from "@/lib/api/help";
 
 export default function HelpScreen(): React.ReactElement {
+  const searchInputRef = useRef<TextInput>(null);
   useThemeSync();
   const faq = useQuery({
     queryKey: ["help-faq"],
@@ -67,9 +69,10 @@ export default function HelpScreen(): React.ReactElement {
     >
       <BackHeader title="Help & FAQ" onBack={() => router.back()} padding={0} />
 
-      <View style={[styles.searchBox, { backgroundColor: colors.s1 }]}>
+      <InputRow inputRef={searchInputRef} style={[styles.searchBox, { backgroundColor: colors.s1 }]}>
         <Search size={16} color={colors.t4} />
         <TextInput
+          ref={searchInputRef}
           value={query}
           onChangeText={setQuery}
           placeholder="Search help"
@@ -80,7 +83,7 @@ export default function HelpScreen(): React.ReactElement {
           style={[styles.searchInput, { color: colors.t0 }]}
           accessibilityLabel="Search help"
         />
-      </View>
+      </InputRow>
 
       <ScrollView
         horizontal

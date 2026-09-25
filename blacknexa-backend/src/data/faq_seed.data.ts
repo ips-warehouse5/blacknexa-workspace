@@ -265,7 +265,7 @@ export const FAQ_SEED: FaqSeed[] = [
     categoryId: "support",
     question: "How do I reach you about partnership or press?",
     answer:
-      "Write to advertising@blacknexa.com for partnerships and advertising, press@blacknexa.com for media, or legal@blacknexa.com for legal matters. The contact form reaches the same people.",
+      "Write to advertising@blacknexa.com for partnerships and advertising, media@blacknexa.com for media, or support@blacknexa.com for legal matters. The contact form reaches the same people.",
     surfaces: ["website", "app"],
   },
   {

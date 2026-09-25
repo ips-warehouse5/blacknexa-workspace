@@ -18,7 +18,7 @@ import {
   Search,
   X,
 } from "lucide-react-native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -30,6 +30,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import InputRow from "@/components/ui/InputRow";
 import Colors from "@/constants/colors";
 import BrandMark from "@/components/BrandMark";
 import LegalResourceCard from "@/components/LegalResourceCard";
@@ -44,6 +45,7 @@ import {
 } from "@/constants/geo-legal";
 
 export default function LegalLookupScreen(): React.ReactElement {
+  const countryInputRef = useRef<TextInput>(null);
   const { lookupJurisdiction, currentProfile } = useGeoLegal();
   const { location, status: locationStatus, canAskAgain, requestLocation, openSettings } = useLocation();
   const { settings } = useSettings();
@@ -155,9 +157,10 @@ export default function LegalLookupScreen(): React.ReactElement {
 
           {/* Lookup controls */}
           <View style={styles.lookupBox}>
-            <View style={styles.inputRow}>
+            <InputRow inputRef={countryInputRef} style={styles.inputRow}>
               <Globe size={16} color={Colors.textDim} />
               <TextInput
+                ref={countryInputRef}
                 value={countryInput}
                 onChangeText={(t) => setCountryInput(t.toUpperCase().slice(0, 2))}
                 placeholder="Country code (e.g. US, GB, DE)"
@@ -179,7 +182,7 @@ export default function LegalLookupScreen(): React.ReactElement {
                 )}
                 <Text style={styles.searchBtnText}>Look up</Text>
               </Pressable>
-            </View>
+            </InputRow>
 
             <Pressable
               onPress={handleGpsLookup}

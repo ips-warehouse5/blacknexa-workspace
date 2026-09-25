@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { BookOpen, Link2, Loader2, LocateFixed, MapPin, MessageCircle, Navigation, Plus, RefreshCw, Search, Sparkles, X } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import InputRow from "@/components/ui/InputRow";
 import Colors from "@/constants/colors";
 import { colors as themeColors, useThemeSync } from "@/constants/theme";
 import ComingSoon from "@/components/ui/ComingSoon";
@@ -263,6 +264,7 @@ const SCOPES: { key: NewsScope; label: string }[] = [
 ];
 
 function ExistingNewsScreen(): React.ReactElement {
+  const searchInputRef = useRef<TextInput>(null);
   const insets = useSafeAreaInsets();
   const { feed, briefings, isLoading, isRefetching, refetch, generate, isGenerating, generateError, searchResults, runSearch, isSearching } = useNews();
   const {
@@ -470,9 +472,10 @@ function ExistingNewsScreen(): React.ReactElement {
           </Pressable>
         </View>
 
-        <View style={styles.searchWrap}>
+        <InputRow inputRef={searchInputRef} style={styles.searchWrap}>
           <Search size={16} color={Colors.textMute} />
           <TextInput
+            ref={searchInputRef}
             value={query}
             onChangeText={setQuery}
             placeholder="Search verified briefings"
@@ -487,7 +490,7 @@ function ExistingNewsScreen(): React.ReactElement {
           {isSearching ? (
             <ActivityIndicator size="small" color={Colors.gold} />
           ) : null}
-        </View>
+        </InputRow>
 
         <Pressable
           onPress={handleLocationRefresh}

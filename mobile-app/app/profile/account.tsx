@@ -23,9 +23,9 @@
  * a password where there is one, an emailed code where sign-in is Apple or Google.
  *
  * ── Afterwards ────────────────────────────────────────────────────────────
- * The server returns a receipt, and the screen shows it before signing out. "Done"
- * would leave someone who chose to keep their reports wondering whether they
- * actually survived.
+ * Straight to Welcome, with a confirmation snackbar. No screen of the deleted
+ * account is shown again; the server emails the member a summary of what was
+ * removed and what was kept.
  */
 
 import React, { useCallback, useState } from "react";
@@ -33,14 +33,14 @@ import { Keyboard, View } from "react-native";
 import { router } from "expo-router";
 import { alpha, colors, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
-import Button, { TextButton } from "@/components/ui/Button";
+import Button from "@/components/ui/Button";
 import TextField, { PasswordField } from "@/components/ui/TextField";
 import OtpInput, { ResendTimer, useCountdown } from "@/components/ui/OtpInput";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { ConsequenceCard, SectionLabel } from "@/components/report/WizardShell";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
-import authApi, { type DeletionReceipt } from "@/lib/api/auth";
+import authApi from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 
 type Disposition = "sever" | "erase";
@@ -70,7 +70,6 @@ export default function DeleteAccountScreen(): React.ReactElement {
   const [sendingCode, setSendingCode] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [receipt, setReceipt] = useState<DeletionReceipt | null>(null);
 
   const sendCode = useCallback(async () => {
     Keyboard.dismiss();
@@ -89,6 +88,21 @@ export default function DeleteAccountScreen(): React.ReactElement {
       setSendingCode(false);
     }
   }, [restart, showSnackbar]);
+
+  const goToWelcome = useCallback(() => {
+    // forgetSession() clears auth state, but navigation from there depends
+    // on AuthGate's own effect reacting to that state change — an extra
+    // AsyncStorage read and a segment-string match away. Driving the
+    // destination directly here means deletion always lands on Welcome, not
+    // whatever AuthGate happens to resolve to.
+    forgetSession();
+    // `replace` alone swaps only this screen: Tabs → Profile → Settings →
+    // Account info would stay underneath, show through the transition, and
+    // be one back-swipe away from a signed-out user. Dismissing to the root
+    // first leaves Welcome as the only screen in the stack.
+    if (router.canDismiss()) router.dismissAll();
+    router.replace("/(auth)/welcome");
+  }, [forgetSession]);
 
   const submit = useCallback(async () => {
     Keyboard.dismiss();
@@ -122,12 +136,10 @@ export default function DeleteAccountScreen(): React.ReactElement {
 
     setBusy(true);
     try {
-      const result = await authApi.deleteAccount({
+      await authApi.deleteAccount({
         disposition,
         ...(usesCode ? { code } : { password }),
       });
-      // Shown before the sign-out, so the receipt is not lost behind a redirect.
-      setReceipt(result);
     } catch (err) {
       showSnackbar({
         message:
@@ -136,24 +148,18 @@ export default function DeleteAccountScreen(): React.ReactElement {
             : "Something went wrong and nothing was deleted. Please try again.",
         type: "error",
       });
-    } finally {
       setBusy(false);
+      return;
     }
-  }, [disposition, typed, usesCode, code, password, showSnackbar]);
 
-  const finishDeletion = useCallback(() => {
-    // forgetSession() clears auth state, but navigation from there depends
-    // on AuthGate's own effect reacting to that state change — an extra
-    // AsyncStorage read and a segment-string match away. Driving the
-    // destination directly here means "Close" always lands on Welcome, not
-    // whatever AuthGate happens to resolve to.
-    forgetSession();
-    router.replace("/(auth)/welcome");
-  }, [forgetSession]);
-
-  if (receipt) {
-    return <DeletionReceiptScreen receipt={receipt} onDone={finishDeletion} />;
-  }
+    // The snackbar host sits above the navigator, so this stays up on Welcome.
+    showSnackbar({
+      message: "Your account has been deleted. We've emailed you a summary.",
+      type: "success",
+      duration: 4500,
+    });
+    goToWelcome();
+  }, [disposition, typed, usesCode, code, password, showSnackbar, goToWelcome]);
 
   return (
     <ScrollScreen
@@ -290,80 +296,6 @@ export default function DeleteAccountScreen(): React.ReactElement {
   );
 }
 
-/**
- * The receipt.
- *
- * A separate screen rather than a toast, and with no back route: there is nothing
- * to go back to. The only action closes it and drops the session.
- */
-function DeletionReceiptScreen({
-  receipt,
-  onDone,
-}: {
-  receipt: DeletionReceipt;
-  onDone: () => void;
-}): React.ReactElement {
-  const kept = receipt.disposition === "sever";
-  const total = kept ? receipt.reportsSevered : receipt.reportsErased;
-
-  const lines: string[] = [];
-  if (total === 0) {
-    lines.push("You had not filed any reports.");
-  } else if (kept) {
-    lines.push(
-      `${total} ${total === 1 ? "report stays" : "reports stay"} in the community feed as anonymous record. The link to you is gone and cannot be restored.`,
-    );
-  } else {
-    lines.push(
-      `${total} ${total === 1 ? "report has" : "reports have"} been removed from the feed.`,
-    );
-    if (receipt.filesPurgedAfter) {
-      lines.push("The sealed files are destroyed after 30 days.");
-    }
-  }
-  if (receipt.commentsRemoved > 0) {
-    lines.push(
-      `${receipt.commentsRemoved} ${receipt.commentsRemoved === 1 ? "comment" : "comments"} removed.`,
-    );
-  }
-  if (receipt.supportsRemoved + receipt.corroborationsRemoved > 0) {
-    lines.push("Everything you stood with or corroborated has been withdrawn.");
-  }
-
-  return (
-    <ScrollScreen
-      padding={screenPadding.hero}
-      testID="delete-account-receipt"
-      footer={
-        <Button label="Close" onPress={onDone} testID="deletion-receipt-done" />
-      }
-    >
-      <View style={{ paddingTop: 40 }}>
-        <Text variant="displaySm">Your account is gone</Text>
-        <View style={{ gap: 10, marginTop: 18 }}>
-          {lines.map((line) => (
-            <Text key={line} variant="bodySm" color={colors.t2} style={{ lineHeight: 22 }}>
-              {line}
-            </Text>
-          ))}
-        </View>
-        <View style={styles.receiptNote}>
-          <Text variant="bodyXs" color={colors.t2} style={{ lineHeight: 19 }}>
-            We have emailed you a copy of this. Your address is not on any list, and
-            nothing further is needed from you.
-          </Text>
-        </View>
-        <View style={{ marginTop: 14 }}>
-          <TextButton
-            label="Read our privacy commitment"
-            onPress={() => router.replace("/(auth)/intro")}
-          />
-        </View>
-      </View>
-    </ScrollScreen>
-  );
-}
-
 const styles = {
   warning: {
     backgroundColor: alpha(colors.bad, 0.1),
@@ -371,12 +303,5 @@ const styles = {
     paddingVertical: 13,
     paddingHorizontal: 14,
     marginTop: 18,
-  },
-  receiptNote: {
-    backgroundColor: colors.s3,
-    borderRadius: radius.md,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    marginTop: 24,
   },
 };

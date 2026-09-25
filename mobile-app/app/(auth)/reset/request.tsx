@@ -19,11 +19,13 @@ import TextField from "@/components/ui/TextField";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
+import { useScreenFocused } from "@/lib/ui/use-screen-focused";
 import { safeResetErrorMessage, validateResetRequest } from "@/lib/auth/reset-validation";
 
 export default function ResetRequestScreen(): React.ReactElement {
   useThemeSync();
   const { forgotPassword, busy, error, clearError } = useAuth();
+  const isFocused = useScreenFocused();
   const { showSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
@@ -44,12 +46,15 @@ export default function ResetRequestScreen(): React.ReactElement {
       shownErrorRef.current = null;
       return;
     }
+    // Every screen in the stack watches the same auth error; only the one
+    // on top shows it, or the message repeats once per mounted screen.
+    if (!isFocused) return;
     if (shownErrorRef.current === error) return;
 
     shownErrorRef.current = error;
     showSnackbar({ message: safeResetErrorMessage(error), type: "error" });
     clearError();
-  }, [clearError, error, showSnackbar]);
+  }, [clearError, error, showSnackbar, isFocused]);
 
   const handleEmailChange = useCallback(
     (text: string) => {

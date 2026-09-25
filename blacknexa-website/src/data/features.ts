@@ -233,7 +233,7 @@ export const featureBlocks: {
     sub: "Like Facebook or X — built differently.",
     body: [
       "Think of BlackNexa as our own dedicated social media platform, featuring a vibrant, worldwide community feed. But this space is built differently-anchored entirely in love, respect, and God's word. There is zero tolerance for vulgar language or ungoldy principles here; everyone treats one another just as they want to be treated, fulfilling the greatest commandment to “Love our neighbor.”",
-      "Just like Facebook or X, you can connect, network, share ideas, and grow together across borders. From discussing economic development, business ventures, job creation, and how to walk in an abundant life, to sharing what's happening right now from Atlanta, GA all the way to Johannesburg, South Africa-our global community comes together to build true, lasting power. (And this is only the beginning-more groundbreaking features are rolling out as our global family scales!)",
+      "Just like Facebook or X, you can connect, network, share ideas, and grow together across borders. As well as providing a social networking space, Our proprietary SaaS allows users to upload, view, and share, and engage with all manner of audio and visual media. From discussing economic development, business ventures, job creation, and how to walk in an abundant life, to sharing what's happening right now from Atlanta, GA all the way to Johannesburg, South Africa-our global community comes together to build true, lasting power. (And this is only the beginning-more groundbreaking features are rolling out as our global family scales!)",
     ],
     caption: "Scrolling the worldwide feed, from Atlanta to Johannesburg.",
   },
@@ -245,7 +245,7 @@ export const featureBlocks: {
       "Never get caught sleeping or out of the loop. Our automated AI news engine cuts straight through the bias and confusion, delivering 100% verified daily news content straight to your phone and syndicated globally via blacknexa.com.",
       "Focusing entirely on what matters most for our growth-Black business, tech advancements, economic power, and rich, uplifting faith-based content centered on God's Word-every piece of news is backed by 3 to 5 factual sources and reviewed daily by our editorial team. It keeps our minds informed, sharp, and moving with divine wisdom to make smart decisions for our future.",
     ],
-    caption: "Opening a story and its list of named, checkable sources.",
+    caption: "Putting AI to work so every story reaches you verified and sourced.",
   },
   {
     num: "03",

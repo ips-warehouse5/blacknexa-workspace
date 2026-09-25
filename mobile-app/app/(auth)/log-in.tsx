@@ -13,12 +13,14 @@ import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
 import { ShieldMark } from "@/app/(auth)/intro";
 import { useAuth } from "@/providers/AuthProvider";
 import { useSnackbar } from "@/providers/SnackbarProvider";
+import { useScreenFocused } from "@/lib/ui/use-screen-focused";
 import { safeLoginErrorMessage, validateLoginForm } from "@/lib/auth/login-validation";
 import { safeBack } from "@/utils/navigation";
 
 export default function LogInScreen(): React.ReactElement {
   useThemeSync();
   const { login, busy, error, clearError } = useAuth();
+  const isFocused = useScreenFocused();
   const { showSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,12 +48,15 @@ export default function LogInScreen(): React.ReactElement {
       shownErrorRef.current = null;
       return;
     }
+    // Every screen in the stack watches the same auth error; only the one
+    // on top shows it, or the message repeats once per mounted screen.
+    if (!isFocused) return;
     if (shownErrorRef.current === error) return;
 
     shownErrorRef.current = error;
     showSnackbar({ message: safeLoginErrorMessage(error), type: "error" });
     clearError();
-  }, [clearError, error, showSnackbar]);
+  }, [clearError, error, showSnackbar, isFocused]);
 
   const scrollTo = useCallback((y: number) => {
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });

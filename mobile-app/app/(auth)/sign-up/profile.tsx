@@ -223,15 +223,21 @@ export default function SignUpProfileScreen(): React.ReactElement {
             </Text>
           )}
         </View>
-        <View>
-          <Text variant="label" color={colors.t0}>
+        <View style={{ flex: 1 }}>
+          <Text variant="label" color={colors.t0} numberOfLines={1}>
             {publishedName}
           </Text>
-          <Text variant="metaSm" color={colors.t4}>
-            Your area · just now
+          {/* On a real post this line is the report's general location and
+              age — see the same preview in profile/identity.tsx. */}
+          <Text variant="metaSm" color={colors.t4} numberOfLines={1}>
+            {user?.area?.label?.trim() || "Report location"} · just now
           </Text>
         </View>
       </View>
+      <Text variant="bodyXs" color={colors.t3} style={{ marginTop: 10, lineHeight: 19 }}>
+        Posts show the report&apos;s general location, even when you post
+        anonymously.
+      </Text>
 
       <Text variant="fieldLabel" color={colors.t3} style={{ marginTop: 20 }}>
         WHO SEES A NEW REPORT BY DEFAULT

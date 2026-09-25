@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Check, ChevronRight, Crosshair, Search } from "lucide-react-native";
+import InputRow from "@/components/ui/InputRow";
 import { alpha, colors, hairline, radius, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
 import { ScrollScreen, BackHeader } from "@/components/ui/Screen";
@@ -73,6 +74,7 @@ const SUGGESTED_AREAS: AreaCandidate[] = [
 ];
 
 export default function AreaScreen(): React.ReactElement {
+  const searchInputRef = useRef<TextInput>(null);
   useThemeSync();
   const { location, status, canAskAgain, requestLocation, openSettings, setLocation } = useLocation();
   const { user, saveArea } = useAuth();
@@ -203,9 +205,10 @@ export default function AreaScreen(): React.ReactElement {
     <ScrollScreen padding={screenPadding.detail} testID="profile-area">
       <BackHeader title="Your area" onBack={() => router.back()} padding={0} />
 
-      <View style={[styles.searchBox, { backgroundColor: colors.s3 }]}>
+      <InputRow inputRef={searchInputRef} style={[styles.searchBox, { backgroundColor: colors.s3 }]}>
         <Search size={16} color={colors.t4} />
         <TextInput
+          ref={searchInputRef}
           value={query}
           onChangeText={setQuery}
           placeholder="City or ZIP code"
@@ -216,7 +219,7 @@ export default function AreaScreen(): React.ReactElement {
           style={[styles.searchInput, { color: colors.t0 }]}
           accessibilityLabel="Search city or ZIP code"
         />
-      </View>
+      </InputRow>
 
       <Text variant="bodySm" color={colors.t2} style={styles.intro}>
         Sets what Local means for news, which organisations you see first, and

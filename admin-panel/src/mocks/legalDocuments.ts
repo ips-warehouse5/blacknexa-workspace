@@ -14,7 +14,7 @@ export const legalDocuments: Record<string, LegalDocument> = {
     title: "BlackNexa™ — Terms of Service",
     updated: "Effective 2026",
     version: "1.0",
-    footer: "Questions: legal@blacknexa.app",
+    footer: "Questions: support@blacknexa.com",
     sections: [
       {
         heading: "1. What this app does",

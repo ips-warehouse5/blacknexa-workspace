@@ -73,6 +73,7 @@ const organizationJsonLd = {
   name: siteConfig.name,
   url: siteConfig.url,
   description: siteConfig.seoDescription,
+  sameAs: siteConfig.socialLinks.map((s) => s.href),
 };
 
 const websiteJsonLd = {
