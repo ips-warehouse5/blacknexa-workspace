@@ -8,7 +8,7 @@ import { versionedAsset } from "@/lib/asset-version";
 const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
   "01": {
     src: "/images/blacknexa/feature-social-feed.jpg",
-    alt: "The BlackNexa community feed on a phone, surrounded by member posts from Atlanta to Johannesburg",
+    alt: "A group of people gathered around the BlackNexa community feed on a touchscreen table, with a world map linking Atlanta, Salvador, Accra and Johannesburg behind them",
   },
   "02": {
     src: "/images/blacknexa/feature-news-engine.jpg",
@@ -16,7 +16,7 @@ const FEATURE_IMAGES: Record<string, { src: string; alt: string }> = {
   },
   "03": {
     src: "/images/blacknexa/feature-geo-stamp.jpg",
-    alt: "The BlackNexa incident report on a phone, with a verified geo-stamped location and captured evidence",
+    alt: "Four people reviewing a tablet in front of a city map marked with geo-stamped incidents of housing discrimination, police profiling and medical bias, beside a phone showing a locked incident location and its review status",
   },
 };
 

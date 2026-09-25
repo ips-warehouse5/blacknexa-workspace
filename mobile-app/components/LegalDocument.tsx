@@ -3,14 +3,17 @@
  *
  * The documents are long (Privacy runs to thirteen sections), so each section
  * is a collapsible row: the reader sees every heading at a glance and opens
- * the ones they want. Sections sit
+ * the one they want. Only one section is open at a time: opening another
+ * closes the previous one, so the list never turns back into one long wall
+ * of text. Sections sit
  * flat on the screen, separated by hairlines, so the text uses the full width
  * instead of being inset twice by a card inside the screen padding.
  */
 
 import { router } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Pressable, Text as RNText, StyleSheet, View } from "react-native";
+import type { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { ChevronDown } from "lucide-react-native";
 import { colors, fonts, screenPadding, useThemeSync } from "@/constants/theme";
 import Text from "@/components/ui/Text";
@@ -35,20 +38,30 @@ export default function LegalDocument({
   testID: string;
 }): React.ReactElement {
   useThemeSync();
-  const [open, setOpen] = useState<ReadonlySet<number>>(() => new Set());
+  /** The one open section, or null when all are closed. */
+  const [open, setOpen] = useState<number | null>(null);
+  const scrollRef =
+    useRef<React.ComponentRef<typeof KeyboardAwareScrollView>>(null);
+  const listY = useRef(0);
+  /**
+   * Set when opening a section closes one above it. That section's text
+   * disappears, so the heading just tapped jumps up, possibly off the top of
+   * the screen; its next layout scrolls it back into view.
+   */
+  const scrollToOnLayout = useRef<number | null>(null);
 
   const toggle = useCallback((index: number) => {
     setOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
+      if (prev === index) return null;
+      if (prev !== null && prev < index) scrollToOnLayout.current = index;
+      return index;
     });
   }, []);
 
   return (
     <ScrollScreen
       padding={screenPadding.detail}
+      scrollRef={scrollRef}
       contentStyle={styles.content}
       testID={testID}
     >
@@ -61,13 +74,26 @@ export default function LegalDocument({
         {doc.updated}
       </Text>
 
-      <View style={[styles.list, { borderColor: colors.line }]}>
+      <View
+        style={[styles.list, { borderColor: colors.line }]}
+        onLayout={(e) => {
+          listY.current = e.nativeEvent.layout.y;
+        }}
+      >
         {doc.sections.map((s, i) => {
-          const isOpen = open.has(i);
+          const isOpen = open === i;
           return (
             <View
               key={s.heading}
               style={[styles.section, { borderColor: colors.line }]}
+              onLayout={(e) => {
+                if (scrollToOnLayout.current !== i) return;
+                scrollToOnLayout.current = null;
+                scrollRef.current?.scrollTo({
+                  y: Math.max(0, listY.current + e.nativeEvent.layout.y - 8),
+                  animated: true,
+                });
+              }}
             >
               <Pressable
                 onPress={() => toggle(i)}
