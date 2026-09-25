@@ -145,6 +145,24 @@ For detailed instructions, visit [Expo's App Store deployment guide](https://doc
 
 For detailed instructions, visit [Expo's Google Play deployment guide](https://docs.expo.dev/submit/android/).
 
+### **Build an Android APK locally**
+
+```bash
+npm run apk:<develop|preview|production>:<debug|release>
+# e.g. npm run apk:preview:release
+```
+
+Each command runs `expo prebuild` and Gradle with the environment variables of the matching `eas.json` profile, then prints the APK path (`android/app/build/outputs/apk/<debug|release>/`).
+
+Every APK is named automatically:
+
+```
+BlackNexa_{environment}_{buildType}_v{version}_{DDMMYYYY}.apk
+e.g. BlackNexa_preview_release_v1.0.2_26092026.apk
+```
+
+The version is read from `APP_VERSION` in `app.config.ts` at build time, and the date is the build date. The naming comes from a Gradle hook (`plugins/withAndroidApkNaming.js` → `scripts/android-apk-name.js`), so it also applies to `./gradlew assemble*`, Android Studio and EAS builds. App bundles (`.aab`) keep their default names.
+
 ### **Publish as a Website**
 
 Your React Native app can also run on the web:

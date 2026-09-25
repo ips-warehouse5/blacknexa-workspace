@@ -65,3 +65,6 @@ keystore.properties
 BlackNexa Screen Board*.html
 *.designboard.html
 design-board/
+
+# Named APKs downloaded by npm run eas:apk:* (scripts/eas-build-android-apk.js)
+/builds/

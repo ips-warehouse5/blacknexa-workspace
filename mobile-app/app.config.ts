@@ -234,6 +234,7 @@ const config: ExpoConfig = {
     "./plugins/withAndroidMailtoQuery",
     "./plugins/withAndroidSingleTaskMainActivity",
     "./plugins/withAndroidReleaseSigning",
+    "./plugins/withAndroidApkNaming",
   ],
   experiments: {
     typedRoutes: true,
